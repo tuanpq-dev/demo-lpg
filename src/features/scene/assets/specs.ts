@@ -37,6 +37,10 @@ export type AssetSpec = {
   /** Tên loại (tiếng Việt) cho tooltip/Editor. */
   label: string;
   category: AssetCategory;
+  /**
+   * Quy ước id khi Editor tự sinh: equipment `V-101, V-102…` (3 chữ số, từ 101), environment `FN-01…` (2 chữ số).
+   */
+  idPrefix: string;
   paramsSchema: Record<string, ParamDef>;
   /** Các trường dữ liệu có thể gắn tag trong `bindings`. */
   dataFields: string[];
@@ -60,6 +64,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   'tank-horizontal': {
     label: 'Bồn chứa nằm ngang',
     category: 'equipment',
+    idPrefix: 'V',
     paramsSchema: {
       length: { label: 'Chiều dài thân', default: 11, min: 4, max: 30, unit: 'm' },
       diameter: { label: 'Đường kính', default: 4.4, min: 1.5, max: 8, unit: 'm' },
@@ -82,6 +87,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   'tank-vertical': {
     label: 'Tháp / bồn đứng',
     category: 'equipment',
+    idPrefix: 'C',
     paramsSchema: {
       height: { label: 'Chiều cao thân', default: 8, min: 2, max: 30, unit: 'm' },
       diameter: { label: 'Đường kính', default: 2, min: 0.8, max: 8, unit: 'm' },
@@ -101,6 +107,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   pump: {
     label: 'Bơm',
     category: 'equipment',
+    idPrefix: 'P',
     paramsSchema: {},
     dataFields: ['state', 'pressure', 'flow'],
     layout: () => ({
@@ -111,6 +118,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   valve: {
     label: 'Van',
     category: 'equipment',
+    idPrefix: 'XV',
     paramsSchema: {},
     dataFields: ['state', 'position'],
     layout: () => ({ ports: { a: [-0.34, 0, 0], b: [0.34, 0, 0] }, bounds: box([-0.35, -0.25, -0.25], [0.35, 0.75, 0.25]) }),
@@ -118,6 +126,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   filter: {
     label: 'Bình lọc',
     category: 'equipment',
+    idPrefix: 'F',
     paramsSchema: {},
     dataFields: ['pressure'],
     layout: () => ({
@@ -128,6 +137,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   'flow-meter': {
     label: 'Đồng hồ lưu lượng',
     category: 'equipment',
+    idPrefix: 'FT',
     paramsSchema: {},
     dataFields: ['flow'],
     layout: () => ({ ports: { a: [-0.45, 0, 0], b: [0.45, 0, 0] }, bounds: box([-0.45, -0.36, -0.36], [0.45, 0.9, 0.36]) }),
@@ -135,6 +145,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   vaporizer: {
     label: 'Hóa hơi & điều áp',
     category: 'equipment',
+    idPrefix: 'E',
     paramsSchema: { plates: { label: 'Số tấm trao đổi nhiệt', default: 18, min: 4, max: 40, integer: true } },
     dataFields: ['temperature', 'pressure', 'flow'],
     layout: () => ({
@@ -145,6 +156,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   'tanker-truck': {
     label: 'Xe bồn',
     category: 'equipment',
+    idPrefix: 'TK',
     paramsSchema: {},
     dataFields: ['state', 'level'],
     layout: () => ({
@@ -156,6 +168,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   'loading-station': {
     label: 'Trạm nạp',
     category: 'equipment',
+    idPrefix: 'LS',
     paramsSchema: {},
     dataFields: ['state', 'flow'],
     layout: () => ({ ports: {}, bounds: box([-2.6, 0, -0.6], [0.8, 2.9, 0.7]) }),
@@ -163,6 +176,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   building: {
     label: 'Nhà xưởng',
     category: 'environment',
+    idPrefix: 'B',
     paramsSchema: {
       width: { label: 'Chiều rộng', default: 18, min: 6, max: 60, unit: 'm' },
       depth: { label: 'Chiều sâu', default: 10, min: 4, max: 40, unit: 'm' },
@@ -180,6 +194,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   canopy: {
     label: 'Mái che',
     category: 'environment',
+    idPrefix: 'PH',
     paramsSchema: {
       length: { label: 'Chiều dài', default: 16, min: 4, max: 40, unit: 'm' },
       depth: { label: 'Chiều sâu', default: 8, min: 3, max: 20, unit: 'm' },
@@ -195,6 +210,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
   fence: {
     label: 'Hàng rào',
     category: 'environment',
+    idPrefix: 'FN',
     paramsSchema: {
       height: { label: 'Chiều cao', default: 1.3, min: 0.5, max: 4, unit: 'm' },
       postSpacing: { label: 'Khoảng cách cọc', default: 1.6, min: 0.5, max: 5, unit: 'm' },

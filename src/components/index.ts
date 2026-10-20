@@ -36,4 +36,5 @@ export * from './StatusDot';
 export * from './StatusPill';
 export * from './SystemHealthCard';
 export * from './Tabs';
+export * from './TreeView';
 export * from './TrendChart';
