@@ -1,0 +1,33 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-bg-app font-sans text-base text-fg antialiased;
+  }
+
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+@layer components {
+  /* Cảnh 3D: vignette nhẹ ở rìa (Figma 53:244 – rìa tối hơn giữa), phủ trên canvas, không nhận chuột. */
+  .scene-vignette {
+    background: radial-gradient(
+      ellipse 72% 68% at 50% 46%,
+      transparent 58%,
+      rgb(var(--color-scene-ground) / 0.38) 86%,
+      rgb(var(--color-scene-ground) / 0.62) 100%
+    );
+  }
+}

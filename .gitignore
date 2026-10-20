@@ -1,0 +1,41 @@
+# Dependencies & build
+node_modules
+dist
+dist-ssr
+.vite/
+*.tsbuildinfo
+coverage/
+*.local
+
+# Môi trường, bí mật (quan trọng nhất)
+.env
+.env.*
+!.env.example
+
+# Log
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/mcp.json
+.idea
+*.suo
+*.sw?
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Claude Code - cấu hình cá nhân
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Dữ liệu tạm khi làm việc với Figma
+.figma-cache/
+scratch/

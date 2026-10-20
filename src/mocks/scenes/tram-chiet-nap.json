@@ -1,0 +1,55 @@
+{
+  "id": "tram-chiet-nap",
+  "name": "Trạm chiết nạp số 2",
+  "version": 2,
+  "camera": { "position": [64, 50, 66], "target": [6, 0, 2], "zoom": 19 },
+  "views": [
+    { "id": "all", "label": "Toàn cảnh" },
+    { "id": "tanks", "label": "Bồn chứa", "objectIds": ["V-301", "V-302", "V-303"] },
+    { "id": "pumps", "label": "Bơm & Lọc", "objectIds": ["P-301A", "P-301B", "P-302A", "P-302B"] },
+    { "id": "top", "label": "Từ trên", "camera": { "position": [16, 80, 42], "target": [6, 0, 2], "zoom": 15 } }
+  ],
+  "thresholds": {
+    "level": { "warn": 85, "danger": 95, "lowWarn": 15, "lowDanger": 5 },
+    "pressure": { "warn": 16, "danger": 17.5 }
+  },
+  "objects": [
+    { "id": "TK-02", "asset": "tanker-truck", "position": [-13, 0, 13], "rotation": [0, 1.5708, 0], "label": "Xe bồn LPG", "bindings": { "state": "LOAD-02.STATE" } },
+    { "id": "LS-02", "asset": "loading-station", "position": [-17, 0, 8], "label": "Trạm nạp 2", "bindings": { "state": "LOAD-02.STATE", "flow": "FT-311" } },
+
+    { "id": "V-301", "asset": "tank-horizontal", "position": [0, 0, 8], "params": { "length": 10, "diameter": 4 }, "label": "Bồn V-301", "marker": { "field": "level" }, "bindings": { "level": "LT-301", "pressure": "PT-301" } },
+    { "id": "V-302", "asset": "tank-horizontal", "position": [0, 0, 14], "params": { "length": 12, "diameter": 4.4 }, "label": "Bồn V-302", "marker": { "field": "level" }, "bindings": { "level": "LT-302", "pressure": "PT-302" } },
+    { "id": "V-303", "asset": "tank-horizontal", "position": [0, 0, 20], "params": { "length": 9, "diameter": 3.6 }, "label": "Bồn V-303", "marker": { "field": "level" }, "bindings": { "level": "LT-303", "pressure": "PT-303" } },
+    { "id": "FN-21", "asset": "fence", "position": [0, 0, 14], "params": { "height": 1.6 }, "path": [[-8.2, 0, -9], [8.2, 0, -9], [8.2, 0, 9], [-8.2, 0, 9], [-8.2, 0, -9]] },
+
+    { "id": "PH-21", "asset": "canopy", "position": [14.5, 0, 2], "params": { "length": 9, "depth": 6, "height": 5, "bays": 1 }, "label": "Mái che cụm bơm A" },
+    { "id": "P-301A", "asset": "pump", "position": [14, 0.3, 1], "label": "Bơm P-301A", "marker": { "tone": "success", "title": "Cụm bơm A", "field": "state" }, "bindings": { "state": "P-301A.STATE" } },
+    { "id": "P-301B", "asset": "pump", "position": [14, 0.3, 3], "label": "Bơm P-301B", "bindings": { "state": "P-301B.STATE" } },
+    { "id": "PH-22", "asset": "canopy", "position": [14.5, 0, -8], "params": { "length": 9, "depth": 6, "height": 5, "bays": 1 }, "label": "Mái che cụm bơm B" },
+    { "id": "P-302A", "asset": "pump", "position": [14, 0.3, -9], "label": "Bơm P-302A", "bindings": { "state": "P-302A.STATE" } },
+    { "id": "P-302B", "asset": "pump", "position": [14, 0.3, -7], "label": "Bơm P-302B", "marker": { "tone": "success", "title": "Cụm bơm B", "field": "state" }, "bindings": { "state": "P-302B.STATE" } },
+
+    { "id": "XV-301", "asset": "valve", "attach": { "pipe": "PL-01", "t": 0.45 }, "label": "Van XV-301", "bindings": { "position": "XV-301.POS" } },
+    { "id": "FT-302", "asset": "flow-meter", "attach": { "pipe": "PL-30", "t": 0.3 }, "label": "FT-302", "marker": { "field": "flow" }, "bindings": { "flow": "FT-302" } },
+    { "id": "C-301", "asset": "tank-vertical", "position": [26, 0, 12], "params": { "height": 10, "diameter": 2.4 }, "label": "Tháp ổn áp C-301", "bindings": { "pressure": { "tag": "PT-311", "warn": 6, "danger": 7 } } },
+
+    { "id": "B-02", "asset": "building", "position": [30, 0, -14], "params": { "width": 14, "depth": 10, "height": 9, "floors": 3 }, "label": "Nhà chiết nạp", "marker": { "variant": "tag" } }
+  ],
+  "pipes": [
+    { "id": "PL-01", "from": "TK-02.outlet", "points": [[-13, 1.1, 3.5], [9, 1.1, 3.5]], "flowTag": "FT-311" },
+    { "id": "PL-10", "points": [[9, 1.1, 20], [9, 1.1, -9]], "flowTag": "FT-301" },
+    { "id": "PL-11", "from": "V-301.out", "points": [[9, 2.8, 8], [9, 1.1, 8]], "flowTag": "FT-301" },
+    { "id": "PL-12", "from": "V-302.out", "points": [[9, 3, 14], [9, 1.1, 14]], "flowTag": "FT-301" },
+    { "id": "PL-13", "from": "V-303.out", "points": [[9, 2.6, 20], [9, 1.1, 20]], "flowTag": "FT-301" },
+    { "id": "PL-21", "to": "P-301A.suction", "points": [[9, 1.1, 1]], "flowTag": "FT-301" },
+    { "id": "PL-22", "to": "P-301B.suction", "points": [[9, 1.1, 3]] },
+    { "id": "PL-23", "to": "P-302A.suction", "points": [[9, 1.1, -9]], "flowTag": "FT-301" },
+    { "id": "PL-24", "to": "P-302B.suction", "points": [[9, 1.1, -7]] },
+    { "id": "PL-31", "from": "P-301A.discharge", "points": [[13.45, 3.2, 1], [21, 3.2, 1]], "flowTag": "FT-302" },
+    { "id": "PL-32", "from": "P-301B.discharge", "points": [[13.45, 3.2, 3], [21, 3.2, 3]] },
+    { "id": "PL-33", "from": "P-302A.discharge", "points": [[13.45, 3.2, -9], [21, 3.2, -9]], "flowTag": "FT-302" },
+    { "id": "PL-34", "from": "P-302B.discharge", "points": [[13.45, 3.2, -7], [21, 3.2, -7]] },
+    { "id": "PL-30", "points": [[21, 3.2, 4], [21, 3.2, -12], [23, 3.2, -12]], "flowTag": "FT-302" },
+    { "id": "PL-35", "to": "C-301.in", "points": [[21, 3.2, 4], [21, 3.2, 12], [23, 3.2, 12], [23, 1.2, 12]], "flowTag": "FT-302" }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "khu-bon-lpg",
+  "name": "Khu bồn LPG",
+  "version": 3,
+  "camera": { "position": [56.3, 50, 62.3], "target": [-1.7, 0, -1.7], "zoom": 27 },
+  "views": [
+    { "id": "all", "label": "Toàn cảnh" },
+    { "id": "tanks", "label": "Bồn chứa", "objectIds": ["V-101", "FN-02"] },
+    { "id": "pumps", "label": "Bơm & Lọc", "objectIds": ["P-101A", "P-101B", "F-101"] }
+  ],
+  "thresholds": {
+    "level": { "warn": 85, "danger": 95, "lowWarn": 15, "lowDanger": 5 },
+    "pressure": { "warn": 16, "danger": 17.5 },
+    "temperature": { "warn": 42, "danger": 45 }
+  },
+  "objects": [
+    { "id": "TK-01", "asset": "tanker-truck", "position": [-13.5, 0, 7], "rotation": [0, 1.5708, 0], "label": "Xe bồn LPG", "marker": { "variant": "side", "tone": "warning", "title": "Khu nạp LPG", "field": "state" }, "bindings": { "state": "LOAD-01.STATE", "level": "LT-TK01" } },
+    { "id": "LS-01", "asset": "loading-station", "position": [-6, 0, 16], "label": "Trạm nạp", "bindings": { "state": "LOAD-01.STATE", "flow": "FT-001" } },
+    { "id": "FN-01", "asset": "fence", "position": [-6.4, 0, 9.5], "path": [[-5.5, 0, 0], [5.5, 0, 0]] },
+
+    { "id": "V-101", "asset": "tank-horizontal", "position": [8.3, 0, 15.4], "label": "Bồn V-101", "marker": { "title": "Khu bồn LPG", "field": "level" }, "bindings": { "level": "LT-101", "pressure": "PT-101", "temperature": { "tag": "TT-101", "warn": 40, "danger": 50 } } },
+    { "id": "FN-02", "asset": "fence", "position": [8.3, 0, 15.4], "path": [[-9.25, 0, -4.5], [9.25, 0, -4.5], [9.25, 0, 4.5], [-9.25, 0, 4.5], [-9.25, 0, -4.5]] },
+    { "id": "XV-101", "asset": "valve", "attach": { "pipe": "PL-06", "t": 0.69 }, "label": "Van XV-101", "bindings": { "position": "XV-101.POS" } },
+
+    { "id": "PH-01", "asset": "canopy", "position": [-1, 0, -5], "label": "Mái che cụm bơm & lọc" },
+    { "id": "P-101A", "asset": "pump", "position": [-4, 0.3, -6.6], "label": "Bơm P-101A", "marker": { "tone": "success", "title": "Cụm bơm & lọc", "field": "state" }, "bindings": { "state": "P-101A.STATE", "pressure": "PT-102" } },
+    { "id": "P-101B", "asset": "pump", "position": [-4, 0.3, -3.6], "label": "Bơm P-101B", "bindings": { "state": "P-101B.STATE" } },
+    { "id": "F-101", "asset": "filter", "position": [1, 0.3, -5.1], "label": "Bộ lọc F-101", "bindings": { "pressure": { "tag": "PDT-101", "warn": 0.8, "danger": 1.2 } } },
+
+    { "id": "FT-101", "asset": "flow-meter", "attach": { "pipe": "PL-05", "t": 0.69 }, "label": "FT-101", "marker": { "field": "flow" }, "bindings": { "flow": "FT-101" } },
+    { "id": "XV-102", "asset": "valve", "attach": { "pipe": "PL-05", "t": 0.86 }, "label": "Van XV-102", "bindings": { "position": "XV-102.POS" } },
+
+    { "id": "E-101A", "asset": "vaporizer", "position": [21.1, 0, -1.6], "label": "Hóa hơi E-101A", "marker": { "title": "Hóa hơi và điều áp", "field": "temperature" }, "bindings": { "temperature": "TT-201", "pressure": { "tag": "PT-201", "warn": 5, "danger": 6 } } },
+    { "id": "C-101", "asset": "tank-vertical", "position": [27.8, 0, -0.7], "label": "Tháp điều áp C-101", "bindings": { "pressure": { "tag": "PT-202", "warn": 5, "danger": 6 } } },
+
+    { "id": "B-01", "asset": "building", "position": [4.6, 0, -17], "label": "Nhà xưởng", "marker": { "variant": "tag", "title": "Khu sản xuất" } }
+  ],
+  "pipes": [
+    { "id": "PL-01", "from": "TK-01.outlet", "to": "P-101A.suction", "points": [[-13.5, 1.1, -1.6], [-7, 1.1, -1.6], [-7, 1.1, -6.6]], "flowTag": "FT-001" },
+    { "id": "PL-02", "to": "P-101B.suction", "points": [[-7, 1.1, -3.6]] },
+    { "id": "PL-03", "from": "P-101A.discharge", "to": "F-101.in", "points": [[-4.55, 2.7, -6.6], [-4.55, 2.7, -5.1], [-1.2, 2.7, -5.1], [-1.2, 2.2, -5.1]], "flowTag": "FT-101" },
+    { "id": "PL-04", "from": "P-101B.discharge", "points": [[-4.55, 2.7, -3.6], [-4.55, 2.7, -5.1]] },
+    { "id": "PL-05", "from": "F-101.out", "to": "E-101A.in", "points": [[6, 1.2, -5.1], [6, 1.2, 5], [15.2, 1.2, 5], [15.2, 1.2, -0.1]], "flowTag": "FT-101" },
+    { "id": "PL-06", "to": "V-101.out", "points": [[6, 1.2, 5], [6, 1.2, 8], [16.5, 1.2, 8], [16.5, 1.2, 15.4], [16.5, 3, 15.4]], "flowTag": "FT-102" },
+    { "id": "PL-07", "from": "E-101A.out", "to": "C-101.in", "points": [[26.1, 1.2, -3.1], [26.1, 1.2, -0.7]], "flowTag": "FT-201" },
+    { "id": "PL-08", "from": "C-101.out", "points": [[27.8, 1.2, -10.5], [12, 1.2, -10.5], [12, 1.2, -11.6]], "flowTag": "FT-201" }
+  ]
+}
