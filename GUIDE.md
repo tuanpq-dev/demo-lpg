@@ -150,6 +150,37 @@ export function useOverviewData() { /* → { status, data, error, refetch } */ }
 | Nội dung KPI/thẻ/chart | `src/mocks/overview.ts` |
 | Thứ tự/bố cục khối | `src/pages/overview/OverviewPage.tsx` |
 
+**Số liệu trực tiếp (live) – một luồng chung cho KPI, danh sách theo dõi, bản đồ 2.5D, cảnh 3D và header:**
+
+```mermaid
+flowchart LR
+  BASE["mocks/scenes/live.ts liveBase, liveJitter, liveUnit"] --> SRC["data/live/MockLiveSource"]
+  SRC -->|"implements"| IF["features/live/types LiveDataSource"]
+  SRC --> LS["data/live liveSource (một nguồn cho cả app)"]
+  LS --> HOOK["useLiveData(tags?) → LiveData"]
+  LS --> ST["useLiveStatus → connected / connecting / disconnected"]
+  HOOK --> AL["data/overview applyLive: KPI, watchlist, marker 2.5D"]
+  HOOK --> SV["SceneViewer: fields.ts + markers.ts"]
+  ST --> HDR["app/HeaderActions LiveDataButton"]
+  SIG["features/live/signal tagSignal, STALE_MS"] --> AL
+  SIG --> SV
+```
+
+- Kiểu: `TagValue = { value: number | string; unit?; ts; quality: 'good' | 'uncertain' | 'bad' }`, `LiveData = Record<tag, TagValue>` (`src/features/live/types.ts`, thuần).
+- Nguồn: interface `LiveDataSource { subscribe(tags, cb) → huỷ; getSnapshot(tags); status; onStatusChange(cb) }`. Bản hiện tại `MockLiveSource` (đổi số mỗi 2 s, kết nối khi có người nghe). **Nối WebSocket/SCADA = viết class mới cùng interface và đổi `liveSource` trong `src/data/live/index.ts`** – UI không sửa.
+- Quy tắc hiển thị (`src/features/live/signal.ts`): **mất tín hiệu** = quality `bad`, hoặc ≥ 10 s (`STALE_MS`) không cập nhật, hoặc không có tag → "Mất tín hiệu" (xám + `SignalLostIcon`), KHÔNG hiện số cũ; `uncertain` vẫn hiện số. `useLiveData` tự hẹn giờ vẽ lại đúng mốc 10 s (`nextExpiry`) kể cả khi nguồn im lặng. Chưa nhận ảnh chụp đầu → "—" (không báo mất tín hiệu).
+- Áp dụng: KPI (`signalLost` → "—" + "Mất tín hiệu"), dòng theo dõi (`signalLost`, tone offline), marker 2.5D (tone neutral + icon), nhãn 3D (`objectMarker`), màu thiết bị 3D (`objectStatus`: một binding mất tín hiệu → offline nếu không có cảnh báo/sự cố nào khác), tooltip 3D, vệt chảy ống (mất tín hiệu → không chảy).
+- Header "Dữ liệu trực tiếp" (`LiveDataButton`, mọi trang): connected = chấm live · connecting = "Đang kết nối lại…" vàng nhấp nháy · disconnected = "Mất kết nối" đỏ.
+- Giả lập sự cố: `?live=disconnect`, `?live=bad:LT-101,TT-201`, `?live=stale:FT-101` (ghép bằng `;`), thanh "Giả lập nguồn dữ liệu" ở `/playground#scene`, hoặc `window.__liveSimulator` (dev).
+- Mức bồn: tag `LT-xxx` = mức theo **chiều cao** (% đường kính); KPI "Mức bồn V-101" = **% thể tích** quy đổi bằng `levelPercentToVolumePercent` (`src/features/tank/volume.ts`, bồn trụ nằm, bỏ qua đáy elip; test `npm test`). TODO: bảng dung tích thật từ khách → `strappingVolume`.
+
+| Muốn sửa | Sửa ở |
+|---|---|
+| Gắn KPI với tag | `live: { tag, digits?, transform? }` trong `overviewKpis` (`src/mocks/overview.ts`) |
+| Gắn dòng theo dõi / marker 2.5D với tag | `live: { tag, field }` trong `watchlist` / `mapMarkers` |
+| Thời gian coi là mất tín hiệu | `STALE_MS` (`src/features/live/signal.ts`) |
+| Nối nguồn thật | `liveSource` trong `src/data/live/index.ts` (+ class mới implements `LiveDataSource`) |
+
 ### 4c. Cảnh báo: lọc, chọn nhiều, xác nhận, drawer, URL
 
 ```mermaid
@@ -237,7 +268,7 @@ flowchart TD
   SV --> REG["features/scene/assets/registry.ts ASSETS"]
   SV --> PIPE["PipeMesh"]
   SV --> MARK["markers.ts nhãn MapMarker"]
-  LIVE["useLiveData mocks/scenes/live.ts"] --> SV
+  LIVE["data/live useLiveData (LiveDataSource)"] --> SV
   SV --> SEL["onSelect id object"]
 ```
 
@@ -250,7 +281,7 @@ Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)
 |---|---|---|
 | 1 | `src/features/scene/types.ts` | Hợp đồng dữ liệu `SceneConfig`, `SceneObject` (gồm `elevation`), `Pipe`, `ASSET_TYPES`, `LiveData`, `SCENE_SCHEMA_VERSION` (không phụ thuộc three) |
 | 2 | `src/mocks/scenes/khu-bon-lpg.json` | Ví dụ cảnh thật: camera, views, thresholds, objects, pipes |
-| 3 | `src/data/scene.ts` | `fetchScene` (mock → kho), `useSceneConfig`, `useLiveData`, `SCENE_IDS`, `SENSOR_TAGS` |
+| 3 | `src/data/scene.ts` + `src/data/live/` | `fetchScene` (mock → kho), `useSceneConfig`, `SCENE_IDS`; số liệu: `useLiveData`, `useLiveStatus`, `SENSOR_TAGS` (xem 4b) |
 | 4 | `src/features/scene/migrate.ts` → `parse.ts` | `migrateScene` (v1 → v2: position[1] → `elevation`, van/đồng hồ dời pivot, version + 1) rồi validate zod: cấu trúc + tham chiếu (asset, id trùng, cổng ống, params, position[1] = elevation…) |
 | 5 | `src/app/ConnectedPlantMap.tsx` | Nạp theo `sceneId` → `PlantMap renderer="three"` |
 | 6 | `src/components/PlantMap/PlantMap.tsx` | Khung chung (nút view, zoom, toàn màn hình, 2.5D/3D); lazy-load SceneViewer |
@@ -393,6 +424,18 @@ Mục playground: `#tokens` (1), `#primitives` (2), `#navigation` (3), `#layout`
 7. Kiểm tra: `npm run typecheck`, mở `/alerts?range=30d`, gõ giá trị của cột vào ô tìm kiếm.
 8. Bảng Bảo trì làm tương tự ở `src/pages/maintenance/MaintenancePage.tsx` + `src/mocks/maintenance.ts`.
 
+**Nối nguồn dữ liệu trực tiếp thật (WebSocket/SCADA)**
+1. Tạo `src/data/live/WebSocketLiveSource.ts` `implements LiveDataSource` (`src/features/live/types.ts`): mở socket khi có người nghe (`subscribe`/`onStatusChange`), gửi danh sách tag cần nghe, đổi `status` + gọi listener khi kết nối/mất/thử lại.
+2. Mỗi bản tin → `TagValue` (`value`, `unit`, `ts` = thời điểm đo từ SCADA, `quality` map từ OPC: Good/Uncertain/Bad) → gọi `cb(snapshot)` với ảnh chụp mới (đối tượng mới).
+3. `getSnapshot(tags)` → REST đọc giá trị hiện tại (nạp ban đầu/xuất báo cáo).
+4. Đổi `export const liveSource = new WebSocketLiveSource(url)` trong `src/data/live/index.ts`; giữ `MockLiveSource` cho demo/test (giả lập sự cố chỉ có ở mock).
+5. Kiểm tra: header đổi trạng thái khi rút mạng; tag không cập nhật 10 s → "Mất tín hiệu".
+
+**Đổi cách quy đổi mức bồn → thể tích**
+1. Hàm ở `src/features/tank/volume.ts` (thuần); KPI dùng qua `transform: 'tank-volume'` trong `applyLive` (`src/data/overview.ts`).
+2. Có bảng dung tích của khách: thêm dữ liệu bảng (vd `src/mocks/tanks.ts`), dùng `strappingVolume(table, chiều cao)`, thêm transform mới.
+3. Chạy `npm test` (node:test, `*.test.ts` cạnh module).
+
 **Thêm loại asset 3D**
 1. Thêm tên vào `ASSET_TYPES` trong `src/features/scene/types.ts` (đúng nhóm equipment/environment).
 2. Thêm spec vào `ASSET_SPECS` trong `src/features/scene/assets/specs.ts`: `label`, `category`, `idPrefix` (tiền tố id khi Editor tự sinh), `paramsSchema`, `dataFields` (trường cho bindings, nhãn/đơn vị lấy từ `FIELD_META`), `layout(params)` trả `{ ports, bounds, labelAnchor? }`.
@@ -452,9 +495,9 @@ Mục playground: `#tokens` (1), `#primitives` (2), `#navigation` (3), `#layout`
 4. Xem kết quả ở `/playground#tokens`.
 
 **Thêm tag cảm biến**
-1. Thêm giá trị nền vào `liveBase` trong `src/mocks/scenes/live.ts` (số hoặc chuỗi trạng thái như `running`, `fault`).
+1. Thêm giá trị nền vào `liveBase` trong `src/mocks/scenes/live.ts` (số hoặc chuỗi trạng thái như `running`, `fault`); đơn vị theo tiền tố tag trong `liveUnit` (thêm nhánh nếu tiền tố mới).
 2. Muốn giá trị dao động: thêm biên độ vào `liveJitter` (cùng file).
-3. Tag tự có trong `SENSOR_TAGS` (`src/data/scene.ts`) → Editor cho chọn trong ô binding.
+3. Tag tự có trong `SENSOR_TAGS` (`src/data/live/index.ts`) → Editor cho chọn trong ô binding.
 4. Gắn vào object: `bindings` trong JSON cảnh (vd `"level": "LT-401"` hoặc `{ "tag": "PT-401", "warn": 5, "danger": 6 }`) hoặc qua Properties của `/editor`.
 5. Trường mới (ngoài level/pressure/temperature/flow/position/state): thêm vào `FIELD_META` (`src/features/scene/fields.ts`) và `dataFields` của asset trong `specs.ts`.
 
@@ -563,7 +606,8 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 | Phần | Hiện tại | Chờ |
 |---|---|---|
 | Dữ liệu Tổng quan, Cảnh báo, Bảo trì | Mock trong `src/mocks/`, mutation chỉ sửa bộ nhớ (mất khi F5) | Backend: thay thân `fetch*` và các hàm `acknowledge*/create*/advance*` trong `src/data/` |
-| Số liệu cảm biến 3D | `useLiveData` dao động ngẫu nhiên từ `src/mocks/scenes/live.ts` mỗi 2 giây | WebSocket/SSE |
+| Số liệu trực tiếp | `MockLiveSource` (`src/data/live`) dao động quanh `src/mocks/scenes/live.ts` mỗi 2 giây, giả lập mất kết nối/tag lỗi | `WebSocketLiveSource` cùng interface `LiveDataSource` |
+| Quy đổi mức bồn → thể tích | Công thức bồn trụ nằm (bỏ qua đáy) – `src/features/tank/volume.ts` | Bảng dung tích thật từ khách (`strappingVolume`) |
 | Danh sách tag cảm biến | `SENSOR_TAGS` = khoá của `liveBase` | API danh mục tag |
 | Kho cảnh của Editor | `LocalStorageRepository` (chỉ trên trình duyệt hiện tại) | Bản HTTP của `SceneRepository` |
 | Quyền vào `/editor` | `?edit=1` hoặc `VITE_SCENE_EDITOR` | Phân quyền thật theo vai trò |
