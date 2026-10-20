@@ -12,7 +12,7 @@ const SceneViewer = lazy(() => import('@/features/scene/SceneViewer'));
 
 const TOOLS: { id: EditorTool; label: string; key: string; icon: ReactNode }[] = [
   { id: 'select', label: 'Chọn', key: 'Q', icon: <CursorIcon /> },
-  { id: 'translate', label: 'Di chuyển', key: 'W', icon: <MoveIcon /> },
+  { id: 'translate', label: 'Di chuyển trên sàn', key: 'W', icon: <MoveIcon /> },
   { id: 'rotate', label: 'Xoay (quanh trục đứng)', key: 'E', icon: <RotateIcon /> },
   { id: 'scale', label: 'Scale', key: 'R', icon: <ScaleIcon /> },
 ];
@@ -67,8 +67,8 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
         <Button
           variant="toolbar"
           size="sm"
-          aria-label="Snap lưới 0,5 m / 15°"
-          title="Snap lưới 0,5 m / 15° / 0,1"
+          aria-label="Snap lưới 0,5 m / 15° (giữ Alt khi kéo để tắt)"
+          title="Snap lưới 0,5 m / 15° / 0,1 · độ cao 0,25 m (giữ Alt khi kéo = tắt)"
           pressed={ui.snap}
           onClick={() => ui.toggle('snap')}
           icon={<MagnetIcon />}
@@ -76,8 +76,8 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
         <Button
           variant="toolbar"
           size="sm"
-          aria-label="Hiện lưới (G)"
-          title="Hiện lưới (G)"
+          aria-label="Hiện lưới và vạch chân (G)"
+          title="Hiện lưới + vạch chân y = 0 và khoảng cách đáy–sàn (G)"
           pressed={ui.grid}
           onClick={() => ui.toggle('grid')}
           icon={<GridIcon />}

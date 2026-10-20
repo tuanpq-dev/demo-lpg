@@ -49,6 +49,8 @@ import {
   FloorOutline,
   PickerBridge,
   SCENE_ASSET_MIME,
+  SelectionFootprints,
+  startGroundDrag,
   type ScenePicker,
   type SceneEditState,
 } from './EditTools';
@@ -211,7 +213,30 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   const skipPick = useMemo(() => new Set([...hidden, ...locked]), [hidden, locked]);
   const onPointerDownCapture = (e: ReactPointerEvent<HTMLDivElement>) => {
     downAt.current = { x: e.clientX, y: e.clientY };
-    if (!edit || !e.shiftKey || e.button !== 0 || !(e.target instanceof HTMLCanvasElement)) return;
+    if (!edit || e.button !== 0 || !(e.target instanceof HTMLCanvasElement)) return;
+    // Di chuyển: nắm object (không phím bổ trợ) → kéo trên mặt sàn. Không chặn sự kiện (R3F vẫn ghi pointerdown cho click);
+    // OrbitControls bị tắt trước khi sự kiện tới canvas nên không xoay camera.
+    if (edit.mode === 'translate' && !e.shiftKey && !e.ctrlKey && !e.metaKey && picker.current) {
+      const id = picker.current.object(e.clientX, e.clientY, skipPick);
+      if (!id) return;
+      const group = selected.has(id) ? edit.selected : [id];
+      const ok = startGroundDrag({
+        picker: picker.current,
+        edit,
+        byId,
+        grabbed: id,
+        ids: group,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        onState: (dragging) => {
+          gizmo.current.dragging = dragging;
+          if (!dragging) gizmo.current.endedAt = performance.now();
+        },
+      });
+      if (ok && !selected.has(id)) edit.onSelect([id], 'replace');
+      return;
+    }
+    if (!e.shiftKey) return;
     // Chặn OrbitControls/R3F: Shift+kéo thuộc về chọn vùng.
     e.stopPropagation();
     const start = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY };
@@ -242,7 +267,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     const asset = e.dataTransfer.getData(SCENE_ASSET_MIME) as AssetType;
     const p = picker.current?.ground(e.clientX, e.clientY);
     if (!asset || !p) return;
-    const step = edit.snap !== false ? EDIT_SNAP.translate : 0.001;
+    // Cùng mặt phẳng sàn + snap như khi kéo (Alt = tắt snap); đáy asset luôn ở y = 0.
+    const step = edit.snap !== false && !e.altKey ? EDIT_SNAP.translate : 0.001;
     edit.onDropAsset(asset, [Math.round(p.x / step) * step, 0, Math.round(p.z / step) * step]);
   };
   const statuses = new Map(
@@ -273,7 +299,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   return (
     <div
       ref={wrapper}
-      className={cn('relative h-full w-full', hovered && 'cursor-pointer', className)}
+      className={cn('relative h-full w-full', hovered && (edit?.mode === 'translate' ? 'cursor-move' : 'cursor-pointer'), className)}
       data-scene-quality={level}
       onPointerDownCapture={onPointerDownCapture}
       onDragOver={(e) => {
@@ -327,8 +353,11 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           {edit && <PickerBridge pickerRef={picker} byId={byId} />}
 
           <SceneLights palette={palette} preset={preset} />
-          <Ground palette={palette} grid={edit?.grid !== false} />
+          <Ground palette={palette} grid={edit?.grid !== false} color={composerOn ? groundBehindToneMap : palette.ground} />
           {edit?.floor && <FloorOutline half={edit.floor} palette={palette} />}
+          {edit && edit.grid !== false && (
+            <SelectionFootprints objects={edit.selected.flatMap((id) => byId.get(id) ?? [])} palette={palette} />
+          )}
 
           <MaterialsProvider palette={palette}>
             {visible.map((obj) => (
@@ -381,7 +410,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
             );
           })}
 
-          {edit && <EditGizmo edit={edit} byId={byId} state={gizmo} />}
+          {edit && <EditGizmo edit={edit} byId={byId} state={gizmo} palette={palette} />}
 
           {hoveredObj && !markedIds.has(hoveredObj.id) && (
             <ObjectTooltip obj={hoveredObj} liveData={liveData} thresholds={thresholds} />
@@ -422,6 +451,8 @@ export default SceneViewer;
 
 // ---------------------------------------------------------------------------
 // Renderer, ánh sáng, sàn
+
+const noRaycast = () => null;
 
 /** Bắt lỗi khi dựng Canvas/WebGLRenderer (vd. GPU bị chặn) → báo lên để rơi về ảnh 2.5D. */
 class WebGLErrorBoundary extends Component<{ onError: (message: string) => void; children: ReactNode }, { failed: boolean }> {
@@ -515,7 +546,11 @@ function createFalloffTexture(stops: [number, number][]) {
 }
 
 /** Sàn: nhận bóng + vùng sáng nhẹ ở giữa (Figma: giữa #0A1827, rìa #081323) + lưới token. */
-function Ground({ palette, grid = true }: { palette: ScenePalette; grid?: boolean }) {
+/**
+ * Sàn CHỈ ĐỂ NHÌN (không nhận tia – kéo/thả tính bằng GROUND_PLANE trong EditTools): mặt sàn lớn màu `scene-ground`
+ * (cùng màu nền, đã bù tone mapping khi có composer), lớp nhận bóng, vùng sáng giữa sàn, lưới `scene-grid`.
+ */
+function Ground({ palette, grid = true, color }: { palette: ScenePalette; grid?: boolean; color: Color }) {
   const falloff = useMemo(
     () =>
       createFalloffTexture([
@@ -528,11 +563,15 @@ function Ground({ palette, grid = true }: { palette: ScenePalette; grid?: boolea
   useEffect(() => () => falloff.dispose(), [falloff]);
   return (
     <>
-      <mesh rotation-x={-Math.PI / 2} position-y={-0.02} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.05} renderOrder={-3} raycast={noRaycast}>
+        <planeGeometry args={[800, 800]} />
+        <meshBasicMaterial color={color} toneMapped={false} depthWrite={false} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.02} receiveShadow raycast={noRaycast}>
         <planeGeometry args={[400, 400]} />
         <shadowMaterial transparent opacity={LOOK.shadowOpacity} color={palette.shade} />
       </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.03, 0]} renderOrder={-2}>
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.03, 0]} renderOrder={-2} raycast={noRaycast}>
         <planeGeometry args={[150, 150]} />
         <meshBasicMaterial
           color={palette.grid}
@@ -545,6 +584,7 @@ function Ground({ palette, grid = true }: { palette: ScenePalette; grid?: boolea
       </mesh>
       {grid && (
         <Grid
+          raycast={noRaycast}
           position-y={-0.01}
           infiniteGrid
           cellSize={2}

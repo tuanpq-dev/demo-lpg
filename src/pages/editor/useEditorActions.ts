@@ -4,13 +4,16 @@ import type { ObjectTransform } from '@/features/scene/EditTools';
 import type { AssetType, SceneConfig, SceneObject, Vec3 } from '@/features/scene/types';
 import {
   addObjects,
+  alignObjects,
   applyTransforms,
   cloneObjects,
   createObject,
   objectIds,
   removeObjects,
   renameObject,
+  setElevation,
   SNAP,
+  type AlignAxis,
   snapVec,
   updateObject,
   OBJECT_ID_PATTERN,
@@ -88,6 +91,16 @@ export function useEditorActions(viewer: RefObject<SceneViewerHandle>) {
 
       transform(changes: ObjectTransform[]) {
         setScene((s) => applyTransforms(s, changes));
+      },
+
+      /** Độ cao đáy (m) cho object đang chọn (hoặc `ids`); 0 = Đặt xuống sàn. */
+      setElevation(elevation: number, ids: readonly string[] = ui().selection) {
+        setScene((s) => setElevation(s, ids, elevation));
+      },
+
+      /** Căn hàng nhóm đang chọn theo trục X hoặc Z (cùng elevation, phân bố đều). */
+      align(axis: AlignAxis) {
+        setScene((s) => alignObjects(s, ui().selection, axis, ui().snap));
       },
 
       updateObject(id: string, fn: (o: SceneObject) => SceneObject) {

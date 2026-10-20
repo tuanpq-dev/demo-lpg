@@ -16,6 +16,8 @@ import {
 import { SENSOR_TAGS } from '@/data/scene';
 import { ASSET_SPECS } from '@/features/scene/assets/specs';
 import { FIELD_META } from '@/features/scene/fields';
+import { GROUND_EPS, mayFloat, worldBaseY } from '@/features/scene/ground';
+import { ELEVATION_STEP, snapTo } from '@/features/scene-editor/ops';
 import type { Binding, SceneObject, SceneObjectMarker, Thresholds, Vec3 } from '@/features/scene/types';
 import { useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { cn } from '@/lib/cn';
@@ -95,7 +97,10 @@ export function PropertiesPanel({ actions, onUseCurrentCamera }: PropertiesPanel
       <div className="flex flex-col gap-3">
         <p className="text-base font-semibold text-fg">{picked.length} object đang chọn</p>
         <p className="text-sm text-fg-muted">{picked.map((o) => o.id).join(', ')}</p>
-        <p className="text-sm text-fg-muted">Kéo gizmo để di chuyển/xoay/scale cả nhóm quanh trọng tâm.</p>
+        <p className="text-sm text-fg-muted">
+          Di chuyển (W): kéo một object trong nhóm – cả nhóm trượt trên sàn. Xoay/scale: gizmo quanh trọng tâm.
+        </p>
+        <GroupPlacement picked={picked} actions={actions} />
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" size="sm" icon={<DuplicateIcon />} onClick={actions.duplicateSelection}>
             Nhân bản
@@ -177,20 +182,39 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
         ) : (
           <>
             <Vec3Field
-              label="Vị trí"
+              label="Vị trí trên sàn"
               unit="m"
               step={0.5}
+              only={[0, 2]}
               value={obj.position ?? [0, 0, 0]}
-              onChange={(position) => update((o) => ({ ...o, position }))}
+              onChange={(p) => update((o) => ({ ...o, position: [p[0], o.elevation ?? 0, p[2]] }))}
             />
-            <Vec3Field
-              label="Góc xoay"
+            <ElevationField obj={obj} actions={actions} />
+            <NumberField
+              label="Góc xoay quanh Y"
               unit="°"
               step={15}
               precision={1}
-              value={(obj.rotation ?? [0, 0, 0]).map((r) => r * DEG) as Vec3}
-              onChange={(deg) => update((o) => ({ ...o, rotation: deg.map((d) => +(d / DEG).toFixed(4)) as Vec3 }))}
+              value={+((obj.rotation?.[1] ?? 0) * DEG).toFixed(1)}
+              onChange={(deg) =>
+                update((o) => {
+                  const r = o.rotation ?? [0, 0, 0];
+                  return { ...o, rotation: [r[0], +(deg / DEG).toFixed(4), r[2]] };
+                })
+              }
             />
+            {(obj.rotation?.[0] || obj.rotation?.[2]) && (
+              <div className="flex items-center justify-between gap-2 rounded-md bg-warning/10 px-2 py-1.5 text-sm text-warning">
+                <span>Có nghiêng X/Z (từ JSON) – đáy lệch khỏi sàn.</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => update((o) => ({ ...o, rotation: [0, o.rotation?.[1] ?? 0, 0] }))}
+                >
+                  Bỏ nghiêng
+                </Button>
+              </div>
+            )}
             <Vec3Field
               label="Scale"
               step={0.1}
@@ -247,6 +271,78 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
 }
 
 type Update = (fn: (o: SceneObject) => SceneObject) => void;
+
+const fmtGap = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} m`;
+
+/** Ô Elevation (độ cao đáy, snap 0.25 m khi bật snap) + "Đặt xuống sàn" + khoảng cách đáy–sàn thực tế. */
+function ElevationField({ obj, actions }: { obj: SceneObject; actions: EditorActions }) {
+  const snap = useEditorUi((s) => s.snap);
+  const elevation = obj.elevation ?? 0;
+  const base = worldBaseY(obj, elevation);
+  const hint =
+    base < -GROUND_EPS
+      ? `Lún dưới sàn ${fmtGap(base)}`
+      : elevation > GROUND_EPS && !mayFloat(obj)
+        ? `Đáy cách sàn ${fmtGap(base)} – lơ lửng (chỉ van/đồng hồ lắp trên ống mới nên nâng)`
+        : `Đáy cách sàn ${fmtGap(base)}`;
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <NumberField
+        className="w-full"
+        label="Elevation (độ cao đáy)"
+        unit="m"
+        step={ELEVATION_STEP}
+        value={elevation}
+        hint={hint}
+        onChange={(v) => actions.setElevation(snap ? snapTo(v, ELEVATION_STEP) : v, [obj.id])}
+        onClear={() => actions.setElevation(0, [obj.id])}
+      />
+      <Button variant="ghost" size="sm" disabled={elevation === 0} onClick={() => actions.setElevation(0, [obj.id])}>
+        Đặt xuống sàn
+      </Button>
+    </div>
+  );
+}
+
+/** Nhiều object: căn hàng X/Z (cùng elevation, phân bố đều), elevation chung, đặt xuống sàn. */
+function GroupPlacement({ picked, actions }: { picked: SceneObject[]; actions: EditorActions }) {
+  const snap = useEditorUi((s) => s.snap);
+  const placed = picked.filter((o) => !o.attach && o.position);
+  const levels = new Set(placed.map((o) => o.elevation ?? 0));
+  const same = levels.size === 1 ? [...levels][0] : undefined;
+  return (
+    <Section title="Căn chỉnh">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="ghost" size="sm" disabled={placed.length < 2} onClick={() => actions.align('x')}>
+          Căn hàng theo X
+        </Button>
+        <Button variant="ghost" size="sm" disabled={placed.length < 2} onClick={() => actions.align('z')}>
+          Căn hàng theo Z
+        </Button>
+      </div>
+      <p className="text-xs text-fg-muted">Theo object chọn đầu tiên ({placed[0]?.id ?? '—'}): cùng toạ độ trục kia và elevation, tâm cách đều.</p>
+      <div className="flex items-end gap-2">
+        <NumberField
+          className="min-w-0 flex-1"
+          label="Elevation (cả nhóm)"
+          unit="m"
+          step={ELEVATION_STEP}
+          value={same}
+          placeholder="khác nhau"
+          onChange={(v) => actions.setElevation(snap ? snapTo(v, ELEVATION_STEP) : v, placed.map((o) => o.id))}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={same === 0}
+          onClick={() => actions.setElevation(0, placed.map((o) => o.id))}
+        >
+          Đặt xuống sàn
+        </Button>
+      </div>
+    </Section>
+  );
+}
 
 /** Đường bao hàng rào: danh sách điểm (x, z) cục bộ + khép kín. */
 function PathEditor({ obj, update }: { obj: SceneObject; update: Update }) {

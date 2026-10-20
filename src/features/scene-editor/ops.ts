@@ -205,7 +205,7 @@ export function cleanObject(o: SceneObject): SceneObject {
 // Độ cao, căn hàng
 
 /** Bước snap của ô Elevation (m). */
-export const ELEVATION_STEP = 0.25;
+export const ELEVATION_STEP = EDIT_SNAP.elevation;
 
 /** Đặt độ cao đáy (m) cho các object (bỏ qua object gắn ống). `0` = "Đặt xuống sàn". */
 export function setElevation(scene: SceneConfig, ids: readonly string[], elevation: number): SceneConfig {
