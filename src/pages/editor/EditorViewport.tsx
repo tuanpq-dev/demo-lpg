@@ -13,7 +13,7 @@ import {
   RotateIcon,
   ScaleIcon,
 } from '@/components';
-import { useLiveData } from '@/data/scene';
+import { useLiveData } from '@/data/live';
 import type { SceneEditState, SceneViewerHandle } from '@/features/scene';
 import { FLOOR_HALF_SIZE } from '@/features/scene/editConstants';
 import type { AssetType, Vec3 } from '@/features/scene/types';

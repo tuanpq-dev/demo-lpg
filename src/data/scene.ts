@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { LiveData, SceneConfig } from '@/features/scene/types';
-import { liveBase, liveJitter } from '@/mocks/scenes/live';
+import type { SceneConfig } from '@/features/scene/types';
 import type { QueryState } from './overview';
 import { sceneRepository, type SceneSummary } from './sceneRepository';
 
@@ -52,11 +51,8 @@ export function useSceneList() {
   return { items, refetch };
 }
 
-/**
- * Danh sách tag cảm biến hợp lệ (cho binding trong Editor + kiểm tra). Hiện lấy từ mock số liệu;
- * khi có API: GET /api/tags.
- */
-export const SENSOR_TAGS: readonly string[] = Object.keys(liveBase).sort();
+/** Danh sách tag cảm biến hợp lệ (binding trong Editor + kiểm tra) – xem src/data/live. */
+export { SENSOR_TAGS } from './live';
 
 /** Hook cảnh 3D: `{ status, data, error, refetch }`; đổi sceneId → tải lại. */
 export function useSceneConfig(sceneId: string) {
@@ -81,33 +77,5 @@ export function useSceneConfig(sceneId: string) {
 }
 
 // ---------------- Số liệu trực tiếp ----------------
-
-/** Một bước mô phỏng: dao động quanh giá trị nền (mean-reverting), làm tròn 2 chữ số. */
-function step(prev: LiveData): LiveData {
-  const next: LiveData = { ...prev };
-  for (const [tag, amp] of Object.entries(liveJitter)) {
-    const base = liveBase[tag];
-    const cur = prev[tag];
-    if (typeof base !== 'number' || typeof cur !== 'number') continue;
-    const v = cur + (base - cur) * 0.3 + (Math.random() * 2 - 1) * amp * 0.6;
-    next[tag] = Math.round(Math.min(base + amp, Math.max(base - amp, v)) * 100) / 100;
-  }
-  return next;
-}
-
-/**
- * Số liệu trực tiếp theo tag cảm biến. Hiện giả lập: đổi mỗi `intervalMs` (mặc định 2 giây).
- * Thay bằng WebSocket/SSE khi có API – giữ nguyên kiểu trả về `LiveData`.
- * `enabled = false` → không chạy timer, trả về undefined.
- */
-export function useLiveData({ enabled = true, intervalMs = 2000 }: { enabled?: boolean; intervalMs?: number } = {}) {
-  const [data, setData] = useState<LiveData>(liveBase);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const t = window.setInterval(() => setData(step), intervalMs);
-    return () => window.clearInterval(t);
-  }, [enabled, intervalMs]);
-
-  return enabled ? data : undefined;
-}
+// Đã chuyển sang src/data/live (LiveDataSource + useLiveData/useLiveStatus); giữ export để import cũ vẫn chạy.
+export { useLiveData, useLiveStatus } from './live';

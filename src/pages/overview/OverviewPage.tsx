@@ -24,8 +24,8 @@ import { ClockButton, LiveDataButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
-import { useOverviewData } from '@/data/overview';
-import { useLiveData } from '@/data/scene';
+import { useLiveData } from '@/data/live';
+import { applyLive, useOverviewData } from '@/data/overview';
 import { parseQuality } from '@/features/scene';
 
 const nf = (v: number) => v.toLocaleString('en-US');
@@ -67,7 +67,8 @@ export default function OverviewPage() {
       { replace: true },
     );
   };
-  const liveData = useLiveData({ enabled: map3d });
+  // Mọi tag: KPI, danh sách theo dõi, nhãn bản đồ 2.5D và cảnh 3D dùng chung một đăng ký.
+  const liveData = useLiveData();
 
   const header = (
     <PageHeader
@@ -108,7 +109,8 @@ export default function OverviewPage() {
     );
   }
 
-  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = data;
+  // Ghép số liệu trực tiếp lúc render (Date.now() → "Mất tín hiệu" khi tag quá 10 s; useLiveData tự hẹn giờ vẽ lại).
+  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = applyLive(data, liveData);
 
   return (
     <Page

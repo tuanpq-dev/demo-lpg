@@ -1,15 +1,47 @@
 import { useMemo, useState } from 'react';
 import { Button, SegmentedControl } from '@/components';
 import { ConnectedPlantMap } from '@/app/ConnectedPlantMap';
-import { SCENE_IDS, useLiveData } from '@/data/scene';
-import type { LiveData } from '@/features/scene';
+import { useLiveData, useLiveStatus, liveSimulator } from '@/data/live';
+import { SCENE_IDS } from '@/data/scene';
+import type { LiveData, TagValue } from '@/features/scene';
 import { FigmaRef } from './FigmaRef';
 
-/** Ghi đè số liệu để xem đủ trạng thái: V-101 warning (mức cao), E-101A danger, C-101 offline (mất tag). */
+/** Ghi đè số liệu để xem đủ trạng thái: V-101 warning (mức cao), E-101A danger, C-101 mất tín hiệu (mất tag PT-202). */
 function withIncidents(live: LiveData): LiveData {
-  const { 'PT-202': _offline, ...rest } = live;
-  void _offline;
-  return { ...rest, 'LT-101': 88.5, 'TT-201': 47.2, 'FT-102': 0 };
+  const { 'PT-202': _lost, ...rest } = live;
+  void _lost;
+  const set = (tag: string, value: number): TagValue => ({ ...(live[tag] ?? { ts: Date.now(), quality: 'good' }), value });
+  return { ...rest, 'LT-101': set('LT-101', 88.5), 'TT-201': set('TT-201', 47.2), 'FT-102': set('FT-102', 0) };
+}
+
+/** Giả lập sự cố nguồn dữ liệu (MockLiveSource) – kiểm tra "Mất tín hiệu" / "Mất kết nối" trên mọi màn. */
+function LiveSimulatorBar() {
+  const status = useLiveStatus();
+  const [, force] = useState(0);
+  const sim = liveSimulator.state;
+  const act = (fn: () => void) => () => {
+    fn();
+    force((n) => n + 1);
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-base" aria-label="Giả lập nguồn dữ liệu">
+      <span className="text-fg-muted">
+        Nguồn: <output className="font-mono text-fg">{status}</output>
+      </span>
+      <Button variant="ghost" size="sm" aria-pressed={sim.disconnected} onClick={act(() => liveSimulator.disconnect(!sim.disconnected))}>
+        {sim.disconnected ? 'Kết nối lại' : 'Mất kết nối'}
+      </Button>
+      <Button variant="ghost" size="sm" aria-pressed={sim.bad.includes('LT-101')} onClick={act(() => liveSimulator.setBad(['LT-101', 'FT-101'], !sim.bad.includes('LT-101')))}>
+        Tag lỗi (LT-101, FT-101 = bad)
+      </Button>
+      <Button variant="ghost" size="sm" aria-pressed={sim.frozen.includes('TT-201')} onClick={act(() => liveSimulator.freeze(['TT-201'], !sim.frozen.includes('TT-201')))}>
+        Ngừng cập nhật TT-201 (mất tín hiệu sau 10 s)
+      </Button>
+      <Button variant="ghost" size="sm" onClick={act(() => liveSimulator.restore())}>
+        Khôi phục
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -26,6 +58,7 @@ export function SceneSection() {
 
   return (
     <div className="flex flex-col gap-4">
+      <LiveSimulatorBar />
       <div className="flex flex-wrap items-center gap-3 text-base">
         <SegmentedControl
           label="Cảnh"

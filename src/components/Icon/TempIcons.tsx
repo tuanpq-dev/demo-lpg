@@ -141,3 +141,12 @@ export const AlertTriangleIcon = ({ size = 18, ...p }: P) => (
     <path d="M12 9.5v4M12 17h.01" />
   </svg>
 );
+
+/** Sóng tín hiệu bị gạch – "Mất tín hiệu" (tag quality bad / không cập nhật). Icon tạm, chưa có trong Figma. */
+export const SignalLostIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M2.5 8.5a14 14 0 0 1 5-2.9M12 5a14 14 0 0 1 9.5 3.5M5.5 12a9 9 0 0 1 3.4-2M15 10.4a9 9 0 0 1 3.5 1.6M9 15.5a4.5 4.5 0 0 1 6 0" />
+    <circle cx="12" cy="19" r="0.9" fill="currentColor" />
+    <path d="M3.5 3.5l17 17" />
+  </svg>
+);

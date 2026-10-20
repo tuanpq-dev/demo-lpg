@@ -27,4 +27,12 @@ export type KpiMock = {
   progressTone?: 'success' | 'info';
   /** Nhãn link cuối thẻ. */
   action?: string;
+  /** Lấy giá trị từ số liệu trực tiếp (thay `value`); không có → giá trị tĩnh. */
+  live?: LiveBinding;
 };
+
+/**
+ * Gắn một ô hiển thị với tag trực tiếp. `transform: 'tank-volume'` = tag mức theo chiều cao (%) → % thể tích bồn
+ * trụ nằm (features/tank/volume). `digits` = số lẻ (định dạng en-US như Figma: 152,340 · 76.02).
+ */
+export type LiveBinding = { tag: string; digits?: number; transform?: 'tank-volume' };

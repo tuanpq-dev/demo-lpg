@@ -1,4 +1,5 @@
 import { Button, Icon, Select, StatusDot, type SelectOption } from '@/components';
+import { useLiveStatus } from '@/data/live';
 import { formatDateTime, useNow } from '@/lib/useNow';
 
 /** Các nút dùng lại trong slot actions của PageHeader (Figma 70:2882, 70:4037, 53:124). */
@@ -44,10 +45,29 @@ export function ExportButton({ onClick }: ActionProps) {
   );
 }
 
+const LIVE_STATUS = {
+  connected: { dot: 'live', label: 'Dữ liệu trực tiếp', className: undefined },
+  connecting: { dot: 'warning', label: 'Đang kết nối lại…', className: 'text-warning' },
+  disconnected: { dot: 'danger', label: 'Mất kết nối', className: 'text-danger-strong' },
+} as const;
+
+/**
+ * Trạng thái nguồn dữ liệu trực tiếp (Figma 53:124 = trạng thái connected). Đọc `useLiveStatus` – giữ kết nối mở:
+ * connected "Dữ liệu trực tiếp" (chấm live) · connecting "Đang kết nối lại…" (vàng, nhấp nháy) · disconnected
+ * "Mất kết nối" (đỏ). `role="status"` để trình đọc màn hình báo khi đổi.
+ */
 export function LiveDataButton({ onClick }: ActionProps) {
+  const status = useLiveStatus();
+  const s = LIVE_STATUS[status];
   return (
-    <Button icon={<StatusDot status="live" />} onClick={onClick}>
-      Dữ liệu trực tiếp
+    <Button
+      icon={<StatusDot status={s.dot} pulse={status === 'connecting'} />}
+      onClick={onClick}
+      data-live-status={status}
+    >
+      <span role="status" className={s.className}>
+        {s.label}
+      </span>
     </Button>
   );
 }
