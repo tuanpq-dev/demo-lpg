@@ -3,6 +3,7 @@ import { assetLayout, type Box } from './assets/specs';
 import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 export const DEFAULT_PIPE_RADIUS = 0.18;
+export { FLOOR_HALF_SIZE } from './editConstants';
 
 /** Object đã đặt vị trí (kể cả object gắn ống). */
 export type ResolvedObject = SceneObject & { position: Vec3; rotation: Vec3 };

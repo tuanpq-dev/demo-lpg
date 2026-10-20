@@ -31,7 +31,7 @@ export default function PostEffects({
   preset: QualityPreset;
   palette: ScenePalette;
   hovered: string | null;
-  selected: string | null;
+  selected: readonly string[];
   /** Đổi cảnh/nháp → mesh có thể đổi → tính lại selection. */
   shapeKey: unknown;
   onActive: (active: boolean) => void;
@@ -55,9 +55,14 @@ export default function PostEffects({
     [scene],
   );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const hoverSel = useMemo(() => meshesOf(hovered && hovered !== selected ? [hovered] : []), [meshesOf, hovered, selected, shapeKey]);
+  const selectedKey = selected.join();
+  const hoverSel = useMemo(
+    () => meshesOf(hovered && !selected.includes(hovered) ? [hovered] : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [meshesOf, hovered, selectedKey, shapeKey],
+  );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const selectedSel = useMemo(() => meshesOf(selected ? [selected] : []), [meshesOf, selected, shapeKey]);
+  const selectedSel = useMemo(() => meshesOf([...selected]), [meshesOf, selectedKey, shapeKey]);
 
   return (
     <EffectComposer

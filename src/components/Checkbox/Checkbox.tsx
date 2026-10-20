@@ -6,15 +6,30 @@ export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' |
   onChange: (checked: boolean) => void;
   /** Trạng thái "chọn một phần" (header bảng khi chỉ vài hàng được chọn). */
   indeterminate?: boolean;
-  /** aria-label (bắt buộc vì ô không có nhãn hiển thị). */
+  /** aria-label (bắt buộc vì ô không có nhãn hiển thị) – hoặc nhãn hiển thị khi `showLabel`. */
   label: string;
+  /** Hiện `label` bên phải ô (bọc <label>, bấm chữ cũng chọn) – dùng trong form/bảng thuộc tính. */
+  showLabel?: boolean;
 };
 
 /**
  * Ô chọn 16px – nền surface-sunken, viền line, bo 2px (Figma 70:3036).
  * Trạng thái checked/indeterminate: Figma chưa có → nền info, dấu màu fg-inverse.
  */
-export function Checkbox({ checked, onChange, indeterminate = false, label, className, disabled, ...rest }: CheckboxProps) {
+export function Checkbox({ showLabel, ...props }: CheckboxProps) {
+  if (!showLabel) return <CheckboxBox {...props} />;
+  const { label, className, disabled } = props;
+  return (
+    <label
+      className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-fg-secondary', disabled && 'cursor-not-allowed opacity-50', className)}
+    >
+      <CheckboxBox {...props} className={undefined} aria-label={undefined} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function CheckboxBox({ checked, onChange, indeterminate = false, label, className, disabled, ...rest }: Omit<CheckboxProps, 'showLabel'>) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = indeterminate;
@@ -26,7 +41,7 @@ export function Checkbox({ checked, onChange, indeterminate = false, label, clas
       <input
         ref={ref}
         type="checkbox"
-        aria-label={label}
+        aria-label={'aria-label' in rest ? rest['aria-label'] : label}
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}

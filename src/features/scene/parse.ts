@@ -146,6 +146,20 @@ export class SceneConfigError extends Error {
 const fmtPath = (path: (string | number)[]) =>
   path.reduce<string>((acc, k) => (typeof k === 'number' ? `${acc}[${k}]` : acc ? `${acc}.${k}` : k), '') || '$';
 
+export type SceneIssue = {
+  /** Đường dẫn dạng mảng (objects, 3, id) – Editor dùng để trỏ tới object. */
+  path: (string | number)[];
+  /** Đường dẫn dạng chữ "objects[3].id". */
+  where: string;
+  message: string;
+};
+
+/** Validate không ném lỗi (Editor: bảng kiểm tra, Import JSON). Rỗng = hợp lệ. */
+export function validateSceneConfig(raw: unknown): SceneIssue[] {
+  const r = sceneSchema.safeParse(raw);
+  return r.success ? [] : r.error.issues.map((i) => ({ path: i.path, where: fmtPath(i.path), message: i.message }));
+}
+
 /** JSON (file mock hoặc API) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
 export function parseSceneConfig(raw: unknown, sceneId = (raw as { id?: string } | null)?.id ?? '?'): SceneConfig {
   const r = sceneSchema.safeParse(raw);

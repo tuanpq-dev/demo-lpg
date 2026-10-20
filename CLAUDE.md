@@ -2,21 +2,26 @@
 
 ## 1. Dự án
 - Dashboard giám sát hệ thống LPG (Tổng quan · Cảnh báo · Bảo trì), dựng từ Figma, dữ liệu mock có thể thay bằng API.
-- Stack: Vite 5 · React 18 · TypeScript strict · Tailwind 3.4 · react-router 6 · recharts 2.13 · clsx · three 0.170 + @react-three/fiber 8 + drei 9 (chỉ trong chunk lazy `SceneViewer`) · @react-three/postprocessing 2.19 (chỉ trong chunk lazy `PostEffects`) · zod 3.23 (chỉ trong chunk lazy `parse`). Alias `@/` → `src/`.
+- Stack: Vite 5 · React 18 · TypeScript strict · Tailwind 3.4 · react-router 6 · recharts 2.13 · clsx · three 0.170 + @react-three/fiber 8 + drei 9 (chỉ trong chunk lazy `SceneViewer`) · @react-three/postprocessing 2.19 (chỉ trong chunk lazy `PostEffects`) · zod 3.23 (chỉ trong chunk lazy `parse`) · zustand 5 + zundo 2 (chỉ trong chunk lazy `EditorPage`). Alias `@/` → `src/`.
 - Lệnh: `npm run dev` · `npm run typecheck` · `npm run build` · `npx vite preview --port 4317`.
+- Deploy SPA (Netlify): `netlify.toml` (build + publish `dist` + Node 20 + `/*` → `/index.html` 200); chỉ một nguồn cấu hình (không thêm `public/_redirects`).
+- Lý do: history router (`createBrowserRouter`) – host tĩnh không có file cho `/alerts`… nên gõ URL/F5 sẽ 404 nếu không trả `index.html`; giữ `base` của Vite là `/`, không đặt `basename`.
 - Test tương tác: playwright-core + Edge cài sẵn (`channel: 'msedge'`), script để ngoài repo (scratchpad), không thêm dependency. Module thuần (parse, specs, data) test được trong trang qua `page.evaluate(() => import('/src/…ts'))` trên dev server.
 - Cấu trúc:
   - `src/components/<Name>/`: component thuần (không import router, trừ PageHeader dùng `<Link>`); barrel `src/components/index.ts`.
-  - `src/app/`: nối router: `navigation.ts` (menu), `Page.tsx` (AppLayout + header theo URL), `HeaderActions.tsx`, `useTableFilters.ts`, `kpi.tsx`, `Placeholder.tsx`, `ConnectedPlantMap.tsx` (nạp cảnh theo `sceneId` → PlantMap 3D).
-  - `src/data/`: lớp dữ liệu theo màn: `overview.ts` (`map` chỉ cho ảnh 2.5D), `alerts.ts`, `maintenance.ts`, `scene.ts` (`useSceneConfig(sceneId)`, `fetchScene`, `SCENE_IDS`, `useLiveData`).
+  - `src/app/`: nối router: `navigation.ts` (menu), `Page.tsx` (AppLayout + header theo URL), `HeaderActions.tsx`, `useTableFilters.ts`, `kpi.tsx`, `Placeholder.tsx`, `ConnectedPlantMap.tsx` (nạp cảnh theo `sceneId` → PlantMap 3D), `editorAccess.ts` (quyền vào /editor).
+  - `src/data/`: lớp dữ liệu theo màn: `overview.ts` (`map` chỉ cho ảnh 2.5D), `alerts.ts`, `maintenance.ts`, `scene.ts` (`useSceneConfig(sceneId)`, `fetchScene`, `SCENE_IDS`, `isSampleScene`, `useSceneList`, `SENSOR_TAGS`, `useLiveData`), `sceneRepository.ts` (`SceneRepository` + `LocalStorageRepository`).
   - `src/mocks/`: dữ liệu mẫu từ Figma; `mocks/scenes/`: `{sceneId}.json` (khu-bon-lpg, tram-chiet-nap – gồm views + nhãn), `live.ts` (số liệu giả lập).
-  - `src/features/scene/`: cảnh 3D (mục 6): `types`, `fields`, `geometry` (`resolveScene`), `markers`, `parse` (zod, lazy), `colors` (+ `inverseToneMap`), `look` (thông số ánh sáng/bloom/nét viền), `quality` (preset), `pulse`, `PipeMesh`, `SceneViewer` (default export, lazy), `PostEffects` (lazy), `assets/` (`specs` thuần + `registry` + component asset + `parts` (thang, lan can, bích…) + `materials`).
+  - `src/features/scene/`: cảnh 3D (mục 6): `types`, `fields`, `geometry` (`resolveScene`), `markers`, `parse` (zod, lazy), `colors` (+ `inverseToneMap`), `look` (thông số ánh sáng/bloom/nét viền), `quality` (preset), `pulse`, `PipeMesh`, `SceneViewer` (default export, lazy), `EditTools` (gizmo nhóm, chọn bằng tia/vùng, viền sàn), `editConstants` (thuần: MIME kéo thả, snap, vùng sàn), `PostEffects` (lazy), `assets/` (`specs` thuần + `registry` + component asset + `parts` (thang, lan can, bích…) + `materials`).
+  - `src/features/scene-editor/`: logic Editor thuần/không UI (mục 6b): `store` (zustand + zundo), `ops` (biến đổi SceneConfig), `validate`, `draft` (tự lưu nháp).
   - `src/lib/`: `cn`, `useRovingFocus`, `useNow`, `tokens` (màu cho SVG/chart), `useDialog`, `createCollectionStore`, `useElementSize`.
-  - `src/pages/`: `overview/`, `alerts/`, `maintenance/` (gồm `CreateMaintenanceModal.tsx`), `playground/`, `SimplePage.tsx`.
+  - `src/pages/`: `overview/`, `alerts/`, `maintenance/` (gồm `CreateMaintenanceModal.tsx`), `editor/` (Scene Editor: `EditorPage`, `EditorViewport`, `AssetLibrary`, `Outliner`, `PropertiesPanel`, `ViewsPanel`, `ValidationPanel`, `dialogs`, `useEditorActions`, `AssetGlyph`), `playground/`, `SimplePage.tsx`.
   - `src/assets/digital-twin/`: SVG/PNG từ Figma, đăng ký trong `index.ts`.
   - `src/styles/`: `tokens.css`, `global.css`.
   - `public/figma-ref/`: ảnh tham chiếu.
-- Route: `/overview` `/alerts` `/maintenance` `/map` `/reports` (placeholder) `/playground`; `/` và route lạ → `/overview`. Trang có chart lazy-load (`src/main.tsx`). `/overview?map=3d` bật bản đồ 3D (mặc định ảnh 2.5D); nút 2.5D/3D góc dưới trái bản đồ đổi query (`replace`). `?edit=1` (dev) bật chế độ sửa cảnh 3D. `?quality=low|medium|high` ghi đè preset 3D (mặc định auto). Dev: `?exposure=1.2` thử exposure; `window.__sceneGl` = renderer (đếm draw call).
+- Route (data router `createBrowserRouter` – cần cho `useBlocker`): `/overview` `/alerts` `/maintenance` `/map` `/reports` (placeholder) `/editor` (chỉ khi `?edit=1` hoặc `VITE_SCENE_EDITOR=true`, không thì về `/overview` – TODO phân quyền thật) `/playground`; `/` và route lạ → `/overview`. Trang có chart lazy-load (`src/main.tsx`). `/overview?map=3d` bật bản đồ 3D (mặc định ảnh 2.5D); nút 2.5D/3D góc dưới trái bản đồ đổi query (`replace`). `?edit=1` (dev) bật chế độ sửa cảnh 3D. `?quality=low|medium|high` ghi đè preset 3D (mặc định auto). `/overview?scene=<id>` mở cảnh khác (mẫu hoặc lưu từ Editor) – luôn 3D; về 2.5D thì bỏ `scene`. Dev: `?exposure=1.2` thử exposure; `window.__sceneGl` = renderer (đếm draw call).
+
+- Khi thêm/đổi luồng, component, asset 3D, scene thì cập nhật GUIDE.md (mục 4–6).
 
 ## 2. Figma
 - File key `stJtcbE3XGzA4WFrJFE1un`. Màn: `53:11` Tổng quan · `70:2809` Cảnh báo · `70:3964` Bảo trì.
@@ -62,17 +67,18 @@
 ## 4. Component đã có (`src/components/…`)
 | Component | Mô tả |
 |---|---|
-| Icon / TempIcons | `<Icon name>` từ assets Figma · `Icon/TempIcons.tsx` là SVG tạm (chỉ có trong ảnh) |
+| Icon / TempIcons / EditorIcons | `<Icon name>` từ assets Figma · `Icon/TempIcons.tsx` là SVG tạm (chỉ có trong ảnh) · `Icon/EditorIcons.tsx` icon tạm cho Editor (công cụ, ẩn/khoá, tệp, undo/redo) |
 | Button | primary/ghost/icon/toolbar/overlay/link, sm/md, `pressed` |
 | Badge | severity (sm/md) · status (unacknowledged/pending/assigned/in-progress/review/done) · count |
 | StatusDot, StatusPill | Chấm trạng thái (circle/square, pulse) · pill trạng thái hệ thống |
 | Card, Divider, ProgressBar | Khung card (bar/plain header, tone, radius) · đường kẻ · thanh tiến độ |
 | NavTabs, Tabs, SegmentedControl | Menu chính · tabs gạch chân + chip đếm · nhóm chọn 1 (overlay/field + tone, overlay `size` sm/md) |
 | SearchInput, Select, Combobox | Ô tìm kiếm · dropdown (filter/button/field, side) · combobox tìm kiếm đơn/nhiều + avatar/chip |
-| FormField (+TextField, Textarea, DatePicker) | Nhãn/lỗi/gợi ý chung · ô nhập · date/datetime-local |
-| Checkbox, ChecklistEditor, FileDropzone | Checkbox (indeterminate) · checklist kéo thả/Alt+↑↓/mẫu · kéo thả tệp |
+| FormField (+TextField, Textarea, DatePicker, NumberField, Vec3Field) | Nhãn/lỗi/gợi ý chung · ô nhập · date/datetime-local · ô số (chốt khi Enter/blur/↑↓, kẹp min/max, integer, unit, `onClear` = về mặc định, `hideLabel`/`size sm`/`prefix`) · 3 ô X/Y/Z |
+| Checkbox, ChecklistEditor, FileDropzone | Checkbox (indeterminate; `showLabel` = nhãn chữ bên cạnh) · checklist kéo thả/Alt+↑↓/mẫu · kéo thả tệp |
+| TreeView | Cây chọn nhiều (ARIA tree): Ctrl/⌘ đảo, Shift dải, phím ↑↓←→ Home End Space Enter, F2/double-click đổi tên (trả lỗi → giữ ô), `renderActions` bên phải dòng; không controlled thì nhớ nhánh đóng |
 | FilterBar, DataTable, Pagination | Thanh lọc · bảng (chọn dòng, header sticky, thao tác, rỗng) · phân trang |
-| AppHeader, PageHeader, AppLayout | Header 60px · breadcrumb/tiêu đề/actions · layout full/sidebar 326px |
+| AppHeader, PageHeader, AppLayout | Header 60px · breadcrumb/tiêu đề/actions · layout full/sidebar 326px/`workspace` (cao đúng 1 màn hình, nội dung tự cuộn – /editor) |
 | KpiCard, SystemHealthCard | KPI (default/danger/with-progress/compact) · độ tin cậy hệ thống |
 | AlertItem, AlertCard, PriorityTaskCard | Dòng cảnh báo sidebar · thẻ cảnh báo ưu tiên · thẻ việc bảo trì ưu tiên |
 | AssetRow/AssetWatchlist, EventTimeline/RecentEventsCard | Theo dõi thiết bị · timeline (event/schedule + location) |
@@ -80,7 +86,7 @@
 | PlantMap, MapMarker | Thuần. `renderer="image"`: ảnh 2.5D + markers/views do trang truyền · `"three"`: nhận `scene` + `liveData` + `onSelect` (+ `editable`, `quality`, `onFallback`), views/nhãn lấy từ cảnh, SceneViewer lazy. Chung controls, `onRendererChange` → nút 2.5D/3D, `notice` → thông báo nhỏ cạnh nút; marker callout/side/tag, tone thêm `neutral` (offline), `translucent` (nền /85 + blur, dùng ở 3D). Nạp cảnh theo id: `ConnectedPlantMap` (src/app) |
 | DetailDrawer, AlertDetailDrawer, Modal | Drawer chi tiết bên phải · drawer cảnh báo · modal md/lg/xl (icon, footerStart, form) |
 
-Xem trực quan và các biến thể tại `/playground` (mục 1–8, đặt cạnh ảnh tham chiếu; mục 8 = cảnh 3D: chọn cảnh, "Mô phỏng sự cố", "Chế độ sửa", id đã chọn).
+Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt cạnh ảnh tham chiếu; mục 8 = cảnh 3D: chọn cảnh, "Mô phỏng sự cố", "Chế độ sửa", id đã chọn; mục 9 = component Editor: NumberField, Vec3Field, TreeView, Checkbox có nhãn, icon).
 
 ## 5. Roadmap
 - ✅ GĐ0 Tokens · GĐ1 Primitives · GĐ2 Form & điều hướng · GĐ3 Layout + router · GĐ4A Nghiệp vụ · GĐ4B Chart & bảng.
@@ -90,9 +96,11 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–8, đặt c
 - ✅ **3D-1 Viewer** (đã duyệt + chỉnh vòng 2, 19/10/2026): SceneViewer đọc `SceneConfig` JSON v2, PlantMap `renderer="three"` + toggle 2.5D/3D, mock `khu-bon-lpg.json` + `useLiveData`.
 - ✅ **3D-1b** (19/10/2026): asset có `paramsSchema` + `params`, ports/bounds theo params; validate zod; cảnh theo `sceneId` + cảnh mẫu 2 `tram-chiet-nap`; dev mode `?edit=1` (kéo/xoay, snap, Copy JSON).
 - ✅ **3D-1c** (19/10/2026): PlantMap thuần (`scene` prop) + `ConnectedPlantMap`; `SceneConfig.views[]` + `objects[].marker` (nhãn tự sinh), bỏ presets; bỏ chọn khi click vùng trống + hint.
-- 🔍 **3D-2** (19/10/2026, chờ review): tinh chỉnh theo ảnh Figma, không đổi SceneConfig/API: ánh sáng + ACES + vignette; vật liệu "clay" + nét viền mực + chi tiết asset; ống lõi sáng + vỏ trong mờ + vòng khớp + Bloom; Outline hover/chọn, danger chỉ viền; preset quality auto + fallback 2.5D khi WebGL lỗi.
-- ⏳ Tiếp: Editor đầy đủ (lưu, thêm/xoá, sửa params/pipes) · trang `/map`, `/reports`.
-- Test cuối (scratchpad `e2e/`, phiên 8abaf5c7…): `scene3d.mjs` 27/27, `scene-edit.mjs` 41/41 (3D-2: neo nhãn V-101 dời lên cửa người chui → công thức gốc gizmo trong test đã cập nhật), `overview.mjs`, `tooltip.mjs`, `nogl.mjs` (tắt WebGL → về 2.5D + thông báo; playground báo trong khung), `fps.mjs`/`calls.mjs` (FPS/draw call ở 2560×1440), `shot.mjs`/`hover.mjs` (ảnh so Figma). Phiên 56174141…: `/maintenance` 80/80, `/alerts` 44/44. `nav.mjs`/`layout.mjs` (17/10) đã cũ: lỗi strict-mode do playground/maintenance có 2 nav/aria-current.
+- ✅ **3D-2** (19/10/2026, đã duyệt): tinh chỉnh theo ảnh Figma, không đổi SceneConfig/API: ánh sáng + ACES + vignette; vật liệu "clay" + nét viền mực + chi tiết asset; ống lõi sáng + vỏ trong mờ + vòng khớp + Bloom; Outline hover/chọn, danger chỉ viền; preset quality auto + fallback 2.5D khi WebGL lỗi.
+- 🔍 **3D-3 Scene Editor** (20/10/2026, chờ review): `/editor` – thư viện asset (bấm/kéo thả), canvas dùng chung SceneViewer + Q W E R/snap/lưới/khung vừa, Properties (id/nhãn/transform/params/bindings + ngưỡng/nhãn bản đồ/đường bao hàng rào/thuộc tính cảnh), Outliner (chọn nhiều, ẩn, khoá, đổi id), chọn vùng, nhân bản/copy/dán/xoá, undo/redo (zundo), views, kiểm tra hợp lệ, SceneRepository (localStorage) + autosave nháp + chặn rời trang; Viewer `?scene=`.
+- ⏳ Tiếp: **3D-4** vẽ ống (pipes + object gắn ống) · backend SceneRepository · trang `/map`, `/reports`.
+- Test 3D-3 (scratchpad `e2e/`, phiên 8abaf5c7…): `editor.mjs` 54/54 (quyền vào, thêm bằng click/kéo thả, undo/redo, Ctrl+D/C/V, Delete, Q W E R + không chạy khi gõ, properties/params/góc/binding/nhãn, đổi id F2 + lỗi trùng, ẩn/khoá, Shift+kéo chọn vùng, kéo gizmo nhóm = 1 bước undo, sửa object không kéo camera, views, cảnh báo ngoài sàn, lưu v1→v2, autosave + khôi phục, chặn rời trang, export, import lỗi zod/cú pháp, mở cảnh mẫu → Lưu thành bản mới, Viewer `?scene=`); `rebuild.mjs` (dựng lại khu-bon-lpg chỉ bằng UI, 154 thao tác → export so mock: 12/12 object không gắn ống khớp hoàn toàn, id/tên/camera/ngưỡng/views khớp; khác: version, 8 ống + 3 object gắn ống – thuộc 3D-4); `build2.mjs` 7/7 (cảnh `kho-3-bon`: 3 bồn + 2 cụm bơm, nhân bản nhóm, mở ở Viewer); `pg-editor.mjs` (playground mục 9).
+- Test cuối 3D-2 (scratchpad `e2e/`, phiên 8abaf5c7…): `scene3d.mjs` 27/27, `scene-edit.mjs` 41/41 (3D-2: neo nhãn V-101 dời lên cửa người chui → công thức gốc gizmo trong test đã cập nhật), `overview.mjs`, `tooltip.mjs`, `nogl.mjs` (tắt WebGL → về 2.5D + thông báo; playground báo trong khung), `fps.mjs`/`calls.mjs` (FPS/draw call ở 2560×1440), `shot.mjs`/`hover.mjs` (ảnh so Figma). Phiên 56174141…: `/maintenance` 80/80, `/alerts` 44/44. `nav.mjs`/`layout.mjs` (17/10) đã cũ: lỗi strict-mode do playground/maintenance có 2 nav/aria-current.
 
 ## 6. Kiến trúc 3D (quyết định)
 - **Hợp đồng dữ liệu** (`src/features/scene/types.ts`, không phụ thuộc three; đơn vị m, Y lên, mặt đất y = 0):
@@ -125,20 +133,27 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–8, đặt c
   ```
 - **Category** (`ASSET_SPECS[type].category`): `equipment` = hover/click/bindings/trạng thái; `environment` (nhà xưởng, mái che, hàng rào) = chỉ bối cảnh: không có handler (nên không chặn tia chọn thiết bị bên dưới), `parse` báo lỗi nếu có bindings, marker neo vào nó không click được.
 - **Asset = spec thuần + component**:
-  - `assets/specs.ts` (không three/React – dùng được ở parse/Editor): `{ label, category, paramsSchema: Record<name, { label, default, min?, max?, unit?, integer? }>, dataFields, layout(params, obj) → { ports, bounds, labelAnchor? } }`. `resolveParams(obj)` gộp mặc định; `assetLayout(obj)` → cổng/hộp bao theo params.
+  - `assets/specs.ts` (không three/React – dùng được ở parse/Editor): `{ label, category, idPrefix (quy ước id Editor), paramsSchema: Record<name, { label, default, min?, max?, unit?, integer? }>, dataFields, layout(params, obj) → { ports, bounds, labelAnchor? } }`. `resolveParams(obj)` gộp mặc định; `assetLayout(obj)` → cổng/hộp bao theo params.
   - Tham số hiện có: tank-horizontal `length, diameter` · tank-vertical `height, diameter` · building `width, depth, height, floors` · canopy `length, depth, height, bays` · fence `height, postSpacing` · vaporizer `plates`; asset khác chưa có tham số.
-  - `assets/registry.ts`: `ASSETS[type] = spec + component` (component nhận `{ params, path }`). Vật liệu dùng chung theo (trạng thái × hover), tối đa 8 bộ (`MaterialsProvider`), dispose khi unmount.
+  - `assets/registry.ts`: `ASSETS[type] = spec + component` (component nhận `{ params, path }`). Vật liệu dùng chung theo (offline × hover), tối đa 4 bộ (`MaterialsProvider`, xem mục Vật liệu), dispose khi unmount.
   - Thêm asset = tên vào `ASSET_TYPES` (types.ts) + spec + component.
 - **Validate** (`parse.ts`, zod, chỉ import động trong `fetchScene`): cấu trúc strict (trường lạ = lỗi) + kiểm tra tham chiếu: asset không tồn tại (liệt kê loại có), id object/ống trùng, thiếu position/attach, attach tới ống không có, pipe `from/to` tới object không có hoặc cổng không có (liệt kê cổng của asset theo params), params sai tên/ngoài min–max/không nguyên, bindings trên environment, fence thiếu path, `marker.field` không có binding, view trỏ object không có / id view trùng / dùng cả objectIds lẫn camera. Kiểm tra tham chiếu chỉ chạy khi cấu trúc đã hợp lệ. Ném `SceneConfigError` liệt kê mọi lỗi "đường dẫn: thông báo"; `ConnectedPlantMap` hiện Card danger + "Thử lại" (+ "Về bản đồ 2.5D").
 - **Nạp cảnh** (`data/scene.ts`): `import.meta.glob('../mocks/scenes/*.json')` → mỗi cảnh một chunk; `fetchScene(sceneId)` (id lạ → lỗi liệt kê cảnh có) → `parseSceneConfig`; `useSceneConfig(sceneId)` theo mẫu QueryState. Khi có API: thay thân `fetchScene` bằng `fetch('/api/scenes/:id')`.
 - **Tách thuần / nối dữ liệu**: PlantMap (components) không import data – nhận `scene` đã nạp. `ConnectedPlantMap` (src/app) = `useSceneConfig(sceneId)` + 3 trạng thái (Placeholder · Card danger · PlantMap), dùng ở Tổng quan (`SCENE_ID` trong trang) và playground. `useOverviewData().map` chỉ phục vụ ảnh 2.5D; 3D lấy số liệu từ `useLiveData`.
-- **Chế độ sửa** (`PlantMap editable`, Tổng quan `?edit=1`, playground nút "Chế độ sửa"):
-  - Bản nháp `SceneConfig` trong PlantMapThree (khởi tạo lại khi đổi `scene`); click chọn mọi object (kể cả environment, nhãn).
+- **Chế độ sửa của SceneViewer** (`edit: SceneEditState`, `EditTools.tsx`) – dùng bởi Editor `/editor` (đầy đủ) và PlantMap `editable` (sửa nhanh 1 object, Tổng quan `?edit=1`, playground "Chế độ sửa"):
+  - `SceneEditState = { selected: string[]; mode: 'select'|'translate'|'rotate'|'scale'; snap?; grid?; hidden?; locked?; floor?; onSelect(ids, 'replace'|'toggle'|'add'); onTransform(changes[]); onDropAsset?(asset, at) }`.
+  - Click object = replace, Ctrl/⌘/Shift+click = toggle; **Shift+kéo** trên canvas = chọn vùng (chặn OrbitControls/R3F ở capture; hộp bao chiếu lên màn hình giao hình chữ nhật), Shift+click không kéo = toggle bằng tia. Bỏ qua object ẩn/khoá; object khoá không hover/click trên canvas.
+  - Gizmo `EditGizmo`: TransformControls gắn **pivot** – 1 object: pivot tại object (snap tuyệt đối 0.5 m theo trục kéo, như trước); nhóm: trọng tâm đã snap (độ dời bội 0.5 m, giữ khoảng cách tương đối). Xoay chỉ quanh Y (15°), scale (0.1; nhóm giãn cả khoảng cách tới pivot). Kéo chỉ đổi object three; thả chuột → `onTransform` 1 lần (= 1 bước undo). Bỏ qua object `attach`/khoá/ẩn.
+  - Thả asset (HTML5 DnD, `SCENE_ASSET_MIME`) → tia xuống sàn y = 0, snap → `onDropAsset`. `grid: false` ẩn lưới; `floor` vẽ viền nét đứt vùng sàn ±60 m (`FLOOR_HALF_SIZE`).
+  - Handle thêm: `fit(ids?)` (trống = mọi object), `getCamera()` (SceneCamera, zoom quy về 1146px), `pickGround(x?, y?)` (trống = tâm khung), `toScreen(p)`.
+  - Camera rig chỉ bay khi đổi view / kích thước / camera cảnh / id cảnh (`frameKey`) – sửa object KHÔNG kéo camera về khung cũ. Cảnh không có `camera` → "Toàn cảnh" = khung vừa mọi object (Editor tạo cảnh mới không đặt camera).
+- **Chế độ sửa nhanh của PlantMap** (`PlantMap editable`):
+  - Bản nháp `SceneConfig` trong PlantMapThree (khởi tạo lại khi đổi `scene`); chọn 1 object (kể cả environment, nhãn).
   - Bỏ chọn: Esc, hoặc click vùng trống (`onPointerMissed`) – bỏ qua nếu gizmo đang kéo/vừa thả < 300 ms (`dragging-changed` → ref), nếu chuột đã di chuyển > 4px từ pointerdown (xoay/pan camera), hoặc nếu đích click không phải canvas (R3F nghe ở div bọc canvas nên click lên nhãn HTML cũng tới đây). Hint nhỏ góc dưới phải.
   - Object chỉ nhận click có đích là canvas (click lên nhãn không chọn nhầm object nằm sau nhãn).
   - drei `TransformControls` gắn group `name = id`: Di chuyển snap 0.5 m theo trục đang kéo; Xoay chỉ quanh Y, snap 15°. OrbitControls (makeDefault) tự tắt khi kéo gizmo. Thả chuột → cập nhật nháp → ống nối cổng tự đi theo.
   - Object `attach` không kéo được (báo trên thanh sửa). "Copy JSON" = `JSON.stringify(nháp, null, 2)` (làm tròn 3 số lẻ vị trí, 4 số lẻ góc; bỏ rotation toàn 0). Chưa lưu, chưa thêm/xoá object.
-- **Hàng rào** dựng theo đoạn từ `path`: cọc (cách ≤ postSpacing + mỗi đỉnh) và 2 ray mỗi đoạn đều instanced (2 draw call mỗi hàng rào).
+- **Hàng rào** dựng theo đoạn từ `path`: cọc (cách ≤ postSpacing + mỗi đỉnh), 3 thanh ngang mỗi đoạn và song đứng mảnh đều instanced (3 draw call mỗi hàng rào).
 - **Gắn ống** (`resolveScene` trong `geometry.ts`): đặt object thường → dựng đường cong ống (cổng from/to) → đặt object `attach` bằng `curve.getPointAt(t)` + hướng tiếp tuyến. Dùng cho FT-101 và van XV-101/102. TubeGeometry dùng chung đường cong đó.
 - **Trạng thái** (`fields.ts`): ngưỡng KHÔNG hardcode, ưu tiên binding > `config.thresholds[field]`; `FIELD_META` chỉ giữ nhãn/đơn vị/số lẻ và nghĩa chuỗi state (fault → danger, offline…). Object lấy trạng thái xấu nhất của các binding; thiếu toàn bộ tag → offline.
 - **Hiển thị trạng thái** (KHÔNG tô cả khối): nét viền mực của object đổi tone – hover `primary` (+ emissive primary 0.14), chọn `primary` đậm hơn, warning `warning`, danger `danger-strong` HDR **pulse chậm** (2.4 s, `pulse.ts`, đồng pha với vòng sáng sàn) + vòng sáng đỏ mờ dưới sàn (texture độ sáng × `danger-strong`, blending cộng) + ⚠ ở nhãn; frameloop `always` khi có danger. Offline → vật liệu tối 55%, nét nhạt, nhãn tone `neutral`. Preset có postprocessing thêm **Outline** (`PostEffects`): hover `primary` (edgeStrength 4, blur), chọn `primary` (9, xRay) + hộp bao; mỗi Outline một `selectionLayer` riêng (11/12). Danger không dùng Outline (luôn có selection → thêm depth pass mỗi frame).
@@ -168,7 +183,36 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–8, đặt c
   - FPS ở 2560×1440 (canvas 2134×587, Intel Iris Xe, không vsync; máy đo nhiễu ±20%): trước 3D-2 ~114 · high ~36 · **medium ~62** · low ~77 · auto → chốt medium ~60. Draw call/frame (low): 67 → 39 sau khi gộp nét viền.
 - **Dự phòng WebGL**: SceneViewer kiểm tra WebGL trước (`isWebGLAvailable`), bọc Canvas bằng ErrorBoundary, nghe `webglcontextlost` → `onWebGLError(lý do)`. PlantMap `onFallback`: Tổng quan chuyển về 2.5D (bỏ `?map`) + `notice` cạnh nút 2.5D/3D; bấm 3D lại thì thử lại. Không truyền `onFallback` (playground) → thông báo ngay trong khung.
 - **Hiệu năng**: SceneViewer lazy (three/drei ở chunk ~254KB gzip; postprocessing ở chunk `PostEffects` ~80KB gzip, chỉ tải khi preset bật; zod ở chunk `parse` ~15KB gzip; barrel `@/features/scene` không kéo three/zod/postprocessing), `frameloop` = always khi có ống chảy hoặc danger, ngược lại demand; instancing cho hàng rào (cọc/thanh/song), lan can, bậc/lồng thang, gân động cơ, lá trao đổi nhiệt, cửa sổ + bậu, bánh xe + mâm, vòng khớp ống; nét viền gộp 1 draw call/object.
-- **Bước tiếp theo**: Editor đầy đủ trên cùng `SceneConfig` + `ASSET_SPECS` (paramsSchema làm form sửa tham số, ports để nối ống, validate zod khi lưu).
+- **Bước tiếp theo**: 3D-4 vẽ ống trong Editor (ports của `ASSET_SPECS` để nối, điểm gấp snap, object gắn ống `attach`).
+
+## 6b. Scene Editor `/editor` (3D-3)
+- **Nguyên tắc**: Editor và Viewer dùng chung `SceneConfig`; canvas là SceneViewer (lazy) nhận cảnh từ store – không tự nạp dữ liệu; Editor chỉ giữ thêm state UI ngoài cảnh. Không đổi hợp đồng dữ liệu.
+- **Quyền vào**: `canUseEditor(search)` (`app/editorAccess.ts`) = `VITE_SCENE_EDITOR === 'true'` hoặc `?edit=1`; không có → `/overview`. TODO: phân quyền thật theo vai trò khi có backend.
+- **Bố cục** (`AppLayout variant="workspace"`): thanh tệp (Cảnh mới · Mở… · Lưu · Lưu thành bản mới… · Import/Export JSON · Undo/Redo · "Xem ở Tổng quan") | trái 264px: Thư viện asset (nhóm Thiết bị/Bối cảnh, tìm theo tên/loại/tiền tố) + Cây object | giữa: canvas + thanh công cụ nổi + thanh trạng thái (tên, id, version, Đã lưu/Chưa lưu, số object, số đang chọn, lỗi/cảnh báo, nguồn) | phải 340px: Tabs Thuộc tính · Góc nhìn · Kiểm tra.
+- **Store** (`features/scene-editor/store.ts`):
+  - `useSceneDoc` (zustand + zundo `temporal`): chỉ `scene`, `partialize`, `equality` theo tham chiếu, `limit 200`. Mỗi thao tác = 1 `setScene` = 1 bước; kéo gizmo commit 1 lần khi thả; ô số/chữ chốt khi Enter/blur. `loadScene` (thay + xoá lịch sử), `setSceneSilently` (lưu/tăng version không ghi lịch sử).
+  - `useEditorUi`: `selection, tool, snap, grid, hidden, locked, clipboard, source ('new'|'saved'|'sample'), saved, previewView`. **Chưa lưu** = `scene !== saved` (so tham chiếu → undo về đúng bản đã lưu là "Đã lưu").
+- **Thao tác thuần** (`ops.ts`): `nextObjectId` theo `ASSET_SPECS[asset].idPrefix` (equipment `V-101…` 3 chữ số từ 101, environment `FN-01…`, lấy số nhỏ nhất chưa dùng), `createObject` (tâm khung hoặc điểm thả, snap 0.5 m; hàng rào mặc định khung 6×4 khép kín), `removeObjects` (dọn view.objectIds, bỏ `from/to` của ống trỏ tới), `renameObject` (cập nhật view + `from/to "id.cổng"`; id `[A-Za-z0-9_-]+`), `cloneObjects` (nhân bản/dán: id mới, dời 1 m; gắn ống: t + 0.05), `applyTransforms`, `cleanObject` (bỏ rotation 0, scale 1, params/bindings rỗng), view (`addView/updateView/removeView`, id = slug tên), `normalizeScene` (thứ tự khoá như file mock – dùng khi lưu/xuất).
+- **Properties**: 1 object – id (đổi kèm tham chiếu), nhãn, vị trí/góc (độ)/scale bằng `Vec3Field` (object gắn ống: chọn ống + t), form tham số sinh từ `paramsSchema` (min/max/integer/unit, trống = mặc định), đường bao hàng rào (điểm X/Z, khép kín), bindings theo `dataFields` (Combobox tag từ `SENSOR_TAGS` + "Ngưỡng riêng" 4 ô), nhãn bản đồ (kiểu, tone, tiêu đề, trường giá trị); nhiều object – tóm tắt + nhân bản/xoá; không chọn – thuộc tính cảnh (id, tên, version, camera mặc định: lấy góc nhìn hiện tại hoặc nhập số / bỏ = tự khung vừa, ngưỡng theo trường).
+- **Outliner** (`TreeView`): nhóm Thiết bị/Bối cảnh; Ctrl/⌘ đảo, Shift chọn dải; nút ẩn (không vẽ, không chọn trên canvas) và khoá (không chọn/kéo trên canvas) – state UI, không lưu vào cảnh; F2/double-click đổi id.
+- **Góc nhìn**: "Lưu góc nhìn hiện tại thành view" (đặt tên → camera), sửa tên + id, Xem (bay thử), "Gán object đang chọn" (→ objectIds, bỏ camera), "Gán góc nhìn hiện tại" (→ camera, bỏ objectIds), xoá.
+- **Kiểm tra** (`validate.ts`, không chặn lưu nháp): lỗi = mọi issue của schema zod dùng chung (`validateSceneConfig` trong `parse.ts`: id trùng, asset không tồn tại, cổng/ống, params…); cảnh báo = binding trỏ tag không có trong `SENSOR_TAGS`, object nằm ngoài vùng sàn ±60 m. Bấm dòng → chọn + bay tới object.
+- **Lưu trữ** (`data/sceneRepository.ts`): `interface SceneRepository { list(); load(id); has(id); save(scene); remove(id) }`, bản `LocalStorageRepository` (key `demo-lpg:scene:<id>` + chỉ mục `demo-lpg:scenes`; `load` qua zod). Khi có API: viết bản HTTP cùng interface, đổi `sceneRepository`. `fetchScene` (Viewer) tìm cảnh mẫu trước rồi tới kho → `/overview?scene=<id>` mở cảnh lưu từ Editor.
+  - Lưu: version = bản trong kho + 1 (chưa có = 1); cảnh mẫu (chỉ đọc) hoặc id trùng mẫu → hộp "Lưu thành bản mới" (id `[a-z0-9-]+`, báo ghi đè nếu id đã có). Lưu xong ghi `?scene=` (giữ `?edit=1`), xoá nháp.
+  - Import JSON: `JSON.parse` + `validateSceneConfig` – lỗi → hộp liệt kê "đường dẫn: thông báo", cảnh hiện tại giữ nguyên; hợp lệ → mở như cảnh chưa lưu. Export JSON: `normalizeScene` → tải `<id>.json`.
+  - Tự lưu nháp mỗi 3 s (`draft.ts`, key riêng `demo-lpg:editor-draft`) khi có thay đổi; mở lại `/editor` → hỏi Khôi phục / Bỏ bản nháp. Rời trang khi chưa lưu: `beforeunload` + `useBlocker` (hộp "Rời Scene Editor?").
+- **Phím tắt** (không chạy khi focus ở input/textarea/select/contenteditable hoặc đang có hộp thoại; riêng Ctrl+S chạy cả trong ô nhập – blur ô để chốt rồi lưu):
+
+  | Phím | Thao tác |
+  |---|---|
+  | Q / W / E / R | Chọn / Di chuyển / Xoay / Scale |
+  | Ctrl+Z · Ctrl+Shift+Z (Ctrl+Y) | Hoàn tác · Làm lại |
+  | Ctrl+D · Ctrl+C · Ctrl+V | Nhân bản · Copy (+ clipboard hệ thống dạng JSON) · Dán (dời 1 m mỗi lần) |
+  | Delete / Backspace | Xoá đang chọn |
+  | Ctrl+A · Esc | Chọn tất cả (trừ ẩn/khoá) · Bỏ chọn |
+  | F · G · Ctrl+S | Khung hình vừa (đang chọn, trống = tất cả) · Bật/tắt lưới · Lưu |
+  | Chuột | Click chọn · Ctrl+click đảo · Shift+kéo chọn vùng · kéo trái xoay · kéo phải dời khung · cuộn zoom · kéo asset từ thư viện vào canvas |
+- **Test hook (dev)**: `window.__sceneEditor = { doc, ui, viewer }` (store + SceneViewerHandle) – không có ở bản build.
 
 ## 7. TODO / chờ designer
 - Chưa có thiết kế (đang dựng theo token, cần designer): drawer chi tiết, thanh thao tác hàng loạt, form/modal (có ảnh nhưng chưa có node), checkbox checked, badge "Đã phân công"/"Chờ nghiệm thu", trang `/map` và `/reports`.
@@ -187,7 +231,10 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–8, đặt c
   - 3D: asset hiện là khối hình học đơn giản (thay bằng model glTF khi có); token màu 3D chưa phản ứng đổi theme (app chỉ có theme tối).
   - 3D-2 còn lệch Figma: ống mảnh hơn (bán kính dữ liệu 0.18 m, Figma ~0.3 m); Figma có giàn ống nhỏ song song, cụm bơm/lọc dày đặc hơn, nhà xưởng nhiều thiết bị mái hơn (nội dung cảnh – cần thêm object/pipe trong JSON); cabin xe Figma bo tròn, chi tiết hơn; chưa có AO (n8ao có sẵn theo postprocessing nhưng tốn); nền Figma có nét blueprint mờ góc trên trái; vật hơi xanh hơn Figma (b−r ≈ 10 so với 7, do token `neutral`); Figma không vẽ hover/chọn (đang dựng theo token).
   - Nhãn 3D chưa tự né đè (3 view hiện tại không đè); high ~36 FPS trên Iris Xe (auto tự hạ medium).
-  - Chế độ sửa: chưa lưu (chỉ Copy JSON), chưa thêm/xoá object, chưa sửa params/pipe points; ống không đi theo khi đang kéo (cập nhật lúc thả chuột); hàng rào/điểm gấp ống không tự dời theo object.
+  - Chế độ sửa nhanh của PlantMap (`?edit=1` ở Tổng quan): vẫn chỉ Copy JSON – dùng `/editor` để sửa đầy đủ.
+  - Editor (3D-3): chưa vẽ/sửa ống và object gắn ống (3D-4) – dựng lại khu-bon-lpg thiếu 8 ống + XV-101/FT-101/XV-102; xoá object chỉ bỏ `from/to` của ống trỏ tới (ống còn < 2 điểm → lỗi ở bảng Kiểm tra); ống không đi theo khi đang kéo (cập nhật lúc thả); hàng rào/điểm gấp ống không tự dời theo object.
+  - Editor: chưa có backend (localStorage, 1 bản nháp chung); quyền vào bằng `?edit=1`/env (chưa phân quyền thật); danh sách tag = khoá của mock số liệu (`SENSOR_TAGS`, thay bằng GET /api/tags) và Combobox chỉ chọn tag có trong danh sách (tag lạ chỉ vào được qua Import, hiện cảnh báo); ẩn/khoá chỉ là state phiên, không lưu; Outliner chọn nhiều bằng Ctrl/Shift+click (chưa kéo chuột quét dòng); chưa có camera numeric cho view (chỉ "Gán góc nhìn hiện tại").
+  - Bundle chính tăng ~15 KB gzip do chuyển sang data router (`createBrowserRouter`) để dùng `useBlocker`.
 
 ## 8. Log sai khác Figma đã chuẩn hóa
 - Màu cảnh 3D (đọc pixel ảnh 53:244): #061123 → bg-app, #343C4C → line, #C1C0C8 → neutral (alias, lệch < 5%); `scene-flow` #94D9C4 là token mới.

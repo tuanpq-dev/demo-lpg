@@ -291,10 +291,11 @@ function PlantMapThree({
   const selectedObj = selected ? config.objects.find((o) => o.id === selected) : undefined;
   const edit: SceneEditState | undefined = editable
     ? {
-        selected,
+        // Chế độ sửa nhanh của PlantMap: chọn một object (Editor đầy đủ ở /editor).
+        selected: selected ? [selected] : [],
         mode: tool,
-        onSelect: setSelected,
-        onTransform: (id, t) => setDraft((d) => applyTransform(d, id, t)),
+        onSelect: (ids) => setSelected(ids[0] ?? null),
+        onTransform: (changes) => setDraft((d) => changes.reduce((acc, c) => applyTransform(acc, c.id, c), d)),
       }
     : undefined;
 

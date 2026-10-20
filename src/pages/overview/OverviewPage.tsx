@@ -30,8 +30,8 @@ import { parseQuality } from '@/features/scene';
 
 const nf = (v: number) => v.toLocaleString('en-US');
 
-/** Cảnh 3D của bản đồ Tổng quan (src/mocks/scenes/khu-bon-lpg.json; views + nhãn nằm trong cảnh). */
-const SCENE_ID = 'khu-bon-lpg';
+/** Cảnh 3D mặc định của bản đồ Tổng quan (src/mocks/scenes/khu-bon-lpg.json; views + nhãn nằm trong cảnh). */
+const DEFAULT_SCENE_ID = 'khu-bon-lpg';
 
 /**
  * Tổng quan (Figma 53:11) – AppLayout 2 cột.
@@ -43,7 +43,10 @@ export default function OverviewPage() {
   const [mapView, setMapView] = useState('all');
   // Bản đồ 3D bật bằng ?map=3d hoặc nút 2.5D/3D ở góc bản đồ; mặc định ảnh 2.5D theo Figma.
   const [params, setParams] = useSearchParams();
-  const map3d = params.get('map') === '3d';
+  // ?scene=<id>: cảnh khác (mẫu hoặc lưu từ /editor) – luôn 3D vì ảnh 2.5D chỉ có cho khu bồn LPG.
+  const sceneParam = params.get('scene');
+  const sceneId = sceneParam ?? DEFAULT_SCENE_ID;
+  const map3d = params.get('map') === '3d' || !!sceneParam;
   // Dev: ?edit=1 → kéo/xoay object + Copy JSON (chưa lưu).
   const editMode = params.get('edit') === '1';
   // ?quality=low|medium|high ghi đè preset 3D (mặc định tự chọn theo FPS).
@@ -55,7 +58,10 @@ export default function OverviewPage() {
     setParams(
       (p) => {
         if (r === 'three') p.set('map', '3d');
-        else p.delete('map');
+        else {
+          p.delete('map');
+          p.delete('scene');
+        }
         return p;
       },
       { replace: true },
@@ -142,7 +148,7 @@ export default function OverviewPage() {
       {/* 2. Bản đồ 2.5D – 53:242 (hoặc 3D với ?map=3d) */}
       {map3d ? (
         <ConnectedPlantMap
-          sceneId={SCENE_ID}
+          sceneId={sceneId}
           editable={editMode}
           liveData={liveData}
           quality={quality}
