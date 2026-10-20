@@ -1,5 +1,5 @@
 import { CatmullRomCurve3, Euler, Matrix4, Quaternion, Vector3 } from 'three';
-import { ASSET_SPECS, assetLayout, objectElevation, type Box } from './assets/specs';
+import { ASSET_SPECS, assetLayout, findPort, objectElevation, type Box } from './assets/specs';
 import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 export const DEFAULT_PIPE_RADIUS = 0.18;
@@ -47,7 +47,7 @@ function resolvePort(ref: string | undefined, byId: Map<string, ResolvedObject>)
   if (!ref) return undefined;
   const dot = ref.lastIndexOf('.');
   const obj = byId.get(ref.slice(0, dot));
-  const port = obj && assetLayout(obj).ports[ref.slice(dot + 1)];
+  const port = obj && findPort(obj, ref.slice(dot + 1));
   if (!obj || !port) {
     if (import.meta.env.DEV) console.warn(`[scene] Không tìm thấy cổng "${ref}"`);
     return undefined;

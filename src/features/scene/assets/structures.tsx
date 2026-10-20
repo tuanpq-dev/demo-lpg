@@ -1,7 +1,7 @@
 import { Instance, Instances } from '@react-three/drei';
 import type { AssetComponentProps } from './registry';
 import { useAssetMaterials } from './materials';
-import { Ladder, Nozzle, postsAlong, Railing, segmentsOf } from './parts';
+import { Flange, Ladder, Nozzle, postsAlong, Railing, segmentsOf } from './parts';
 import { CANOPY_RISE } from './specs';
 
 const HALF_PI = Math.PI / 2;
@@ -272,6 +272,11 @@ export function LoadingStation() {
       <mesh position={[0, 1.05, 0.5]} rotation={[-0.5, 0, 0]} material={m.body}>
         <boxGeometry args={[1.1, 0.1, 0.4]} />
       </mesh>
+      {/* Họng ra (cần nạp) → cổng "out" */}
+      <mesh position={[0.75, 0.9, 0]} rotation={[0, 0, Math.PI / 2]} material={m.metal}>
+        <cylinderGeometry args={[0.1, 0.1, 0.3, 12]} />
+      </mesh>
+      <Flange position={[0.92, 0.9, 0]} rotation={[0, 0, Math.PI / 2]} r={0.17} t={0.05} />
       <mesh position={[0.4, 2.36, 0]} material={m.glow} userData={{ noEdges: true }}>
         <cylinderGeometry args={[0.07, 0.07, 0.12, 12]} />
       </mesh>

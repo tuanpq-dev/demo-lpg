@@ -46,6 +46,11 @@ export type AssetSpec = {
    */
   inline?: { axisY: number };
   /**
+   * Tên cổng thay thế → tên cổng thật (vd bơm `in` → `suction`). Ống nối được bằng cả hai tên; Editor lưu tên thật.
+   * Giữ tên cũ trong dữ liệu đã có mà vẫn có bộ tên chung in/out.
+   */
+  portAliases?: Record<string, string>;
+  /**
    * Quy ước id khi Editor tự sinh: equipment `V-101, V-102…` (3 chữ số, từ 101), environment `FN-01…` (2 chữ số).
    */
   idPrefix: string;
@@ -59,6 +64,8 @@ const box = (min: Vec3, max: Vec3): Box => ({ min, max });
 
 // Hằng hình học dùng chung giữa spec và component.
 export const TANK_SADDLE_H = 0.8;
+/** Cao độ cổng xả đáy bồn nằm (dưới đáy thân TANK_SADDLE_H). */
+export const TANK_DRAIN_Y = 0.35;
 export const CANOPY_RISE = 1.3;
 export const VAPORIZER_PLATE_SPAN = 2.9;
 /** Độ cao trục ống so với đáy của van / đồng hồ lưu lượng (= bán kính mặt bích + vòng sáng). */
@@ -87,9 +94,10 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
       const tip = L! / 2 + R * 0.5;
       const deck = tankHorizontalPlatform(L!, R);
       return {
-        ports: { out: [tip + 0.5, cy, 0] },
+        // Hai đầu (in −X, out +X, trên trục thân) + xả đáy (giữa 2 yên đỡ).
+        ports: { in: [-tip - 0.5, cy, 0], out: [tip + 0.5, cy, 0], drain: [0, TANK_DRAIN_Y, 0] },
         // Gồm sàn thao tác + lan can trên đỉnh và lồng thang phía +Z.
-        bounds: box([-tip, 0, -R], [tip + 0.5, deck.y + 1.1, deck.z1 + 0.8]),
+        bounds: box([-tip - 0.5, 0, -R], [tip + 0.5, deck.y + 1.1, deck.z1 + 0.8]),
         // Chấm nhãn đặt trên cửa người chui (như Figma).
         labelAnchor: [deck.x, deck.y + 0.5, 0],
       };
@@ -110,7 +118,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
       // Sàn vành khăn r + 0.6 + lan can 1.05 m trên đỉnh thân; lồng thang phía +X.
       const ext = r + 0.65;
       return {
-        ports: { in: [-r - 0.3, 1.2, 0], out: [0, 1.2, -r - 0.3], top: [0, top + 0.45, 0] },
+        ports: { in: [-r - 0.3, 1.2, 0], out: [0, 1.2, -r - 0.3], top: [0, top + 0.45, 0], drain: [0, 1.2, r + 0.3] },
         bounds: box([-ext, 0, -ext], [r + 1.2, Math.max(top + 0.5, 1 + h! + 1.1), ext]),
       };
     },
@@ -121,6 +129,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     idPrefix: 'P',
     paramsSchema: {},
     dataFields: ['state', 'pressure', 'flow'],
+    portAliases: { in: 'suction', out: 'discharge' },
     layout: () => ({
       ports: { suction: [-1.25, 0.8, 0], discharge: [-0.55, 1.78, 0] },
       bounds: box([-1.4, 0, -0.65], [1.6, 1.8, 0.65]),
@@ -133,8 +142,9 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     paramsSchema: {},
     dataFields: ['state', 'position'],
     inline: { axisY: VALVE_AXIS },
+    portAliases: { a: 'in', b: 'out' },
     layout: () => ({
-      ports: { a: [-0.34, VALVE_AXIS, 0], b: [0.34, VALVE_AXIS, 0] },
+      ports: { in: [-0.34, VALVE_AXIS, 0], out: [0.34, VALVE_AXIS, 0] },
       bounds: box([-0.38, 0, -0.27], [0.38, VALVE_AXIS + 0.75, 0.27]),
     }),
   },
@@ -156,8 +166,9 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     paramsSchema: {},
     dataFields: ['flow'],
     inline: { axisY: FLOW_METER_AXIS },
+    portAliases: { a: 'in', b: 'out' },
     layout: () => ({
-      ports: { a: [-0.45, FLOW_METER_AXIS, 0], b: [0.45, FLOW_METER_AXIS, 0] },
+      ports: { in: [-0.45, FLOW_METER_AXIS, 0], out: [0.45, FLOW_METER_AXIS, 0] },
       bounds: box([-0.5, 0, -0.4], [0.5, FLOW_METER_AXIS + 0.9, 0.4]),
     }),
   },
@@ -178,6 +189,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     idPrefix: 'TK',
     paramsSchema: {},
     dataFields: ['state', 'level'],
+    portAliases: { out: 'outlet' },
     layout: () => ({
       ports: { outlet: [7.4, 1.1, 0] },
       bounds: box([-7.5, 0, -1.65], [7.4, 5.2, 1.65]),
@@ -190,7 +202,8 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     idPrefix: 'LS',
     paramsSchema: {},
     dataFields: ['state', 'flow'],
-    layout: () => ({ ports: {}, bounds: box([-2.6, 0, -0.6], [0.8, 2.9, 0.7]) }),
+    // Họng ra (cần nạp) bên phải tủ.
+    layout: () => ({ ports: { out: [0.95, 0.9, 0] }, bounds: box([-2.6, 0, -0.6], [1.0, 2.9, 0.7]) }),
   },
   building: {
     label: 'Nhà xưởng',
@@ -254,6 +267,20 @@ export function resolveParams(obj: Pick<SceneObject, 'asset' | 'params'>): Asset
 
 /** Độ cao đáy object so với sàn (m). Object gắn ống: tính trong `resolveScene` từ tâm ống − `inline.axisY`. */
 export const objectElevation = (obj: Pick<SceneObject, 'elevation'>) => obj.elevation ?? 0;
+
+/** Tên cổng thật của `name` (tên thật hoặc bí danh) – undefined nếu asset không có. */
+export function resolvePortName(obj: Pick<SceneObject, 'asset' | 'params' | 'path'>, name: string): string | undefined {
+  const ports = assetLayout(obj).ports;
+  if (name in ports) return name;
+  const alias = ASSET_SPECS[obj.asset].portAliases?.[name];
+  return alias && alias in ports ? alias : undefined;
+}
+
+/** Toạ độ cục bộ của cổng (chấp nhận bí danh). */
+export function findPort(obj: Pick<SceneObject, 'asset' | 'params' | 'path'>, name: string): Vec3 | undefined {
+  const real = resolvePortName(obj, name);
+  return real ? assetLayout(obj).ports[real] : undefined;
+}
 
 export function assetLayout(obj: Pick<SceneObject, 'asset' | 'params' | 'path'>): AssetLayout {
   return ASSET_SPECS[obj.asset].layout(resolveParams(obj), obj);

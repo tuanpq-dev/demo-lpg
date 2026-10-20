@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_SPECS, assetLayout } from './assets/specs';
+import { ASSET_SPECS, assetLayout, resolvePortName } from './assets/specs';
 import { migrateScene } from './migrate';
 import { ASSET_TYPES, SCENE_SCHEMA_VERSION, type SceneConfig } from './types';
 
@@ -130,8 +130,9 @@ const sceneSchema = z
         const obj = objects.get(objId);
         if (!obj) return issue(['pipes', i, end], `ống "${p.id}" nối tới object "${objId}" không tồn tại`);
         if (!known.has(obj.asset)) return;
-        const ports = Object.keys(assetLayout(obj as SceneConfig['objects'][number]).ports);
-        if (!ports.includes(port))
+        const o = obj as SceneConfig['objects'][number];
+        const ports = Object.keys(assetLayout(o).ports);
+        if (!resolvePortName(o, port))
           issue(['pipes', i, end], `ống "${p.id}": "${objId}" (${obj.asset}) không có cổng "${port}" (có: ${ports.join(', ') || 'không có'})`);
       });
       if (p.points.length + (p.from ? 1 : 0) + (p.to ? 1 : 0) < 2) issue(['pipes', i, 'points'], `ống "${p.id}" cần ≥ 2 điểm`);
