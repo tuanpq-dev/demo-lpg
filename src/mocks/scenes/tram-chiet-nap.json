@@ -1,7 +1,8 @@
 {
   "id": "tram-chiet-nap",
   "name": "Trạm chiết nạp số 2",
-  "version": 2,
+  "version": 3,
+  "schemaVersion": 2,
   "camera": { "position": [64, 50, 66], "target": [6, 0, 2], "zoom": 19 },
   "views": [
     { "id": "all", "label": "Toàn cảnh" },
@@ -23,11 +24,11 @@
     { "id": "FN-21", "asset": "fence", "position": [0, 0, 14], "params": { "height": 1.6 }, "path": [[-8.2, 0, -9], [8.2, 0, -9], [8.2, 0, 9], [-8.2, 0, 9], [-8.2, 0, -9]] },
 
     { "id": "PH-21", "asset": "canopy", "position": [14.5, 0, 2], "params": { "length": 9, "depth": 6, "height": 5, "bays": 1 }, "label": "Mái che cụm bơm A" },
-    { "id": "P-301A", "asset": "pump", "position": [14, 0.3, 1], "label": "Bơm P-301A", "marker": { "tone": "success", "title": "Cụm bơm A", "field": "state" }, "bindings": { "state": "P-301A.STATE" } },
-    { "id": "P-301B", "asset": "pump", "position": [14, 0.3, 3], "label": "Bơm P-301B", "bindings": { "state": "P-301B.STATE" } },
+    { "id": "P-301A", "asset": "pump", "position": [14, 0.3, 1], "elevation": 0.3, "label": "Bơm P-301A", "marker": { "tone": "success", "title": "Cụm bơm A", "field": "state" }, "bindings": { "state": "P-301A.STATE" } },
+    { "id": "P-301B", "asset": "pump", "position": [14, 0.3, 3], "elevation": 0.3, "label": "Bơm P-301B", "bindings": { "state": "P-301B.STATE" } },
     { "id": "PH-22", "asset": "canopy", "position": [14.5, 0, -8], "params": { "length": 9, "depth": 6, "height": 5, "bays": 1 }, "label": "Mái che cụm bơm B" },
-    { "id": "P-302A", "asset": "pump", "position": [14, 0.3, -9], "label": "Bơm P-302A", "bindings": { "state": "P-302A.STATE" } },
-    { "id": "P-302B", "asset": "pump", "position": [14, 0.3, -7], "label": "Bơm P-302B", "marker": { "tone": "success", "title": "Cụm bơm B", "field": "state" }, "bindings": { "state": "P-302B.STATE" } },
+    { "id": "P-302A", "asset": "pump", "position": [14, 0.3, -9], "elevation": 0.3, "label": "Bơm P-302A", "bindings": { "state": "P-302A.STATE" } },
+    { "id": "P-302B", "asset": "pump", "position": [14, 0.3, -7], "elevation": 0.3, "label": "Bơm P-302B", "marker": { "tone": "success", "title": "Cụm bơm B", "field": "state" }, "bindings": { "state": "P-302B.STATE" } },
 
     { "id": "XV-301", "asset": "valve", "attach": { "pipe": "PL-01", "t": 0.45 }, "label": "Van XV-301", "bindings": { "position": "XV-301.POS" } },
     { "id": "FT-302", "asset": "flow-meter", "attach": { "pipe": "PL-30", "t": 0.3 }, "label": "FT-302", "marker": { "field": "flow" }, "bindings": { "flow": "FT-302" } },

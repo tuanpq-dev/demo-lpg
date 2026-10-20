@@ -1,7 +1,7 @@
 import type { AssetComponentProps } from './registry';
 import { useAssetMaterials } from './materials';
 import { Flange, Ladder, Nozzle, Railing, ReliefValve } from './parts';
-import { TANK_SADDLE_H, tankHorizontalPlatform } from './specs';
+import { TANK_DRAIN_Y, TANK_SADDLE_H, tankHorizontalPlatform } from './specs';
 
 const HALF_PI = Math.PI / 2;
 
@@ -147,6 +147,16 @@ export function TankHorizontal({ params }: AssetComponentProps) {
         <cylinderGeometry args={[0.24, 0.24, 0.6, 16]} />
       </mesh>
       <Flange position={[L / 2 + R * 0.5 + 0.48, cy, 0]} rotation={[0, 0, HALF_PI]} r={0.38} t={0.08} />
+      {/* Họng vào ở đầu trái → cổng "in" (đối xứng họng ra) */}
+      <mesh position={[-L / 2 - R * 0.5 - 0.2, cy, 0]} rotation={[0, 0, HALF_PI]} material={m.metal}>
+        <cylinderGeometry args={[0.24, 0.24, 0.6, 16]} />
+      </mesh>
+      <Flange position={[-L / 2 - R * 0.5 - 0.48, cy, 0]} rotation={[0, 0, HALF_PI]} r={0.38} t={0.08} />
+      {/* Họng xả đáy → cổng "drain" */}
+      <mesh position={[0, (TANK_SADDLE_H + TANK_DRAIN_Y) / 2 + 0.05, 0]} material={m.metal}>
+        <cylinderGeometry args={[0.15, 0.15, TANK_SADDLE_H - TANK_DRAIN_Y, 12]} />
+      </mesh>
+      <Flange position={[0, TANK_DRAIN_Y + 0.04, 0]} r={0.24} t={0.06} />
     </group>
   );
 }
@@ -197,6 +207,11 @@ export function TankVertical({ params }: AssetComponentProps) {
         <cylinderGeometry args={[0.2, 0.2, 0.3, 16]} />
       </mesh>
       <Flange position={[0, 1.2, -r - 0.28]} rotation={[HALF_PI, 0, 0]} r={0.32} />
+      {/* Họng xả phía +Z → cổng "drain" */}
+      <mesh position={[0, 1.2, r + 0.15]} rotation={[HALF_PI, 0, 0]} material={m.metal}>
+        <cylinderGeometry args={[0.16, 0.16, 0.3, 16]} />
+      </mesh>
+      <Flange position={[0, 1.2, r + 0.28]} rotation={[HALF_PI, 0, 0]} r={0.26} />
     </group>
   );
 }

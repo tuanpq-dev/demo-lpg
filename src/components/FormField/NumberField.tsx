@@ -160,20 +160,33 @@ export type Vec3FieldProps = {
   unit?: string;
   /** Tên trục (mặc định X Y Z). */
   axes?: [string, string, string];
+  /** Chỉ hiện các trục này (chỉ số 0–2), vd vị trí trên sàn `[0, 2]` (X, Z); trục ẩn giữ nguyên giá trị. */
+  only?: readonly (0 | 1 | 2)[];
   disabled?: boolean;
   className?: string;
 };
 
 /** 3 ô số nhỏ X/Y/Z trên một hàng (vị trí, góc, scale) – mỗi ô chốt riêng. */
-export function Vec3Field({ label, value, onChange, step = 0.5, precision = 3, unit, axes = ['X', 'Y', 'Z'], disabled, className }: Vec3FieldProps) {
+export function Vec3Field({
+  label,
+  value,
+  onChange,
+  step = 0.5,
+  precision = 3,
+  unit,
+  axes = ['X', 'Y', 'Z'],
+  only = [0, 1, 2],
+  disabled,
+  className,
+}: Vec3FieldProps) {
   return (
     <fieldset className={cn('flex flex-col gap-1.5', className)} disabled={disabled}>
       <legend className="mb-1.5 text-sm font-semibold text-fg-secondary">
         {label}
         {unit && <span className="font-normal text-fg-muted"> ({unit})</span>}
       </legend>
-      <div className="grid grid-cols-3 gap-1.5">
-        {axes.map((axis, i) => (
+      <div className={cn('grid gap-1.5', only.length === 3 ? 'grid-cols-3' : only.length === 2 ? 'grid-cols-2' : 'grid-cols-1')}>
+        {axes.map((axis, i) => only.includes(i as 0 | 1 | 2) && (
           <NumberField
             key={axis}
             label={`${label} ${axis}`}

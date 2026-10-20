@@ -107,8 +107,9 @@ export function Ladder({
   return (
     <group position={position} rotation-y={rotationY}>
       {[-width / 2, width / 2].map((x) => (
-        <mesh key={x} position={[x, height / 2, 0]} material={m.metal}>
-          <boxGeometry args={[0.05, height + 0.9, 0.05]} />
+        // Thanh dọc từ chân thang (y = 0, không lún xuống sàn) tới 0.45 m trên đỉnh làm tay vịn.
+        <mesh key={x} position={[x, (height + 0.45) / 2, 0]} material={m.metal}>
+          <boxGeometry args={[0.05, height + 0.45, 0.05]} />
         </mesh>
       ))}
       <Instances limit={rungs.length} material={m.metal}>

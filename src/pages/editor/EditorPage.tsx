@@ -17,6 +17,7 @@ import { Page } from '@/app/Page';
 import { fetchScene, isSampleScene, SENSOR_TAGS } from '@/data/scene';
 import { sceneRepository } from '@/data/sceneRepository';
 import type { SceneViewerHandle } from '@/features/scene';
+import { migrateScene } from '@/features/scene/migrate';
 import { validateSceneConfig } from '@/features/scene/parse';
 import type { SceneConfig } from '@/features/scene/types';
 import { AUTOSAVE_MS, clearDraft, readDraft, writeDraft, type EditorDraft } from '@/features/scene-editor/draft';
@@ -28,7 +29,7 @@ import { ConfirmDialog, ImportErrorDialog, NameDialog, OpenSceneDialog, RestoreD
 import { EditorViewport } from './EditorViewport';
 import { Outliner } from './Outliner';
 import { PropertiesPanel } from './PropertiesPanel';
-import { useEditorActions } from './useEditorActions';
+import { useEditorActions, type DeleteImpact } from './useEditorActions';
 import { ValidationPanel } from './ValidationPanel';
 import { ViewsPanel } from './ViewsPanel';
 
@@ -38,7 +39,8 @@ type Dialog =
   | { kind: 'view-name' }
   | { kind: 'restore'; draft: EditorDraft }
   | { kind: 'confirm'; title: string; message: string; confirmLabel: string; run: () => void }
-  | { kind: 'import-error'; file: string; errors: string[] };
+  | { kind: 'import-error'; file: string; errors: string[] }
+  | { kind: 'delete'; impact: DeleteImpact; run: (pipes: 'keep' | 'delete') => void };
 
 type PanelId = 'props' | 'views' | 'issues';
 
@@ -55,7 +57,13 @@ const ui = () => useEditorUi.getState();
  */
 export default function EditorPage() {
   const viewer = useRef<SceneViewerHandle>(null);
-  const actions = useEditorActions(viewer);
+  const [dialog, setDialog] = useState<Dialog | null>(null);
+  // Xoá object có ống nối / ống có object gắn → hỏi giữ hay xoá ống.
+  const confirmDelete = useCallback(
+    (impact: DeleteImpact, run: (pipes: 'keep' | 'delete') => void) => setDialog({ kind: 'delete', impact, run }),
+    [],
+  );
+  const actions = useEditorActions(viewer, confirmDelete);
   const scene = useSceneDoc((s) => s.scene);
   const source = useEditorUi((s) => s.source);
   const selection = useEditorUi((s) => s.selection);
@@ -63,7 +71,6 @@ export default function EditorPage() {
   const canUndo = useStore(useSceneDoc.temporal, (s) => s.pastStates.length > 0);
   const canRedo = useStore(useSceneDoc.temporal, (s) => s.futureStates.length > 0);
   const [params, setParams] = useSearchParams();
-  const [dialog, setDialog] = useState<Dialog | null>(null);
   const [panel, setPanel] = useState<PanelId>('props');
   const [notice, setNotice] = useState<string>('');
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -193,7 +200,8 @@ export default function EditorPage() {
     }
     const errs = validateSceneConfig(raw);
     if (errs.length) return setDialog({ kind: 'import-error', file: file.name, errors: errs.map((i) => `${i.where}: ${i.message}`) });
-    const s = raw as SceneConfig;
+    // Định dạng cũ (không schemaVersion) → migrate như khi nạp từ kho/mock.
+    const s = migrateScene(raw as SceneConfig);
     // Cảnh import = chưa lưu (Lưu → kho với id trong file, hoặc hỏi id mới nếu trùng cảnh mẫu).
     begin(s, { kind: 'new' }, null);
     setSceneParam(null);
@@ -239,6 +247,8 @@ export default function EditorPage() {
       else if (k === 'w') ui().setTool('translate');
       else if (k === 'e') ui().setTool('rotate');
       else if (k === 'r') ui().setTool('scale');
+      else if (k === 'p') ui().setTool('pipe');
+      else if (k === 'o') ui().toggle('ortho');
       else if (k === 'g') ui().toggle('grid');
       else if (k === 'f') actions.fit();
       else if (e.key === 'Delete' || e.key === 'Backspace') actions.deleteSelection();
@@ -252,7 +262,8 @@ export default function EditorPage() {
 
   // Bỏ id không còn tồn tại khỏi selection (sau undo/xoá).
   useEffect(() => {
-    const ids = new Set(scene.objects.map((o) => o.id));
+    // Selection gồm id object hoặc id ống.
+    const ids = new Set([...scene.objects.map((o) => o.id), ...scene.pipes.map((p) => p.id)]);
     const sel = ui().selection;
     if (sel.some((id) => !ids.has(id))) ui().setSelection(sel.filter((id) => ids.has(id)));
   }, [scene]);
@@ -486,6 +497,41 @@ export default function EditorPage() {
         }}
       >
         {dialog?.kind === 'confirm' ? dialog.message : ''}
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={dialog?.kind === 'delete'}
+        title="Xoá – còn ống liên quan"
+        confirmLabel="Xoá cả ống"
+        danger
+        altLabel={dialog?.kind === 'delete' && dialog.impact.connected.length ? 'Giữ ống' : undefined}
+        onAlt={() => {
+          if (dialog?.kind !== 'delete') return;
+          setDialog(null);
+          dialog.run('keep');
+        }}
+        onClose={() => setDialog(null)}
+        onConfirm={() => {
+          if (dialog?.kind !== 'delete') return;
+          setDialog(null);
+          dialog.run('delete');
+        }}
+      >
+        {dialog?.kind === 'delete' && (
+          <div className="flex flex-col gap-2">
+            {dialog.impact.connected.length > 0 && (
+              <p>
+                Ống nối vào {dialog.impact.objects.join(', ')}: <b className="text-fg">{dialog.impact.connected.join(', ')}</b>. Giữ ống (đầu
+                nối thành điểm tự do, hình ống không đổi) hay xoá cả ống (kèm object gắn trên ống)?
+              </p>
+            )}
+            {dialog.impact.attached.length > 0 && (
+              <p>
+                Object gắn trên ống bị xoá cũng bị xoá: <b className="text-fg">{dialog.impact.attached.join(', ')}</b>.
+              </p>
+            )}
+            <p className="text-sm text-fg-muted">Hoàn tác được bằng Ctrl+Z.</p>
+          </div>
+        )}
       </ConfirmDialog>
       <ConfirmDialog
         open={blocker.state === 'blocked'}

@@ -2,7 +2,7 @@ import { Instance, Instances } from '@react-three/drei';
 import type { AssetComponentProps } from './registry';
 import { useAssetMaterials } from './materials';
 import { Flange, GlowRing, Ladder, Railing } from './parts';
-import { VAPORIZER_PLATE_SPAN } from './specs';
+import { ASSET_SPECS, VAPORIZER_PLATE_SPAN } from './specs';
 
 const HALF_PI = Math.PI / 2;
 
@@ -66,11 +66,11 @@ export function Pump() {
   );
 }
 
-/** Van tay: thân cầu + 2 mặt bích + ty + tay quay. Gốc ở tâm ống, trục ống theo X. */
+/** Van tay: thân cầu + 2 mặt bích + ty + tay quay. Gốc ở tâm đáy; trục ống theo X, cao `inline.axisY`. */
 export function Valve() {
   const m = useAssetMaterials();
   return (
-    <group>
+    <group position-y={ASSET_SPECS.valve.inline!.axisY}>
       <mesh material={m.body}>
         <sphereGeometry args={[0.24, 20, 14]} />
       </mesh>
@@ -147,11 +147,11 @@ export function Filter() {
   );
 }
 
-/** Đồng hồ lưu lượng (FT): thân trụ nằm trên ống + 2 bích + đầu transmitter. Gốc ở tâm ống. */
+/** Đồng hồ lưu lượng (FT): thân trụ nằm trên ống + 2 bích + đầu transmitter. Gốc ở tâm đáy; trục ống cao `inline.axisY`. */
 export function FlowMeter() {
   const m = useAssetMaterials();
   return (
-    <group>
+    <group position-y={ASSET_SPECS['flow-meter'].inline!.axisY}>
       <mesh rotation={[0, 0, HALF_PI]} material={m.body}>
         <cylinderGeometry args={[0.3, 0.3, 0.7, 20]} />
       </mesh>

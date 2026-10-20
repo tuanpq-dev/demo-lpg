@@ -68,6 +68,8 @@ type PipeMeshProps = {
   flow?: number;
   /** Có bloom (postprocessing) → bỏ quầng additive giả lập. */
   bloom?: boolean;
+  /** Ống đang chọn (Editor) → vỏ đổi sang màu `primary`, đậm hơn. */
+  selected?: boolean;
 };
 
 const Z = new Vector3(0, 0, 1);
@@ -77,7 +79,7 @@ const ONE = new Vector3(1, 1, 1);
  * Ống phát sáng: lõi emissive màu `scene-flow` có vệt sáng chạy theo lưu lượng (TubeGeometry theo Catmull-Rom)
  * + vỏ ngoài trong mờ + vòng sáng ở khớp nối (instanced, emissive → bloom). Không bloom → thêm quầng additive.
  */
-export function PipeMesh({ curve, radius, palette, flow, bloom }: PipeMeshProps) {
+export function PipeMesh({ curve, radius, palette, flow, bloom, selected }: PipeMeshProps) {
   const length = useMemo(() => curve.getLength(), [curve]);
   const segments = Math.min(1200, Math.ceil(length * 8));
 
@@ -123,11 +125,11 @@ export function PipeMesh({ curve, radius, palette, flow, bloom }: PipeMeshProps)
       <mesh renderOrder={1}>
         <tubeGeometry args={[curve, segments, radius, 14, false]} />
         <meshStandardMaterial
-          color={palette.flow}
-          emissive={palette.flow}
-          emissiveIntensity={0.18}
+          color={selected ? palette.primary : palette.flow}
+          emissive={selected ? palette.primary : palette.flow}
+          emissiveIntensity={selected ? 0.6 : 0.18}
           transparent
-          opacity={0.55}
+          opacity={selected ? 0.8 : 0.55}
           roughness={0.18}
           metalness={0.05}
           depthWrite={false}

@@ -4,6 +4,7 @@ import {
   Checkbox,
   Combobox,
   DuplicateIcon,
+  PipeIcon,
   FormField,
   NumberField,
   PlusIcon,
@@ -16,7 +17,10 @@ import {
 import { SENSOR_TAGS } from '@/data/scene';
 import { ASSET_SPECS } from '@/features/scene/assets/specs';
 import { FIELD_META } from '@/features/scene/fields';
-import type { Binding, SceneObject, SceneObjectMarker, Thresholds, Vec3 } from '@/features/scene/types';
+import { GROUND_EPS, mayFloat, worldBaseY } from '@/features/scene/ground';
+import { ELEVATION_STEP, snapTo } from '@/features/scene-editor/ops';
+import { allPorts, DEFAULT_PIPE_RADIUS, objectsById, portWorld, roundVec } from '@/features/scene/pipes';
+import type { Binding, Pipe, SceneObject, SceneObjectMarker, Thresholds, Vec3 } from '@/features/scene/types';
 import { useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { cn } from '@/lib/cn';
 import { AssetGlyph } from './AssetGlyph';
@@ -86,16 +90,22 @@ export type PropertiesPanelProps = {
 /** Cột phải: thuộc tính object đang chọn (1 · nhiều) hoặc thuộc tính cảnh khi không chọn gì. */
 export function PropertiesPanel({ actions, onUseCurrentCamera }: PropertiesPanelProps) {
   const objects = useSceneDoc((s) => s.scene.objects);
+  const pipes = useSceneDoc((s) => s.scene.pipes);
   const selection = useEditorUi((s) => s.selection);
   const picked = objects.filter((o) => selection.includes(o.id));
+  const pickedPipe = selection.length === 1 ? pipes.find((p) => p.id === selection[0]) : undefined;
 
+  if (pickedPipe) return <PipeProperties key={pickedPipe.id} pipe={pickedPipe} actions={actions} />;
   if (picked.length === 1) return <ObjectProperties key={picked[0]!.id} obj={picked[0]!} actions={actions} />;
   if (picked.length > 1)
     return (
       <div className="flex flex-col gap-3">
         <p className="text-base font-semibold text-fg">{picked.length} object đang chọn</p>
         <p className="text-sm text-fg-muted">{picked.map((o) => o.id).join(', ')}</p>
-        <p className="text-sm text-fg-muted">Kéo gizmo để di chuyển/xoay/scale cả nhóm quanh trọng tâm.</p>
+        <p className="text-sm text-fg-muted">
+          Di chuyển (W): kéo một object trong nhóm – cả nhóm trượt trên sàn. Xoay/scale: gizmo quanh trọng tâm.
+        </p>
+        <GroupPlacement picked={picked} actions={actions} />
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" size="sm" icon={<DuplicateIcon />} onClick={actions.duplicateSelection}>
             Nhân bản
@@ -151,7 +161,12 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
       <Section title="Vị trí">
         {obj.attach ? (
           <>
-            <p className="text-sm text-fg-muted">Gắn trên ống – vị trí và hướng theo đường ống.</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-fg-muted">Gắn trên ống – vị trí và hướng theo đường ống (W: kéo dọc ống).</p>
+              <Button variant="ghost" size="sm" onClick={() => actions.detachFromPipe(obj.id)}>
+                Tháo khỏi ống
+              </Button>
+            </div>
             <FormField label="Ống">
               {({ id, labelId }) => (
                 <Select
@@ -177,20 +192,55 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
         ) : (
           <>
             <Vec3Field
-              label="Vị trí"
+              label="Vị trí trên sàn"
               unit="m"
               step={0.5}
+              only={[0, 2]}
               value={obj.position ?? [0, 0, 0]}
-              onChange={(position) => update((o) => ({ ...o, position }))}
+              onChange={(p) => update((o) => ({ ...o, position: [p[0], o.elevation ?? 0, p[2]] }))}
             />
-            <Vec3Field
-              label="Góc xoay"
+            <ElevationField obj={obj} actions={actions} />
+            {spec.inline && pipes.length > 0 && (
+              <FormField label="Gắn lên ống" hint="Đặt tại điểm trên ống gần vị trí hiện tại nhất; xoay theo hướng ống">
+                {({ id, labelId }) => (
+                  <Select
+                    variant="field"
+                    id={id}
+                    labelledBy={labelId}
+                    label="Gắn lên ống"
+                    placeholder="Chọn ống…"
+                    options={pipes.map((p) => ({ value: p.id, label: p.id }))}
+                    value={null}
+                    onChange={(v) => v && actions.attachToPipe(obj.id, v)}
+                  />
+                )}
+              </FormField>
+            )}
+            <NumberField
+              label="Góc xoay quanh Y"
               unit="°"
               step={15}
               precision={1}
-              value={(obj.rotation ?? [0, 0, 0]).map((r) => r * DEG) as Vec3}
-              onChange={(deg) => update((o) => ({ ...o, rotation: deg.map((d) => +(d / DEG).toFixed(4)) as Vec3 }))}
+              value={+((obj.rotation?.[1] ?? 0) * DEG).toFixed(1)}
+              onChange={(deg) =>
+                update((o) => {
+                  const r = o.rotation ?? [0, 0, 0];
+                  return { ...o, rotation: [r[0], +(deg / DEG).toFixed(4), r[2]] };
+                })
+              }
             />
+            {(obj.rotation?.[0] || obj.rotation?.[2]) && (
+              <div className="flex items-center justify-between gap-2 rounded-md bg-warning/10 px-2 py-1.5 text-sm text-warning">
+                <span>Có nghiêng X/Z (từ JSON) – đáy lệch khỏi sàn.</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => update((o) => ({ ...o, rotation: [0, o.rotation?.[1] ?? 0, 0] }))}
+                >
+                  Bỏ nghiêng
+                </Button>
+              </div>
+            )}
             <Vec3Field
               label="Scale"
               step={0.1}
@@ -247,6 +297,215 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
 }
 
 type Update = (fn: (o: SceneObject) => SceneObject) => void;
+
+// ---------------------------------------------------------------------------
+// Ống (3D-4)
+
+/** Thuộc tính ống: id, bán kính, tag lưu lượng, cổng đầu/cuối, điểm gập, đảo chiều, xoá. */
+function PipeProperties({ pipe, actions }: { pipe: Pipe; actions: EditorActions }) {
+  const scene = useSceneDoc((s) => s.scene);
+  const update = (fn: (p: Pipe) => Pipe) => actions.updatePipe(pipe.id, fn);
+  const byId = objectsById(scene);
+  const portOptions = allPorts(scene.objects).map((p) => ({ value: p.ref, label: p.ref }));
+  const attached = scene.objects.filter((o) => o.attach?.pipe === pipe.id).map((o) => o.id);
+  const tagOptions = SENSOR_TAGS.map((t) => ({ value: t, label: t }));
+  const pathLen = pipe.points.length + (pipe.from ? 1 : 0) + (pipe.to ? 1 : 0);
+
+  /** Đổi cổng một đầu; bỏ nối → đầu thành điểm tự do tại cổng cũ (hình ống giữ nguyên). */
+  const setEnd = (end: 'from' | 'to', ref: string | null) =>
+    update((p) => {
+      const old = p[end];
+      if (ref) return { ...p, [end]: ref };
+      const at = portWorld(byId, old);
+      const points = at ? (end === 'from' ? [roundVec(at), ...p.points] : [...p.points, roundVec(at)]) : p.points;
+      return { ...p, [end]: undefined, points };
+    });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex size-8 items-center justify-center rounded-md bg-surface-muted text-fg-muted">
+          <PipeIcon />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-fg">Ống {pipe.id}</p>
+          <p className="text-xs text-fg-muted">
+            {pathLen} điểm trên đường đi{attached.length ? ` · gắn: ${attached.join(', ')}` : ''}
+          </p>
+        </div>
+      </div>
+
+      <Section title="Định danh">
+        <CommitTextField label="id" value={pipe.id} hint="Đổi id cập nhật cả object gắn trên ống" onCommit={(v) => actions.rename(pipe.id, v.trim())} />
+        <NumberField
+          label="Bán kính"
+          unit="m"
+          step={0.02}
+          min={0.03}
+          max={1.5}
+          value={pipe.radius}
+          placeholder={`${DEFAULT_PIPE_RADIUS} (mặc định)`}
+          onChange={(radius) => update((p) => ({ ...p, radius }))}
+          onClear={() => update((p) => ({ ...p, radius: undefined }))}
+        />
+        <FormField label="Tag lưu lượng (flowTag)" hint="Tốc độ vệt sáng chạy theo giá trị tag">
+          {({ id, labelId }) => (
+            <Select
+              variant="field"
+              id={id}
+              labelledBy={labelId}
+              label="Tag lưu lượng"
+              allLabel="— không —"
+              options={tagOptions}
+              value={pipe.flowTag ?? null}
+              onChange={(v) => update((p) => ({ ...p, flowTag: v ?? undefined }))}
+            />
+          )}
+        </FormField>
+      </Section>
+
+      <Section title="Nối cổng">
+        {(['from', 'to'] as const).map((end) => (
+          <FormField key={end} label={end === 'from' ? 'Đầu (from)' : 'Cuối (to)'} hint="Bỏ nối → đầu ống thành điểm tự do tại cổng cũ">
+            {({ id, labelId }) => (
+              <Select
+                variant="field"
+                id={id}
+                labelledBy={labelId}
+                label={end}
+                allLabel="— không nối —"
+                options={portOptions}
+                value={pipe[end] ?? null}
+                onChange={(v) => setEnd(end, v)}
+              />
+            )}
+          </FormField>
+        ))}
+      </Section>
+
+      <Section
+        title={`Điểm gập (${pipe.points.length})`}
+        aside={
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<PlusIcon />}
+            onClick={() =>
+              update((p) => {
+                const last = p.points.at(-1) ?? portWorld(byId, p.from) ?? [0, 1.2, 0];
+                return { ...p, points: [...p.points, [last[0] + 1, last[1], last[2]] as Vec3] };
+              })
+            }
+          >
+            Thêm
+          </Button>
+        }
+      >
+        {pipe.points.map((pt, i) => (
+          <div key={i} className="flex items-end gap-1.5">
+            <Vec3Field
+              className="min-w-0 flex-1"
+              label={`Điểm ${i}`}
+              step={0.5}
+              value={pt}
+              onChange={(v) => update((p) => ({ ...p, points: p.points.map((q, k) => (k === i ? v : q)) }))}
+            />
+            <Button
+              variant="icon"
+              size="sm"
+              aria-label={`Xoá điểm ${i}`}
+              disabled={pathLen <= 2}
+              onClick={() => update((p) => ({ ...p, points: p.points.filter((_, k) => k !== i) }))}
+              icon={<TrashIcon />}
+            />
+          </div>
+        ))}
+        <p className="text-xs text-fg-muted">Trên canvas: kéo chấm để dời (giữ Y), click vào đoạn để thêm điểm, chọn chấm + Delete để xoá.</p>
+      </Section>
+
+      <div className="flex flex-wrap gap-2 border-t border-line/30 pt-3">
+        <Button variant="ghost" size="sm" onClick={() => actions.reversePipe(pipe.id)}>
+          Đảo chiều
+        </Button>
+        <Button variant="ghost" size="sm" icon={<TrashIcon />} onClick={actions.deleteSelection}>
+          Xoá ống
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const fmtGap = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} m`;
+
+/** Ô Elevation (độ cao đáy, snap 0.25 m khi bật snap) + "Đặt xuống sàn" + khoảng cách đáy–sàn thực tế. */
+function ElevationField({ obj, actions }: { obj: SceneObject; actions: EditorActions }) {
+  const snap = useEditorUi((s) => s.snap);
+  const elevation = obj.elevation ?? 0;
+  const base = worldBaseY(obj, elevation);
+  const hint =
+    base < -GROUND_EPS
+      ? `Lún dưới sàn ${fmtGap(base)}`
+      : elevation > GROUND_EPS && !mayFloat(obj)
+        ? `Đáy cách sàn ${fmtGap(base)} – lơ lửng (chỉ van/đồng hồ lắp trên ống mới nên nâng)`
+        : `Đáy cách sàn ${fmtGap(base)}`;
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <NumberField
+        className="w-full"
+        label="Elevation (độ cao đáy)"
+        unit="m"
+        step={ELEVATION_STEP}
+        value={elevation}
+        hint={hint}
+        onChange={(v) => actions.setElevation(snap ? snapTo(v, ELEVATION_STEP) : v, [obj.id])}
+        onClear={() => actions.setElevation(0, [obj.id])}
+      />
+      <Button variant="ghost" size="sm" disabled={elevation === 0} onClick={() => actions.setElevation(0, [obj.id])}>
+        Đặt xuống sàn
+      </Button>
+    </div>
+  );
+}
+
+/** Nhiều object: căn hàng X/Z (cùng elevation, phân bố đều), elevation chung, đặt xuống sàn. */
+function GroupPlacement({ picked, actions }: { picked: SceneObject[]; actions: EditorActions }) {
+  const snap = useEditorUi((s) => s.snap);
+  const placed = picked.filter((o) => !o.attach && o.position);
+  const levels = new Set(placed.map((o) => o.elevation ?? 0));
+  const same = levels.size === 1 ? [...levels][0] : undefined;
+  return (
+    <Section title="Căn chỉnh">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="ghost" size="sm" disabled={placed.length < 2} onClick={() => actions.align('x')}>
+          Căn hàng theo X
+        </Button>
+        <Button variant="ghost" size="sm" disabled={placed.length < 2} onClick={() => actions.align('z')}>
+          Căn hàng theo Z
+        </Button>
+      </div>
+      <p className="text-xs text-fg-muted">Theo object chọn đầu tiên ({placed[0]?.id ?? '—'}): cùng toạ độ trục kia và elevation, tâm cách đều.</p>
+      <div className="flex items-end gap-2">
+        <NumberField
+          className="min-w-0 flex-1"
+          label="Elevation (cả nhóm)"
+          unit="m"
+          step={ELEVATION_STEP}
+          value={same}
+          placeholder="khác nhau"
+          onChange={(v) => actions.setElevation(snap ? snapTo(v, ELEVATION_STEP) : v, placed.map((o) => o.id))}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={same === 0}
+          onClick={() => actions.setElevation(0, placed.map((o) => o.id))}
+        >
+          Đặt xuống sàn
+        </Button>
+      </div>
+    </Section>
+  );
+}
 
 /** Đường bao hàng rào: danh sách điểm (x, z) cục bộ + khép kín. */
 function PathEditor({ obj, update }: { obj: SceneObject; update: Update }) {

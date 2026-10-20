@@ -1,8 +1,16 @@
 /**
  * Hợp đồng dữ liệu cảnh 3D – dùng chung cho Viewer (hiện tại) và Editor (sau này).
  * Đơn vị: 1 = 1 m (ước lượng từ ảnh Figma 53:244). Trục Y hướng lên, mặt đất y = 0.
+ * Pivot: mọi asset có gốc tại tâm đáy – object nằm trên sàn khi `elevation` = 0 (xem assets/specs.ts).
  * File này không phụ thuộc three – import được ở mọi nơi.
  */
+
+/**
+ * Phiên bản định dạng hiện tại (`SceneConfig.schemaVersion`). Khác `version` (số lần lưu).
+ * 1 (không có trường): position[1] là độ cao tự do, van/đồng hồ có gốc ở tâm ống.
+ * 2: thêm `elevation` (độ cao đáy, position[1] luôn bằng nó), mọi asset gốc tại tâm đáy. Đọc dữ liệu cũ → `migrateScene`.
+ */
+export const SCENE_SCHEMA_VERSION = 2;
 export type Vec3 = [number, number, number];
 
 export const ASSET_TYPES = [
@@ -73,7 +81,10 @@ export interface SceneObjectMarker {
 export interface SceneConfig {
   id: string;
   name: string;
+  /** Số lần lưu (tăng mỗi lần lưu ở Editor / mỗi lần migrate). */
   version: number;
+  /** Phiên bản định dạng; thiếu = 1 (cũ). Xem SCENE_SCHEMA_VERSION. */
+  schemaVersion?: number;
   camera?: SceneCamera;
   /** Chế độ xem; trống → chỉ "Toàn cảnh". */
   views?: SceneView[];
@@ -92,8 +103,13 @@ export interface PipeAttachment {
 export interface SceneObject {
   id: string;
   asset: AssetType;
-  /** Bắt buộc, trừ khi có `attach` (khi đó vị trí/hướng lấy từ ống). */
+  /** Bắt buộc, trừ khi có `attach` (khi đó vị trí/hướng lấy từ ống). position[1] luôn = elevation. */
   position?: Vec3;
+  /**
+   * Độ cao đáy object so với sàn (m), mặc định 0. Editor chỉ đổi qua ô Elevation (kéo chuột chỉ đổi X/Z).
+   * > 0 chỉ hợp lý với asset lắp trên ống (`inline`) – còn lại Editor cảnh báo "lơ lửng". Bỏ qua khi có `attach`.
+   */
+  elevation?: number;
   /** Euler XYZ (radian). Bỏ qua khi có `attach`. */
   rotation?: Vec3;
   scale?: Vec3;

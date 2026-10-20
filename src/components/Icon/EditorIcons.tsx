@@ -11,6 +11,20 @@ export const CursorIcon = ({ size = 16, ...p }: P) => (
   </svg>
 );
 
+/** Đoạn ống gấp khúc có 2 mặt bích – Vẽ ống. */
+export const PipeIcon = ({ size = 16, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M4 18h6V8h10M4 15.5v5M20 5.5v5" />
+  </svg>
+);
+
+/** Vuông góc – chế độ vẽ ống theo trục. */
+export const OrthoIcon = ({ size = 16, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M5 4v15h15M5 14h5v5" />
+  </svg>
+);
+
 /** 4 mũi tên – Di chuyển. */
 export const MoveIcon = ({ size = 16, ...p }: P) => (
   <svg {...base(size, p)}>
