@@ -36,7 +36,7 @@ const HINTS: Record<EditorTool, string> = {
   translate: 'Kéo object trên sàn (Alt = tắt snap) · van/đồng hồ gắn ống: kéo dọc ống · Esc huỷ',
   rotate: 'Kéo vòng gizmo để xoay quanh trục đứng (15°)',
   scale: 'Kéo gizmo để scale (đáy giữ nguyên)',
-  pipe: 'Click đặt điểm (bắt cổng ≤ 0,5 m) · Enter/double-click xong · Backspace xoá điểm cuối · Esc huỷ · PageUp/PageDown đổi cao độ · O vuông góc',
+  pipe: 'Click đặt điểm (bắt cổng ≤ 0,5 m; Alt = tự do) · Enter/double-click xong · Backspace xoá điểm cuối · Esc huỷ · PageUp/PageDown cao độ · O vuông góc',
 };
 
 /**

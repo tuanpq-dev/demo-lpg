@@ -68,7 +68,8 @@ function expand(nodes: readonly DrawNode[], ortho: boolean): Vec3[] {
 
 /**
  * Vẽ ống (công cụ P):
- * - click (không kéo) = đặt điểm trên mặt phẳng ngang y = `pipeHeight` (snap lưới 0.5 m; Alt = tắt snap);
+ * - click (không kéo) = đặt điểm trên mặt phẳng ngang y = `pipeHeight` (snap lưới 0.5 m; giữ Alt = đặt tự do: tắt snap
+ *   lưới và bắt cổng);
  *   tia chuột cách tâm cổng ≤ 0.5 m → bắt vào cổng (chấm sáng), điểm = đúng toạ độ cổng;
  * - điểm đầu là cổng → mặt phẳng vẽ lấy cao độ cổng; kết thúc tại cổng → tự hoàn tất;
  * - Enter / double-click = hoàn tất · Esc = huỷ · Backspace = xoá điểm cuối · PageUp/PageDown = cao độ ±0.5 m;
@@ -101,10 +102,13 @@ export function PipeDrawTool({ edit, config, palette }: { edit: SceneEditState; 
     const candidate = (e: { clientX: number; clientY: number; altKey: boolean }): DrawNode | null => {
       const r = el.getBoundingClientRect();
       rc.setFromCamera(new Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-      const { ports, height, edit } = live.current;
+      const { ports, height, edit, nodes } = live.current;
       let best: WorldPort | null = null;
       let bestD = PORT_SNAP_RADIUS;
-      for (const p of ports) {
+      // Alt = đặt tự do (không snap lưới, không bắt cổng); không bắt lại cổng của điểm vừa đặt.
+      const lastPort = nodes.at(-1)?.port;
+      for (const p of e.altKey ? [] : ports) {
+        if (p.ref === lastPort) continue;
         const d = rc.ray.distanceToPoint(tmp.set(...p.at));
         if (d <= bestD) [best, bestD] = [p, d];
       }

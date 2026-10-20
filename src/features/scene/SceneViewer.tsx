@@ -494,9 +494,15 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
                 ? onSelect
                 : undefined;
             return (
-              <Html key={obj.id} position={labelAnchor(obj)} zIndexRange={[20, 0]}>
+              // Đang vẽ ống: nhãn mờ + click xuyên qua (không che điểm cần đặt).
+              <Html
+                key={obj.id}
+                position={labelAnchor(obj)}
+                zIndexRange={[20, 0]}
+                style={drawing ? { pointerEvents: 'none', opacity: 0.35 } : undefined}
+              >
                 <div className="relative">
-                  <MapMarker {...marker} translucent onClick={pick ? () => pick(obj.id) : undefined} />
+                  <MapMarker {...marker} translucent onClick={pick && !drawing ? () => pick(obj.id) : undefined} />
                 </div>
               </Html>
             );
