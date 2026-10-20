@@ -316,13 +316,14 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           shadows="percentage"
           frameloop={animated ? 'always' : 'demand'}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
-          onCreated={({ gl, scene: three }) => {
+          onCreated={({ gl, scene: three, get }) => {
             gl.domElement.addEventListener('webglcontextlost', (e) => {
               e.preventDefault();
               reportGlError('Mất ngữ cảnh WebGL (GPU bị đặt lại hoặc hết bộ nhớ).');
             });
-            // Dev: số draw call/tam giác mỗi frame (`__sceneGl.info.render`) + scene three để đo hình học trong test.
-            if (import.meta.env.DEV) Object.assign(window, { __sceneGl: gl, __sceneThree: three });
+            // Dev: số draw call/tam giác mỗi frame (`__sceneGl.info.render`), scene three (đo hình học) và store R3F
+            // (`__sceneR3f()` → camera/controls: test đặt góc nhìn) cho test tương tác.
+            if (import.meta.env.DEV) Object.assign(window, { __sceneGl: gl, __sceneThree: three, __sceneR3f: get });
           }}
           onPointerMissed={onMissed}
         >
