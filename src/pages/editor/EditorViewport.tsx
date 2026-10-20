@@ -1,5 +1,18 @@
 import { Suspense, lazy, type ReactNode, type RefObject } from 'react';
-import { Button, CursorIcon, FitIcon, GridIcon, Icon, MagnetIcon, MoveIcon, RotateIcon, ScaleIcon } from '@/components';
+import {
+  Button,
+  CursorIcon,
+  FitIcon,
+  GridIcon,
+  Icon,
+  MagnetIcon,
+  MoveIcon,
+  NumberField,
+  OrthoIcon,
+  PipeIcon,
+  RotateIcon,
+  ScaleIcon,
+} from '@/components';
 import { useLiveData } from '@/data/scene';
 import type { SceneEditState, SceneViewerHandle } from '@/features/scene';
 import { FLOOR_HALF_SIZE } from '@/features/scene/editConstants';
@@ -15,7 +28,16 @@ const TOOLS: { id: EditorTool; label: string; key: string; icon: ReactNode }[] =
   { id: 'translate', label: 'Di chuyển trên sàn', key: 'W', icon: <MoveIcon /> },
   { id: 'rotate', label: 'Xoay (quanh trục đứng)', key: 'E', icon: <RotateIcon /> },
   { id: 'scale', label: 'Scale', key: 'R', icon: <ScaleIcon /> },
+  { id: 'pipe', label: 'Vẽ ống', key: 'P', icon: <PipeIcon /> },
 ];
+
+const HINTS: Record<EditorTool, string> = {
+  select: 'Click chọn object/ống · Ctrl+click thêm/bớt · Shift+kéo chọn vùng · ống đang chọn: kéo điểm, click đoạn = thêm điểm, Delete = xoá điểm',
+  translate: 'Kéo object trên sàn (Alt = tắt snap) · van/đồng hồ gắn ống: kéo dọc ống · Esc huỷ',
+  rotate: 'Kéo vòng gizmo để xoay quanh trục đứng (15°)',
+  scale: 'Kéo gizmo để scale (đáy giữ nguyên)',
+  pipe: 'Click đặt điểm (bắt cổng ≤ 0,5 m) · Enter/double-click xong · Backspace xoá điểm cuối · Esc huỷ · PageUp/PageDown đổi cao độ · O vuông góc',
+};
 
 /**
  * Canvas 3D của Editor: SceneViewer nhận cảnh từ store (không tự nạp dữ liệu) + state sửa (chọn, công cụ, ẩn/khoá…)
@@ -38,6 +60,13 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
     onSelect: ui.select,
     onTransform: actions.transform,
     onDropAsset: (asset: AssetType, at: Vec3) => actions.addAsset(asset, at),
+    ortho: ui.ortho,
+    pipeHeight: ui.pipeHeight,
+    onPipeHeight: (y) => ui.set({ pipeHeight: y }),
+    onCreatePipe: actions.createPipe,
+    onUpdatePipe: actions.updatePipe,
+    onInsertPipePoint: actions.insertPipePoint,
+    onAttach: actions.setAttach,
   };
 
   return (
@@ -82,6 +111,31 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
           onClick={() => ui.toggle('grid')}
           icon={<GridIcon />}
         />
+        {ui.tool === 'pipe' && (
+          <>
+            <span aria-hidden="true" className="mx-1 h-5 w-px bg-line/60" />
+            <Button
+              variant="toolbar"
+              size="sm"
+              aria-label="Vẽ vuông góc (O)"
+              title="Vuông góc (O): tự chèn điểm gập theo trục X → Z → Y"
+              pressed={ui.ortho}
+              onClick={() => ui.toggle('ortho')}
+              icon={<OrthoIcon />}
+            />
+            <NumberField
+              label="Cao độ vẽ"
+              hideLabel
+              size="sm"
+              prefix="Y"
+              unit="m"
+              step={0.5}
+              className="w-[104px]"
+              value={ui.pipeHeight}
+              onChange={(y) => ui.set({ pipeHeight: y })}
+            />
+          </>
+        )}
         <Button variant="toolbar" size="sm" aria-label="Khung hình vừa (F)" title="Khung hình vừa (F)" onClick={actions.fit} icon={<FitIcon />} />
         <span aria-hidden="true" className="mx-1 h-5 w-px bg-line/60" />
         <Button variant="toolbar" size="sm" aria-label="Phóng to" onClick={() => viewer.current?.zoomIn()} icon={<Icon name="mapZoomIn" box={16} />} />
@@ -94,7 +148,7 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
         </p>
       )}
       <p className="pointer-events-none absolute bottom-3 right-3 z-30 rounded-sm bg-surface-raised/80 px-2 py-0.5 text-xs text-fg-muted">
-        Click chọn · Ctrl+click thêm/bớt · Shift+kéo chọn vùng · kéo asset từ thư viện vào để đặt · chuột phải kéo để di chuyển khung
+        {HINTS[ui.tool]}
       </p>
     </div>
   );

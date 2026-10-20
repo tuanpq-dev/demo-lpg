@@ -50,6 +50,7 @@ import {
   PickerBridge,
   SCENE_ASSET_MIME,
   SelectionFootprints,
+  startAttachDrag,
   startGroundDrag,
   type ScenePicker,
   type SceneEditState,
@@ -58,15 +59,20 @@ import { inverseToneMap, readScenePalette, type ScenePalette } from './colors';
 import { objectReadings, objectStatus } from './fields';
 import {
   DEFAULT_PIPE_RADIUS,
+  applyPreview,
   labelAnchor,
   objectBounds,
   resolveScene,
+  type CurveCache,
+  type ScenePreview,
   worldCorners,
   type ResolvedObject,
 } from './geometry';
 import { LOOK, SCENE_EXPOSURE } from './look';
 import { objectMarker } from './markers';
 import { PipeMesh } from './PipeMesh';
+import { nearestOnPath, pathLength } from './pipes';
+import { PipeDrawTool, PipeHandles, startPointDrag } from './PipeTools';
 import { pulse } from './pulse';
 import { isWebGLAvailable, QUALITY_PRESETS, SCENE_QUALITIES, type QualityPreset, type SceneQuality } from './quality';
 import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, SceneView, Thresholds, Vec3 } from './types';
@@ -157,7 +163,16 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   const preset = QUALITY_PRESETS[level];
   const groundBehindToneMap = useMemo(() => inverseToneMap(palette.ground, SCENE_EXPOSURE), [palette]);
   const [composerOn, setComposerOn] = useState(false);
-  const scene = useMemo(() => resolveScene(config), [config]);
+  // Chế độ sửa: bản xem trước khi đang kéo (object/điểm ống/t) – ống nối đi theo ngay; cache đường cong theo ống
+  // → chỉ ống có đường đi đổi mới dựng lại TubeGeometry.
+  const [preview, setPreview] = useState<ScenePreview | null>(null);
+  const curveCache = useRef<CurveCache>(new Map());
+  const effective = useMemo(() => applyPreview(config, preview), [config, preview]);
+  const scene = useMemo(() => resolveScene(effective, curveCache.current), [effective]);
+  const selectedPipe = edit ? effective.pipes.find((p) => edit.selected.includes(p.id)) : undefined;
+  const [activePoint, setActivePoint] = useState<{ pipe: string; index: number } | null>(null);
+  const activeIndex = activePoint && activePoint.pipe === selectedPipe?.id ? activePoint.index : null;
+  const drawing = edit?.mode === 'pipe';
   const { byId } = scene;
   const thresholds = config.thresholds;
   const [hovered, setHovered] = useState<string | null>(null);
@@ -182,6 +197,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     setHovered(null);
     // R3F nghe sự kiện ở div bọc canvas → click lên nhãn HTML cũng tới đây; chỉ tính click trên canvas.
     if (!edit || !isCanvasEvent(e)) return;
+    // Vẽ ống: click = đặt điểm, không bỏ chọn.
+    if (edit.mode === 'pipe') return;
     const g = gizmo.current;
     if (g.dragging || performance.now() - g.endedAt < 300) return;
     const d = downAt.current;
@@ -208,17 +225,64 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     [],
   );
 
+  // Delete/Backspace khi đang chọn một điểm gập → xoá điểm (đường đi còn ≥ 2 điểm); chặn phím tắt xoá cả ống.
+  useEffect(() => {
+    if (activeIndex === null || !selectedPipe || !edit?.onUpdatePipe) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setActivePoint(null);
+        return;
+      }
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      e.preventDefault();
+      e.stopPropagation();
+      const pathLen = scene.curves.get(selectedPipe.id) ? selectedPipe.points.length + (selectedPipe.from ? 1 : 0) + (selectedPipe.to ? 1 : 0) : 0;
+      if (pathLen <= 2) return;
+      edit.onUpdatePipe!(selectedPipe.id, (p) => ({ ...p, points: p.points.filter((_, i) => i !== activeIndex) }));
+      setActivePoint(null);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [activeIndex, selectedPipe, edit, scene]);
+
   // ----- Chế độ sửa: Shift+kéo = chọn vùng (Shift+click = đảo chọn), thả asset từ thư viện -----
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const skipPick = useMemo(() => new Set([...hidden, ...locked]), [hidden, locked]);
   const onPointerDownCapture = (e: ReactPointerEvent<HTMLDivElement>) => {
     downAt.current = { x: e.clientX, y: e.clientY };
     if (!edit || e.button !== 0 || !(e.target instanceof HTMLCanvasElement)) return;
+    // Vẽ ống: PipeDrawTool tự nghe sự kiện trên canvas (click đặt điểm, kéo = xoay camera).
+    if (drawing || !picker.current) return;
+    const dragState = (dragging: boolean) => {
+      gizmo.current.dragging = dragging;
+      if (!dragging) gizmo.current.endedAt = performance.now();
+    };
+    // Tay nắm điểm gập của ống đang chọn → kéo điểm (mọi công cụ trừ vẽ ống).
+    const handle = !e.shiftKey && picker.current.handle(e.clientX, e.clientY);
+    if (handle && selectedPipe?.id === handle.pipe) {
+      setActivePoint(handle);
+      const pipe = config.pipes.find((p) => p.id === handle.pipe)!;
+      startPointDrag({ picker: picker.current, edit, pipe, index: handle.index, clientX: e.clientX, clientY: e.clientY, onPreview: setPreview, onState: dragState });
+      return;
+    }
     // Di chuyển: nắm object (không phím bổ trợ) → kéo trên mặt sàn. Không chặn sự kiện (R3F vẫn ghi pointerdown cho click);
     // OrbitControls bị tắt trước khi sự kiện tới canvas nên không xoay camera.
     if (edit.mode === 'translate' && !e.shiftKey && !e.ctrlKey && !e.metaKey && picker.current) {
       const id = picker.current.object(e.clientX, e.clientY, skipPick);
       if (!id) return;
+      // Object gắn ống: kéo dọc ống (đổi t).
+      const grabbed = byId.get(id);
+      const curve = grabbed?.attach && scene.curves.get(grabbed.attach.pipe);
+      if (grabbed?.attach) {
+        const ok =
+          !!curve &&
+          startAttachDrag({ picker: picker.current, edit, obj: grabbed, curve, clientX: e.clientX, clientY: e.clientY, onPreview: setPreview, onState: dragState });
+        if (ok && !selected.has(id)) edit.onSelect([id], 'replace');
+        return;
+      }
       const group = selected.has(id) ? edit.selected : [id];
       const ok = startGroundDrag({
         picker: picker.current,
@@ -228,10 +292,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
         ids: group,
         clientX: e.clientX,
         clientY: e.clientY,
-        onState: (dragging) => {
-          gizmo.current.dragging = dragging;
-          if (!dragging) gizmo.current.endedAt = performance.now();
-        },
+        onState: dragState,
+        onPreview: setPreview,
       });
       if (ok && !selected.has(id)) edit.onSelect([id], 'replace');
       return;
@@ -299,7 +361,11 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   return (
     <div
       ref={wrapper}
-      className={cn('relative h-full w-full', hovered && (edit?.mode === 'translate' ? 'cursor-move' : 'cursor-pointer'), className)}
+      className={cn(
+        'relative h-full w-full',
+        drawing ? 'cursor-crosshair' : hovered && (edit?.mode === 'translate' ? 'cursor-move' : 'cursor-pointer'),
+        className,
+      )}
       data-scene-quality={level}
       onPointerDownCapture={onPointerDownCapture}
       onDragOver={(e) => {
@@ -372,7 +438,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
                 onHover={setHovered}
                 onSelect={
                   edit
-                    ? locked.has(obj.id)
+                    ? locked.has(obj.id) || drawing
                       ? undefined
                       : (id, toggle) => edit.onSelect([id], toggle ? 'toggle' : 'replace')
                     : onSelect
@@ -385,16 +451,41 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           {/* Sau các object: effect chạy khi mesh đã gắn castShadow. */}
           <ShadowUpdates live={!!edit} version={config} level={level} />
 
-          {config.pipes.map((p) => (
-            <PipeMesh
-              key={p.id}
-              curve={scene.curves.get(p.id)!}
-              radius={p.radius ?? DEFAULT_PIPE_RADIUS}
-              palette={palette}
-              flow={flowOf(p.flowTag)}
-              bloom={preset.postprocessing}
-            />
-          ))}
+          {effective.pipes.map((p) => {
+            const curve = scene.curves.get(p.id);
+            if (!curve || curve.points.length < 2) return null;
+            const isSel = selectedPipe?.id === p.id;
+            // Chế độ sửa: click ống = chọn ống; click ống đang chọn = thêm điểm gập vào đoạn gần nhất.
+            const onClick =
+              edit && !drawing
+                ? (e: ThreeEvent<MouseEvent>) => {
+                    e.stopPropagation();
+                    if (e.delta > 4 || !isCanvasEvent(e.nativeEvent)) return;
+                    if (!isSel) return edit.onSelect([p.id], 'replace');
+                    // Tia trúng chấm điểm gập (dù vòng khớp nối nằm trước) → là click chọn điểm, không chèn.
+                    if (e.intersections.some((i) => i.object.userData.pipeHandle)) return;
+                    const path = curve.points.map((v) => v.toArray() as Vec3);
+                    if (pathLength(path) <= 0) return;
+                    const near = nearestOnPath(path, e.point.toArray() as Vec3);
+                    const at = snapAlongSegment(near.point, path[near.index]!, path[near.index + 1]!, edit.snap !== false && !e.nativeEvent.altKey);
+                    edit.onInsertPipePoint?.(p.id, at);
+                  }
+                : undefined;
+            return (
+              <group key={p.id} userData={{ pipeId: p.id }} onClick={onClick}>
+                <PipeMesh
+                  curve={curve}
+                  radius={p.radius ?? DEFAULT_PIPE_RADIUS}
+                  palette={palette}
+                  flow={flowOf(p.flowTag)}
+                  bloom={preset.postprocessing}
+                  selected={isSel}
+                />
+              </group>
+            );
+          })}
+          {edit && selectedPipe && !drawing && edit.onUpdatePipe && <PipeHandles pipe={selectedPipe} palette={palette} active={activeIndex} />}
+          {edit && drawing && <PipeDrawTool edit={edit} config={effective} palette={palette} />}
 
           {labels.map(({ obj, marker }) => {
             const pick = edit
@@ -454,6 +545,14 @@ export default SceneViewer;
 // Renderer, ánh sáng, sàn
 
 const noRaycast = () => null;
+
+/** Điểm chèn trên đoạn ab: đoạn song song trục → snap toạ độ dọc trục theo lưới (giữ nằm trên đoạn). */
+function snapAlongSegment(p: Vec3, a: Vec3, b: Vec3, snap: boolean): Vec3 {
+  if (!snap) return p.map((v) => +v.toFixed(3)) as Vec3;
+  const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const len = Math.hypot(...d) || 1;
+  return p.map((v, k) => (Math.abs(d[k]!) / len > 0.999 ? Math.round(v / EDIT_SNAP.translate) * EDIT_SNAP.translate : +v.toFixed(3))) as Vec3;
+}
 
 /** Bắt lỗi khi dựng Canvas/WebGLRenderer (vd. GPU bị chặn) → báo lên để rơi về ảnh 2.5D. */
 class WebGLErrorBoundary extends Component<{ onError: (message: string) => void; children: ReactNode }, { failed: boolean }> {

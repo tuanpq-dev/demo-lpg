@@ -136,6 +136,12 @@ const sceneSchema = z
           issue(['pipes', i, end], `ống "${p.id}": "${objId}" (${obj.asset}) không có cổng "${port}" (có: ${ports.join(', ') || 'không có'})`);
       });
       if (p.points.length + (p.from ? 1 : 0) + (p.to ? 1 : 0) < 2) issue(['pipes', i, 'points'], `ống "${p.id}" cần ≥ 2 điểm`);
+      if (p.from && p.from === p.to) issue(['pipes', i, 'to'], `ống "${p.id}": hai đầu cùng nối "${p.from}"`);
+      p.points.forEach((q, k) => {
+        const prev = p.points[k - 1];
+        if (prev && Math.hypot(q[0] - prev[0], q[1] - prev[1], q[2] - prev[2]) < 1e-3)
+          issue(['pipes', i, 'points', k], `ống "${p.id}": điểm ${k} trùng điểm ${k - 1}`);
+      });
     });
   });
 

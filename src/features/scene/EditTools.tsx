@@ -1,12 +1,12 @@
 import { Html, Line, TransformControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, type ElementRef, type MutableRefObject } from 'react';
-import { DoubleSide, Euler, Object3D, Plane, Raycaster, Vector2, Vector3, type Ray } from 'three';
+import { DoubleSide, Euler, Object3D, Plane, Raycaster, Vector2, Vector3, type CatmullRomCurve3, type Ray } from 'three';
 import type { ScenePalette } from './colors';
 import { EDIT_SNAP, GROUND_GRAZING_DOT, GROUND_WORK_LIMIT } from './editConstants';
-import { worldCorners, type ResolvedObject } from './geometry';
+import { worldCorners, type ResolvedObject, type ScenePreview } from './geometry';
 import { GROUND_EPS, worldBaseY } from './ground';
-import type { AssetType, Vec3 } from './types';
+import type { AssetType, Pipe, PipeAttachment, Vec3 } from './types';
 
 /*
  * Công cụ của chế độ sửa (Editor /editor và `?edit=1`): kéo object trên mặt sàn, gizmo xoay/scale nhiều object,
@@ -25,13 +25,18 @@ export const GROUND_PLANE = new Plane(new Vector3(0, 1, 0), 0);
  * hoặc giao điểm ngoài vùng làm việc ±GROUND_WORK_LIMIT m.
  */
 export function groundHit(ray: Ray, out = new Vector3()): Vector3 | null {
+  return planeHit(ray, 0, out);
+}
+
+/** Như groundHit nhưng với mặt phẳng ngang y = `height` (mặt phẳng làm việc khi vẽ/kéo điểm ống). */
+export function planeHit(ray: Ray, height: number, out = new Vector3()): Vector3 | null {
   if (Math.abs(ray.direction.dot(GROUND_PLANE.normal)) < GROUND_GRAZING_DOT) return null;
-  const p = ray.intersectPlane(GROUND_PLANE, out);
+  const p = ray.intersectPlane(height ? new Plane(GROUND_PLANE.normal, -height) : GROUND_PLANE, out);
   if (!p || Math.abs(p.x) > GROUND_WORK_LIMIT || Math.abs(p.z) > GROUND_WORK_LIMIT) return null;
   return p;
 }
 
-export type EditTool = 'select' | 'translate' | 'rotate' | 'scale';
+export type EditTool = 'select' | 'translate' | 'rotate' | 'scale' | 'pipe';
 export type ObjectTransform = { id: string; position: Vec3; rotation: Vec3; scale: Vec3 };
 export type SelectHow = 'replace' | 'toggle' | 'add';
 
@@ -41,9 +46,24 @@ export type SceneEditState = {
   selected: readonly string[];
   /**
    * select: chỉ chọn · translate: kéo object (đang chọn) trên mặt sàn – chỉ đổi X/Z, giữ elevation ·
-   * rotate (chỉ quanh Y) / scale (đáy giữ tại elevation): gizmo trên nhóm đang chọn.
+   * rotate (chỉ quanh Y) / scale (đáy giữ tại elevation): gizmo trên nhóm đang chọn ·
+   * pipe: vẽ ống (PipeTools – click đặt điểm trên mặt phẳng làm việc, bắt cổng).
+   * `selected` có thể chứa id ỐNG (chọn ống → điểm gập kéo được, click vào đoạn = thêm điểm).
    */
   mode: EditTool;
+  /** Vẽ ống: chế độ vuông góc (chèn điểm gập theo X → Z → Y). */
+  ortho?: boolean;
+  /** Vẽ ống: cao độ mặt phẳng làm việc (m). */
+  pipeHeight?: number;
+  onPipeHeight?: (y: number) => void;
+  /** Kết thúc vẽ ống (from/to = "objectId.port" khi bắt đầu/kết thúc tại cổng). */
+  onCreatePipe?: (draft: { from?: string; to?: string; points: Vec3[] }) => void;
+  /** Sửa ống (kéo/thêm/xoá điểm) – 1 lần gọi = 1 bước undo. */
+  onUpdatePipe?: (id: string, fn: (p: Pipe) => Pipe) => void;
+  /** Click vào đoạn của ống đang chọn → chèn điểm gập tại `at` (toạ độ thế giới, trên tâm ống). */
+  onInsertPipePoint?: (id: string, at: Vec3) => void;
+  /** Kéo object gắn ống dọc ống (thả chuột). */
+  onAttach?: (id: string, attach: PipeAttachment) => void;
   /** Snap theo EDIT_SNAP (mặc định bật). */
   snap?: boolean;
   /** Hiện lưới sàn + vạch chân y = 0 và khoảng cách đáy–sàn của object đang chọn (mặc định bật; phím G). */
@@ -76,6 +96,12 @@ export type ScenePicker = {
   /** Bật/tắt OrbitControls (tắt trong lúc kéo object). */
   orbit(enabled: boolean): void;
   invalidate(): void;
+  /** Tia qua điểm màn hình (bản sao). */
+  ray(clientX: number, clientY: number): Ray;
+  /** Điểm trên mặt phẳng ngang y = height (`planeHit`). */
+  plane(clientX: number, clientY: number, height: number): Vector3 | null;
+  /** Tay nắm điểm ống (userData.pipeHandle) đầu tiên trúng tia. */
+  handle(clientX: number, clientY: number): { pipe: string; index: number } | null;
 };
 
 /** Đăng ký ScenePicker vào ref (cần camera/scene của R3F). */
@@ -99,6 +125,8 @@ export function PickerBridge({ pickerRef, byId }: { pickerRef: MutableRefObject<
         ray.setFromCamera(ndc(x, y), camera);
         for (const hit of ray.intersectObjects(scene.children, true)) {
           for (let o: Object3D | null = hit.object; o; o = o.parent) {
+            // Ống nằm trước object → không nắm object phía sau (click ống = chọn ống).
+            if (o.userData.pipeId) return null;
             if (byId.has(o.name)) {
               if (!skip.has(o.name)) return o.name;
               break;
@@ -129,6 +157,22 @@ export function PickerBridge({ pickerRef, byId }: { pickerRef: MutableRefObject<
         return out;
       },
       node: (id) => scene.getObjectByName(id),
+      ray(x, y) {
+        ray.setFromCamera(ndc(x, y), camera);
+        return ray.ray.clone();
+      },
+      plane(x, y, h) {
+        ray.setFromCamera(ndc(x, y), camera);
+        return planeHit(ray.ray, h);
+      },
+      handle(x, y) {
+        ray.setFromCamera(ndc(x, y), camera);
+        for (const hit of ray.intersectObjects(scene.children, true)) {
+          const h = hit.object.userData.pipeHandle as { pipe: string; index: number } | undefined;
+          if (h) return h;
+        }
+        return null;
+      },
       orbit(enabled) {
         const c = get().controls as { enabled?: boolean } | null;
         if (c) c.enabled = enabled;
@@ -167,6 +211,7 @@ export function startGroundDrag({
   clientX,
   clientY,
   onState,
+  onPreview,
 }: {
   picker: ScenePicker;
   edit: SceneEditState;
@@ -178,6 +223,8 @@ export function startGroundDrag({
   clientY: number;
   /** dragging = true khi bắt đầu dời; false khi kết thúc (moved = đã dời). */
   onState?: (dragging: boolean, moved: boolean) => void;
+  /** Có → vị trí khi kéo đi qua bản xem trước (ống nối đi theo ngay); null = bỏ xem trước. Không có → đổi node three. */
+  onPreview?: (preview: ScenePreview | null) => void;
 }): boolean {
   const locked = new Set(edit.locked);
   const hidden = new Set(edit.hidden);
@@ -198,7 +245,11 @@ export function startGroundDrag({
   let moved = false;
   let delta = { x: 0, z: 0 };
   const place = (d: { x: number; z: number }) => {
-    for (const { obj, node } of items) node.position.set(obj.position[0] + d.x, obj.position[1], obj.position[2] + d.z);
+    if (onPreview) {
+      const positions: Record<string, Vec3> = {};
+      for (const { obj } of items) positions[obj.id] = [obj.position[0] + d.x, obj.position[1], obj.position[2] + d.z];
+      onPreview(d.x || d.z ? { positions } : null);
+    } else for (const { obj, node } of items) node.position.set(obj.position[0] + d.x, obj.position[1], obj.position[2] + d.z);
     picker.invalidate();
   };
 
@@ -225,7 +276,8 @@ export function startGroundDrag({
     window.removeEventListener('keydown', key, true);
     picker.orbit(true);
     if (!commit) place({ x: 0, z: 0 });
-    else if (moved && (delta.x || delta.z))
+    else onPreview?.(null);
+    if (commit && moved && (delta.x || delta.z))
       edit.onTransform(
         items.map(({ obj }) => ({
           id: obj.id,
@@ -246,6 +298,82 @@ export function startGroundDrag({
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', up);
   window.addEventListener('pointercancel', cancel);
+  window.addEventListener('keydown', key, true);
+  return true;
+}
+
+/**
+ * Kéo object gắn ống dọc theo ống: mỗi lần di chuột, t = điểm trên đường cong gần tia chuột nhất (lấy mẫu 240 điểm
+ * + tinh chỉnh quanh mẫu tốt nhất). Hướng object tự theo tiếp tuyến (resolveScene). Thả → onAttach (1 bước undo).
+ */
+export function startAttachDrag({
+  picker,
+  edit,
+  obj,
+  curve,
+  clientX,
+  clientY,
+  onPreview,
+  onState,
+}: {
+  picker: ScenePicker;
+  edit: SceneEditState;
+  obj: ResolvedObject;
+  curve: CatmullRomCurve3;
+  clientX: number;
+  clientY: number;
+  onPreview: (preview: ScenePreview | null) => void;
+  onState?: (dragging: boolean, moved: boolean) => void;
+}): boolean {
+  if (!obj.attach || !edit.onAttach || edit.locked?.includes(obj.id)) return false;
+  const attach = obj.attach;
+  const tmp = new Vector3();
+  const nearestT = (x: number, y: number) => {
+    const ray = picker.ray(x, y);
+    const N = 240;
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i <= N; i++) {
+      const d = ray.distanceSqToPoint(curve.getPointAt(i / N, tmp));
+      if (d < bestD) [best, bestD] = [i / N, d];
+    }
+    for (let k = -10; k <= 10; k++) {
+      const t = Math.min(1, Math.max(0, best + k / (N * 10)));
+      const d = ray.distanceSqToPoint(curve.getPointAt(t, tmp));
+      if (d < bestD) [best, bestD] = [t, d];
+    }
+    return best;
+  };
+  let moved = false;
+  let t = attach.t;
+  picker.orbit(false);
+  const move = (ev: PointerEvent) => {
+    if (!moved && Math.hypot(ev.clientX - clientX, ev.clientY - clientY) < DRAG_START_PX) return;
+    if (!moved) {
+      moved = true;
+      onState?.(true, false);
+    }
+    t = +nearestT(ev.clientX, ev.clientY).toFixed(3);
+    onPreview({ attachT: { [obj.id]: t } });
+    picker.invalidate();
+  };
+  const finish = (commit: boolean) => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('keydown', key, true);
+    picker.orbit(true);
+    onPreview(null);
+    if (commit && moved && t !== attach.t) edit.onAttach!(obj.id, { ...attach, t });
+    onState?.(false, moved);
+  };
+  const up = () => finish(true);
+  const key = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    finish(false);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
   window.addEventListener('keydown', key, true);
   return true;
 }
@@ -318,7 +446,7 @@ export function EditGizmo({
     };
   }, [key, edit.mode, state]);
 
-  if (!movable.length || edit.mode === 'select') return <primitive object={pivot} />;
+  if (!movable.length || edit.mode === 'select' || edit.mode === 'pipe') return <primitive object={pivot} />;
   if (edit.mode === 'translate') {
     const c = movable.reduce((acc, o) => [acc[0] + o.position[0] / movable.length, acc[1] + o.position[2] / movable.length], [0, 0]);
     return (
@@ -443,7 +571,7 @@ export function SelectionFootprints({ objects, palette }: { objects: ResolvedObj
                 depthTest={false}
               />
             )}
-            <Html position={[o.position[0], Math.max(base, 0), o.position[2]]} zIndexRange={[15, 0]} pointerEvents="none">
+            <Html position={[o.position[0], Math.max(base, 0), o.position[2]]} zIndexRange={[15, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
               <span
                 data-ground-gap={o.id}
                 className={

@@ -1,4 +1,4 @@
-import { EyeIcon, EyeOffIcon, LockIcon, TreeView, UnlockIcon, type TreeItem } from '@/components';
+import { EyeIcon, EyeOffIcon, LockIcon, PipeIcon, TreeView, UnlockIcon, type TreeItem } from '@/components';
 import { ASSET_SPECS } from '@/features/scene/assets/specs';
 import { useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { cn } from '@/lib/cn';
@@ -10,11 +10,12 @@ const GROUPS = [
 ] as const;
 
 /**
- * Cây object (nhóm Thiết bị / Bối cảnh): chọn (Ctrl/⌘ đảo, Shift chọn dải), ẩn/hiện, khoá,
+ * Cây object (nhóm Thiết bị / Bối cảnh / Ống): chọn (Ctrl/⌘ đảo, Shift chọn dải), ẩn/hiện, khoá,
  * đổi id tại chỗ (F2 / double-click – cập nhật tham chiếu trong views và ống).
  */
 export function Outliner({ onRename }: { onRename: (id: string, next: string) => string | undefined }) {
   const objects = useSceneDoc((s) => s.scene.objects);
+  const pipes = useSceneDoc((s) => s.scene.pipes);
   const { selection, hidden, locked, setSelection, toggleHidden, toggleLocked } = useEditorUi();
 
   const items: TreeItem[] = GROUPS.map((g) => ({
@@ -32,7 +33,23 @@ export function Outliner({ onRename }: { onRename: (id: string, next: string) =>
         dimmed: hidden.includes(o.id),
         selectable: true,
       })),
-  })).filter((g) => g.children.length);
+  }));
+  // Ống: chọn (→ Thuộc tính ống + tay nắm điểm trên canvas), F2 đổi id (cập nhật attach.pipe). Không ẩn/khoá.
+  items.push({
+    id: '__pipes',
+    label: `Ống (${pipes.length})`,
+    selectable: false,
+    renamable: false,
+    children: pipes.map((p) => ({
+      id: p.id,
+      label: p.id,
+      meta: [p.from, p.to].filter(Boolean).join(' → ') || `${p.points.length} điểm`,
+      icon: <PipeIcon size={14} />,
+      selectable: true,
+    })),
+  });
+  const pipeIds = new Set(pipes.map((p) => p.id));
+  const visibleItems = items.filter((g) => g.children?.length);
 
   const action = (pressed: boolean, label: string, onClick: () => void, on: JSX.Element, off: JSX.Element) => (
     <button
@@ -54,13 +71,13 @@ export function Outliner({ onRename }: { onRename: (id: string, next: string) =>
   return (
     <TreeView
       label="Cây object"
-      items={items}
+      items={visibleItems}
       selected={selection}
       onSelectionChange={setSelection}
       onRename={onRename}
       emptyText="Cảnh trống – thêm asset từ thư viện"
       renderActions={(item) =>
-        item.id.startsWith('__') ? null : (
+        item.id.startsWith('__') || pipeIds.has(item.id) ? null : (
         <>
           {action(hidden.includes(item.id), `Ẩn ${item.id}`, () => toggleHidden(item.id), <EyeOffIcon />, <EyeIcon />)}
           {action(locked.includes(item.id), `Khoá ${item.id}`, () => toggleLocked(item.id), <LockIcon />, <UnlockIcon />)}

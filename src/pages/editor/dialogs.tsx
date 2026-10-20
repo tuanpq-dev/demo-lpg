@@ -15,6 +15,8 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
   danger,
+  altLabel,
+  onAlt,
 }: {
   open: boolean;
   title: string;
@@ -23,6 +25,9 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onClose: () => void;
   danger?: boolean;
+  /** Lựa chọn thứ hai (vd "Giữ ống") cạnh nút xác nhận. */
+  altLabel?: string;
+  onAlt?: () => void;
 }) {
   return (
     <Modal
@@ -35,9 +40,16 @@ export function ConfirmDialog({
         </Button>
       }
       footer={
-        <Button variant={danger ? 'ghost' : 'primary'} onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
+        <>
+          {altLabel && onAlt && (
+            <Button variant="primary" onClick={onAlt}>
+              {altLabel}
+            </Button>
+          )}
+          <Button variant={danger ? 'ghost' : 'primary'} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </>
       }
     >
       <div className="text-base text-fg-secondary">{children}</div>

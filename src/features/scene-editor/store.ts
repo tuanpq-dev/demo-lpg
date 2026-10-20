@@ -7,7 +7,7 @@ import { newScene } from './ops';
  * Hai store tách biệt:
  * - useSceneDoc: TÀI LIỆU (SceneConfig) – có undo/redo (zundo). Mỗi lần `setScene` = 1 bước;
  *   kéo gizmo chỉ commit lúc thả chuột nên cả lần kéo = 1 bước. Nạp cảnh mới → `resetHistory`.
- * - useEditorUi: state giao diện (chọn, công cụ, snap, lưới, ẩn/khoá, clipboard, nguồn cảnh) – không undo.
+ * - useEditorUi: state giao diện (chọn – object hoặc ống, công cụ, snap, lưới, vẽ ống, ẩn/khoá, clipboard, nguồn cảnh) – không undo.
  * Viewer/Editor dùng chung SceneConfig; mọi state riêng của Editor nằm ngoài cảnh.
  */
 
@@ -48,7 +48,7 @@ export function loadScene(scene: SceneConfig) {
   useSceneDoc.temporal.getState().clear();
 }
 
-export type EditorTool = 'select' | 'translate' | 'rotate' | 'scale';
+export type EditorTool = 'select' | 'translate' | 'rotate' | 'scale' | 'pipe';
 
 /** Nguồn cảnh đang sửa: mới · đã lưu trong kho (id) · cảnh mẫu (chỉ đọc → phải "Lưu thành bản mới"). */
 export type SceneSource = { kind: 'new' } | { kind: 'saved'; id: string } | { kind: 'sample'; id: string };
@@ -58,6 +58,10 @@ type UiState = {
   tool: EditorTool;
   snap: boolean;
   grid: boolean;
+  /** Vẽ ống: chế độ vuông góc (phím O). */
+  ortho: boolean;
+  /** Vẽ ống: cao độ mặt phẳng làm việc (m). */
+  pipeHeight: number;
   hidden: string[];
   locked: string[];
   clipboard: SceneObject[] | null;
@@ -70,7 +74,7 @@ type UiState = {
   /** replace: thay · toggle: thêm/bớt từng id (Ctrl/Shift+click) · add: hợp (kéo vùng chọn). */
   select: (ids: string[], how?: 'replace' | 'toggle' | 'add') => void;
   setTool: (tool: EditorTool) => void;
-  toggle: (key: 'snap' | 'grid') => void;
+  toggle: (key: 'snap' | 'grid' | 'ortho') => void;
   toggleHidden: (id: string) => void;
   toggleLocked: (id: string) => void;
   set: (patch: Partial<UiState>) => void;
@@ -83,6 +87,8 @@ export const useEditorUi = create<UiState>()((set) => ({
   tool: 'translate',
   snap: true,
   grid: true,
+  ortho: true,
+  pipeHeight: 1.2,
   hidden: [],
   locked: [],
   clipboard: null,
