@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { ASSET_SPECS, assetLayout } from './assets/specs';
-import { ASSET_TYPES, type SceneConfig } from './types';
+import { migrateScene } from './migrate';
+import { ASSET_TYPES, SCENE_SCHEMA_VERSION, type SceneConfig } from './types';
 
 /*
  * Validate SceneConfig bằng zod. Module này chỉ được import động (data/scene.ts) để zod nằm ở chunk riêng.
- * Bước 1: cấu trúc (kiểu, trường lạ). Bước 2 (superRefine): tham chiếu – asset, id trùng, cổng/ống, params.
+ * Bước 0: migrateScene (dữ liệu định dạng cũ → hiện tại). Bước 1: cấu trúc (kiểu, trường lạ).
+ * Bước 2 (superRefine): tham chiếu – asset, id trùng, cổng/ống, params, position[1] = elevation.
  */
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()]);
@@ -32,6 +34,7 @@ const objectSchema = z
     id: z.string().min(1),
     asset: z.string(),
     position: vec3.optional(),
+    elevation: z.number().finite().optional(),
     rotation: vec3.optional(),
     scale: vec3.optional(),
     attach: z.object({ pipe: z.string().min(1), t: z.number().min(0).max(1) }).strict().optional(),
@@ -59,6 +62,7 @@ const sceneSchema = z
     id: z.string().min(1),
     name: z.string(),
     version: z.number().int(),
+    schemaVersion: z.literal(SCENE_SCHEMA_VERSION),
     camera: camera.optional(),
     views: z.array(view).optional(),
     thresholds: z.record(thresholds).optional(),
@@ -80,6 +84,8 @@ const sceneSchema = z
       }
       const spec = ASSET_SPECS[o.asset as keyof typeof ASSET_SPECS];
       if (!o.attach && !o.position) issue(['objects', i], `"${o.id}" cần position hoặc attach`);
+      if (!o.attach && o.position && Math.abs(o.position[1] - (o.elevation ?? 0)) > 1e-6)
+        issue(['objects', i, 'position'], `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`);
       if (o.attach && !c.pipes.some((p) => p.id === o.attach!.pipe))
         issue(['objects', i, 'attach', 'pipe'], `"${o.id}" gắn vào ống "${o.attach.pipe}" không tồn tại`);
       if (o.asset === 'fence' && (o.path?.length ?? 0) < 2) issue(['objects', i, 'path'], 'hàng rào cần path ≥ 2 điểm');
@@ -156,13 +162,13 @@ export type SceneIssue = {
 
 /** Validate không ném lỗi (Editor: bảng kiểm tra, Import JSON). Rỗng = hợp lệ. */
 export function validateSceneConfig(raw: unknown): SceneIssue[] {
-  const r = sceneSchema.safeParse(raw);
+  const r = sceneSchema.safeParse(migrateScene(raw));
   return r.success ? [] : r.error.issues.map((i) => ({ path: i.path, where: fmtPath(i.path), message: i.message }));
 }
 
-/** JSON (file mock hoặc API) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
+/** JSON (file mock hoặc API, định dạng cũ được migrate) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
 export function parseSceneConfig(raw: unknown, sceneId = (raw as { id?: string } | null)?.id ?? '?'): SceneConfig {
-  const r = sceneSchema.safeParse(raw);
+  const r = sceneSchema.safeParse(migrateScene(raw));
   if (!r.success) throw new SceneConfigError(sceneId, r.error.issues.map((i) => `${fmtPath(i.path)}: ${i.message}`));
   return r.data as SceneConfig;
 }

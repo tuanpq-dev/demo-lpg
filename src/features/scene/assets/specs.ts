@@ -3,6 +3,9 @@ import type { AssetType, SceneObject, Vec3 } from '../types';
 /**
  * Đặc tả asset THUẦN (không three/React): tham số, category, cổng/hộp bao tính theo tham số.
  * Dùng chung cho validate (parse – chunk lazy), Viewer (registry) và Editor sau này.
+ *
+ * QUY ƯỚC PIVOT: mọi asset có gốc toạ độ tại TÂM ĐÁY – y = 0 cục bộ là mặt sàn, hình học không xuống dưới 0
+ * (`bounds.min[1] = 0`). Vị trí thế giới y = `SceneObject.elevation` (mặc định 0).
  */
 
 /**
@@ -38,6 +41,11 @@ export type AssetSpec = {
   label: string;
   category: AssetCategory;
   /**
+   * Asset lắp trên ống (van, đồng hồ): trục ống cao `axisY` so với đáy. Gắn ống (`attach`) → đáy đặt thấp hơn
+   * tâm ống đúng `axisY`; được phép nâng khỏi sàn (elevation > 0) mà không bị cảnh báo "lơ lửng".
+   */
+  inline?: { axisY: number };
+  /**
    * Quy ước id khi Editor tự sinh: equipment `V-101, V-102…` (3 chữ số, từ 101), environment `FN-01…` (2 chữ số).
    */
   idPrefix: string;
@@ -53,6 +61,9 @@ const box = (min: Vec3, max: Vec3): Box => ({ min, max });
 export const TANK_SADDLE_H = 0.8;
 export const CANOPY_RISE = 1.3;
 export const VAPORIZER_PLATE_SPAN = 2.9;
+/** Độ cao trục ống so với đáy của van / đồng hồ lưu lượng (= bán kính mặt bích + vòng sáng). */
+export const VALVE_AXIS = 0.27;
+export const FLOW_METER_AXIS = 0.4;
 
 /** Sàn thao tác trên đỉnh bồn nằm ngang (cạnh cửa người chui) – chung cho component và hộp bao. */
 export function tankHorizontalPlatform(L: number, R: number) {
@@ -121,7 +132,11 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     idPrefix: 'XV',
     paramsSchema: {},
     dataFields: ['state', 'position'],
-    layout: () => ({ ports: { a: [-0.34, 0, 0], b: [0.34, 0, 0] }, bounds: box([-0.35, -0.25, -0.25], [0.35, 0.75, 0.25]) }),
+    inline: { axisY: VALVE_AXIS },
+    layout: () => ({
+      ports: { a: [-0.34, VALVE_AXIS, 0], b: [0.34, VALVE_AXIS, 0] },
+      bounds: box([-0.38, 0, -0.27], [0.38, VALVE_AXIS + 0.75, 0.27]),
+    }),
   },
   filter: {
     label: 'Bình lọc',
@@ -131,7 +146,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     dataFields: ['pressure'],
     layout: () => ({
       ports: { in: [-0.875, 1.9, 0], out: [0.875, 0.9, 0] },
-      bounds: box([-0.9, 0, -0.65], [0.9, 2.7, 0.65]),
+      bounds: box([-0.92, 0, -0.67], [0.92, 2.95, 0.67]),
     }),
   },
   'flow-meter': {
@@ -140,7 +155,11 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     idPrefix: 'FT',
     paramsSchema: {},
     dataFields: ['flow'],
-    layout: () => ({ ports: { a: [-0.45, 0, 0], b: [0.45, 0, 0] }, bounds: box([-0.45, -0.36, -0.36], [0.45, 0.9, 0.36]) }),
+    inline: { axisY: FLOW_METER_AXIS },
+    layout: () => ({
+      ports: { a: [-0.45, FLOW_METER_AXIS, 0], b: [0.45, FLOW_METER_AXIS, 0] },
+      bounds: box([-0.5, 0, -0.4], [0.5, FLOW_METER_AXIS + 0.9, 0.4]),
+    }),
   },
   vaporizer: {
     label: 'Hóa hơi & điều áp',
@@ -150,7 +169,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     dataFields: ['temperature', 'pressure', 'flow'],
     layout: () => ({
       ports: { in: [-4.3, 1.2, 1.5], out: [4.5, 1.2, -1.5] },
-      bounds: box([-4.5, 0, -2.75], [4.5, 2.9, 2.75]),
+      bounds: box([-4.5, 0, -2.75], [4.5, 3.4, 2.75]),
     }),
   },
   'tanker-truck': {
@@ -161,7 +180,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     dataFields: ['state', 'level'],
     layout: () => ({
       ports: { outlet: [7.4, 1.1, 0] },
-      bounds: box([-7.5, 0, -1.6], [7.4, 4.8, 1.6]),
+      bounds: box([-7.5, 0, -1.65], [7.4, 5.2, 1.65]),
       labelAnchor: [5.6, 4.6, 0],
     }),
   },
@@ -186,7 +205,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     dataFields: [],
     layout: ({ width: W, depth: D, height: H }) => ({
       ports: {},
-      bounds: box([-W! / 2 - 0.3, 0, -D! / 2 - 0.3], [W! / 2 + 0.3, H! + 5, D! / 2 + 0.3]),
+      bounds: box([-W! / 2 - 0.3, 0, -D! / 2 - 0.3], [W! / 2 + 0.3, H! + 5.1, D! / 2 + 1.5]),
       // Tag "Khu sản xuất" ở mép mái trước bên trái như Figma.
       labelAnchor: [-W! * 0.22, H! + 0.8, D! / 2],
     }),
@@ -204,7 +223,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
     dataFields: [],
     layout: ({ length: L, depth: D, height: H }) => ({
       ports: {},
-      bounds: box([-L! / 2 - 0.4, 0, -D! / 2 - 0.3], [L! / 2 + 0.4, H! + CANOPY_RISE + 0.1, D! / 2 + 0.3]),
+      bounds: box([-L! / 2 - 0.45, 0, -D! / 2 - 0.3], [L! / 2 + 0.45, H! + CANOPY_RISE + 0.25, D! / 2 + 0.3]),
     }),
   },
   fence: {
@@ -220,7 +239,7 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
       const pts = path?.length ? path : [[0, 0, 0] as Vec3];
       const xs = pts.map((p) => p[0]);
       const zs = pts.map((p) => p[2]);
-      return { ports: {}, bounds: box([Math.min(...xs), 0, Math.min(...zs)], [Math.max(...xs), h!, Math.max(...zs)]) };
+      return { ports: {}, bounds: box([Math.min(...xs) - 0.05, 0, Math.min(...zs) - 0.05], [Math.max(...xs) + 0.05, h! + 0.05, Math.max(...zs) + 0.05]) };
     },
   },
 };
@@ -232,6 +251,9 @@ export function resolveParams(obj: Pick<SceneObject, 'asset' | 'params'>): Asset
   for (const [k, def] of Object.entries(schema)) out[k] = obj.params?.[k] ?? def.default;
   return out;
 }
+
+/** Độ cao đáy object so với sàn (m). Object gắn ống: tính trong `resolveScene` từ tâm ống − `inline.axisY`. */
+export const objectElevation = (obj: Pick<SceneObject, 'elevation'>) => obj.elevation ?? 0;
 
 export function assetLayout(obj: Pick<SceneObject, 'asset' | 'params' | 'path'>): AssetLayout {
   return ASSET_SPECS[obj.asset].layout(resolveParams(obj), obj);

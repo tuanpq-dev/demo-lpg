@@ -1,3 +1,4 @@
+import { migrateScene } from '@/features/scene/migrate';
 import type { SceneConfig } from '@/features/scene/types';
 import type { SceneSource } from './store';
 
@@ -14,7 +15,8 @@ export function readDraft(): EditorDraft | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const d = JSON.parse(raw) as EditorDraft;
-    return d && typeof d === 'object' && d.scene && Array.isArray(d.scene.objects) ? d : null;
+    // Nháp lưu trước khi đổi định dạng → migrate (giữ nguyên vị trí hiển thị).
+    return d && typeof d === 'object' && d.scene && Array.isArray(d.scene.objects) ? { ...d, scene: migrateScene(d.scene) } : null;
   } catch {
     return null;
   }

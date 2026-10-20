@@ -1,7 +1,7 @@
-import { ASSET_SPECS } from '@/features/scene/assets/specs';
+import { ASSET_SPECS, assetLayout } from '@/features/scene/assets/specs';
 import { EDIT_SNAP } from '@/features/scene/editConstants';
 import type { ObjectTransform } from '@/features/scene/EditTools';
-import type { AssetType, SceneCamera, SceneConfig, SceneObject, SceneView, Vec3 } from '@/features/scene/types';
+import { SCENE_SCHEMA_VERSION, type AssetType, type SceneCamera, type SceneConfig, type SceneObject, type SceneView, type Vec3 } from '@/features/scene/types';
 
 /*
  * Phép biến đổi THUẦN trên SceneConfig cho Editor (không React/three) – mọi thao tác trả về cảnh mới,
@@ -62,13 +62,13 @@ const DEFAULT_FENCE_PATH: Vec3[] = [
   [-3, 0, -2],
 ];
 
-/** Object mới của `asset` tại `at` (đã snap), id theo quy ước, nhãn = id. */
+/** Object mới của `asset` tại `at` (X/Z, đã snap) – luôn đặt trên sàn (y = 0, không elevation), id theo quy ước, nhãn = id. */
 export function createObject(asset: AssetType, at: Vec3, taken: ReadonlySet<string>): SceneObject {
   const id = nextObjectId(asset, taken);
   return {
     id,
     asset,
-    position: [round(at[0]), round(at[1]), round(at[2])],
+    position: [round(at[0]), 0, round(at[2])],
     label: id,
     ...(asset === 'fence' ? { path: DEFAULT_FENCE_PATH.map((p) => [...p] as Vec3) } : {}),
   };
@@ -79,6 +79,7 @@ export function newScene(id: string, name: string): SceneConfig {
     id,
     name,
     version: 1,
+    schemaVersion: SCENE_SCHEMA_VERSION,
     // Không đặt camera: Viewer tự khung vừa mọi object cho "Toàn cảnh" (đặt sau ở Thuộc tính cảnh).
     views: [{ id: 'all', label: 'Toàn cảnh' }],
     thresholds: {},
@@ -158,7 +159,10 @@ export function cloneObjects(objs: readonly SceneObject[], taken: ReadonlySet<st
   });
 }
 
-/** Kết quả kéo gizmo (1 lần thả = 1 bước undo). Làm tròn 3 số lẻ vị trí/scale, 4 số lẻ góc; bỏ rotation 0 và scale 1. */
+/**
+ * Kết quả kéo (1 lần thả = 1 bước undo). Làm tròn 3 số lẻ vị trí/scale, 4 số lẻ góc; bỏ rotation 0 và scale 1.
+ * Kéo không đổi độ cao: position[1] lấy lại từ elevation của object (bỏ qua y trong `changes`).
+ */
 export function applyTransforms(scene: SceneConfig, changes: readonly ObjectTransform[]): SceneConfig {
   const byId = new Map(changes.map((c) => [c.id, c]));
   return {
@@ -168,7 +172,7 @@ export function applyTransforms(scene: SceneConfig, changes: readonly ObjectTran
       if (!c) return o;
       return cleanObject({
         ...o,
-        position: c.position.map((v) => round(v)) as Vec3,
+        position: [round(c.position[0]), o.elevation ?? 0, round(c.position[2])],
         rotation: c.rotation.map((v) => round(v, 4)) as Vec3,
         scale: c.scale.map((v) => round(v)) as Vec3,
       });
@@ -176,15 +180,86 @@ export function applyTransforms(scene: SceneConfig, changes: readonly ObjectTran
   };
 }
 
-/** Bỏ trường rỗng/mặc định: rotation toàn 0, scale toàn 1, params/bindings rỗng, label rỗng (`marker: {}` hợp lệ = nhãn mặc định). */
+/**
+ * Bỏ trường rỗng/mặc định: rotation toàn 0, scale toàn 1, elevation 0, params/bindings rỗng, label rỗng
+ * (`marker: {}` hợp lệ = nhãn mặc định). Đồng bộ position[1] = elevation (bất biến của định dạng v2).
+ */
 export function cleanObject(o: SceneObject): SceneObject {
   const out: SceneObject = { ...o };
+  if (out.attach) delete out.elevation;
+  else if (out.position) {
+    const h = round(out.elevation ?? 0);
+    if (out.position[1] !== h) out.position = [out.position[0], h, out.position[2]];
+    if (h) out.elevation = h;
+    else delete out.elevation;
+  }
   if (out.rotation?.every((v) => v === 0)) delete out.rotation;
   if (out.scale?.every((v) => v === 1)) delete out.scale;
   if (out.params && !Object.keys(out.params).length) delete out.params;
   if (out.bindings && !Object.keys(out.bindings).length) delete out.bindings;
   if (!out.label) delete out.label;
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Độ cao, căn hàng
+
+/** Bước snap của ô Elevation (m). */
+export const ELEVATION_STEP = 0.25;
+
+/** Đặt độ cao đáy (m) cho các object (bỏ qua object gắn ống). `0` = "Đặt xuống sàn". */
+export function setElevation(scene: SceneConfig, ids: readonly string[], elevation: number): SceneConfig {
+  const set = new Set(ids);
+  const h = round(elevation);
+  let changed = false;
+  const objects = scene.objects.map((o) => {
+    if (!set.has(o.id) || o.attach || !o.position || (o.elevation ?? 0) === h) return o;
+    changed = true;
+    return cleanObject({ ...o, elevation: h });
+  });
+  return changed ? { ...scene, objects } : scene;
+}
+
+export type AlignAxis = 'x' | 'z';
+
+/**
+ * Căn hàng (≥ 2 object, bỏ qua gắn ống): xếp thành một hàng dọc theo trục `axis`.
+ * - Toạ độ trục kia và elevation = của object chọn đầu tiên (mốc).
+ * - Phân bố đều tâm giữa object đầu và cuối theo `axis` (giữ thứ tự hiện có); trùng toạ độ → cách nhau
+ *   bề rộng lớn nhất + 1 m. Kết quả snap lưới nếu `snap`.
+ */
+export function alignObjects(scene: SceneConfig, ids: readonly string[], axis: AlignAxis, snap = true): SceneConfig {
+  const objs = ids
+    .map((id) => scene.objects.find((o) => o.id === id))
+    .filter((o): o is SceneObject & { position: Vec3 } => !!o && !o.attach && !!o.position);
+  if (objs.length < 2) return scene;
+  const a = axis === 'x' ? 0 : 2;
+  const b = axis === 'x' ? 2 : 0;
+  const anchor = objs[0]!;
+  const sorted = [...objs].sort((p, q) => p.position[a] - q.position[a]);
+  const lo = sorted[0]!.position[a];
+  const hi = sorted[sorted.length - 1]!.position[a];
+  const width = Math.max(...objs.map((o) => {
+    const { min, max } = assetLayout(o).bounds;
+    return (max[a] - min[a]) * (o.scale?.[a] ?? 1);
+  }));
+  const step = hi - lo > 1e-3 ? (hi - lo) / (sorted.length - 1) : width + 1;
+  const s = (v: number) => (snap ? snapTo(v, SNAP.translate) : round(v));
+  const next = new Map(
+    sorted.map((o, i) => {
+      const p: Vec3 = [0, anchor.elevation ?? 0, 0];
+      p[a] = s(lo + i * step);
+      p[b] = s(anchor.position[b]);
+      return [o.id, p] as const;
+    }),
+  );
+  return {
+    ...scene,
+    objects: scene.objects.map((o) => {
+      const p = next.get(o.id);
+      return p ? cleanObject({ ...o, position: p, elevation: anchor.elevation }) : o;
+    }),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +286,7 @@ const OBJECT_KEYS: (keyof SceneObject)[] = [
   'id',
   'asset',
   'position',
+  'elevation',
   'rotation',
   'scale',
   'attach',
@@ -227,6 +303,7 @@ export function normalizeScene(scene: SceneConfig): SceneConfig {
     id: scene.id,
     name: scene.name,
     version: scene.version,
+    schemaVersion: SCENE_SCHEMA_VERSION,
     ...(scene.camera ? { camera: scene.camera } : {}),
     ...(scene.views?.length ? { views: scene.views } : {}),
     ...(scene.thresholds && Object.keys(scene.thresholds).length ? { thresholds: scene.thresholds } : {}),

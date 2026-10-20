@@ -1,11 +1,11 @@
 import { CatmullRomCurve3, Euler, Matrix4, Quaternion, Vector3 } from 'three';
-import { assetLayout, type Box } from './assets/specs';
+import { ASSET_SPECS, assetLayout, objectElevation, type Box } from './assets/specs';
 import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 export const DEFAULT_PIPE_RADIUS = 0.18;
 export { FLOOR_HALF_SIZE } from './editConstants';
 
-/** Object đã đặt vị trí (kể cả object gắn ống). */
+/** Object đã đặt vị trí (kể cả object gắn ống); position[1] = độ cao đáy (elevation). */
 export type ResolvedObject = SceneObject & { position: Vec3; rotation: Vec3 };
 
 export type ResolvedScene = {
@@ -90,13 +90,16 @@ export function pipeCurve(path: Vector3[], radius: number) {
 }
 
 /**
- * Đặt vị trí mọi object: object thường theo `position`; ống nối theo cổng; object `attach`
- * nằm trên tâm ống tại tỉ lệ chiều dài `t`, trục X cục bộ theo tiếp tuyến (chỉ xoay quanh Y).
+ * Đặt vị trí mọi object: object thường theo `position` X/Z + `elevation` (đáy); ống nối theo cổng (toạ độ thế giới,
+ * gồm elevation); object `attach` có trục ống trùng tâm ống tại tỉ lệ chiều dài `t`, trục X theo tiếp tuyến (chỉ xoay quanh Y).
  */
 export function resolveScene(config: SceneConfig): ResolvedScene {
   const byId = new Map<string, ResolvedObject>();
   for (const o of config.objects) {
-    if (!o.attach) byId.set(o.id, { ...o, position: o.position ?? [0, 0, 0], rotation: o.rotation ?? [0, 0, 0] });
+    if (o.attach) continue;
+    const [x, , z] = o.position ?? [0, 0, 0];
+    // Độ cao lấy từ elevation (position[1] luôn bằng nó sau migrate) → đáy object đúng mặt sàn khi elevation = 0.
+    byId.set(o.id, { ...o, position: [x, objectElevation(o), z], rotation: o.rotation ?? [0, 0, 0] });
   }
   const curves = new Map<string, CatmullRomCurve3>();
   for (const p of config.pipes) curves.set(p.id, pipeCurve(pipePath(p, byId), p.radius ?? DEFAULT_PIPE_RADIUS));
@@ -107,6 +110,8 @@ export function resolveScene(config: SceneConfig): ResolvedScene {
     const t = Math.min(1, Math.max(0, o.attach.t));
     const pos = curve?.getPointAt(t) ?? new Vector3();
     const tan = curve?.getTangentAt(t) ?? new Vector3(1, 0, 0);
+    // Gốc asset ở tâm đáy → hạ đáy xuống để trục ống của asset (inline.axisY) trùng tâm ống.
+    pos.y -= ASSET_SPECS[o.asset].inline?.axisY ?? 0;
     byId.set(o.id, { ...o, position: pos.toArray(), rotation: [0, Math.atan2(-tan.z, tan.x), 0] });
   }
   return { objects: config.objects.map((o) => byId.get(o.id)!), byId, curves };

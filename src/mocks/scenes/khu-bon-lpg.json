@@ -1,7 +1,8 @@
 {
   "id": "khu-bon-lpg",
   "name": "Khu bồn LPG",
-  "version": 3,
+  "version": 4,
+  "schemaVersion": 2,
   "camera": { "position": [56.3, 50, 62.3], "target": [-1.7, 0, -1.7], "zoom": 27 },
   "views": [
     { "id": "all", "label": "Toàn cảnh" },
@@ -23,9 +24,9 @@
     { "id": "XV-101", "asset": "valve", "attach": { "pipe": "PL-06", "t": 0.69 }, "label": "Van XV-101", "bindings": { "position": "XV-101.POS" } },
 
     { "id": "PH-01", "asset": "canopy", "position": [-1, 0, -5], "label": "Mái che cụm bơm & lọc" },
-    { "id": "P-101A", "asset": "pump", "position": [-4, 0.3, -6.6], "label": "Bơm P-101A", "marker": { "tone": "success", "title": "Cụm bơm & lọc", "field": "state" }, "bindings": { "state": "P-101A.STATE", "pressure": "PT-102" } },
-    { "id": "P-101B", "asset": "pump", "position": [-4, 0.3, -3.6], "label": "Bơm P-101B", "bindings": { "state": "P-101B.STATE" } },
-    { "id": "F-101", "asset": "filter", "position": [1, 0.3, -5.1], "label": "Bộ lọc F-101", "bindings": { "pressure": { "tag": "PDT-101", "warn": 0.8, "danger": 1.2 } } },
+    { "id": "P-101A", "asset": "pump", "position": [-4, 0.3, -6.6], "elevation": 0.3, "label": "Bơm P-101A", "marker": { "tone": "success", "title": "Cụm bơm & lọc", "field": "state" }, "bindings": { "state": "P-101A.STATE", "pressure": "PT-102" } },
+    { "id": "P-101B", "asset": "pump", "position": [-4, 0.3, -3.6], "elevation": 0.3, "label": "Bơm P-101B", "bindings": { "state": "P-101B.STATE" } },
+    { "id": "F-101", "asset": "filter", "position": [1, 0.3, -5.1], "elevation": 0.3, "label": "Bộ lọc F-101", "bindings": { "pressure": { "tag": "PDT-101", "warn": 0.8, "danger": 1.2 } } },
 
     { "id": "FT-101", "asset": "flow-meter", "attach": { "pipe": "PL-05", "t": 0.69 }, "label": "FT-101", "marker": { "field": "flow" }, "bindings": { "flow": "FT-101" } },
     { "id": "XV-102", "asset": "valve", "attach": { "pipe": "PL-05", "t": 0.86 }, "label": "Van XV-102", "bindings": { "position": "XV-102.POS" } },

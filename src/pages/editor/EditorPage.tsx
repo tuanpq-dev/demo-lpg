@@ -17,6 +17,7 @@ import { Page } from '@/app/Page';
 import { fetchScene, isSampleScene, SENSOR_TAGS } from '@/data/scene';
 import { sceneRepository } from '@/data/sceneRepository';
 import type { SceneViewerHandle } from '@/features/scene';
+import { migrateScene } from '@/features/scene/migrate';
 import { validateSceneConfig } from '@/features/scene/parse';
 import type { SceneConfig } from '@/features/scene/types';
 import { AUTOSAVE_MS, clearDraft, readDraft, writeDraft, type EditorDraft } from '@/features/scene-editor/draft';
@@ -193,7 +194,8 @@ export default function EditorPage() {
     }
     const errs = validateSceneConfig(raw);
     if (errs.length) return setDialog({ kind: 'import-error', file: file.name, errors: errs.map((i) => `${i.where}: ${i.message}`) });
-    const s = raw as SceneConfig;
+    // Định dạng cũ (không schemaVersion) → migrate như khi nạp từ kho/mock.
+    const s = migrateScene(raw as SceneConfig);
     // Cảnh import = chưa lưu (Lưu → kho với id trong file, hoặc hỏi id mới nếu trùng cảnh mẫu).
     begin(s, { kind: 'new' }, null);
     setSceneParam(null);

@@ -131,6 +131,10 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt c
     // environment: building, canopy, fence
   type LiveData = Record<string, number | string>;   // theo tag
   ```
+- **Quy ước pivot + độ cao** (fix/editor-ground-plane):
+  - Mọi asset có gốc tại **tâm đáy**, y = 0 cục bộ là mặt sàn, hình học không xuống dưới 0 (`bounds.min[1] = 0`). Asset lệch → bọc geometry trong `<group position-y>` dịch lên cho min.y = 0 (van/đồng hồ: `VALVE_AXIS` 0.27 / `FLOW_METER_AXIS` 0.4 = `spec.inline.axisY`; cổng + bounds dời theo).
+  - `SceneObject.elevation?` (m, mặc định 0) = độ cao đáy; `position[1]` luôn bằng nó (zod báo lỗi nếu lệch). Object gắn ống: đáy = tâm ống − `inline.axisY` (tính trong `resolveScene`).
+  - `SceneConfig.schemaVersion` (định dạng, hiện = `SCENE_SCHEMA_VERSION` 2) khác `version` (số lần lưu). `migrateScene` (`migrate.ts`, thuần) chạy trước zod ở mọi đường nạp (parse, Import, nháp): v1 → v2 = position[1] → elevation, van/đồng hồ đứng riêng hạ `axisY` (giữ nguyên hình), version + 1.
 - **Category** (`ASSET_SPECS[type].category`): `equipment` = hover/click/bindings/trạng thái; `environment` (nhà xưởng, mái che, hàng rào) = chỉ bối cảnh: không có handler (nên không chặn tia chọn thiết bị bên dưới), `parse` báo lỗi nếu có bindings, marker neo vào nó không click được.
 - **Asset = spec thuần + component**:
   - `assets/specs.ts` (không three/React – dùng được ở parse/Editor): `{ label, category, idPrefix (quy ước id Editor), paramsSchema: Record<name, { label, default, min?, max?, unit?, integer? }>, dataFields, layout(params, obj) → { ports, bounds, labelAnchor? } }`. `resolveParams(obj)` gộp mặc định; `assetLayout(obj)` → cổng/hộp bao theo params.
