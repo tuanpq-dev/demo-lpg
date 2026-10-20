@@ -138,8 +138,7 @@ export interface Pipe {
   flowTag?: string;
 }
 
-/** Số liệu trực tiếp theo tag cảm biến. */
-export type LiveValue = number | string;
-export type LiveData = Record<string, LiveValue>;
+/** Số liệu trực tiếp theo tag cảm biến – kiểu chung ở features/live (TagValue: value + unit + ts + quality). */
+export type { LiveData, LiveValue, TagValue, TagQuality } from '@/features/live/types';
 
 export type ObjectStatus = 'normal' | 'warning' | 'danger' | 'offline';

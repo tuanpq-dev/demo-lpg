@@ -1,8 +1,8 @@
 import { Icon, KpiCard } from '@/components';
-import type { KpiMock } from '@/mocks/types';
+import type { KpiData } from '@/data/overview';
 
-/** Map dữ liệu KPI thuần (mock/API) → <KpiCard>. */
-export function KpiFromData({ data, onAction }: { data: KpiMock; onAction?: (id: string) => void }) {
+/** Map dữ liệu KPI thuần (mock/API, đã ghép số liệu trực tiếp – `applyLive`) → <KpiCard>. */
+export function KpiFromData({ data, onAction }: { data: KpiData; onAction?: (id: string) => void }) {
   const {
     id,
     icon,
@@ -11,8 +11,10 @@ export function KpiFromData({ data, onAction }: { data: KpiMock; onAction?: (id:
     progress,
     progressTone,
     action,
+    live: _live,
     ...rest
   } = data;
+  void _live;
   return (
     <KpiCard
       {...rest}

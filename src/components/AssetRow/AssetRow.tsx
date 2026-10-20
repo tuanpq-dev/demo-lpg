@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { Card } from '../Card';
+import { SignalLostIcon } from '../Icon';
 import { StatusDot } from '../StatusDot';
 
 export type AssetTone = 'success' | 'warning' | 'danger' | 'offline';
@@ -11,6 +12,8 @@ export type AssetRowData = {
   /** Nhãn trạng thái: "Bình thường", "Đang chạy", "Ổn định"… */
   statusLabel: string;
   tone: AssetTone;
+  /** Mất tín hiệu → icon trước nhãn (nhãn thường là "Mất tín hiệu", tone offline). */
+  signalLost?: boolean;
 };
 
 export type AssetRowProps = AssetRowData & {
@@ -29,7 +32,7 @@ const textTone: Record<AssetTone, string> = {
  * Một dòng thiết bị – nền surface-muted/20, viền line/30, cao 34px (Figma 53:500).
  * Màu lấy từ ảnh chụp Figma (node con 53:499 chưa có design context).
  */
-export function AssetRow({ id, name, statusLabel, tone, onClick, className }: AssetRowProps) {
+export function AssetRow({ id, name, statusLabel, tone, signalLost, onClick, className }: AssetRowProps) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
@@ -45,7 +48,10 @@ export function AssetRow({ id, name, statusLabel, tone, onClick, className }: As
         <StatusDot status={tone} size="sm" />
         <span className="truncate text-sm text-fg">{name}</span>
       </span>
-      <span className={cn('shrink-0 text-sm', textTone[tone])}>{statusLabel}</span>
+      <span className={cn('flex shrink-0 items-center gap-1 text-sm', textTone[tone])}>
+        {signalLost && <SignalLostIcon size={14} />}
+        {statusLabel}
+      </span>
     </Tag>
   );
 }

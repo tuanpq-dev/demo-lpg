@@ -56,6 +56,8 @@ import {
   type SceneEditState,
 } from './EditTools';
 import { inverseToneMap, readScenePalette, type ScenePalette } from './colors';
+import { freshNumber } from '@/features/live/signal';
+import { SignalLostIcon } from '@/components/Icon';
 import { objectReadings, objectStatus } from './fields';
 import {
   DEFAULT_PIPE_RADIUS,
@@ -340,10 +342,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     ]),
   );
 
-  const flowOf = (tag?: string) => {
-    const v = tag ? liveData?.[tag] : undefined;
-    return typeof v === 'number' ? v : undefined;
-  };
+  // Lưu lượng tươi (mất tín hiệu → không chạy vệt sáng, không giữ số cũ).
+  const flowOf = (tag?: string) => (tag ? freshNumber(liveData?.[tag]) : undefined);
   // Render liên tục khi có ống đang chảy hoặc object danger (pulse); còn lại render theo yêu cầu.
   const animated =
     config.pipes.some((p) => (flowOf(p.flowTag) ?? 0) > 0) || [...statuses.values()].includes('danger');
@@ -1131,7 +1131,10 @@ function ObjectTooltip({
             <span className="text-fg-muted">
               {r.label} <span className="text-2xs">({r.tag})</span>
             </span>
-            <span className={cn('font-semibold', readingTone[r.status])}>{r.text}</span>
+            <span className={cn('flex items-center gap-1 font-semibold', readingTone[r.status])}>
+              {r.lost && <SignalLostIcon size={13} />}
+              {r.text}
+            </span>
           </div>
         ))}
       </div>

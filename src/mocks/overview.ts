@@ -13,11 +13,11 @@ import type {
 import type { KpiMock } from './types';
 
 export const overviewKpis: KpiMock[] = [
-  { id: 'inventory', label: 'Tồn kho', icon: 'kpiInventory', iconBox: 16, value: '152,340', unit: 'Nm³', sub: '+2.5%', subTone: 'success' },
-  // Figma 53:241 "Đang chạy" có opacity-0 (ẩn) → chỉ hiện "—".
-  { id: 'tank-level', label: 'Mức bồn V-101', value: '76.02', unit: '%', subTone: 'success', subIcon: 'kpiDash', subDim: true },
-  { id: 'pressure', label: 'Áp suất hệ thống', value: '1.82', unit: 'bar', sub: 'Ổn định', subTone: 'success', subDim: true },
-  { id: 'consumption', label: 'Tiêu thụ', icon: 'kpiFlow', iconBox: 16, value: '203', unit: 'Nm³/h', sub: 'Bình thường', subTone: 'warning-soft', subDim: true },
+  { id: 'inventory', label: 'Tồn kho', icon: 'kpiInventory', iconBox: 16, value: '152,340', unit: 'Nm³', sub: '+2.5%', subTone: 'success', live: { tag: 'INV-TOTAL', digits: 0 } },
+  // Figma 53:241 "Đang chạy" có opacity-0 (ẩn) → chỉ hiện "—". Giá trị = % THỂ TÍCH quy đổi từ mức chiều cao LT-101.
+  { id: 'tank-level', label: 'Mức bồn V-101', value: '76.02', unit: '%', subTone: 'success', subIcon: 'kpiDash', subDim: true, live: { tag: 'LT-101', digits: 2, transform: 'tank-volume' } },
+  { id: 'pressure', label: 'Áp suất hệ thống', value: '1.82', unit: 'bar', sub: 'Ổn định', subTone: 'success', subDim: true, live: { tag: 'PT-100', digits: 2 } },
+  { id: 'consumption', label: 'Tiêu thụ', icon: 'kpiFlow', iconBox: 16, value: '203', unit: 'Nm³/h', sub: 'Bình thường', subTone: 'warning-soft', subDim: true, live: { tag: 'FQ-100', digits: 0 } },
   { id: 'alerts', label: 'Cảnh báo', icon: 'kpiDanger', iconBox: 24, value: '2', unit: 'Active', variant: 'danger', action: 'Xem chi tiết' },
   { id: 'health', label: 'Sức khỏe thiết bị', value: '98.7', unit: '%', variant: 'with-progress', tone: 'success', progress: 98.7 },
 ];
@@ -38,11 +38,12 @@ export const priorityAlarms: AlertItemData[] = [
   { id: 'a3', code: 'LT-101', message: 'Mức bồn V-101 giảm nhanh bất thường.', time: '1 giờ trước', severity: 'high' },
 ];
 
-export const watchlist: AssetRowData[] = [
-  { id: 'pr-101', name: 'PR-101', statusLabel: 'Bình thường', tone: 'success' },
-  { id: 'f-101', name: 'F-101', statusLabel: 'Bình thường', tone: 'success' },
-  { id: 'p-101a', name: 'P-101A', statusLabel: 'Đang chạy', tone: 'success' },
-  { id: 'v-101', name: 'V-101', statusLabel: 'Ổn định', tone: 'success' },
+/** `live`: tag quyết định dòng (mất tín hiệu → "Mất tín hiệu"; trạng thái chuỗi xấu → nhãn + tone theo FIELD_META). */
+export const watchlist: (AssetRowData & { live?: { tag: string; field: string } })[] = [
+  { id: 'pr-101', name: 'PR-101', statusLabel: 'Bình thường', tone: 'success', live: { tag: 'PT-201', field: 'pressure' } },
+  { id: 'f-101', name: 'F-101', statusLabel: 'Bình thường', tone: 'success', live: { tag: 'PDT-101', field: 'pressure' } },
+  { id: 'p-101a', name: 'P-101A', statusLabel: 'Đang chạy', tone: 'success', live: { tag: 'P-101A.STATE', field: 'state' } },
+  { id: 'v-101', name: 'V-101', statusLabel: 'Ổn định', tone: 'success', live: { tag: 'LT-101', field: 'level' } },
 ];
 
 export const recentEvents: TimelineEvent[] = [
@@ -94,12 +95,13 @@ export const deviceStatus: DonutSegment[] = [
  * - Marker là con của khung 53:243 (tag "Khu sản xuất"): fx = (X + 70.5) / 1287  (layer ảnh lệch -70.5)
  * - fy = (Y + 78.16) / 828.5 cho cả hai (layer ảnh và khung cùng top 0).
  */
-export const mapMarkers: MapMarkerData[] = [
-  { id: 'pump', variant: 'callout', tone: 'success', title: 'Cụm bơm & lọc', value: 'Hoạt động', showDot: true, x: 0.4934, y: 0.4625 },
-  { id: 'ft-101', variant: 'callout', tone: 'accent', title: 'FT-101', value: '203  m³/h', x: 0.6364, y: 0.6616 },
+/** `live`: giá trị nhãn lấy từ tag (định dạng theo trường); tone giữ như Figma, mất tín hiệu → xám + "Mất tín hiệu". */
+export const mapMarkers: (MapMarkerData & { live?: { tag: string; field: string } })[] = [
+  { id: 'pump', variant: 'callout', tone: 'success', title: 'Cụm bơm & lọc', value: 'Hoạt động', showDot: true, x: 0.4934, y: 0.4625, live: { tag: 'P-101A.STATE', field: 'state' } },
+  { id: 'ft-101', variant: 'callout', tone: 'accent', title: 'FT-101', value: '203  m³/h', x: 0.6364, y: 0.6616, live: { tag: 'FT-101', field: 'flow' } },
   { id: 'v-101', variant: 'callout', tone: 'accent', title: 'Khu bồn LPG', value: 'V- 101', x: 0.366, y: 0.6194 },
-  { id: 'vaporizer', variant: 'callout', tone: 'danger', title: 'Hóa hơi và điều áp', value: '45,6 °C', showWarningIcon: true, x: 0.7879, y: 0.6387 },
-  { id: 'loading', variant: 'side', tone: 'warning', title: 'Khu nạp LPG', value: 'Đang nạp', x: 0.3081, y: 0.4251 },
+  { id: 'vaporizer', variant: 'callout', tone: 'danger', title: 'Hóa hơi và điều áp', value: '45,6 °C', showWarningIcon: true, x: 0.7879, y: 0.6387, live: { tag: 'TT-201', field: 'temperature' } },
+  { id: 'loading', variant: 'side', tone: 'warning', title: 'Khu nạp LPG', value: 'Đang nạp', x: 0.3081, y: 0.4251, live: { tag: 'LOAD-01.STATE', field: 'state' } },
   { id: 'production', variant: 'tag', title: 'Khu sản xuất', x: 0.7805, y: 0.1909 },
 ];
 

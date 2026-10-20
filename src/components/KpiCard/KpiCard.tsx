@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Card } from '../Card';
+import { SignalLostIcon } from '../Icon';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
 
 export type KpiVariant = 'default' | 'danger' | 'with-progress' | 'compact';
@@ -17,6 +18,8 @@ export type KpiCardProps = {
   unit?: string;
   /** Text dòng phụ (tuỳ chọn, mặc định không có): "+2.5%", "Ổn định", "+12% vs tháng trước"… */
   sub?: ReactNode;
+  /** Mất tín hiệu (tag bad / quá 10 s không cập nhật): số xám "—", dòng phụ "Mất tín hiệu" + icon – không hiện số cũ. */
+  signalLost?: boolean;
   subTone?: KpiSubTone;
   /**
    * Icon dòng phụ (trend ↑, "—", ⚠…). Có thể dùng một mình không kèm `sub`,
@@ -78,6 +81,7 @@ export function KpiCard({
   strongBorder,
   progress,
   action,
+  signalLost,
   className,
 }: KpiCardProps) {
   const compact = variant === 'compact';
@@ -102,7 +106,7 @@ export function KpiCard({
   const numberClass = cn(
     'font-bold',
     compact ? 'text-2xl' : 'text-kpi',
-    danger ? 'text-danger-strong' : valueTone[tone],
+    signalLost ? 'text-fg-disabled' : danger ? 'text-danger-strong' : valueTone[tone],
   );
 
   return (
@@ -125,8 +129,8 @@ export function KpiCard({
       {/* Giá trị */}
       <div className={cn('flex flex-col', compact && sub !== undefined && 'gap-2')}>
         <p className="flex items-baseline gap-1 whitespace-nowrap">
-          <span className={numberClass}>{value}</span>
-          {unit && (
+          <span className={numberClass}>{signalLost ? '—' : value}</span>
+          {unit && !signalLost && (
             <span className={cn('text-md', danger ? 'text-danger-strong/70' : 'text-fg-muted')}>{unit}</span>
           )}
         </p>
@@ -141,11 +145,18 @@ export function KpiCard({
           />
         )}
 
-        {(sub !== undefined || subIcon) && (
-          <div className={cn('flex h-6 items-center gap-1 text-md', subToneClass[subTone], subDim && 'opacity-70')}>
-            {subIcon}
-            {sub !== undefined && <span className="truncate">{sub}</span>}
+        {signalLost ? (
+          <div className="flex h-6 items-center gap-1 text-md text-fg-secondary" role="status">
+            <SignalLostIcon size={16} className="shrink-0" />
+            <span className="truncate">Mất tín hiệu</span>
           </div>
+        ) : (
+          (sub !== undefined || subIcon) && (
+            <div className={cn('flex h-6 items-center gap-1 text-md', subToneClass[subTone], subDim && 'opacity-70')}>
+              {subIcon}
+              {sub !== undefined && <span className="truncate">{sub}</span>}
+            </div>
+          )
         )}
 
         {action && (

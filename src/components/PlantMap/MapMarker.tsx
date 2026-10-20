@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { icons, type IconName } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
-import { Icon } from '../Icon';
+import { Icon, SignalLostIcon } from '../Icon';
 
 /** neutral: thiết bị mất kết nối (nhãn tự sinh ở renderer 3D khi có liveData). */
 export type MapMarkerTone = 'success' | 'accent' | 'warning' | 'danger' | 'neutral';
@@ -24,6 +24,8 @@ export type MapMarkerData = {
   showDot?: boolean;
   /** Icon cảnh báo trước giá trị (callout danger – 53:280). */
   showWarningIcon?: boolean;
+  /** Icon mất tín hiệu trước giá trị (giá trị = "Mất tín hiệu", tone neutral) – chưa có trong Figma. */
+  showSignalLostIcon?: boolean;
 };
 
 export type MapMarkerProps = MapMarkerData & {
@@ -74,6 +76,7 @@ export function MapMarker({
   value,
   showDot,
   showWarningIcon,
+  showSignalLostIcon,
   zoom = 1,
   translucent,
   onClick,
@@ -114,6 +117,7 @@ export function MapMarker({
     <span className={cn('flex items-center justify-center gap-1 text-md font-semibold leading-6', valueTone[tone])}>
       {showDot && <span aria-hidden="true" className="size-1.5 rounded-full bg-success-strong" />}
       {showWarningIcon && <Icon name="danger" box={18} />}
+      {showSignalLostIcon && <SignalLostIcon size={16} className="shrink-0" />}
       <span className="whitespace-pre">{value}</span>
     </span>
   );

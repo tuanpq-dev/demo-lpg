@@ -1,4 +1,5 @@
-import type { Binding, LiveData, LiveValue, ObjectStatus, SceneObject, Thresholds } from './types';
+import { freshValue, SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
+import type { Binding, LiveData, ObjectStatus, SceneObject, TagValue, Thresholds } from './types';
 
 type StateMeta = { label: string; status: ObjectStatus };
 
@@ -48,8 +49,13 @@ export function bindingTag(obj: SceneObject | undefined, field: string): string 
   return typeof b === 'string' ? b : b?.tag;
 }
 
-export function formatField(field: string, value: LiveValue | undefined): string {
-  if (value === undefined) return '—';
+/**
+ * Chữ hiển thị của một trường. `tv` undefined khi chưa có liveData (Editor/không nguồn) → "—";
+ * mất tín hiệu (bad / quá 10 s / không có tag) → "Mất tín hiệu", KHÔNG hiện số cũ.
+ */
+export function formatField(field: string, tv: TagValue | undefined, now: number = Date.now()): string {
+  if (tagSignal(tv, now) === 'lost') return SIGNAL_LOST_LABEL;
+  const value = tv!.value;
   const meta = FIELD_META[field];
   if (typeof value === 'string') return meta?.states?.[value]?.label ?? value;
   const d = meta?.digits ?? 1;
@@ -57,7 +63,9 @@ export function formatField(field: string, value: LiveValue | undefined): string
   return meta?.unit ? `${n} ${meta.unit}` : n;
 }
 
-export function fieldStatus(field: string, value: LiveValue | undefined, t: Thresholds = {}): ObjectStatus {
+/** Trạng thái theo ngưỡng; mất tín hiệu → offline. */
+export function fieldStatus(field: string, tv: TagValue | undefined, t: Thresholds = {}, now: number = Date.now()): ObjectStatus {
+  const value = freshValue(tv, now);
   if (value === undefined) return 'offline';
   if (typeof value === 'string') return FIELD_META[field]?.states?.[value]?.status ?? 'normal';
   if ((t.danger !== undefined && value >= t.danger) || (t.lowDanger !== undefined && value <= t.lowDanger)) return 'danger';
@@ -66,28 +74,35 @@ export function fieldStatus(field: string, value: LiveValue | undefined, t: Thre
 }
 
 /**
- * Trạng thái xấu nhất của các binding. Chưa có liveData → normal;
- * có liveData nhưng không tag nào có số liệu → offline.
+ * Trạng thái xấu nhất của các binding (danger > warning > offline > normal). Chưa có liveData → normal.
+ * Một binding mất tín hiệu → ít nhất offline (thiết bị xám) – cảnh báo/sự cố của binding khác vẫn ưu tiên hiển thị.
  */
 export function objectStatus(
   obj: SceneObject | undefined,
   live: LiveData | undefined,
   defaults?: Record<string, Thresholds>,
+  now: number = Date.now(),
 ): ObjectStatus {
   const bindings = obj ? resolveBindings(obj, defaults) : [];
   if (!live || bindings.length === 0) return 'normal';
-  const statuses = bindings.map((b) => fieldStatus(b.field, live[b.tag], b.thresholds));
-  if (statuses.every((s) => s === 'offline')) return 'offline';
-  return statuses.filter((s) => s !== 'offline').reduce<ObjectStatus>((a, s) => (RANK[s] > RANK[a] ? s : a), 'normal');
+  return bindings
+    .map((b) => fieldStatus(b.field, live[b.tag], b.thresholds, now))
+    .reduce<ObjectStatus>((a, s) => (RANK[s] > RANK[a] ? s : a), 'normal');
 }
 
 /** Danh sách "nhãn: giá trị" của một object để hiển thị tooltip. */
-export function objectReadings(obj: SceneObject, live: LiveData | undefined, defaults?: Record<string, Thresholds>) {
+export function objectReadings(
+  obj: SceneObject,
+  live: LiveData | undefined,
+  defaults?: Record<string, Thresholds>,
+  now: number = Date.now(),
+) {
   return resolveBindings(obj, defaults).map(({ field, tag, thresholds }) => ({
     field,
     tag,
     label: FIELD_META[field]?.label ?? field,
-    text: formatField(field, live?.[tag]),
-    status: live ? fieldStatus(field, live[tag], thresholds) : ('normal' as ObjectStatus),
+    text: live ? formatField(field, live[tag], now) : '—',
+    status: live ? fieldStatus(field, live[tag], thresholds, now) : ('normal' as ObjectStatus),
+    lost: !!live && tagSignal(live[tag], now) === 'lost',
   }));
 }
