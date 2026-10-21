@@ -17,6 +17,7 @@ import { maintenanceRecords } from '@/mocks/maintenance';
 import { overviewKpis, priorityAlarms, recentEvents, systemHealth, watchlist } from '@/mocks/overview';
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
+import { StatesDemo } from './StatesDemo';
 
 const alertKpis = deriveAlertKpis(alertRecords);
 const priorityAlertCards = derivePriorityCards(alertRecords);
@@ -61,6 +62,8 @@ export function BusinessSection() {
         </div>
         <FigmaRef src={MAINT} x={31} y={200} w={1503} h={130} />
       </Demo>
+
+      <StatesDemo />
 
       <Demo title="KpiCard – API trực tiếp (không qua mock)" node="—">
         <div className="grid w-[760px] grid-cols-4 gap-4">

@@ -75,6 +75,7 @@ import { objectMarker } from './markers';
 import { PipeMesh } from './PipeMesh';
 import { nearestOnPath, pathLength } from './pipes';
 import { PipeDrawTool, PipeHandles, startPointDrag } from './PipeTools';
+import { isTyping } from '@/lib/isTyping';
 import { prefersReducedMotion, useReducedMotion } from '@/lib/reducedMotion';
 import { pulse } from './pulse';
 import { isWebGLAvailable, QUALITY_PRESETS, SCENE_QUALITIES, type QualityPreset, type SceneQuality } from './quality';
@@ -232,8 +233,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   useEffect(() => {
     if (activeIndex === null || !selectedPipe || !edit?.onUpdatePipe) return;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target;
-      if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+      if (isTyping(e.target)) return;
       if (e.key === 'Escape') {
         e.stopPropagation();
         setActivePoint(null);

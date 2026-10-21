@@ -171,6 +171,7 @@ flowchart LR
 - Quy tắc hiển thị (`src/features/live/signal.ts`): **mất tín hiệu** = quality `bad`, hoặc ≥ 10 s (`STALE_MS`) không cập nhật, hoặc không có tag → "Mất tín hiệu" (xám + `SignalLostIcon`), KHÔNG hiện số cũ; `uncertain` vẫn hiện số. `useLiveData` tự hẹn giờ vẽ lại đúng mốc 10 s (`nextExpiry`) kể cả khi nguồn im lặng. Chưa nhận ảnh chụp đầu → "—" (không báo mất tín hiệu).
 - Áp dụng: KPI (`signalLost` → "—" + "Mất tín hiệu"), dòng theo dõi (`signalLost`, tone offline), marker 2.5D (tone neutral + icon), nhãn 3D (`objectMarker`), màu thiết bị 3D (`objectStatus`: một binding mất tín hiệu → offline nếu không có cảnh báo/sự cố nào khác), tooltip 3D, vệt chảy ống (mất tín hiệu → không chảy).
 - Header "Dữ liệu trực tiếp" (`LiveDataButton`, mọi trang): connected = chấm live · connecting = "Đang kết nối lại…" vàng nhấp nháy · disconnected = "Mất kết nối" đỏ.
+- Trình đọc màn hình: `src/app/LiveAnnouncer.tsx` (một vùng `aria-live="polite"` trong `Page`) đọc khi đổi trạng thái nguồn, khi số cảnh báo chưa xác nhận tăng, và mọi `announce()` (`src/lib/announce.ts`; Tổng quan dùng `useAnnounceChange` báo số điểm đo mất tín hiệu).
 - Giả lập sự cố: `?live=disconnect`, `?live=bad:LT-101,TT-201`, `?live=stale:FT-101` (ghép bằng `;`), thanh "Giả lập nguồn dữ liệu" ở `/playground#scene`, hoặc `window.__liveSimulator` (dev).
 - Mức bồn: tag `LT-xxx` = mức theo **chiều cao** (% đường kính); KPI "Mức bồn V-101" = **% thể tích** quy đổi bằng `levelPercentToVolumePercent` (`src/features/tank/volume.ts`, bồn trụ nằm, bỏ qua đáy elip; test `npm test`). TODO: bảng dung tích thật từ khách → `strappingVolume`.
 
@@ -230,6 +231,8 @@ flowchart TD
   E --> F["data/maintenance.ts createMaintenance: MT-xxxxx, commit store"]
   F --> G["Bảng + KPI + lịch tự tính lại"]
 ```
+
+**Ngày và quá hạn:** "hôm nay" tính theo giờ nhà máy `Asia/Bangkok` (`src/lib/plantTime.ts`: `plantDayKey`, `daysFromToday`, `plantMonthKey`), không theo múi giờ máy người xem. Mọi hàm ngày trong `src/data/maintenance.ts` (`isOverdue`, `dueLabel`, `matchMaintenance`, `derive*`) nhận `now` từ nơi gọi (trang dùng `useNow(60_000)`), không tự gọi `Date.now()` – test được bằng `now` cố định.
 
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
@@ -425,7 +428,7 @@ Mục playground: `#tokens` (1), `#primitives` (2), `#navigation` (3), `#layout`
 8. Bảng Bảo trì làm tương tự ở `src/pages/maintenance/MaintenancePage.tsx` + `src/mocks/maintenance.ts`.
 
 **Nối nguồn dữ liệu trực tiếp thật (WebSocket/SCADA)**
-1. Tạo `src/data/live/WebSocketLiveSource.ts` `implements LiveDataSource` (`src/features/live/types.ts`): mở socket khi có người nghe (`subscribe`/`onStatusChange`), gửi danh sách tag cần nghe, đổi `status` + gọi listener khi kết nối/mất/thử lại.
+1. Tạo file mới `WebSocketLiveSource.ts` trong `src/data/live/` (`implements LiveDataSource`) (`src/features/live/types.ts`): mở socket khi có người nghe (`subscribe`/`onStatusChange`), gửi danh sách tag cần nghe, đổi `status` + gọi listener khi kết nối/mất/thử lại.
 2. Mỗi bản tin → `TagValue` (`value`, `unit`, `ts` = thời điểm đo từ SCADA, `quality` map từ OPC: Good/Uncertain/Bad) → gọi `cb(snapshot)` với ảnh chụp mới (đối tượng mới).
 3. `getSnapshot(tags)` → REST đọc giá trị hiện tại (nạp ban đầu/xuất báo cáo).
 4. Đổi `export const liveSource = new WebSocketLiveSource(url)` trong `src/data/live/index.ts`; giữ `MockLiveSource` cho demo/test (giả lập sự cố chỉ có ở mock).
@@ -433,7 +436,7 @@ Mục playground: `#tokens` (1), `#primitives` (2), `#navigation` (3), `#layout`
 
 **Đổi cách quy đổi mức bồn → thể tích**
 1. Hàm ở `src/features/tank/volume.ts` (thuần); KPI dùng qua `transform: 'tank-volume'` trong `applyLive` (`src/data/overview.ts`).
-2. Có bảng dung tích của khách: thêm dữ liệu bảng (vd `src/mocks/tanks.ts`), dùng `strappingVolume(table, chiều cao)`, thêm transform mới.
+2. Có bảng dung tích của khách: thêm dữ liệu bảng (vd file mới `tanks.ts` trong `src/mocks/`), dùng `strappingVolume(table, chiều cao)`, thêm transform mới.
 3. Chạy `npm test` (node:test, `*.test.ts` cạnh module).
 
 **Thêm loại asset 3D**
@@ -517,14 +520,14 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone`, `pulse`, `children` | Tổng quan | `#layout` |
 | Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerVariant`, `tone`, `padding`, `bodyClassName` | mọi trang | `#primitives` |
 | Divider | `src/components/Divider/Divider.tsx` | `orientation`, `tone` | trong AppHeader, DetailDrawer | `#primitives` |
-| ProgressBar | `src/components/ProgressBar/ProgressBar.tsx` | `value`, `max`, `tone`, `size` | Bảo trì | `#primitives` |
+| ProgressBar | `src/components/ProgressBar/ProgressBar.tsx` | `value`, `max`, `tone`, `size`, `label` (bắt buộc – tên truy cập) | Bảo trì, trong KpiCard/CategoryBarList | `#primitives` |
 | Icon (+ TempIcons, EditorIcons) | `src/components/Icon/Icon.tsx` | `name` (IconName), `box`, `label` | mọi trang | `#primitives`, `#editor` |
 
 **GĐ2 – Form & điều hướng**
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| NavTabs | `src/components/NavTabs/NavTabs.tsx` | `items`, `value`, `onChange` | trong AppHeader | `#navigation` |
+| NavTabs, NavMenu | `src/components/NavTabs/NavTabs.tsx` | `items`, `value`, `onChange` · NavTabs: đủ chữ ≥ `wide`, chỉ icon 1280–1519 · NavMenu: nút xổ danh sách < `xl` | trong AppHeader | `#navigation` |
 | Tabs | `src/components/Tabs/Tabs.tsx` | `items` (count, countTone), `value`, `onChange`, `panelId` | Cảnh báo, Bảo trì, Editor | `#navigation` |
 | SegmentedControl | `src/components/SegmentedControl/SegmentedControl.tsx` | `options`, `value`, `onChange`, `variant`, `size` | form Bảo trì, PlantMap | `#navigation` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
@@ -543,21 +546,21 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 |---|---|---|---|---|
 | AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` | `src/app/Page.tsx` | `#layout` (bản gắn router) |
 | PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions` | mọi trang | `#layout` |
-| AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar` | `src/app/Page.tsx` | không |
+| AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
 
 **GĐ4A – Nghiệp vụ**
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action` | qua `src/app/kpi.tsx` | `#business` |
+| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost` | qua `src/app/kpi.tsx` | `#business` |
 | SystemHealthCard | `src/components/SystemHealthCard/SystemHealthCard.tsx` | `value`, `caption`, `stats` | Tổng quan | `#business` |
 | AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick` | Tổng quan | `#business` |
 | AlertCard | `src/components/AlertCard/AlertCard.tsx` | dữ liệu `AlertCardData` + `onClick(id)` | Cảnh báo | `#business` |
 | PriorityTaskCard | `src/components/PriorityTaskCard/PriorityTaskCard.tsx` | dữ liệu `PriorityTaskData` + `onDetail` | Bảo trì | `#forms` |
-| AssetRow, AssetWatchlist | `src/components/AssetRow/AssetRow.tsx` | `assets`, `onAssetClick` | Tổng quan | `#business` |
+| AssetRow, AssetWatchlist | `src/components/AssetRow/AssetRow.tsx` | `assets`, `onAssetClick`, dòng `signalLost` | Tổng quan | `#business` |
 | EventTimeline, RecentEventsCard | `src/components/EventTimeline/EventTimeline.tsx` | `events`, `variant` (event/schedule) | Bảo trì, Tổng quan | `#forms`, `#business` |
 | DetailDrawer | `src/components/DetailDrawer/DetailDrawer.tsx` | `open`, `title`, `badges`, `fields`, `actions` | Bảo trì | `#forms` |
-| AlertDetailDrawer | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | `alert`, `onAcknowledge`, `onComplete`, `onCreateMaintenance` | Cảnh báo | không |
+| AlertDetailDrawer | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | `alert`, `onAcknowledge`, `onComplete`, `onCreateMaintenance` | Cảnh báo | `#business` (mục Trạng thái) |
 | Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size` | form Bảo trì, Editor | `#forms` |
 | PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`; chung `onSelect`, `onRendererChange`, `notice` | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
 
@@ -570,7 +573,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | CategoryBarList | `src/components/CategoryBarList/CategoryBarList.tsx` | `items`, `max`, `unit` | Tổng quan | `#charts` |
 | DonutGauge | `src/components/DonutGauge/DonutGauge.tsx` | `segments`, `total`, `totalLabel` | Tổng quan | `#charts` |
 | FilterBar | `src/components/FilterBar/FilterBar.tsx` | `search`, `filters`, `values`, `onValuesChange`, `onAdvancedFilter` | Cảnh báo, Bảo trì | `#navigation` |
-| DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `selectable`, `selectedIds`, `rowActions`, `pagination` | Cảnh báo, Bảo trì | `#charts` |
+| DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `label` (→ `<caption>`), `selectable`, `selectedIds`, `rowActions`, `pagination`, `minWidth` (cuộn ngang trong khung), `stickyFirst`, `stickyActions` | Cảnh báo, Bảo trì | `#charts` |
 | Pagination | `src/components/Pagination/Pagination.tsx` | `page`, `pageCount`, `onPageChange` | trong DataTable | `#charts` (qua DataTable) |
 
 ---
@@ -601,6 +604,60 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 
 ---
 
+## 7b. Test và chất lượng
+
+**Lệnh**
+
+| Lệnh | Làm gì |
+|---|---|
+| `npm test` | vitest chế độ watch (chạy lại khi sửa file) |
+| `npm run test:run` | chạy hết test một lần (CI, trước khi commit) |
+| `npm run test:coverage` | test + coverage cho thư mục logic (`src/features`, `src/data`, `src/lib`, `src/app/useTableFilters.ts`; báo cáo HTML ở `coverage/`) |
+| `npm run lint` | ESLint 9: TypeScript + react-hooks + jsx-a11y (`eslint.config.js`) |
+| `npm run typecheck` | `tsc -b --noEmit` (kể cả file test) |
+| `npm run build` | typecheck + build production |
+
+**Nơi đặt và đặt tên**
+- Test nằm cạnh module: `src/lib/plantTime.ts` → `src/lib/plantTime.test.ts`; component → `src/components/Tabs/Tabs.test.tsx`.
+- `*.test.ts` = test thuần, chạy môi trường node (nhanh). `*.test.tsx` cần DOM thì dòng đầu file ghi `// @vitest-environment jsdom`.
+- Cấu hình: `vitest.config.ts` (gộp `vite.config.ts` nên alias `@/` dùng được); `src/test/setup.ts` nạp matcher jest-dom, dọn DOM, polyfill `matchMedia`/`ResizeObserver`/`scrollIntoView`.
+- Tên test viết tiếng Việt, mô tả hành vi: `test('hạn = hôm nay → chưa quá hạn', …)`.
+
+**Thêm test cho hàm mới**
+1. Hàm logic viết **thuần**: nhận mọi thứ thay đổi theo thời gian/môi trường qua tham số (vd `now: Date`, `now: number`), không gọi `Date.now()`/`new Date()`/`localStorage` bên trong.
+2. Tạo `<file>.test.ts` cạnh nó; có ca thường + ca biên (0, rỗng, âm, vượt giới hạn, ranh giới ngày/múi giờ, chạy lại hai lần…).
+3. Hook: `renderHook` của Testing Library (cần router thì bọc `MemoryRouter`, xem `src/app/useTableFilters.test.tsx`).
+4. Component: `render` + `userEvent` + truy vấn theo vai trò/tên (`getByRole('tab', { name: … })`) – đồng thời kiểm tra a11y.
+5. `npm run test:run` và `npm run lint` phải sạch trước khi commit; hàm logic mới có test trong cùng commit.
+
+**Hiện có** (≈ 92 test): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
+
+**Kiểm tra accessibility**
+- Tự động khi viết code: `npm run lint` (jsx-a11y: tên truy cập, nhãn ô nhập, không `tabindex` > 0, phần tử có click phải dùng được bằng phím).
+- Theo trang: chạy axe-core (WCAG 2.1 A/AA) trên dev server bằng Playwright (script để ngoài repo, nạp `node_modules/axe-core/axe.min.js` vào trang rồi gọi `axe.run`). Lỗi serious/critical phải sửa; lỗi tương phản lệch Figma ghi vào `CLAUDE.md` mục 7 để duyệt.
+- Quy tắc: dialog dùng `useDialog` (bẫy focus, Esc, trả focus); vùng cuộn/bản đồ có `role="region"` + tên + `tabIndex={0}`; thông báo động qua `announce()` (aria-live polite); trạng thái luôn kèm chữ/icon, không chỉ màu; chuyển động tôn trọng `prefers-reduced-motion` (`useReducedMotion`, CSS toàn cục).
+- Canvas 3D: danh sách thiết bị ẩn (`DeviceList` trong `SceneViewer.tsx`) – Tab vào thì hiện, Enter chọn thiết bị + đưa camera tới.
+
+**Breakpoint** (`tailwind.config.ts` → `screens`; không viết `min-[…px]` tuỳ ý)
+
+| Tên | Từ | Bố cục |
+|---|---|---|
+| (mặc định) | 0 | dùng được, không cần đẹp tuyệt đối; KPI 2 cột |
+| `md` | 768 | KPI 3 cột |
+| `lg` | 1024 | Editor cột bên hẹp; Tổng quan sidebar nằm dưới |
+| `xl` | 1280 | bố cục đầy đủ: sidebar 326px bên phải, menu ngang chỉ icon (dưới mức này là nút Menu) |
+| `wide` | 1520 | như Figma (frame 1565): menu đủ chữ, KPI một hàng, 4 biểu đồ một hàng |
+| `3xl` | 1920 | nội dung tối đa `max-w-content` (1920px) căn giữa |
+
+Bảng rộng: `DataTable minWidth` → cuộn ngang trong khung, `stickyFirst`/`stickyActions` giữ cột mã/cột "Xem". Ảnh chụp kiểm tra responsive để trong `scratch/` (đã gitignore).
+
+**Kiểm tra đường dẫn trong GUIDE**: mọi đường dẫn file src/… nhắc tới trong file này phải tồn tại (mẫu có <…> hoặc * bị bỏ qua) – chạy:
+```bash
+grep -oE 'src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | sort -u | while read p; do [ -e "$p" ] || echo "THIẾU $p"; done
+```
+
+---
+
 ## 8. Chỗ còn là giả lập / TODO
 
 | Phần | Hiện tại | Chờ |
@@ -615,12 +672,13 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 | Bơm/lọc nâng 0.3 m trong cảnh mẫu | `elevation: 0.3` (dữ liệu cũ để khớp cổng ống) – bảng Kiểm tra báo "lơ lửng" | Thêm bệ (asset/tham số) hoặc hạ xuống sàn + dời điểm ống |
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
 | Tệp đính kèm | Chỉ giữ tên/kích thước, không upload | API lưu tệp |
-| KPI Tổng quan | Số tĩnh từ Figma | API (hoặc derive từ dữ liệu thật) |
+| KPI Tổng quan | Tồn kho / Mức bồn / Áp suất / Tiêu thụ lấy từ tag trực tiếp (mock); Cảnh báo, Sức khỏe và số chuông thông báo (2) vẫn tĩnh | API (hoặc derive từ dữ liệu thật) |
+| Màu chưa đạt tương phản AA | `danger`, `danger-strong` alpha 70/80, chữ menu chưa chọn (xem `CLAUDE.md` mục 7) | Duyệt màu với designer |
 | Thiết kế | Drawer, thao tác hàng loạt, form, checkbox checked, trang `/map` `/reports`, Editor chưa có trong Figma | Designer |
 | Icon tạm | `src/components/Icon/TempIcons.tsx`, `src/components/Icon/EditorIcons.tsx`, `src/pages/editor/AssetGlyph.tsx` | Asset từ Figma |
 | Cần khách xác nhận | Danh sách ở `CLAUDE.md` mục 7 ("Cần xác nhận") | Khách/PO |
 
 ---
 
-Cập nhật: 20/10/2026.
+Cập nhật: 21/10/2026.
 Khi thêm tính năng mới, cập nhật mục 4–6.

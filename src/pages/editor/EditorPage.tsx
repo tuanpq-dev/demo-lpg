@@ -24,6 +24,7 @@ import { AUTOSAVE_MS, clearDraft, readDraft, writeDraft, type EditorDraft } from
 import { addView, newScene, normalizeScene, uniqueId } from '@/features/scene-editor/ops';
 import { loadScene, redo, setSceneSilently, undo, useDirty, useEditorUi, useSceneDoc, type SceneSource } from '@/features/scene-editor/store';
 import { checkScene } from '@/features/scene-editor/validate';
+import { isTyping } from '@/lib/isTyping';
 import { AssetLibrary } from './AssetLibrary';
 import { ConfirmDialog, ImportErrorDialog, NameDialog, OpenSceneDialog, RestoreDraftDialog, SaveAsDialog } from './dialogs';
 import { EditorViewport } from './EditorViewport';
@@ -44,9 +45,6 @@ type Dialog =
 
 type PanelId = 'props' | 'views' | 'issues';
 
-/** Đang gõ trong ô nhập → không bắt phím tắt. */
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
 
 const ui = () => useEditorUi.getState();
 

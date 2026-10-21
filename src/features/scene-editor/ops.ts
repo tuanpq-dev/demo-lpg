@@ -1,5 +1,5 @@
 import { ASSET_SPECS, assetLayout } from '@/features/scene/assets/specs';
-import { EDIT_SNAP } from '@/features/scene/editConstants';
+import { EDIT_SNAP, snapTo } from '@/features/scene/editConstants';
 import type { ObjectTransform } from '@/features/scene/EditTools';
 import {
   canonicalPortRef,
@@ -33,7 +33,7 @@ import {
 export const SNAP = EDIT_SNAP;
 
 const round = (v: number, digits = 3) => +v.toFixed(digits) || 0;
-export const snapTo = (v: number, step: number) => round(Math.round(v / step) * step);
+export { snapTo };
 export const snapVec = (v: Vec3, step = SNAP.translate): Vec3 => [snapTo(v[0], step), round(v[1]), snapTo(v[2], step)];
 
 /** "Bơm & Lọc" → "bom-loc" (bỏ dấu tiếng Việt). */
@@ -372,11 +372,6 @@ export function insertPipePoint(scene: SceneConfig, id: string, at: Vec3): Scene
   const offset = pipe.from && portWorld(byId, pipe.from) ? 1 : 0;
   const index = Math.min(pipe.points.length, Math.max(0, near.index + 1 - offset));
   return updatePipe(scene, id, (p) => ({ ...p, points: [...p.points.slice(0, index), at, ...p.points.slice(index)] }));
-}
-
-/** Xoá điểm gập thứ `index` của `points`. */
-export function removePipePoint(scene: SceneConfig, id: string, index: number): SceneConfig {
-  return updatePipe(scene, id, (p) => ({ ...p, points: p.points.filter((_, i) => i !== index) }));
 }
 
 /** Đảo chiều ống (from ↔ to, đảo thứ tự điểm; object gắn: t → 1 − t). */

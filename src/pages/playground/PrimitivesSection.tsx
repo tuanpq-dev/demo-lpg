@@ -11,28 +11,9 @@ import {
   type Severity,
   type WorkStatus,
 } from '@/components';
+import { Demo } from './Demo';
 
 /** Một khối demo: component bên trái, ảnh Figma tham chiếu bên phải. */
-function Demo({ title, node, refImg, children }: { title: string; node: string; refImg?: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/65">Figma {node}</span>
-      </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-lg border border-dashed border-line/30 bg-bg-app p-4">{children}</div>
-        {refImg && (
-          <figure className="flex flex-col gap-2 rounded-lg border border-dashed border-line/30 p-4">
-            <figcaption className="text-xs text-fg-muted/65">Figma (tham chiếu)</figcaption>
-            <img src={refImg} alt={`Figma ${node}`} className="max-w-full self-start" />
-          </figure>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3">

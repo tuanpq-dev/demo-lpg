@@ -1,9 +1,10 @@
 import { Html, Line } from '@react-three/drei';
+import { isTyping } from '@/lib/isTyping';
 import { useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Raycaster, SphereGeometry, Vector2, Vector3, type Group } from 'three';
 import type { ScenePalette } from './colors';
-import { EDIT_SNAP } from './editConstants';
+import { EDIT_SNAP, snapTo } from './editConstants';
 import { planeHit, type SceneEditState, type ScenePicker } from './EditTools';
 import type { ScenePreview } from './geometry';
 import { allPorts, orthoSegment, PORT_SNAP_RADIUS, same3, type WorldPort } from './pipes';
@@ -21,10 +22,7 @@ const HEIGHT_STEP = 0.5;
 /** Click (không kéo) nếu chuột đi < 4 px giữa down và up – kéo thì để OrbitControls xoay camera. */
 const CLICK_PX = 4;
 
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
 
-const snapTo = (v: number, step: number) => +(Math.round(v / step) * step).toFixed(3);
 
 const DOT = new SphereGeometry(1, 12, 8);
 

@@ -1,55 +1,58 @@
-const colorGroups: { title: string; tokens: { name: string; hex: string }[] }[] = [
+import { tokenHex } from '@/lib/tokens';
+
+/** Tên token (giá trị hex đọc từ tokens.css lúc chạy – không chép tay để khỏi lệch). */
+const colorGroups: { title: string; tokens: { name: string }[] }[] = [
   {
     title: 'Background / Surface',
     tokens: [
-      { name: 'bg-app', hex: '#07111F' },
-      { name: 'bg-header', hex: '#0F1C2D' },
-      { name: 'bg-canvas', hex: '#0A111A' },
-      { name: 'surface', hex: '#111827' },
-      { name: 'surface-raised', hex: '#0E1A2B' },
-      { name: 'surface-sunken', hex: '#0E1417' },
-      { name: 'surface-muted', hex: '#303639' },
-      { name: 'surface-chip', hex: '#3C4148' },
+      { name: 'bg-app' },
+      { name: 'bg-header' },
+      { name: 'bg-canvas' },
+      { name: 'surface' },
+      { name: 'surface-raised' },
+      { name: 'surface-sunken' },
+      { name: 'surface-muted' },
+      { name: 'surface-chip' },
     ],
   },
   {
     title: 'Border',
     tokens: [
-      { name: 'line', hex: '#3C494E' },
-      { name: 'line-card', hex: '#3D4850' },
-      { name: 'divider', hex: '#737373' },
+      { name: 'line' },
+      { name: 'line-card' },
+      { name: 'divider' },
     ],
   },
   {
     title: 'Text',
     tokens: [
-      { name: 'text-primary', hex: '#DDE3E7' },
-      { name: 'text-secondary', hex: '#BDC8D2' },
-      { name: 'text-muted', hex: '#BBC9CF' },
-      { name: 'text-label', hex: '#A9C7EA' },
-      { name: 'text-inverse', hex: '#07111F' },
-      { name: 'text-disabled', hex: '#3B4048' },
+      { name: 'text-primary' },
+      { name: 'text-secondary' },
+      { name: 'text-muted' },
+      { name: 'text-label' },
+      { name: 'text-inverse' },
+      { name: 'text-disabled' },
     ],
   },
   {
     title: 'Brand',
     tokens: [
-      { name: 'primary', hex: '#22D3EE' },
-      { name: 'accent', hex: '#00B7FF' },
-      { name: 'info', hex: '#87CFFF' },
+      { name: 'primary' },
+      { name: 'accent' },
+      { name: 'info' },
     ],
   },
   {
     title: 'Status',
     tokens: [
-      { name: 'success', hex: '#34D399' },
-      { name: 'success-strong', hex: '#0FA876' },
-      { name: 'live', hex: '#0DE635' },
-      { name: 'warning', hex: '#FFBB43' },
-      { name: 'warning-soft', hex: '#FFD9A1' },
-      { name: 'danger', hex: '#D34957' },
-      { name: 'danger-strong', hex: '#FA2439' },
-      { name: 'neutral', hex: '#BDC8D2' },
+      { name: 'success' },
+      { name: 'success-strong' },
+      { name: 'live' },
+      { name: 'warning' },
+      { name: 'warning-soft' },
+      { name: 'danger' },
+      { name: 'danger-strong' },
+      { name: 'neutral' },
     ],
   },
 ];
@@ -92,7 +95,7 @@ export function TokensSection() {
                   style={{ backgroundColor: `rgb(var(--color-${t.name}))` }}
                 />
                 <div className="text-sm text-fg">{t.name}</div>
-                <div className="font-mono text-xs text-fg-muted/70">{t.hex}</div>
+                <div className="font-mono text-xs text-fg-muted/70">{tokenHex(t.name)}</div>
               </div>
             ))}
           </div>
