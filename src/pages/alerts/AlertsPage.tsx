@@ -230,7 +230,7 @@ export default function AlertsPage() {
       </section>
 
       {/* 2. KPI – 70:2957 (5 cột gap 12) */}
-      <section aria-label="Thống kê cảnh báo" className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <section aria-label="Thống kê cảnh báo" className="grid grid-cols-2 gap-3 lg:grid-cols-3 wide:grid-cols-5">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} />
         ))}
@@ -292,6 +292,9 @@ export default function AlertsPage() {
         <div id="alerts-table">
           <DataTable
             label="Danh sách cảnh báo"
+            // Khung hẹp hơn → cuộn ngang trong khung; cột "Xem" cố định mép phải.
+            minWidth={1180}
+            stickyActions
             columns={columns}
             rows={table.pageRows}
             getRowId={(a) => a.id}

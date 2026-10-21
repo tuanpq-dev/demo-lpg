@@ -364,7 +364,8 @@ export default function EditorPage() {
 
   return (
     <Page variant="workspace" pageHeader={fileBar}>
-      <div className="grid min-h-0 flex-1 grid-cols-[264px_minmax(0,1fr)_340px] gap-3">
+      {/* < xl: 2 cột bên hẹp lại để canvas còn chỗ; ≥ xl như thiết kế 264 | canvas | 340. */}
+      <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)_288px] gap-3 xl:grid-cols-[264px_minmax(0,1fr)_340px]">
         <aside className="flex min-h-0 flex-col gap-3" aria-label="Thư viện và cây object">
           <Card title="Thư viện asset" className="min-h-0 flex-[1.2]" bodyClassName="min-h-0 p-3">
             <AssetLibrary onAdd={(a) => actions.addAsset(a)} />

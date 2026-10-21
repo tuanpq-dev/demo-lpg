@@ -39,7 +39,8 @@ export function AppLayout({ header, variant = 'full', pageHeader, sidebar, child
   return (
     <div className={cn('flex min-h-screen flex-col bg-bg-app', className)}>
       <div className="sticky top-0 z-30">{header}</div>
-      <main className="flex flex-1 flex-col gap-6 px-page pb-8 pt-6">
+      {/* max-w-content: màn rất lớn (≥ 1920 + lề) nội dung căn giữa thay vì giãn thẻ. */}
+      <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-page pb-8 pt-6">
         {pageHeader}
         {variant === 'sidebar' ? (
           <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_326px]">

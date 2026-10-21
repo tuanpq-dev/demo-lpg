@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 import { Badge } from '../Badge';
 import { Divider } from '../Divider';
 import { Icon } from '../Icon';
-import { NavTabs, type NavTabItem } from '../NavTabs';
+import { NavMenu, NavTabs, type NavTabItem } from '../NavTabs';
 
 export type AppHeaderUser = {
   name: string;
@@ -56,7 +56,9 @@ export function AppHeader({
         </div>
       </div>
 
-      <NavTabs items={navItems} value={navValue} onChange={onNavChange} className="min-w-0" />
+      {/* ≥ xl: menu ngang (chỉ icon tới wide); < xl: nút Menu xổ danh sách. */}
+      <NavTabs items={navItems} value={navValue} onChange={onNavChange} className="hidden min-w-0 xl:block" />
+      <NavMenu items={navItems} value={navValue} onChange={onNavChange} className="mr-auto xl:hidden" />
 
       {/* Nhóm phải – 53:76 */}
       <div className="flex shrink-0 items-center gap-[26px] pl-2.5 pr-2">

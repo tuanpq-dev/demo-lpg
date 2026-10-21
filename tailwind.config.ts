@@ -63,6 +63,20 @@ export default {
       semibold: 'var(--font-weight-semibold)',
       bold: 'var(--font-weight-bold)',
     },
+    /**
+     * Breakpoint CHUNG (không rải số tuỳ ý trong class). Figma vẽ ở 1565px (≥ wide).
+     * - < lg (1024): dùng được, không cần đẹp tuyệt đối · lg–xl: sidebar xuống dưới, menu thu gọn thành nút
+     * - xl (1280) – wide: bố cục đầy đủ, menu chỉ icon, KPI 3 cột · ≥ wide (1520): như Figma (KPI 1 hàng, menu đủ chữ)
+     * - 3xl (1920): nội dung giới hạn `max-w-content`, căn giữa (màn 2560 không giãn thẻ).
+     */
+    screens: {
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      wide: '1520px',
+      '3xl': '1920px',
+    },
     // Thang chữ lấy từ các cặp size/line-height xuất hiện nhiều nhất trong Figma.
     fontSize: {
       '2xs': ['10px', '15px'],
@@ -93,6 +107,10 @@ export default {
       letterSpacing: {
         label: '0.55px',
         caps: '0.8px',
+      },
+      maxWidth: {
+        /** Bề rộng tối đa vùng nội dung trang (màn rất lớn: căn giữa, không giãn thẻ). */
+        content: 'var(--content-max-width)',
       },
     },
   },

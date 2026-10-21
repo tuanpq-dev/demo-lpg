@@ -150,7 +150,7 @@ export default function OverviewPage() {
       }
     >
       {/* 1. KPI – 53:166 (6 cột gap 16, cao 128) */}
-      <section aria-label="Chỉ số chính" className="grid auto-rows-[128px] grid-cols-3 gap-4 min-[1520px]:grid-cols-6">
+      <section aria-label="Chỉ số chính" className="grid auto-rows-[128px] grid-cols-2 gap-4 md:grid-cols-3 wide:grid-cols-6">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} onAction={() => navigate('/alerts')} />
         ))}
@@ -184,7 +184,7 @@ export default function OverviewPage() {
       )}
 
       {/* 3. Chart – 53:319. Figma đặt cả hàng opacity 70% (xem mục "Sai khác với Figma") */}
-      <section aria-label="Biểu đồ" className="grid grid-cols-2 gap-4 opacity-70 min-[1520px]:grid-cols-4">
+      <section aria-label="Biểu đồ" className="grid grid-cols-2 gap-4 opacity-70 wide:grid-cols-4">
         <ChartCard title="Xu hướng tồn kho (24h)" description="Tồn kho 24 giờ qua">
           <AreaTrendChart data={charts.inventory.points} domain={charts.inventory.domain} unit="Nm³" format={nf} />
         </ChartCard>

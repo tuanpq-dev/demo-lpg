@@ -150,3 +150,10 @@ export const SignalLostIcon = ({ size = 16, ...p }: P) => (
     <path d="M3.5 3.5l17 17" />
   </svg>
 );
+
+/** Ba gạch – nút mở menu điều hướng thu gọn (màn hẹp). */
+export const MenuIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </svg>
+);

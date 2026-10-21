@@ -249,7 +249,7 @@ export default function MaintenancePage() {
   return (
     <Page pageHeader={header}>
       {/* 1. KPI – 70:5207 (6 cột gap 18) */}
-      <section aria-label="Thống kê bảo trì" className="grid grid-cols-2 gap-[18px] md:grid-cols-3 xl:grid-cols-6">
+      <section aria-label="Thống kê bảo trì" className="grid grid-cols-2 gap-[18px] md:grid-cols-3 wide:grid-cols-6">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} />
         ))}
@@ -330,6 +330,10 @@ export default function MaintenancePage() {
             <div id="maintenance-table">
               <DataTable
                 label="Danh sách yêu cầu bảo trì"
+                // Khung hẹp hơn → cuộn ngang trong khung; mã yêu cầu + cột "Xem" cố định khi cuộn.
+                minWidth={1100}
+                stickyFirst
+                stickyActions
                 columns={columns}
                 rows={table.pageRows}
                 getRowId={getId}
