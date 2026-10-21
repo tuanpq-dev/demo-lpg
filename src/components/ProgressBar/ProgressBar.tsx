@@ -17,8 +17,8 @@ export type ProgressBarProps = {
   size?: 'sm' | 'md';
   /** subtle = surface-muted/50 (Tổng quan), solid = surface-muted (Bảo trì 70:5098). */
   track?: 'subtle' | 'solid';
-  /** Nhãn cho trình đọc màn hình. */
-  label?: string;
+  /** Tên truy cập (bắt buộc – axe `aria-progressbar-name`). */
+  label: string;
   className?: string;
 };
 

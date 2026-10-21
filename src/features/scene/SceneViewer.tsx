@@ -75,6 +75,8 @@ import { objectMarker } from './markers';
 import { PipeMesh } from './PipeMesh';
 import { nearestOnPath, pathLength } from './pipes';
 import { PipeDrawTool, PipeHandles, startPointDrag } from './PipeTools';
+import { isTyping } from '@/lib/isTyping';
+import { prefersReducedMotion, useReducedMotion } from '@/lib/reducedMotion';
 import { pulse } from './pulse';
 import { isWebGLAvailable, QUALITY_PRESETS, SCENE_QUALITIES, type QualityPreset, type SceneQuality } from './quality';
 import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, SceneView, Thresholds, Vec3 } from './types';
@@ -231,8 +233,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   useEffect(() => {
     if (activeIndex === null || !selectedPipe || !edit?.onUpdatePipe) return;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target;
-      if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+      if (isTyping(e.target)) return;
       if (e.key === 'Escape') {
         e.stopPropagation();
         setActivePoint(null);
@@ -345,8 +346,10 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   // Lưu lượng tươi (mất tín hiệu → không chạy vệt sáng, không giữ số cũ).
   const flowOf = (tag?: string) => (tag ? freshNumber(liveData?.[tag]) : undefined);
   // Render liên tục khi có ống đang chảy hoặc object danger (pulse); còn lại render theo yêu cầu.
+  // prefers-reduced-motion: không vệt chảy/không pulse → không cần vẽ liên tục.
+  const reducedMotion = useReducedMotion();
   const animated =
-    config.pipes.some((p) => (flowOf(p.flowTag) ?? 0) > 0) || [...statuses.values()].includes('danger');
+    !reducedMotion && (config.pipes.some((p) => (flowOf(p.flowTag) ?? 0) > 0) || [...statuses.values()].includes('danger'));
   const cam = config.camera ?? DEFAULT_CAMERA;
   const hoveredObj = hovered ? byId.get(hovered) : undefined;
 
@@ -478,6 +481,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
                   radius={p.radius ?? DEFAULT_PIPE_RADIUS}
                   palette={palette}
                   flow={flowOf(p.flowTag)}
+                  still={reducedMotion}
                   bloom={preset.postprocessing}
                   selected={isSel}
                 />
@@ -529,6 +533,27 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
         </Canvas>
       </WebGLErrorBoundary>
       <div aria-hidden className="scene-vignette pointer-events-none absolute inset-0" />
+      <DeviceList
+        sceneName={config.name}
+        objects={visible.filter((o) => ASSETS[o.asset].category === 'equipment')}
+        statuses={statuses}
+        liveData={liveData}
+        thresholds={thresholds}
+        selected={selected}
+        onPick={
+          edit
+            ? (id) => {
+                edit.onSelect([id], 'replace');
+                rig.current?.fit([id]);
+              }
+            : onSelect
+              ? (id) => {
+                  onSelect(id);
+                  rig.current?.fit([id]);
+                }
+              : undefined
+        }
+      />
       {marquee && (
         <div
           aria-hidden
@@ -865,7 +890,8 @@ function CameraRig({
     const g = goal.current;
     const c = controls.current;
     if (!g || !c) return;
-    const k = 1 - Math.exp(-dt * FLY_RATE);
+    // Giảm chuyển động → nhảy thẳng tới khung (không bay).
+    const k = prefersReducedMotion() ? 1 : 1 - Math.exp(-dt * FLY_RATE);
     const offset = camera.position.clone().sub(c.target).lerp(g.offset, k);
     c.target.lerp(g.target, k);
     camera.zoom += (g.zoom - camera.zoom) * k;
@@ -1043,7 +1069,8 @@ function BoundsOutline({ obj, color }: { obj: ResolvedObject; color: Color }) {
     const edges = new EdgesGeometry(box);
     box.dispose();
     return edges;
-    // `key` gói min/max.
+    // `key` gói min/max (mảng mới mỗi render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
@@ -1077,7 +1104,7 @@ function DangerGlow({ obj, color }: { obj: ResolvedObject; color: Color }) {
   useEffect(() => () => texture.dispose(), [texture]);
   const material = useRef<MeshBasicMaterial>(null);
   useFrame(({ clock }) => {
-    if (material.current) material.current.opacity = 0.2 + 0.35 * pulse(clock.elapsedTime);
+    if (material.current) material.current.opacity = 0.2 + 0.35 * pulse(clock.elapsedTime, prefersReducedMotion());
   });
   return (
     // Đặt ở mặt đất (y thế giới ≈ 0) dù object nằm trên cao.
@@ -1107,6 +1134,73 @@ const readingTone: Record<ObjectStatus, string> = {
   danger: 'text-danger-strong',
   offline: 'text-neutral',
 };
+
+const STATUS_TEXT: Record<ObjectStatus, string> = {
+  normal: 'bình thường',
+  warning: 'cảnh báo',
+  danger: 'sự cố',
+  offline: 'mất tín hiệu',
+};
+
+/**
+ * Văn bản thay thế cho canvas 3D (trình đọc màn hình + bàn phím): tóm tắt số thiết bị theo trạng thái và danh sách
+ * thiết bị (tên, trạng thái, số đo). Ẩn với mắt thường; Tab vào thì hiện thành bảng nhỏ góc trên trái. Có `onPick` →
+ * mỗi thiết bị là nút: Enter/Space = chọn thiết bị + đưa camera tới.
+ */
+function DeviceList({
+  sceneName,
+  objects,
+  statuses,
+  liveData,
+  thresholds,
+  selected,
+  onPick,
+}: {
+  sceneName: string;
+  objects: ResolvedObject[];
+  statuses: Map<string, ObjectStatus>;
+  liveData?: LiveData;
+  thresholds?: Record<string, Thresholds>;
+  selected: ReadonlySet<string>;
+  onPick?: (id: string) => void;
+}) {
+  const count = (s: ObjectStatus) => objects.filter((o) => statuses.get(o.id) === s).length;
+  const summary = `${objects.length} thiết bị: ${count('danger')} sự cố, ${count('warning')} cảnh báo, ${count('offline')} mất tín hiệu.`;
+  return (
+    <section
+      aria-label={`Thiết bị trong cảnh ${sceneName}`}
+      data-scene-devices
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:left-3 focus-within:top-16 focus-within:z-30 focus-within:max-h-[60%] focus-within:w-72 focus-within:overflow-auto focus-within:rounded-lg focus-within:border focus-within:border-line/30 focus-within:bg-surface-raised/95 focus-within:p-2 focus-within:text-sm focus-within:shadow-card"
+    >
+      <p className="mb-1 text-fg-secondary">{summary}</p>
+      <ul className="flex flex-col gap-0.5">
+        {objects.map((o) => {
+          const st = statuses.get(o.id) ?? 'normal';
+          const readings = objectReadings(o, liveData, thresholds)
+            .map((r) => `${r.label} ${r.text}`)
+            .join(', ');
+          const text = `${o.label ?? o.id} (${o.id}) – ${STATUS_TEXT[st]}${readings ? `. ${readings}` : ''}`;
+          return (
+            <li key={o.id}>
+              {onPick ? (
+                <button
+                  type="button"
+                  aria-pressed={selected.has(o.id)}
+                  onClick={() => onPick(o.id)}
+                  className={cn('w-full rounded-sm px-2 py-1 text-left hover:bg-surface-muted', readingTone[st])}
+                >
+                  {text}
+                </button>
+              ) : (
+                <span className={readingTone[st]}>{text}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 /** Tooltip khi hover object không có marker: tên + loại + số liệu theo bindings. */
 function ObjectTooltip({

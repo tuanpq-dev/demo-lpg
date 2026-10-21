@@ -54,7 +54,7 @@ const LIVE_STATUS = {
 /**
  * Trạng thái nguồn dữ liệu trực tiếp (Figma 53:124 = trạng thái connected). Đọc `useLiveStatus` – giữ kết nối mở:
  * connected "Dữ liệu trực tiếp" (chấm live) · connecting "Đang kết nối lại…" (vàng, nhấp nháy) · disconnected
- * "Mất kết nối" (đỏ). `role="status"` để trình đọc màn hình báo khi đổi.
+ * "Mất kết nối" (đỏ). Trình đọc màn hình được báo qua LiveAnnouncer.
  */
 export function LiveDataButton({ onClick }: ActionProps) {
   const status = useLiveStatus();
@@ -65,9 +65,8 @@ export function LiveDataButton({ onClick }: ActionProps) {
       onClick={onClick}
       data-live-status={status}
     >
-      <span role="status" className={s.className}>
-        {s.label}
-      </span>
+      {/* Đổi trạng thái được đọc qua LiveAnnouncer (aria-live polite) – không đặt vùng live trong nút. */}
+      <span className={s.className}>{s.label}</span>
     </Button>
   );
 }

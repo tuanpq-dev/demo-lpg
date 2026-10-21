@@ -4,7 +4,6 @@ import { DEFAULT_PIPE_RADIUS } from './pipes';
 import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 export { DEFAULT_PIPE_RADIUS } from './pipes';
-export { FLOOR_HALF_SIZE } from './editConstants';
 
 /** Object đã đặt vị trí (kể cả object gắn ống); position[1] = độ cao đáy (elevation). */
 export type ResolvedObject = SceneObject & { position: Vec3; rotation: Vec3 };

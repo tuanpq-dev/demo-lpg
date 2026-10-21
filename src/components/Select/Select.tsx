@@ -195,7 +195,8 @@ export function Select<V extends string = string>({
         ref={triggerRef}
         id={id}
         type="button"
-        aria-invalid={invalid || undefined}
+        // Không đặt aria-invalid: không hợp lệ với role button; thông báo lỗi đã nối qua aria-describedby (FormField).
+        data-invalid={invalid || undefined}
         aria-describedby={describedBy}
         aria-labelledby={variant === 'field' && labelledBy ? `${labelledBy} ${uid}-value` : undefined}
         aria-haspopup="listbox"
@@ -219,7 +220,7 @@ export function Select<V extends string = string>({
         )}
       >
         {icon}
-        <span id={`${uid}-value`} className={cn(variant === 'field' && 'truncate', variant === 'field' && !selected && 'text-fg-secondary/50')}>
+        <span id={`${uid}-value`} className={cn(variant === 'field' && 'truncate', variant === 'field' && !selected && 'text-fg-secondary/60')}>
           {triggerText}
         </span>
         {variant !== 'button' && (
@@ -245,6 +246,8 @@ export function Select<V extends string = string>({
           {rows.map((row, i) => {
             const isSelected = i === selectedIndex;
             return (
+              // Bàn phím xử lý ở phần tử cha (aria-activedescendant) – option chỉ cần click chuột.
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
               <li
                 key={row.value ?? '__all__'}
                 id={`${uid}-opt-${i}`}

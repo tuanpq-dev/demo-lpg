@@ -76,6 +76,3 @@ export function useSceneConfig(sceneId: string) {
   return { ...state, refetch };
 }
 
-// ---------------- Số liệu trực tiếp ----------------
-// Đã chuyển sang src/data/live (LiveDataSource + useLiveData/useLiveStatus); giữ export để import cũ vẫn chạy.
-export { useLiveData, useLiveStatus } from './live';

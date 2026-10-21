@@ -18,3 +18,6 @@ export const GROUND_GRAZING_DOT = 0.05;
 /** Vùng sàn hợp lệ: hình vuông ±FLOOR_HALF_SIZE m quanh gốc (Editor vẽ viền + cảnh báo object nằm ngoài). */
 export const FLOOR_HALF_SIZE = 60;
 export const GROUND_WORK_LIMIT = FLOOR_HALF_SIZE * 2;
+
+/** Làm tròn `v` về bội số gần nhất của `step`, 3 số lẻ (bỏ sai số dấu phẩy động, -0 → 0). */
+export const snapTo = (v: number, step: number) => +(Math.round(v / step) * step).toFixed(3) || 0;

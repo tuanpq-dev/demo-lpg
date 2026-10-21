@@ -1,10 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CameraIcon,
   CaretIcon,
   Checkbox,
   CursorIcon,
+  OrthoIcon,
+  PipeIcon,
   DuplicateIcon,
   ExportIcon,
   EyeIcon,
@@ -30,9 +32,12 @@ import {
   type TreeItem,
   type Vec3Value,
 } from '@/components';
+import { Demo } from './Demo';
 
 const ICONS = {
   CursorIcon,
+  PipeIcon,
+  OrthoIcon,
   MoveIcon,
   RotateIcon,
   ScaleIcon,
@@ -56,15 +61,6 @@ const ICONS = {
   CameraIcon,
 };
 
-function Demo({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line/30 bg-surface p-4">
-      <h3 className="text-md font-semibold">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
 /** Mục 9 – component mới cho Scene Editor (3D-3): NumberField, Vec3Field, TreeView, Checkbox có nhãn, icon editor. */
 export function EditorSection() {
   const [len, setLen] = useState<number | null>(null);
@@ -87,7 +83,7 @@ export function EditorSection() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-base text-fg-secondary">
-        Dùng trong <Link className="text-accent hover:underline" to="/editor?edit=1">Scene Editor (/editor?edit=1)</Link>. ⚠ Figma chưa có thiết kế –
+        Dùng trong <Link className="text-accent underline" to="/editor?edit=1">Scene Editor (/editor?edit=1)</Link>. ⚠ Figma chưa có thiết kế –
         style theo token, cùng ngôn ngữ với TextField / Select.
       </p>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

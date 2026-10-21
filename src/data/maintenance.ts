@@ -1,6 +1,7 @@
 import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
 import { createCollectionStore } from '@/lib/createCollectionStore';
+import { daysFromToday, plantMonthKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/mocks/alerts';
 import {
   CHECKLIST_TEMPLATES,
@@ -26,20 +27,16 @@ export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, SHIFTS
 // Ngày & hạn
 // ============================================================================
 
-const DAY = 86_400_000;
-const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-const parseDay = (iso: string) => {
-  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-  return new Date(y, m - 1, d).getTime();
-};
+// "Hôm nay" tính theo giờ nhà máy (Asia/Bangkok – src/lib/plantTime.ts), không theo múi giờ máy người xem.
+// Mọi hàm nhận `now` từ nơi gọi (trang dùng useNow) → test được, không gọi Date.now() bên trong.
 
-/** Số ngày từ hôm nay tới hạn (âm = đã qua). */
-export const daysUntilDue = (r: MaintenanceRecord, now = new Date()) => Math.round((parseDay(r.dueAt) - dayStart(now)) / DAY);
+/** Số ngày từ hôm nay (giờ nhà máy) tới hạn (âm = đã qua). */
+export const daysUntilDue = (r: MaintenanceRecord, now: Date) => daysFromToday(r.dueAt, now);
 
-/** Quá hạn = hạn (theo ngày) trước hôm nay và chưa hoàn thành. Tự tính, không lưu. */
-export const isOverdue = (r: MaintenanceRecord, now = new Date()) => r.status !== 'done' && daysUntilDue(r, now) < 0;
+/** Quá hạn = hạn (theo ngày, giờ nhà máy) trước hôm nay và chưa hoàn thành. Hạn = hôm nay → chưa quá hạn. */
+export const isOverdue = (r: MaintenanceRecord, now: Date) => r.status !== 'done' && daysUntilDue(r, now) < 0;
 
-export function dueLabel(r: MaintenanceRecord, now = new Date()) {
+export function dueLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
   if (d < 0) return `Quá hạn ${-d} ngày`;
   if (d === 0) return 'Hết hạn hôm nay';
@@ -54,7 +51,7 @@ export const formatDate = (iso: string) => {
 };
 
 /** "Hôm nay, 14:00" / "Ngày mai, 08:30" / "20/10/2026, 17:00" (Lịch sắp tới 70:4902). */
-export function scheduleLabel(r: MaintenanceRecord, now = new Date()) {
+export function scheduleLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
   const time = r.dueAt.slice(11, 16);
   const day = d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : formatDate(r.dueAt);
@@ -140,12 +137,12 @@ type Filters = {
 
 const RANGE_DAYS: Record<Exclude<MaintenanceRange, 'all'>, number> = { today: 0, '7d': 6, '30d': 29 };
 
-export function matchMaintenance(r: MaintenanceRecord, f: Filters) {
+export function matchMaintenance(r: MaintenanceRecord, f: Filters, now: Date) {
   const q = f.q.trim().toLowerCase();
-  const age = Math.round((dayStart(new Date()) - parseDay(r.createdAt)) / DAY);
+  const age = -daysFromToday(r.createdAt, now);
   return (
     (f.range === 'all' || age <= RANGE_DAYS[f.range]) &&
-    (f.tab === 'all' || (f.tab === 'overdue' ? isOverdue(r) : r.status === f.tab)) &&
+    (f.tab === 'all' || (f.tab === 'overdue' ? isOverdue(r, now) : r.status === f.tab)) &&
     (!q || [r.code, r.title, r.device, r.area, r.assignee ?? ''].some((s) => s.toLowerCase().includes(q))) &&
     (!f.area || r.area === f.area) &&
     (!f.priority || r.priority === f.priority) &&
@@ -167,10 +164,10 @@ export function sortMaintenance(a: MaintenanceRecord, b: MaintenanceRecord, f: P
 const SEVERITY_RANK: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 /** 3 việc ưu tiên: chưa xong, mức Nghiêm trọng/Cao; quá hạn trước, rồi hạn gần nhất, rồi mức độ (70:4969). */
-export function derivePriorityTasks(rows: readonly MaintenanceRecord[], limit = 3): PriorityTaskData[] {
+export function derivePriorityTasks(rows: readonly MaintenanceRecord[], now: Date, limit = 3): PriorityTaskData[] {
   return rows
     .filter((r) => r.status !== 'done' && (r.priority === 'critical' || r.priority === 'high'))
-    .sort((a, b) => daysUntilDue(a) - daysUntilDue(b) || SEVERITY_RANK[a.priority] - SEVERITY_RANK[b.priority])
+    .sort((a, b) => daysUntilDue(a, now) - daysUntilDue(b, now) || SEVERITY_RANK[a.priority] - SEVERITY_RANK[b.priority])
     .slice(0, limit)
     .map((r) => ({
       id: r.id,
@@ -179,27 +176,22 @@ export function derivePriorityTasks(rows: readonly MaintenanceRecord[], limit = 
       severity: r.priority,
       device: r.device,
       deviceIcon: deviceIcon(r.device),
-      dueLabel: dueLabel(r),
-      overdue: isOverdue(r),
+      dueLabel: dueLabel(r, now),
+      overdue: isOverdue(r, now),
     }));
 }
 
 /** Lịch sắp tới: việc ĐỊNH KỲ chưa xong, hạn từ hôm nay trở đi, gần nhất trước (70:4889). */
-export function deriveSchedule(rows: readonly MaintenanceRecord[], limit = 3): TimelineEvent[] {
+export function deriveSchedule(rows: readonly MaintenanceRecord[], now: Date, limit = 3): TimelineEvent[] {
   return rows
-    .filter((r) => r.type === 'periodic' && r.status !== 'done' && daysUntilDue(r) >= 0)
+    .filter((r) => r.type === 'periodic' && r.status !== 'done' && daysUntilDue(r, now) >= 0)
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
     .slice(0, limit)
-    .map((r, i) => ({ id: r.id, time: scheduleLabel(r), title: r.title, location: r.area, active: i === 0 }));
+    .map((r, i) => ({ id: r.id, time: scheduleLabel(r, now), title: r.title, location: r.area, active: i === 0 }));
 }
 
-const inMonth = (iso: string | null, monthOffset: number, now = new Date()) => {
-  if (!iso) return false;
-  const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1).getTime();
-  const end = new Date(now.getFullYear(), now.getMonth() + monthOffset + 1, 1).getTime();
-  const t = parseDay(iso);
-  return t >= start && t < end;
-};
+/** Ngày `iso` thuộc tháng hiện tại (giờ nhà máy) dời `monthOffset` tháng. */
+const inMonth = (iso: string | null, monthOffset: number, now: Date) => !!iso && iso.slice(0, 7) === plantMonthKey(now, monthOffset);
 
 /**
  * 6 KPI (70:5207):
@@ -207,7 +199,7 @@ const inMonth = (iso: string | null, monthOffset: number, now = new Date()) => {
  * - Đang thực hiện: thanh = đang thực hiện / (đang thực hiện + chờ nghiệm thu + hoàn thành trong tháng).
  * - Đã hoàn thành = hoàn thành trong tháng.
  */
-export function deriveMaintenanceKpis(rows: readonly MaintenanceRecord[], now = new Date()): KpiMock[] {
+export function deriveMaintenanceKpis(rows: readonly MaintenanceRecord[], now: Date): KpiMock[] {
   const thisMonth = rows.filter((r) => inMonth(r.createdAt, 0, now)).length;
   const lastMonth = rows.filter((r) => inMonth(r.createdAt, -1, now)).length;
   const trend = lastMonth ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;

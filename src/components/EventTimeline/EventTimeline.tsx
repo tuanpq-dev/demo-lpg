@@ -85,7 +85,7 @@ export function EventTimeline({ events, variant = 'event', onEventClick, classNa
               ) : (
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-sm text-fg">{e.title}</span>
-                  <time className="text-2xs text-fg-muted/60">{e.time}</time>
+                  <time className="text-2xs text-fg-muted/65">{e.time}</time>
                 </span>
               )}
             </Tag>

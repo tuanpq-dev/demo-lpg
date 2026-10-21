@@ -338,6 +338,8 @@ function PlantMapThree({
       notice={notice}
       className={className}
     >
+      {/* Vùng bản đồ nhận phím +/−/0 nên phải focus được (WCAG 2.1.1); region có tên + hướng dẫn trong hint. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         role="region"
         aria-label={alt}
@@ -475,6 +477,7 @@ function PlantMapImage({
     }
     setT(clamp({ z: f.zoom, tx: cw / 2 - baseLeft - f.zoom * f.x * W, ty: ch / 2 - baseTop - f.zoom * f.y * H }));
     // Chỉ chạy khi đổi view hoặc kích thước khung; không phụ thuộc transform hiện tại.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, cw, ch]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -542,6 +545,7 @@ function PlantMapImage({
       notice={notice}
       className={className}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         ref={viewportRef}
         role="region"

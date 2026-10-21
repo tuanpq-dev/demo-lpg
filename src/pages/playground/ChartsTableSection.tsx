@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AreaTrendChart,
   Badge,
@@ -17,22 +17,11 @@ import { alertRecords as alertRows } from '@/mocks/alerts';
 import { consumptionByArea, deviceStatus, inventoryDomain, inventoryTrend, pressureTrend } from '@/mocks/overview';
 import { cn } from '@/lib/cn';
 import { FigmaRef } from './FigmaRef';
+import { Demo } from './Demo';
 
 const OVERVIEW = '/figma-ref/53-11-overview.png';
 const ALERTS = '/figma-ref/70-2809-alerts.png';
 const MAINT = '/figma-ref/70-3964-maintenance.png';
-
-function Demo({ title, node, children }: { title: string; node: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="flex flex-col gap-4 overflow-x-auto rounded-lg border border-dashed border-line/30 p-4">{children}</div>
-    </div>
-  );
-}
 
 const valueTone: Record<Severity, string> = {
   critical: 'text-danger',
@@ -52,7 +41,7 @@ export function ChartsTableSection() {
   const [empty, setEmpty] = useState(false);
   const [viewed, setViewed] = useState('—');
   const pageSize = 5;
-  const rows = empty ? [] : alertRows;
+  const rows = useMemo(() => (empty ? [] : alertRows), [empty]);
   const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
 
   const columns: DataTableColumn<AlertRecord>[] = [
@@ -116,7 +105,7 @@ export function ChartsTableSection() {
           <Button size="sm" onClick={() => { setEmpty((v) => !v); setPage(1); }}>
             {empty ? 'Hiện dữ liệu' : 'Thử trạng thái rỗng'}
           </Button>
-          <span className="font-mono text-xs text-fg-muted/60">
+          <span className="font-mono text-xs text-fg-muted/65">
             đã chọn: {selected.length} [{selected.join(', ')}] · xem: {viewed}
           </span>
         </div>

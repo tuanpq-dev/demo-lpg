@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import {
   Badge,
   FilterBar,
+  NavMenu,
   NavTabs,
   SearchInput,
   SegmentedControl,
@@ -15,25 +16,14 @@ import {
   type WorkStatus,
 } from '@/components';
 import { FigmaRef } from './FigmaRef';
+import { Demo } from './Demo';
 
 const OVERVIEW = '/figma-ref/53-11-overview.png';
 const ALERTS = '/figma-ref/70-2809-alerts.png';
 const MAINT = '/figma-ref/70-3964-maintenance.png';
 
-function Demo({ title, node, children }: { title: string; node: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="flex flex-col gap-4 rounded-lg border border-dashed border-line/30 p-4">{children}</div>
-    </div>
-  );
-}
-
 function StateLine({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-xs text-fg-muted/60">{children}</p>;
+  return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;
 }
 
 // ---------------- Dữ liệu mẫu (Figma) ----------------
@@ -150,6 +140,10 @@ export function NavigationSection() {
           <NavTabs items={navItems} value={nav} onChange={setNav} />
         </div>
         <StateLine>value = &quot;{nav}&quot; · ←/→ di chuyển, Enter chọn · &quot;Vận hành&quot; disabled</StateLine>
+        <StateLine>1280–1519px: chỉ icon (mục đang mở giữ chữ) · dưới 1280px: NavMenu bên dưới</StateLine>
+        <div className="rounded-md bg-bg-header px-6 py-2.5">
+          <NavMenu items={navItems} value={nav} onChange={setNav} />
+        </div>
         <FigmaRef src={OVERVIEW} x={270} y={0} w={950} h={60} caption="Figma – active: Tổng quan" />
         <FigmaRef src={ALERTS} x={270} y={0} w={950} h={60} caption="Figma – active: Cảnh báo" />
       </Demo>
@@ -201,7 +195,7 @@ export function NavigationSection() {
                 <Badge variant="status" value={a.status} />
               </li>
             ))}
-            {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-fg-muted/60">Không có cảnh báo phù hợp.</li>}
+            {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-fg-muted/65">Không có cảnh báo phù hợp.</li>}
           </ul>
         </div>
         <StateLine>

@@ -3,19 +3,20 @@
 ## 1. Dự án
 - Dashboard giám sát hệ thống LPG (Tổng quan · Cảnh báo · Bảo trì), dựng từ Figma, dữ liệu mock có thể thay bằng API.
 - Stack: Vite 5 · React 18 · TypeScript strict · Tailwind 3.4 · react-router 6 · recharts 2.13 · clsx · three 0.170 + @react-three/fiber 8 + drei 9 (chỉ trong chunk lazy `SceneViewer`) · @react-three/postprocessing 2.19 (chỉ trong chunk lazy `PostEffects`) · zod 3.23 (chỉ trong chunk lazy `parse`) · zustand 5 + zundo 2 (chỉ trong chunk lazy `EditorPage`). Alias `@/` → `src/`.
-- Lệnh: `npm run dev` · `npm run typecheck` · `npm run build` · `npm test` (unit test thuần `src/**/*.test.ts` bằng `node --test` + `--experimental-strip-types`, không thêm dependency) · `npx vite preview --port 4317`.
+- Lệnh: `npm run dev` · `npm run typecheck` · `npm run build` · `npm run lint` (ESLint 9 + typescript-eslint + react-hooks + jsx-a11y) · `npm test` (vitest watch) · `npm run test:run` · `npm run test:coverage` · `npx vite preview --port 4317`.
 - Deploy SPA (Netlify): `netlify.toml` (build + publish `dist` + Node 20 + `/*` → `/index.html` 200); chỉ một nguồn cấu hình (không thêm `public/_redirects`).
 - Lý do: history router (`createBrowserRouter`) – host tĩnh không có file cho `/alerts`… nên gõ URL/F5 sẽ 404 nếu không trả `index.html`; giữ `base` của Vite là `/`, không đặt `basename`.
 - Test tương tác: playwright-core + Edge cài sẵn (`channel: 'msedge'`; máy Linux: `npm i playwright-core` trong scratchpad + `executablePath: '/usr/bin/brave-browser'`), script để ngoài repo (scratchpad), không thêm dependency. Module thuần (parse, specs, data) test được trong trang qua `page.evaluate(() => import('/src/…ts'))` trên dev server.
 - Cấu trúc:
   - `src/components/<Name>/`: component thuần (không import router, trừ PageHeader dùng `<Link>`); barrel `src/components/index.ts`.
-  - `src/app/`: nối router: `navigation.ts` (menu), `Page.tsx` (AppLayout + header theo URL), `HeaderActions.tsx`, `useTableFilters.ts`, `kpi.tsx`, `Placeholder.tsx`, `ConnectedPlantMap.tsx` (nạp cảnh theo `sceneId` → PlantMap 3D), `editorAccess.ts` (quyền vào /editor).
+  - `src/app/`: nối router: `navigation.ts` (menu), `Page.tsx` (AppLayout + header theo URL), `HeaderActions.tsx`, `useTableFilters.ts`, `kpi.tsx`, `Placeholder.tsx`, `ConnectedPlantMap.tsx` (nạp cảnh theo `sceneId` → PlantMap 3D), `editorAccess.ts` (quyền vào /editor), `LiveAnnouncer.tsx` (vùng aria-live dùng chung, gắn trong `Page`).
   - `src/data/`: lớp dữ liệu theo màn: `overview.ts` (`applyLive` ghép số liệu trực tiếp vào KPI/watchlist/marker 2.5D), `alerts.ts`, `maintenance.ts`, `scene.ts` (`useSceneConfig(sceneId)`, `fetchScene`, `SCENE_IDS`, `isSampleScene`, `useSceneList`), `live/` (`liveSource` + `useLiveData` + `useLiveStatus` + `SENSOR_TAGS` + `liveSimulator`; `MockLiveSource.ts`), `sceneRepository.ts` (`SceneRepository` + `LocalStorageRepository`).
   - `src/features/live/`: thuần – `types` (`TagValue`, `LiveData`, `LiveDataSource`), `signal` (quy tắc mất tín hiệu). `src/features/tank/volume.ts`: quy đổi mức → % thể tích (có test).
   - `src/mocks/`: dữ liệu mẫu từ Figma; `mocks/scenes/`: `{sceneId}.json` (khu-bon-lpg, tram-chiet-nap – gồm views + nhãn), `live.ts` (số liệu giả lập).
   - `src/features/scene/`: cảnh 3D (mục 6): `types`, `fields`, `geometry` (`resolveScene`), `markers`, `parse` (zod, lazy), `colors` (+ `inverseToneMap`), `ground` (thuần: độ cao đáy thế giới, `mayFloat`), `pipes` (thuần: cổng thế giới, đường đi ống, vuông góc, va chạm), `PipeTools` (vẽ ống, tay nắm điểm, chấm cổng), `migrate` (thuần: định dạng cũ → hiện tại), `look` (thông số ánh sáng/bloom/nét viền), `quality` (preset), `pulse`, `PipeMesh`, `SceneViewer` (default export, lazy), `EditTools` (`GROUND_PLANE`/`groundHit`, kéo trên sàn `startGroundDrag`, gizmo xoay/scale, chọn bằng tia/vùng, viền sàn, vạch chân), `editConstants` (thuần: MIME kéo thả, snap, vùng sàn, ngưỡng tia sàn), `PostEffects` (lazy), `assets/` (`specs` thuần + `registry` + component asset + `parts` (thang, lan can, bích…) + `materials`).
   - `src/features/scene-editor/`: logic Editor thuần/không UI (mục 6b): `store` (zustand + zundo), `ops` (biến đổi SceneConfig), `validate`, `draft` (tự lưu nháp).
-  - `src/lib/`: `cn`, `useRovingFocus`, `useNow`, `tokens` (màu cho SVG/chart), `useDialog`, `createCollectionStore`, `useElementSize`.
+  - `src/lib/`: `cn`, `useRovingFocus`, `useNow`, `tokens` (màu cho SVG/chart, `tokenHex`), `useDialog`, `createCollectionStore`, `useElementSize`, `plantTime` (ngày theo giờ nhà máy Asia/Bangkok), `reducedMotion` (`useReducedMotion`), `announce` (aria-live), `isTyping`.
+  - `src/test/setup.ts`: setup vitest (jest-dom, cleanup, polyfill jsdom). Test đặt cạnh module (`*.test.ts` node, `*.test.tsx` jsdom).
   - `src/pages/`: `overview/`, `alerts/`, `maintenance/` (gồm `CreateMaintenanceModal.tsx`), `editor/` (Scene Editor: `EditorPage`, `EditorViewport`, `AssetLibrary`, `Outliner`, `PropertiesPanel`, `ViewsPanel`, `ValidationPanel`, `dialogs`, `useEditorActions`, `AssetGlyph`), `playground/`, `SimplePage.tsx`.
   - `src/assets/digital-twin/`: SVG/PNG từ Figma, đăng ký trong `index.ts`.
   - `src/styles/`: `tokens.css`, `global.css`.
@@ -65,6 +66,22 @@
   - Khai báo tham số bằng hằng `*_PARAMS as const`; bộ lọc, trang, bản ghi đang mở và lựa chọn dòng đồng bộ URL (`replace`).
   - Modal/drawer mở qua query (`?open=`, `?alert=`, `?create=1&device=&from=`).
 - **Modal có form:** chỉ mount khi mở, khởi tạo state bằng hàm khởi tạo của `useState` (tránh nháy giá trị cũ).
+- **Test** (chi tiết GUIDE 7b):
+  - **Hàm logic mới phải có test trong cùng commit.** Test đặt cạnh module (`x.ts` → `x.test.ts`); `*.test.tsx` cần DOM ghi `// @vitest-environment jsdom`.
+  - Hàm thuần nhận thời gian qua tham số (`now`), không gọi `Date.now()`/`new Date()` bên trong; "hôm nay" theo giờ nhà máy (`src/lib/plantTime.ts`), không theo múi giờ máy.
+  - Có ca biên (0, rỗng, âm, vượt giới hạn, ranh giới ngày, chạy lại hai lần). Component test truy vấn theo vai trò/tên (Testing Library). Trước commit: `npm run test:run`, `npm run lint`, `npm run typecheck`.
+  - Lỗi thật test tìm ra: sửa hàm, không sửa test cho khớp lỗi.
+- **Breakpoint** (`tailwind.config.ts` → `screens`, KHÔNG viết `min-[…px]` tuỳ ý): `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `wide` 1520 · `3xl` 1920.
+  - ≥ `wide`: như Figma (1565) – không đổi giao diện ở 1565. `xl`–`wide`: bố cục đầy đủ, menu chỉ icon, KPI 3 cột. `lg`–`xl`: sidebar xuống dưới, menu thành nút `NavMenu`. < `lg`: dùng được.
+  - Nội dung trang tối đa `max-w-content` (`--content-max-width` 1920px) căn giữa. Bảng rộng: `DataTable minWidth` + `stickyFirst`/`stickyActions` (cuộn ngang trong khung, trang không tràn).
+  - Ảnh chụp kiểm tra để trong `scratch/` (gitignore).
+- **Accessibility (bổ sung):**
+  - ESLint jsx-a11y phải sạch; không `tabindex` > 0; vùng cuộn/bản đồ = `role="region"` + tên + `tabIndex={0}` (được phép trong config).
+  - axe-core (WCAG 2.1 A/AA) trên từng trang: không còn lỗi critical; serious chỉ còn tương phản màu Figma chờ duyệt (mục 7).
+  - Thông báo động qua `announce()` / `useAnnounceChange` (aria-live polite, `LiveAnnouncer`); không đặt vùng live trong nút.
+  - `ProgressBar` bắt buộc `label`; SVG chart trong `role="img"` ẩn khỏi trình đọc (`aria-hidden`, recharts `rootTabIndex={-1}`).
+  - `prefers-reduced-motion`: CSS toàn cục tắt animation; 3D dùng `useReducedMotion`/`prefersReducedMotion` (pulse đứng, ống không chảy, camera không bay, frameloop demand).
+  - Canvas 3D có `DeviceList` ẩn: tóm tắt trạng thái + nút từng thiết bị (Tab hiện ra, Enter chọn + đưa camera tới).
 
 ## 4. Component đã có (`src/components/…`)
 | Component | Mô tả |
@@ -73,14 +90,14 @@
 | Button | primary/ghost/icon/toolbar/overlay/link, sm/md, `pressed` |
 | Badge | severity (sm/md) · status (unacknowledged/pending/assigned/in-progress/review/done) · count |
 | StatusDot, StatusPill | Chấm trạng thái (circle/square, pulse) · pill trạng thái hệ thống |
-| Card, Divider, ProgressBar | Khung card (bar/plain header, tone, radius) · đường kẻ · thanh tiến độ |
-| NavTabs, Tabs, SegmentedControl | Menu chính · tabs gạch chân + chip đếm · nhóm chọn 1 (overlay/field + tone, overlay `size` sm/md) |
+| Card, Divider, ProgressBar | Khung card (bar/plain header, tone, radius) · đường kẻ · thanh tiến độ (`label` bắt buộc) |
+| NavTabs, NavMenu, Tabs, SegmentedControl | Menu chính (đủ chữ ≥ `wide`, chỉ icon `xl`–`wide`) · menu thu gọn < `xl` (nút + danh sách, aria-current) · tabs gạch chân + chip đếm · nhóm chọn 1 (overlay/field + tone, overlay `size` sm/md) |
 | SearchInput, Select, Combobox | Ô tìm kiếm · dropdown (filter/button/field, side) · combobox tìm kiếm đơn/nhiều + avatar/chip |
 | FormField (+TextField, Textarea, DatePicker, NumberField, Vec3Field) | Nhãn/lỗi/gợi ý chung · ô nhập · date/datetime-local · ô số (chốt khi Enter/blur/↑↓, kẹp min/max, integer, unit, `onClear` = về mặc định, `hideLabel`/`size sm`/`prefix`) · 3 ô X/Y/Z (`only` = chỉ hiện một số trục, vd `[0, 2]`) |
 | Checkbox, ChecklistEditor, FileDropzone | Checkbox (indeterminate; `showLabel` = nhãn chữ bên cạnh) · checklist kéo thả/Alt+↑↓/mẫu · kéo thả tệp |
 | TreeView | Cây chọn nhiều (ARIA tree): Ctrl/⌘ đảo, Shift dải, phím ↑↓←→ Home End Space Enter, F2/double-click đổi tên (trả lỗi → giữ ô), `renderActions` bên phải dòng; không controlled thì nhớ nhánh đóng |
-| FilterBar, DataTable, Pagination | Thanh lọc · bảng (chọn dòng, header sticky, thao tác, rỗng) · phân trang |
-| AppHeader, PageHeader, AppLayout | Header 60px · breadcrumb/tiêu đề/actions · layout full/sidebar 326px/`workspace` (cao đúng 1 màn hình, nội dung tự cuộn – /editor) |
+| FilterBar, DataTable, Pagination | Thanh lọc · bảng (chọn dòng, header sticky, thao tác, rỗng, `<caption>` từ `label`, `minWidth` cuộn ngang trong khung, `stickyFirst`/`stickyActions`) · phân trang |
+| AppHeader, PageHeader, AppLayout | Header 60px (NavTabs ≥ `xl`, NavMenu < `xl`) · breadcrumb/tiêu đề/actions · layout full/sidebar 326px/`workspace` (cao đúng 1 màn hình, nội dung tự cuộn – /editor); nội dung tối đa `max-w-content` |
 | KpiCard, SystemHealthCard | KPI (default/danger/with-progress/compact, `signalLost` → "—" + "Mất tín hiệu") · độ tin cậy hệ thống |
 | AlertItem, AlertCard, PriorityTaskCard | Dòng cảnh báo sidebar · thẻ cảnh báo ưu tiên · thẻ việc bảo trì ưu tiên |
 | AssetRow/AssetWatchlist, EventTimeline/RecentEventsCard | Theo dõi thiết bị (`signalLost` → icon) · timeline (event/schedule + location) |
@@ -88,13 +105,14 @@
 | PlantMap, MapMarker | Thuần. `renderer="image"`: ảnh 2.5D + markers/views do trang truyền · `"three"`: nhận `scene` + `liveData` + `onSelect` (+ `editable`, `quality`, `onFallback`), views/nhãn lấy từ cảnh, SceneViewer lazy. Chung controls, `onRendererChange` → nút 2.5D/3D, `notice` → thông báo nhỏ cạnh nút; marker callout/side/tag, tone thêm `neutral` (offline/mất tín hiệu, `showSignalLostIcon`), `translucent` (nền /85 + blur, dùng ở 3D). Nạp cảnh theo id: `ConnectedPlantMap` (src/app) |
 | DetailDrawer, AlertDetailDrawer, Modal | Drawer chi tiết bên phải · drawer cảnh báo · modal md/lg/xl (icon, footerStart, form) |
 
-Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt cạnh ảnh tham chiếu; mục 8 = cảnh 3D: chọn cảnh, "Mô phỏng sự cố", "Chế độ sửa", id đã chọn; mục 9 = component Editor: NumberField, Vec3Field, TreeView, Checkbox có nhãn, icon).
+Xem trực quan và các biến thể tại `/playground` (khung mẫu dùng chung `pages/playground/Demo.tsx`; mục "Trạng thái" = loading · lỗi · mất tín hiệu · AlertDetailDrawer; mục 1–9, đặt cạnh ảnh tham chiếu; mục 8 = cảnh 3D: chọn cảnh, "Mô phỏng sự cố", "Chế độ sửa", id đã chọn; mục 9 = component Editor: NumberField, Vec3Field, TreeView, Checkbox có nhãn, icon).
 
 ## 5. Roadmap
 - ✅ GĐ0 Tokens · GĐ1 Primitives · GĐ2 Form & điều hướng · GĐ3 Layout + router · GĐ4A Nghiệp vụ · GĐ4B Chart & bảng.
 - ✅ 5A `/overview`: KPI, PlantMap, 4 chart, sidebar.
 - ✅ 5B `/alerts`: thẻ ưu tiên, KPI, Tabs, FilterBar, bảng, thao tác hàng loạt, drawer, xuất CSV.
 - ✅ 5C `/maintenance`: KPI theo tháng, việc ưu tiên, bảng 7 tab + cờ Quá hạn, lịch sắp tới, drawer chuyển bước, modal tạo yêu cầu đầy đủ theo ảnh thiết kế (AI mock, checklist, tệp, lưu nháp), liên kết từ /alerts.
+- 🔍 **Chất lượng: test · a11y · responsive · dọn dẹp** (21/10/2026, nhánh `chore/quality-a11y-responsive` tách từ `main`, chờ review): vitest + Testing Library (92 test), sửa bug quá hạn theo múi giờ máy; ESLint + jsx-a11y, axe sạch trừ màu chờ duyệt, reduced motion, aria-live, văn bản thay thế canvas 3D; breakpoint chung, menu thu gọn, bảng cuộn trong khung, max-width 1920; gộp helper trùng, lazy-load Cảnh báo/Bảo trì.
 - 🔍 **Live data chuẩn hoá** (20/10/2026, nhánh `feat/live-data-source` tách từ `main` (đã gồm 3D-4), chờ review): `TagValue`/`LiveData`/`LiveDataSource` + `MockLiveSource` (giả lập mất kết nối, tag bad, tag đứng); "Mất tín hiệu" ở KPI, theo dõi thiết bị, marker 2.5D, nhãn + màu 3D; header theo trạng thái nguồn; KPI/marker/watchlist gắn tag; mức bồn → % thể tích (`features/tank/volume`, test).
 - 🔍 **3D-4 Vẽ ống** (20/10/2026, nhánh `feat/3d-4-pipe-editor` tách từ `fix/editor-ground-plane`, chờ review): bổ sung cổng (bí danh in/out), công cụ Vẽ ống (P, vuông góc O, bắt cổng), sửa ống (kéo/thêm/xoá điểm, Thuộc tính), ống theo object ngay khi kéo, kéo van/đồng hồ dọc ống, xoá object hỏi giữ/xoá ống, kiểm tra ống. Không đổi SceneConfig.
 - 🔍 **fix/editor-ground-plane** (20/10/2026, chờ review): pivot tâm đáy cho mọi asset + `elevation` + `schemaVersion` 2 (migrate 2 cảnh mẫu); kéo object bằng pointer events trên `GROUND_PLANE` (chỉ X/Z), xoay chỉ Y, scale giữ đáy; Elevation/Đặt xuống sàn/Căn hàng; cảnh báo mặt sàn; vạch chân (G).
@@ -104,6 +122,7 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt c
 - ✅ **3D-2** (19/10/2026, đã duyệt): tinh chỉnh theo ảnh Figma, không đổi SceneConfig/API: ánh sáng + ACES + vignette; vật liệu "clay" + nét viền mực + chi tiết asset; ống lõi sáng + vỏ trong mờ + vòng khớp + Bloom; Outline hover/chọn, danger chỉ viền; preset quality auto + fallback 2.5D khi WebGL lỗi.
 - 🔍 **3D-3 Scene Editor** (20/10/2026, chờ review): `/editor` – thư viện asset (bấm/kéo thả), canvas dùng chung SceneViewer + Q W E R/snap/lưới/khung vừa, Properties (id/nhãn/transform/params/bindings + ngưỡng/nhãn bản đồ/đường bao hàng rào/thuộc tính cảnh), Outliner (chọn nhiều, ẩn, khoá, đổi id), chọn vùng, nhân bản/copy/dán/xoá, undo/redo (zundo), views, kiểm tra hợp lệ, SceneRepository (localStorage) + autosave nháp + chặn rời trang; Viewer `?scene=`.
 - ⏳ Tiếp: backend SceneRepository · trang `/map`, `/reports` · (ống) kéo điểm theo Y trên canvas, tự đi ống tránh thiết bị, nhánh chữ T có cấu trúc.
+- Test chất lượng (phiên d1bdb515…): `npm run test:run` 92/92 (độc lập múi giờ máy: chạy UTC/New_York/Tokyo/HCM như nhau); scratchpad `e2e/`: `axe.mjs` (9 trạng thái trang), `a11y.mjs` 22/22 (focus trap + Esc + trả focus modal/drawer, tablist, không tabindex dương, nút có tên, aria-live mất/kết nối lại/mất tín hiệu, DeviceList 3D chọn bằng Enter, reduced motion → frameloop demand + CSS animation 0), `responsive.mjs` (7 độ rộng × 5 trang, ảnh ở `scratch/responsive/`; 1565 trùng pixel trước/sau trừ đồng hồ), `resize3d.mjs` 6/6 (cùng renderer khi resize, không méo, dpr ≤ 1.5, nhãn 3D không đè), `pg.mjs` 6/6.
 - Test live (scratchpad `e2e/`, phiên d1bdb515…): `npm test` 7/7 (thể tích bồn: rỗng/đầy/nửa, h/D 0.1/0.25/0.75/0.9, đối xứng, kẹp, bảng dung tích; tín hiệu: bad/thiếu tag/mốc 10 s, `nextExpiry`); `live.mjs` 23/23 ×3 lần (TagValue, KPI theo tag + đổi mỗi 2 s, mức bồn = thể tích từ LT-101, tag bad → "Mất tín hiệu" ở KPI/marker/theo dõi, tag đứng 7 s còn số – ≥ 10 s mất tín hiệu, mất kết nối → header đỏ → "Đang kết nối lại…" → > 10 s cả 4 KPI + marker mất tín hiệu → kết nối lại có số; 3D nhãn V-101 + trạng thái offline; `?live=bad:`; /alerts header), `pg-live.mjs` 5/5; hồi quy `pipes` 36/36, `ground` 54/54, `overview` 3/3.
 - Test 3D-4 (scratchpad `e2e/`, phiên d1bdb515…): `ports.mjs` (bảng cổng), `pipes.mjs` 36/36 (nối V-101 → van → P-101A bằng công cụ vẽ: bắt cổng, cao độ theo cổng, Backspace/Esc, vuông góc; kéo bơm → ống theo ngay khi kéo + chỉ ống liên quan dựng lại TubeGeometry; xoay bơm → đầu ống theo cổng; kéo điểm gập 1 bước undo; click đoạn chèn điểm; chọn điểm + Delete; bán kính/đổi id; undo 5 bước + redo; gắn đồng hồ qua Thuộc tính, kéo dọc ống, xoay theo tiếp tuyến; xoá bơm → Giữ ống / Xoá cả ống; 7 luật kiểm tra), `rebuild-pipes.mjs` 7/7 (xoá 8 ống khu-bon-lpg rồi dựng lại chỉ bằng UI – 83 thao tác – export JSON khớp mock hoàn toàn trừ version), `ground.mjs` 54/54, `overview.mjs` 3/3, `issues.mjs` (cảnh mẫu chỉ 2 cảnh báo "đầu hở" đúng thực tế: PL-08, PL-30).
 - Test ground-plane (scratchpad `e2e/`, phiên d1bdb515… – Linux, playwright-core cài trong scratchpad + Brave `/usr/bin/brave-browser`): `diagnose.mjs` (hộp bao three từng asset: min.y = 0 cả 12 loại), `compare.mjs` 10/10 (2 cảnh mẫu trước/sau migrate: vị trí 31 object + 23 ống khớp; chỉ khác chân thang hết lún), `ground.mjs` 54/54 (kéo ở polar 0.4/0.8/1.2/1.45 + xoay camera giữa lúc kéo → y = elevation; |dot| < 0.05 bỏ frame; Alt tắt snap; Esc huỷ; thả 8 loại asset đáy y = 0; kéo nhóm 3 loại khác elevation; undo/redo; scale giữ đáy; gizmo xoay chỉ Y; Elevation/Đặt xuống sàn/cảnh báo/căn hàng; G; export→import; import v1 migrate), `overview.mjs` 3/3 (`?map=3d` + sửa nhanh `?edit=1`), `floorcolor.mjs` (mesh sàn mới không đổi màu, ±1/255).
@@ -273,7 +292,11 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt c
   - Ống (3D-4): định dạng cổng giữ `objectId.port` (dấu chấm, như dữ liệu/zod hiện có – yêu cầu ghi `objectId:portName` sẽ là đổi SceneConfig, chưa làm); bơm/xe bồn giữ tên cũ suction/discharge/outlet + bí danh in/out; điểm gập chỉ kéo ngang trên canvas (Y sửa ở Thuộc tính hoặc đặt cao độ khi vẽ); vuông góc không xét hướng mặt bích của cổng; gizmo xoay/scale: ống theo khi thả (không xem trước); nhánh chữ T chỉ là "đầu ống nằm trên ống khác" (không có cấu trúc tee); object gắn ống chỉ xoay quanh Y (đoạn đứng → hướng 0); kiểm tra "xuyên thiết bị" theo hộp bao (gồm sàn thao tác/thang) nên có thể báo thừa; hàng rào không tự dời theo object; cổng mới `drain`/`in` của bồn và `out` của trạm nạp đã thêm hình họng + bích.
   - Mặt sàn: 7 bơm/lọc trong 2 cảnh mẫu có elevation 0.3 (dữ liệu cũ y = 0.3 để khớp cổng ống) → bảng Kiểm tra cảnh báo "lơ lửng"; cần quyết định: thêm bệ (tham số/asset) hay hạ xuống sàn + dời điểm ống. Cảnh báo mặt sàn dùng hộp bao spec (đã chỉnh theo đo thật), không phải mesh. Kéo trên sàn chưa khoá trục (X hoặc Z) và chưa kéo được object gắn ống dọc ống.
   - Editor: chưa có backend (localStorage, 1 bản nháp chung); quyền vào bằng `?edit=1`/env (chưa phân quyền thật); danh sách tag = khoá của mock số liệu (`SENSOR_TAGS`, thay bằng GET /api/tags) và Combobox chỉ chọn tag có trong danh sách (tag lạ chỉ vào được qua Import, hiện cảnh báo); ẩn/khoá chỉ là state phiên, không lưu; Outliner chọn nhiều bằng Ctrl/Shift+click (chưa kéo chuột quét dòng); chưa có camera numeric cho view (chỉ "Gán góc nhìn hiện tại").
-  - Bundle chính tăng ~15 KB gzip do chuyển sang data router (`createBrowserRouter`) để dùng `useBlocker`.
+  - Bundle: chính 103 KB gzip (React + router + layout; mọi trang lazy), recharts ~118 KB chỉ ở Tổng quan, SceneViewer 267 KB, PostEffects 80 KB, Editor 22 KB, zod 16 KB (đo 21/10/2026).
+  - **Màu chờ duyệt (tương phản WCAG AA, axe serious còn lại):** `danger` #D34957 trên nền tối 3.7–4.1:1 (đề xuất #D9626F, ΔE 11) · `danger-strong/70` "Active" 2.7:1 và `/80` "Xem chi tiết" 3.2:1 trong KPI Cảnh báo (đề xuất 100 %) · `danger-strong` trên `surface-raised` 4.47:1 (đề xuất #FA2D41, ΔE 4) · chữ menu chưa chọn (`line-divider` + opacity 70) 2.43:1 (đề xuất `fg-secondary` opacity 70 ≈ 5.6:1) · chữ trắng trên nền `danger` (Segmented field) 3.3:1 · `fg-disabled` 1.7:1 (chỉ mục disabled – được miễn).
+  - Còn lại responsive: header ở 2560 vẫn trải hết chiều rộng (nội dung giới hạn 1920 căn giữa); Editor ở 1024–1279 rút gọn tên asset/meta (công cụ dành cho màn rộng); < 768 chưa tối ưu (KPI 2 cột, bảng cuộn ngang).
+  - Số trên chuông thông báo (`notificationCount={2}` trong `src/app/Page.tsx`) vẫn tĩnh – nên derive từ cảnh báo chưa xác nhận.
+  - knip không chạy được trong môi trường (lỗi tương thích TypeScript của knip); đã dùng ts-prune + script tìm file không đến được từ `main.tsx`.
 
 ## 8. Log sai khác Figma đã chuẩn hóa
 - Màu cảnh 3D (đọc pixel ảnh 53:244): #061123 → bg-app, #343C4C → line, #C1C0C8 → neutral (alias, lệch < 5%); `scene-flow` #94D9C4 là token mới.
@@ -283,4 +306,6 @@ Xem trực quan và các biến thể tại `/playground` (mục 1–9, đặt c
 - Nội dung: "nghiệm"→"nghiêm"; "Giátrị"→"Giá trị"; Mã CB trống → ALT-00124; layer ẩn "Đang chạy" (opacity-0) bỏ; "Đang xử lý" (bảng bảo trì) → "Đang thực hiện"; MT-00128 quá hạn theo thẻ (−2 ngày); ngày Bảo trì tính tương đối (Figma: hôm nay = 15/10).
 - Dữ liệu: KPI, số đếm và tab đều tính từ data (không dùng số tĩnh Figma); thanh tiêu thụ theo `max = 170`.
 - Hành vi: ảnh bản đồ giữ đúng tỉ lệ (Figma giãn ~14%); hàng chart giữ opacity 70%; nút "Hôm nay" bên Bảo trì mặc định "Tất cả thời gian"; Tabs Cảnh báo thêm chip đếm + phân trang; bộ lọc Cảnh báo = Mức độ/Khu vực/Thiết bị/Thời gian.
+- Tương phản (21/10/2026, lệch nhỏ tự chuẩn hoá): `text-fg-muted/60` → `/65` (ΔE 3.4, 4.46 → 5.0:1), `text-fg-secondary/50` → `/60` (placeholder/giá trị trống của Select, 3.5 → 4.5:1). Màu lệch lớn chờ duyệt – mục 7.
+- Responsive (Figma chỉ có 1565): dưới 1520px KPI Cảnh báo/Bảo trì/Tổng quan 3 cột (hết cắt chữ), menu chỉ icon 1280–1519, nút Menu dưới 1280; bảng cuộn ngang trong khung thay vì ép cột.
 - Form bảo trì: mức ưu tiên 3 nút (Thường = medium); thêm * cho Thiết bị và Hạn; tổng quan ghi "Nghiêm trọng" thay "Critical"; loại trong form dùng nhãn đầy đủ (bảng dùng nhãn ngắn).

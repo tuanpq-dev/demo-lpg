@@ -3,12 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from 'react-router-dom';
 import './styles/global.css';
 import { canUseEditor } from './app/editorAccess';
-import AlertsPage from './pages/alerts/AlertsPage';
-import MaintenancePage from './pages/maintenance/MaintenancePage';
 import SimplePage from './pages/SimplePage';
 
-// Trang có chart (recharts) / 3D tách chunk riêng để bundle chính nhẹ.
+// Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
 const OverviewPage = lazy(() => import('./pages/overview/OverviewPage'));
+const AlertsPage = lazy(() => import('./pages/alerts/AlertsPage'));
+const MaintenancePage = lazy(() => import('./pages/maintenance/MaintenancePage'));
 const PlaygroundPage = lazy(() => import('./pages/playground/PlaygroundPage'));
 const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 

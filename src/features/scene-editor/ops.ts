@@ -1,5 +1,5 @@
 import { ASSET_SPECS, assetLayout } from '@/features/scene/assets/specs';
-import { EDIT_SNAP } from '@/features/scene/editConstants';
+import { EDIT_SNAP, snapTo } from '@/features/scene/editConstants';
 import type { ObjectTransform } from '@/features/scene/EditTools';
 import {
   canonicalPortRef,
@@ -33,7 +33,7 @@ import {
 export const SNAP = EDIT_SNAP;
 
 const round = (v: number, digits = 3) => +v.toFixed(digits) || 0;
-export const snapTo = (v: number, step: number) => round(Math.round(v / step) * step);
+export { snapTo };
 export const snapVec = (v: Vec3, step = SNAP.translate): Vec3 => [snapTo(v[0], step), round(v[1]), snapTo(v[2], step)];
 
 /** "Bơm & Lọc" → "bom-loc" (bỏ dấu tiếng Việt). */
@@ -374,11 +374,6 @@ export function insertPipePoint(scene: SceneConfig, id: string, at: Vec3): Scene
   return updatePipe(scene, id, (p) => ({ ...p, points: [...p.points.slice(0, index), at, ...p.points.slice(index)] }));
 }
 
-/** Xoá điểm gập thứ `index` của `points`. */
-export function removePipePoint(scene: SceneConfig, id: string, index: number): SceneConfig {
-  return updatePipe(scene, id, (p) => ({ ...p, points: p.points.filter((_, i) => i !== index) }));
-}
-
 /** Đảo chiều ống (from ↔ to, đảo thứ tự điểm; object gắn: t → 1 − t). */
 export function reversePipe(scene: SceneConfig, id: string): SceneConfig {
   const s = updatePipe(scene, id, (p) => ({ ...p, from: p.to, to: p.from, points: [...p.points].reverse() }));
@@ -405,7 +400,6 @@ export function attachToPipe(scene: SceneConfig, id: string, pipeId: string): Sc
     objects: scene.objects.map((o) => {
       if (o.id !== id) return o;
       const { position: _p, rotation: _r, elevation: _e, ...rest } = o;
-      void _p, _r, _e;
       return { ...rest, attach: { pipe: pipeId, t } };
     }),
   };

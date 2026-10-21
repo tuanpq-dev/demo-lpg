@@ -20,8 +20,10 @@ export function FigmaRef({
   caption?: string;
 }) {
   return (
-    <figure className="flex max-w-full flex-col gap-2 overflow-x-auto">
-      <figcaption className="text-xs text-fg-muted/60">{caption ?? 'Figma (tham chiếu)'}</figcaption>
+    <figure className="flex max-w-full flex-col gap-2">
+      <figcaption className="text-xs text-fg-muted/65">{caption ?? 'Figma (tham chiếu)'}</figcaption>
+      {/* Ảnh rộng hơn khung → cuộn ngang; vùng cuộn focus được (WCAG 2.1.1). */}
+      <div role="region" aria-label={caption ?? 'Ảnh Figma tham chiếu'} tabIndex={0} className="max-w-full overflow-x-auto">
       <div
         role="img"
         aria-label={caption ?? 'Figma reference'}
@@ -35,6 +37,7 @@ export function FigmaRef({
           backgroundRepeat: 'no-repeat',
         }}
       />
+      </div>
     </figure>
   );
 }

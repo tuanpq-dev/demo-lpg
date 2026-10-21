@@ -24,6 +24,7 @@ import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
+import { plantDayKey } from '@/lib/plantTime';
 import {
   ALERT_ASSIGNEES,
   ALERT_PARAMS,
@@ -86,7 +87,8 @@ function exportCsv(rows: readonly AlertRecord[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `canh-bao-${new Date().toISOString().slice(0, 10)}.csv`;
+  // Ngày theo giờ nhà máy (toISOString là UTC → lệch ngày từ 0h đến 7h sáng).
+  link.download = `canh-bao-${plantDayKey(new Date())}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -155,7 +157,7 @@ export default function AlertsPage() {
   ];
 
   const columns: DataTableColumn<AlertRecord>[] = [
-    { id: 'time', header: 'Thời gian', width: 81, cell: (a) => (a.daysAgo === 0 ? a.time : <span title={dayLabel(a.daysAgo)}>{a.time}<span className="block text-2xs text-fg-muted/60">{dayLabel(a.daysAgo)}</span></span>) },
+    { id: 'time', header: 'Thời gian', width: 81, cell: (a) => (a.daysAgo === 0 ? a.time : <span title={dayLabel(a.daysAgo)}>{a.time}<span className="block text-2xs text-fg-muted/65">{dayLabel(a.daysAgo)}</span></span>) },
     { id: 'severity', header: 'Mức độ', width: 110, cell: (a) => <Badge variant="severity" value={a.severity} /> },
     { id: 'code', header: 'Mã CB', width: 90 },
     { id: 'message', header: 'Nội dung', align: 'start', width: 260, className: 'max-w-[260px] truncate text-fg', cell: (a) => <span title={a.message}>{a.message}</span> },
@@ -228,7 +230,7 @@ export default function AlertsPage() {
       </section>
 
       {/* 2. KPI – 70:2957 (5 cột gap 12) */}
-      <section aria-label="Thống kê cảnh báo" className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <section aria-label="Thống kê cảnh báo" className="grid grid-cols-2 gap-3 lg:grid-cols-3 wide:grid-cols-5">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} />
         ))}
@@ -290,6 +292,9 @@ export default function AlertsPage() {
         <div id="alerts-table">
           <DataTable
             label="Danh sách cảnh báo"
+            // Khung hẹp hơn → cuộn ngang trong khung; cột "Xem" cố định mép phải.
+            minWidth={1180}
+            stickyActions
             columns={columns}
             rows={table.pageRows}
             getRowId={(a) => a.id}

@@ -54,7 +54,6 @@ export default function PostEffects({
     },
     [scene],
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const selectedKey = selected.join();
   const hoverSel = useMemo(
     () => meshesOf(hovered && !selected.includes(hovered) ? [hovered] : []),

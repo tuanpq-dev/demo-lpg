@@ -49,7 +49,7 @@ export function FormField({ label, required, hint, error, children, className }:
         </p>
       ) : (
         hint && (
-          <p id={hintId} className="text-sm text-fg-muted/60">
+          <p id={hintId} className="text-sm text-fg-muted/65">
             {hint}
           </p>
         )
@@ -61,7 +61,7 @@ export function FormField({ label, required, hint, error, children, className }:
 /** Class chung cho ô nhập (TextField/Textarea/DatePicker) – cùng kiểu SearchInput 70:3018. */
 export const inputClass = (invalid: boolean) =>
   cn(
-    'w-full rounded-lg border bg-surface-sunken px-3 text-base text-fg placeholder:text-fg-secondary/50',
+    'w-full rounded-lg border bg-surface-sunken px-3 text-base text-fg placeholder:text-fg-secondary/60',
     'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
     invalid ? 'border-danger focus-visible:border-danger' : 'border-line hover:border-accent/40 focus-visible:border-accent/60',
   );

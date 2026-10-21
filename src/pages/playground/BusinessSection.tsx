@@ -16,29 +16,19 @@ import { deriveMaintenanceKpis } from '@/data/maintenance';
 import { maintenanceRecords } from '@/mocks/maintenance';
 import { overviewKpis, priorityAlarms, recentEvents, systemHealth, watchlist } from '@/mocks/overview';
 import { FigmaRef } from './FigmaRef';
+import { Demo } from './Demo';
+import { StatesDemo } from './StatesDemo';
 
 const alertKpis = deriveAlertKpis(alertRecords);
 const priorityAlertCards = derivePriorityCards(alertRecords);
-const maintenanceKpis = deriveMaintenanceKpis(maintenanceRecords);
+const maintenanceKpis = deriveMaintenanceKpis(maintenanceRecords, new Date());
 
 const OVERVIEW = '/figma-ref/53-11-overview.png';
 const ALERTS = '/figma-ref/70-2809-alerts.png';
 const MAINT = '/figma-ref/70-3964-maintenance.png';
 
-function Demo({ title, node, children }: { title: string; node: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="flex flex-col gap-4 overflow-x-auto rounded-lg border border-dashed border-line/30 p-4">{children}</div>
-    </div>
-  );
-}
-
 function Log({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-xs text-fg-muted/60">{children}</p>;
+  return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;
 }
 
 export function BusinessSection() {
@@ -72,6 +62,8 @@ export function BusinessSection() {
         </div>
         <FigmaRef src={MAINT} x={31} y={200} w={1503} h={130} />
       </Demo>
+
+      <StatesDemo />
 
       <Demo title="KpiCard – API trực tiếp (không qua mock)" node="—">
         <div className="grid w-[760px] grid-cols-4 gap-4">

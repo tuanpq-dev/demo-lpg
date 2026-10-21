@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'r
 import { LineBasicMaterial, MeshStandardMaterial } from 'three';
 import type { ScenePalette } from '../colors';
 import { LOOK } from '../look';
+import { prefersReducedMotion } from '@/lib/reducedMotion';
 import { pulse } from '../pulse';
 import type { ObjectStatus } from '../types';
 
@@ -32,6 +33,8 @@ export const ObjectStateProvider = ObjectStateContext.Provider;
  * Hover → emissive primary nhẹ; offline → tối màu. Dispose toàn bộ khi Viewer unmount.
  */
 export function MaterialsProvider({ palette, children }: { palette: ScenePalette; children: ReactNode }) {
+  // Cố ý phụ thuộc `palette`: đổi bảng màu → bỏ cache vật liệu cũ.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cache = useMemo(() => new Map<string, AssetMaterials>(), [palette]);
 
   const edges = useMemo(() => {
@@ -50,7 +53,7 @@ export function MaterialsProvider({ palette, children }: { palette: ScenePalette
 
   // Danger: nét viền đỏ pulse chậm (đồng pha với outline/vòng sáng sàn qua pulse()).
   useFrame(({ clock }) => {
-    edges.danger.opacity = 0.3 + 0.7 * pulse(clock.elapsedTime);
+    edges.danger.opacity = 0.3 + 0.7 * pulse(clock.elapsedTime, prefersReducedMotion());
   });
 
   useEffect(

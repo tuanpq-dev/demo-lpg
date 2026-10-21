@@ -1,4 +1,4 @@
-import type { LiveData, LiveDataSource, LiveSourceStatus, LiveValue, TagQuality, TagValue } from '@/features/live/types';
+import type { LiveData, LiveDataSource, LiveSourceStatus, LiveValue, TagQuality } from '@/features/live/types';
 
 type Listener = { tags: Set<string> | null; cb: (data: LiveData) => void };
 
@@ -105,7 +105,10 @@ export class MockLiveSource implements LiveDataSource {
 
   /** Ngừng (true) / tiếp tục cập nhật tag – ts đứng yên → quá 10 s UI báo mất tín hiệu. */
   freeze(tags: readonly string[], frozen = true) {
-    for (const t of tags) (frozen ? this.frozen.add(t) : this.frozen.delete(t));
+    for (const t of tags) {
+      if (frozen) this.frozen.add(t);
+      else this.frozen.delete(t);
+    }
   }
 
   /** Bỏ mọi giả lập sự cố. */
@@ -193,5 +196,3 @@ export class MockLiveSource implements LiveDataSource {
   }
 }
 
-/** Tag ở dạng TagValue cố định (test / playground). */
-export const tagValue = (value: LiveValue, unit?: string, quality: TagQuality = 'good', ts = Date.now()): TagValue => ({ value, unit, ts, quality });

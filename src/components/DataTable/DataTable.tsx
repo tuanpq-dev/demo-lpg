@@ -32,7 +32,7 @@ export type DataTableProps<T> = {
   columns: readonly DataTableColumn<T>[];
   rows: readonly T[];
   getRowId: (row: T) => string;
-  /** aria-label của bảng. */
+  /** Tên bảng – thành <caption> ẩn (tên truy cập). */
   label: string;
 
   /** Bật cột checkbox. Controlled: `selectedIds` + `onSelectionChange`. */
@@ -51,6 +51,14 @@ export type DataTableProps<T> = {
   /** Giới hạn chiều cao vùng cuộn để header dính (sticky). */
   maxHeight?: number | string;
   pagination?: DataTablePagination;
+  /**
+   * Bề rộng tối thiểu (px) của bảng: khung hẹp hơn → cuộn ngang TRONG khung (trang không tràn), cột không bị ép gãy chữ.
+   */
+  minWidth?: number;
+  /** Cố định ô chọn + cột dữ liệu đầu tiên (mã) khi cuộn ngang. */
+  stickyFirst?: boolean;
+  /** Cố định cột thao tác ở mép phải khi cuộn ngang (luôn mở được chi tiết). */
+  stickyActions?: boolean;
   className?: string;
 };
 
@@ -78,6 +86,9 @@ export function DataTable<T>({
   density = 'comfortable',
   maxHeight,
   pagination,
+  minWidth,
+  stickyFirst,
+  stickyActions,
   className,
 }: DataTableProps<T>) {
   const ids = rows.map(getRowId);
@@ -100,6 +111,8 @@ export function DataTable<T>({
   };
 
   const th = 'sticky top-0 z-[1] bg-surface-raised px-3 py-3 text-xs font-semibold tracking-label text-fg-secondary';
+  /** Cột đầu cố định: nằm sau ô chọn (w-14 = 56px). */
+  const firstLeft = cn('z-[3]', selectable ? 'left-14' : 'left-0');
   const rowH = density === 'comfortable' ? 'h-[76px]' : 'h-12';
 
   const from = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
@@ -108,11 +121,13 @@ export function DataTable<T>({
   return (
     <div className={cn('flex flex-col', className)}>
       <div className="overflow-auto" style={{ maxHeight }}>
-        <table aria-label={label} className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-sm" style={{ minWidth }}>
+          {/* caption = tên truy cập của bảng (ẩn hiển thị). */}
+          <caption className="sr-only">{label}</caption>
           <thead>
             <tr className="border-b border-line/30">
               {selectable && (
-                <th scope="col" className={cn(th, 'w-14 pl-7 text-left')}>
+                <th scope="col" className={cn(th, 'w-14 pl-7 text-left', stickyFirst && 'left-0 z-[3]')}>
                   <Checkbox
                     label={allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
                     checked={allSelected}
@@ -122,18 +137,18 @@ export function DataTable<T>({
                   />
                 </th>
               )}
-              {columns.map((col) => (
+              {columns.map((col, i) => (
                 <th
                   key={col.id}
                   scope="col"
-                  className={cn(th, 'whitespace-nowrap', alignClass[col.align ?? 'center'])}
+                  className={cn(th, 'whitespace-nowrap', alignClass[col.align ?? 'center'], stickyFirst && i === 0 && firstLeft)}
                   style={{ width: col.width }}
                 >
                   {col.header}
                 </th>
               ))}
               {rowActions && (
-                <th scope="col" className={cn(th, 'w-[71px] whitespace-nowrap pr-4 text-center')}>
+                <th scope="col" className={cn(th, 'w-[71px] whitespace-nowrap pr-4 text-center', stickyActions && 'right-0 z-[3]')}>
                   {actionsHeader}
                 </th>
               )}
@@ -142,7 +157,7 @@ export function DataTable<T>({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={colCount} className="px-4 py-12 text-center text-base text-fg-muted/60">
+                <td colSpan={colCount} className="px-4 py-12 text-center text-base text-fg-muted/65">
                   {emptyState}
                 </td>
               </tr>
@@ -161,19 +176,26 @@ export function DataTable<T>({
                     )}
                   >
                     {selectable && (
-                      <td className="pl-7 pr-3">
+                      <td className={cn('pl-7 pr-3', stickyFirst && 'sticky left-0 z-[1] bg-surface')}>
                         <Checkbox label={`Chọn hàng ${id}`} checked={isSel} onChange={(on) => toggleOne(id, on)} />
                       </td>
                     )}
-                    {columns.map((col) => (
+                    {columns.map((col, i) => (
                       <td
                         key={col.id}
-                        className={cn('px-3 text-fg-secondary', alignClass[col.align ?? 'center'], col.className)}
+                        className={cn(
+                          'px-3 text-fg-secondary',
+                          alignClass[col.align ?? 'center'],
+                          col.className,
+                          stickyFirst && i === 0 && cn('sticky z-[1] bg-surface', selectable ? 'left-14' : 'left-0'),
+                        )}
                       >
                         {col.cell ? col.cell(row) : String((row as Record<string, unknown>)[col.id] ?? '')}
                       </td>
                     ))}
-                    {rowActions && <td className="pr-4 text-center">{rowActions(row)}</td>}
+                    {rowActions && (
+                      <td className={cn('pr-4 text-center', stickyActions && 'sticky right-0 z-[1] bg-surface')}>{rowActions(row)}</td>
+                    )}
                   </tr>
                 );
               })

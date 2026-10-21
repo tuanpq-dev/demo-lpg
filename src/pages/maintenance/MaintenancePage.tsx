@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
   Button,
@@ -52,17 +52,19 @@ import {
   type MaintenanceType,
 } from '@/data/maintenance';
 import { cn } from '@/lib/cn';
+import { plantDayKey } from '@/lib/plantTime';
+import { useNow } from '@/lib/useNow';
 import { CreateMaintenanceModal } from './CreateMaintenanceModal';
 
 const PAGE_SIZE = 8;
 const getId = (r: MaintenanceRecord) => r.id;
 
-function exportCsv(rows: readonly MaintenanceRecord[]) {
+function exportCsv(rows: readonly MaintenanceRecord[], now: Date) {
   const head = ['Mã yêu cầu', 'Ngày tạo', 'Nội dung', 'Thiết bị', 'Khu vực', 'Loại', 'Mức độ', 'Người PT', 'Hạn xử lý', 'Trạng thái', 'Tiến độ (%)', 'Quá hạn'];
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
-    [r.code, formatDate(r.createdAt), r.title, r.device, r.area, TYPE_LABEL[r.type], pr[r.priority], r.assignee ?? '', formatDate(r.dueAt), STATUS_LABEL[r.status], String(r.progress), isOverdue(r) ? 'Có' : '']
+    [r.code, formatDate(r.createdAt), r.title, r.device, r.area, TYPE_LABEL[r.type], pr[r.priority], r.assignee ?? '', formatDate(r.dueAt), STATUS_LABEL[r.status], String(r.progress), isOverdue(r, now) ? 'Có' : '']
       .map(esc)
       .join(','),
   );
@@ -70,7 +72,8 @@ function exportCsv(rows: readonly MaintenanceRecord[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `bao-tri-${new Date().toISOString().slice(0, 10)}.csv`;
+  // Ngày theo giờ nhà máy (toISOString là UTC → lệch ngày từ 0h đến 7h sáng).
+  a.download = `bao-tri-${plantDayKey(now)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -90,21 +93,24 @@ export default function MaintenancePage() {
   const alerts = useAlerts();
   const [notice, setNotice] = useState('');
   const all = useMemo(() => data ?? [], [data]);
+  // "Hôm nay" (quá hạn, khoảng ngày, KPI tháng) theo giờ nhà máy – cập nhật mỗi phút, truyền vào các hàm thuần.
+  const now = useNow(60_000);
+  const match = useCallback((r: MaintenanceRecord, v: Parameters<typeof matchMaintenance>[1]) => matchMaintenance(r, v, now), [now]);
 
   const table = useTableFilters({
     rows: all,
     getId,
     params: MAINTENANCE_PARAMS,
-    match: matchMaintenance,
+    match,
     sort: sortMaintenance,
     pageSize: PAGE_SIZE,
     tabKey: 'tab',
   });
   const { values: f, setValues, selected, setSelected, openId, setOpenId, search, setExtra } = table;
 
-  const kpis = useMemo(() => deriveMaintenanceKpis(all), [all]);
-  const priority = useMemo(() => derivePriorityTasks(all), [all]);
-  const schedule = useMemo(() => deriveSchedule(all), [all]);
+  const kpis = useMemo(() => deriveMaintenanceKpis(all, now), [all, now]);
+  const priority = useMemo(() => derivePriorityTasks(all, now), [all, now]);
+  const schedule = useMemo(() => deriveSchedule(all, now), [all, now]);
   const open = openId ? all.find((r) => r.id === openId) ?? null : null;
 
   // ---- Modal tạo yêu cầu: điều khiển qua URL (?create=1&device=&from=) để /alerts mở sẵn được.
@@ -164,7 +170,7 @@ export default function MaintenancePage() {
       header: 'Hạn xử lý',
       width: 100,
       cell: (r) => (
-        <span className={cn('text-base', isOverdue(r) ? 'text-danger' : 'text-fg')} title={dueLabel(r)}>
+        <span className={cn('text-base', isOverdue(r, now) ? 'text-danger' : 'text-fg')} title={dueLabel(r, now)}>
           {formatDate(r.dueAt)}
         </span>
       ),
@@ -206,7 +212,7 @@ export default function MaintenancePage() {
       actions={
         <>
           <DateRangeSelect value={f.range} options={RANGE_OPTIONS} onChange={(range) => setValues({ range })} />
-          <ExportButton onClick={() => exportCsv(table.filtered)} />
+          <ExportButton onClick={() => exportCsv(table.filtered, now)} />
           <LiveDataButton />
           <RefreshButton onClick={refetch} />
           <Button variant="primary" icon={<Icon name="add" />} onClick={() => setExtra({ create: '1' })}>
@@ -243,7 +249,7 @@ export default function MaintenancePage() {
   return (
     <Page pageHeader={header}>
       {/* 1. KPI – 70:5207 (6 cột gap 18) */}
-      <section aria-label="Thống kê bảo trì" className="grid grid-cols-2 gap-[18px] md:grid-cols-3 xl:grid-cols-6">
+      <section aria-label="Thống kê bảo trì" className="grid grid-cols-2 gap-[18px] md:grid-cols-3 wide:grid-cols-6">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} />
         ))}
@@ -324,6 +330,10 @@ export default function MaintenancePage() {
             <div id="maintenance-table">
               <DataTable
                 label="Danh sách yêu cầu bảo trì"
+                // Khung hẹp hơn → cuộn ngang trong khung; mã yêu cầu + cột "Xem" cố định khi cuộn.
+                minWidth={1100}
+                stickyFirst
+                stickyActions
                 columns={columns}
                 rows={table.pageRows}
                 getRowId={getId}
@@ -369,7 +379,7 @@ export default function MaintenancePage() {
                 <Badge variant="status" value={STATUS_BADGE[open.status]} withIcon>
                   {STATUS_LABEL[open.status]}
                 </Badge>
-                {isOverdue(open) && <Badge variant="status" value="unacknowledged">{dueLabel(open)}</Badge>}
+                {isOverdue(open, now) && <Badge variant="status" value="unacknowledged">{dueLabel(open, now)}</Badge>}
               </div>
               <div className="flex items-center gap-3">
                 <ProgressBar value={open.progress} tone={open.status === 'done' ? 'success' : 'info'} track="solid" label="Tiến độ" className="flex-1" />
@@ -384,7 +394,7 @@ export default function MaintenancePage() {
                   <ol className="flex flex-col gap-1 text-sm text-fg">
                     {open.checklist.map((c, i) => (
                       <li key={c.id} className={cn('flex gap-2', c.done && 'text-fg-secondary line-through')}>
-                        <span className="tabular-nums text-fg-muted/60">{i + 1}.</span>
+                        <span className="tabular-nums text-fg-muted/65">{i + 1}.</span>
                         {c.text}
                       </li>
                     ))}
@@ -409,8 +419,8 @@ export default function MaintenancePage() {
                 {
                   label: 'Hạn xử lý',
                   value: (
-                    <span className={isOverdue(open) ? 'text-danger' : undefined}>
-                      {formatDate(open.dueAt)} · {dueLabel(open)}
+                    <span className={isOverdue(open, now) ? 'text-danger' : undefined}>
+                      {formatDate(open.dueAt)} · {dueLabel(open, now)}
                     </span>
                   ),
                 },

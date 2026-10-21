@@ -26,6 +26,7 @@ import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useLiveData } from '@/data/live';
 import { applyLive, useOverviewData } from '@/data/overview';
+import { useAnnounceChange } from '@/lib/announce';
 import { parseQuality } from '@/features/scene';
 
 const nf = (v: number) => v.toLocaleString('en-US');
@@ -70,6 +71,14 @@ export default function OverviewPage() {
   // Mọi tag: KPI, danh sách theo dõi, nhãn bản đồ 2.5D và cảnh 3D dùng chung một đăng ký.
   const liveData = useLiveData();
 
+  const view = data ? applyLive(data, liveData) : undefined;
+  const lostCount = view
+    ? view.kpis.filter((k) => k.signalLost).length + view.watchlist.filter((r) => r.signalLost).length + view.map.markers.filter((m) => m.showSignalLostIcon).length
+    : 0;
+  useAnnounceChange(lostCount, (n, prev) =>
+    n > 0 ? `Mất tín hiệu ở ${n} điểm đo trên Tổng quan.` : prev > 0 ? 'Các điểm đo trên Tổng quan đã có tín hiệu trở lại.' : '',
+  );
+
   const header = (
     <PageHeader
       actions={
@@ -110,7 +119,7 @@ export default function OverviewPage() {
   }
 
   // Ghép số liệu trực tiếp lúc render (Date.now() → "Mất tín hiệu" khi tag quá 10 s; useLiveData tự hẹn giờ vẽ lại).
-  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = applyLive(data, liveData);
+  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = view!;
 
   return (
     <Page
@@ -141,7 +150,7 @@ export default function OverviewPage() {
       }
     >
       {/* 1. KPI – 53:166 (6 cột gap 16, cao 128) */}
-      <section aria-label="Chỉ số chính" className="grid auto-rows-[128px] grid-cols-3 gap-4 min-[1520px]:grid-cols-6">
+      <section aria-label="Chỉ số chính" className="grid auto-rows-[128px] grid-cols-2 gap-4 md:grid-cols-3 wide:grid-cols-6">
         {kpis.map((k) => (
           <KpiFromData key={k.id} data={k} onAction={() => navigate('/alerts')} />
         ))}
@@ -175,7 +184,7 @@ export default function OverviewPage() {
       )}
 
       {/* 3. Chart – 53:319. Figma đặt cả hàng opacity 70% (xem mục "Sai khác với Figma") */}
-      <section aria-label="Biểu đồ" className="grid grid-cols-2 gap-4 opacity-70 min-[1520px]:grid-cols-4">
+      <section aria-label="Biểu đồ" className="grid grid-cols-2 gap-4 opacity-70 wide:grid-cols-4">
         <ChartCard title="Xu hướng tồn kho (24h)" description="Tồn kho 24 giờ qua">
           <AreaTrendChart data={charts.inventory.points} domain={charts.inventory.domain} unit="Nm³" format={nf} />
         </ChartCard>

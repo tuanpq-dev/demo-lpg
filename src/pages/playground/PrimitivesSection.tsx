@@ -11,32 +11,13 @@ import {
   type Severity,
   type WorkStatus,
 } from '@/components';
+import { Demo } from './Demo';
 
 /** Một khối demo: component bên trái, ảnh Figma tham chiếu bên phải. */
-function Demo({ title, node, refImg, children }: { title: string; node: string; refImg?: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-lg border border-dashed border-line/30 bg-bg-app p-4">{children}</div>
-        {refImg && (
-          <figure className="flex flex-col gap-2 rounded-lg border border-dashed border-line/30 p-4">
-            <figcaption className="text-xs text-fg-muted/60">Figma (tham chiếu)</figcaption>
-            <img src={refImg} alt={`Figma ${node}`} className="max-w-full self-start" />
-          </figure>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="w-28 shrink-0 text-xs text-fg-muted/60">{label}</span>
+      <span className="w-28 shrink-0 text-xs text-fg-muted/65">{label}</span>
       {children}
     </div>
   );
@@ -160,7 +141,7 @@ export function PrimitivesSection() {
                     <span className={a.critical ? 'text-sm font-bold text-danger-strong/75' : 'text-sm font-bold text-warning-soft'}>
                       {a.code}
                     </span>
-                    <span className="text-2xs text-fg-muted/60">{a.time}</span>
+                    <span className="text-2xs text-fg-muted/65">{a.time}</span>
                   </div>
                   <p className="text-sm text-fg-muted/70">{a.text}</p>
                 </div>
@@ -187,19 +168,19 @@ export function PrimitivesSection() {
             <ProgressBar value={98.7} label="Sức khỏe thiết bị" className="flex-1" />
           </Row>
           <Row label="sm · info · solid">
-            <ProgressBar value={18} max={27} tone="info" track="solid" className="flex-1" />
+            <ProgressBar value={18} max={27} tone="info" track="solid" label="Đang thực hiện 18/27" className="flex-1" />
           </Row>
           <Row label="md · accent">
-            <ProgressBar value={40} size="md" tone="accent" className="flex-1" />
+            <ProgressBar value={40} size="md" tone="accent" label="Xưởng 1" className="flex-1" />
           </Row>
           <Row label="md · warning">
-            <ProgressBar value={30} size="md" tone="warning" className="flex-1" />
+            <ProgressBar value={30} size="md" tone="warning" label="Xưởng 2" className="flex-1" />
           </Row>
           <Row label="md · success">
-            <ProgressBar value={25} size="md" tone="success" className="flex-1" />
+            <ProgressBar value={25} size="md" tone="success" label="Xưởng 3" className="flex-1" />
           </Row>
           <Row label="md · neutral">
-            <ProgressBar value={20} size="md" tone="neutral" className="flex-1" />
+            <ProgressBar value={20} size="md" tone="neutral" label="Lò hơi" className="flex-1" />
           </Row>
         </div>
       </Demo>
@@ -207,11 +188,11 @@ export function PrimitivesSection() {
       {/* ---------------- Divider ---------------- */}
       <Demo title="Divider" node="53:442 · 53:89">
         <div className="flex flex-col gap-3 rounded-lg bg-surface p-4">
-          <span className="text-xs text-fg-muted/60">default (line/30)</span>
+          <span className="text-xs text-fg-muted/65">default (line/30)</span>
           <Divider />
-          <span className="text-xs text-fg-muted/60">subtle (line/10)</span>
+          <span className="text-xs text-fg-muted/65">subtle (line/10)</span>
           <Divider tone="subtle" />
-          <span className="text-xs text-fg-muted/60">strong (#737373)</span>
+          <span className="text-xs text-fg-muted/65">strong (#737373)</span>
           <Divider tone="strong" />
         </div>
         <div className="flex h-10 items-center gap-4 rounded-lg bg-surface px-4 text-sm">

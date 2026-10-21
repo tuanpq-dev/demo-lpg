@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, type ElementRef, type MutableRefObject } from 'react';
 import { DoubleSide, Euler, Object3D, Plane, Raycaster, Vector2, Vector3, type CatmullRomCurve3, type Ray } from 'three';
 import type { ScenePalette } from './colors';
-import { EDIT_SNAP, GROUND_GRAZING_DOT, GROUND_WORK_LIMIT } from './editConstants';
+import { EDIT_SNAP, GROUND_GRAZING_DOT, GROUND_WORK_LIMIT, snapTo } from './editConstants';
 import { worldCorners, type ResolvedObject, type ScenePreview } from './geometry';
 import { GROUND_EPS, worldBaseY } from './ground';
 import type { AssetType, Pipe, PipeAttachment, Vec3 } from './types';
@@ -187,7 +187,6 @@ export function PickerBridge({ pickerRef, byId }: { pickerRef: MutableRefObject<
 }
 
 const round = (v: number, digits = 3) => +v.toFixed(digits) || 0;
-const snapTo = (v: number, step: number) => Math.round(v / step) * step;
 
 /** Chuột phải đi quá ngưỡng này (px) mới bắt đầu kéo – click không làm object nhảy theo snap. */
 const DRAG_START_PX = 3;
@@ -440,9 +439,11 @@ export function EditGizmo({
     const add = c.addEventListener.bind(c) as (t: string, l: (e: { value: unknown }) => void) => void;
     const remove = c.removeEventListener.bind(c) as (t: string, l: (e: { value: unknown }) => void) => void;
     add('dragging-changed', onDrag);
+    // `state.current` là object trạng thái dùng chung (không đổi tham chiếu) – giữ lại cho cleanup.
+    const shared = state.current;
     return () => {
       remove('dragging-changed', onDrag);
-      state.current.dragging = false;
+      shared.dragging = false;
     };
   }, [key, edit.mode, state]);
 

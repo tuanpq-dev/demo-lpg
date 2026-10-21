@@ -22,6 +22,8 @@ import {
   TemplateIcon,
   ToolsIcon,
   UploadIcon,
+  SignalLostIcon,
+  MenuIcon,
   newChecklistItem,
   type AttachedFile,
   type ChecklistItem,
@@ -31,6 +33,8 @@ import { CHECKLIST_TEMPLATES, FORM_PRIORITY_OPTIONS, PEOPLE } from '@/data/maint
 const tempIcons = [
   ['ToolsIcon', ToolsIcon],
   ['UploadIcon', UploadIcon],
+  ['SignalLostIcon', SignalLostIcon],
+  ['MenuIcon', MenuIcon],
   ['FileIcon', FileIcon],
   ['PaperclipIcon', PaperclipIcon],
   ['ShieldIcon', ShieldIcon],

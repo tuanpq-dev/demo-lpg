@@ -87,4 +87,5 @@
 
   /* ---------- Layout ---------- */
   --header-height: 60px;
+  --content-max-width: 1920px;      /* vùng nội dung trang tối đa (màn 2560) */
 }
