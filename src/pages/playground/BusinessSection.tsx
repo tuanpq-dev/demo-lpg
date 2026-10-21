@@ -19,7 +19,7 @@ import { FigmaRef } from './FigmaRef';
 
 const alertKpis = deriveAlertKpis(alertRecords);
 const priorityAlertCards = derivePriorityCards(alertRecords);
-const maintenanceKpis = deriveMaintenanceKpis(maintenanceRecords);
+const maintenanceKpis = deriveMaintenanceKpis(maintenanceRecords, new Date());
 
 const OVERVIEW = '/figma-ref/53-11-overview.png';
 const ALERTS = '/figma-ref/70-2809-alerts.png';

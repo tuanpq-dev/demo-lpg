@@ -1,3 +1,4 @@
+import { plantDayKey } from '@/lib/plantTime';
 /**
  * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
  * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này.
@@ -107,9 +108,11 @@ export const MAINTENANCE_ASSIGNEES = ['Nguyễn Văn A', 'Trần Bình', 'Lê Th
 
 const pad = (n: number) => String(n).padStart(2, '0');
 /** Ngày (local) cách hôm nay `offset` ngày → "yyyy-mm-dd". */
+/** "yyyy-mm-dd" cách hôm nay (giờ nhà máy – khớp cách tính quá hạn) `offset` ngày. */
 export function isoDay(offset = 0, base = new Date()) {
-  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + offset);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const [y, m, d] = plantDayKey(base).split('-').map(Number);
+  const t = new Date(Date.UTC(y!, m! - 1, d! + offset));
+  return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
 const at = (offset: number, time = '17:00') => `${isoDay(offset)}T${time}`;
 

@@ -49,7 +49,7 @@ export function FormsSection() {
     <div className="flex flex-col gap-10">
       <Demo title="PriorityTaskCard" node="70:4581 · 70:4601 · 70:4621">
         <div className="grid w-[1503px] grid-cols-3 gap-3">
-          {derivePriorityTasks(maintenanceRecords).map((t) => (
+          {derivePriorityTasks(maintenanceRecords, new Date()).map((t) => (
             <PriorityTaskCard key={t.id} {...t} onDetail={(id) => setClicked(id)} />
           ))}
         </div>
@@ -61,7 +61,7 @@ export function FormsSection() {
         <Demo title="EventTimeline variant=schedule (Lịch sắp tới)" node="70:4889 (màu đọc từ ảnh chụp)">
           <div className="flex flex-wrap items-start gap-6">
             <Card title="Lịch sắp tới" headerVariant="plain" action={{ label: 'Xem lịch' }} className="w-[346px]">
-              <EventTimeline variant="schedule" events={deriveSchedule(maintenanceRecords)} />
+              <EventTimeline variant="schedule" events={deriveSchedule(maintenanceRecords, new Date())} />
             </Card>
             <FigmaRef src={MAINT} x={1187} y={621} w={346} h={216} />
           </div>

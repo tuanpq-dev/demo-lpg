@@ -24,6 +24,7 @@ import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
+import { plantDayKey } from '@/lib/plantTime';
 import {
   ALERT_ASSIGNEES,
   ALERT_PARAMS,
@@ -86,7 +87,8 @@ function exportCsv(rows: readonly AlertRecord[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `canh-bao-${new Date().toISOString().slice(0, 10)}.csv`;
+  // Ngày theo giờ nhà máy (toISOString là UTC → lệch ngày từ 0h đến 7h sáng).
+  link.download = `canh-bao-${plantDayKey(new Date())}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
