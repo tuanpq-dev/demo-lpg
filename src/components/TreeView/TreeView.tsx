@@ -203,7 +203,8 @@ export function TreeView({
               'group flex h-7 cursor-default items-center gap-1.5 rounded-sm pr-1 text-sm outline-offset-[-2px]',
               isSel ? 'bg-accent/15 text-fg' : 'text-fg-secondary hover:bg-surface-muted/60',
               !row.selectable && 'font-semibold text-fg-muted',
-              item.dimmed && 'opacity-70' // 70 % để chữ mờ vẫn đạt 4.5:1 (WCAG AA),
+              // 70 % để chữ mờ (object ẩn) vẫn đạt 4.5:1 (WCAG AA).
+              item.dimmed && 'opacity-70',
             )}
             style={{ paddingLeft: 6 + depth * 14 }}
           >
