@@ -108,7 +108,7 @@ export function FileDropzone({ files, onChange, accept, maxSizeMB = 20, label = 
               <FileIcon className={/\.pdf$/i.test(f.name) ? 'text-danger' : 'text-accent'} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm text-fg">{f.name}</span>
-                <span className="text-2xs text-fg-muted/60">{formatFileSize(f.size)}</span>
+                <span className="text-2xs text-fg-muted/65">{formatFileSize(f.size)}</span>
               </span>
               <button
                 type="button"

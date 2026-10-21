@@ -1,24 +1,12 @@
-import type { ReactNode } from 'react';
 import { Button, Icon, PageHeader, StatusPill } from '@/components';
 import { ClockButton, ExportButton, LiveDataButton, RefreshButton, TodayButton } from '@/app/HeaderActions';
 import { RoutedAppHeader } from '@/app/Page';
 import { FigmaRef } from './FigmaRef';
+import { Demo } from './Demo';
 
 const OVERVIEW = '/figma-ref/53-11-overview.png';
 const ALERTS = '/figma-ref/70-2809-alerts.png';
 const MAINT = '/figma-ref/70-3964-maintenance.png';
-
-function Demo({ title, node, children }: { title: string; node: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="flex flex-col gap-4 overflow-x-auto rounded-lg border border-dashed border-line/30 p-4">{children}</div>
-    </div>
-  );
-}
 
 export function LayoutSection() {
   return (

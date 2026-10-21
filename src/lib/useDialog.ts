@@ -49,10 +49,13 @@ export function useDialog({
       document.body.style.overflow = prevOverflow;
       returnFocus.current?.focus?.();
     };
+    // Chỉ chạy khi mở/đóng; focusInitial đọc ref mới nhất.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
     if (open && !panelRef.current?.contains(document.activeElement)) focusInitial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, contentKey]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {

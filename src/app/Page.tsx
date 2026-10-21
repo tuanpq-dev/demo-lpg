@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
+import { LiveAnnouncer } from './LiveAnnouncer';
 import { NAV_ROUTES, navIdFromPath } from './navigation';
 
 /** AppHeader gắn với React Router: tab active theo URL, chọn tab → navigate. */
@@ -23,5 +24,10 @@ export function RoutedAppHeader() {
 
 /** AppLayout với header đã gắn router – dùng cho mọi trang. */
 export function Page(props: Omit<AppLayoutProps, 'header'>) {
-  return <AppLayout header={<RoutedAppHeader />} {...props} />;
+  return (
+    <>
+      <AppLayout header={<RoutedAppHeader />} {...props} />
+      <LiveAnnouncer />
+    </>
+  );
 }

@@ -203,7 +203,7 @@ export function TreeView({
               'group flex h-7 cursor-default items-center gap-1.5 rounded-sm pr-1 text-sm outline-offset-[-2px]',
               isSel ? 'bg-accent/15 text-fg' : 'text-fg-secondary hover:bg-surface-muted/60',
               !row.selectable && 'font-semibold text-fg-muted',
-              item.dimmed && 'opacity-50',
+              item.dimmed && 'opacity-70' // 70 % để chữ mờ vẫn đạt 4.5:1 (WCAG AA),
             )}
             style={{ paddingLeft: 6 + depth * 14 }}
           >
@@ -251,7 +251,7 @@ export function TreeView({
             {/* Nhãn chính không bị cắt; chữ phụ co lại trước. */}
             {!isRenaming && <span className="min-w-0 flex-1 truncate text-right text-xs text-fg-muted">{item.meta}</span>}
             {!isRenaming && renderActions && (
-              <span className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+              <span role="presentation" className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                 {renderActions(item)}
               </span>
             )}

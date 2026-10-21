@@ -87,7 +87,7 @@ export function EditorSection() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-base text-fg-secondary">
-        Dùng trong <Link className="text-accent hover:underline" to="/editor?edit=1">Scene Editor (/editor?edit=1)</Link>. ⚠ Figma chưa có thiết kế –
+        Dùng trong <Link className="text-accent underline" to="/editor?edit=1">Scene Editor (/editor?edit=1)</Link>. ⚠ Figma chưa có thiết kế –
         style theo token, cùng ngôn ngữ với TextField / Select.
       </p>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

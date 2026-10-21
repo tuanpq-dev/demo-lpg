@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   Badge,
   Button,
@@ -18,20 +18,9 @@ import { derivePriorityTasks, deriveSchedule, PRIORITY_OPTIONS } from '@/data/ma
 import { isoDay, maintenanceRecords } from '@/mocks/maintenance';
 import { FigmaRef } from './FigmaRef';
 import { ModalPartsDemo } from './ModalPartsDemo';
+import { Demo } from './Demo';
 
 const MAINT = '/figma-ref/70-3964-maintenance.png';
-
-function Demo({ title, node, children }: { title: string; node: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
-      </div>
-      <div className="flex flex-col gap-4 overflow-x-auto rounded-lg border border-dashed border-line/30 p-4">{children}</div>
-    </div>
-  );
-}
 
 const statuses: WorkStatus[] = ['pending', 'assigned', 'in-progress', 'review', 'done'];
 
@@ -54,7 +43,7 @@ export function FormsSection() {
           ))}
         </div>
         <FigmaRef src={MAINT} x={31} y={394} w={1503} h={150} />
-        <p className="font-mono text-xs text-fg-muted/60">Chi tiết: {clicked}</p>
+        <p className="font-mono text-xs text-fg-muted/65">Chi tiết: {clicked}</p>
       </Demo>
 
       <div className="grid gap-10 xl:grid-cols-2">
@@ -80,7 +69,7 @@ export function FormsSection() {
         <div className="flex flex-wrap items-start gap-6">
           <a href="/maintenance?create=1" className="rounded-sm text-sm text-accent underline">Mở modal thật trên /maintenance →</a>
           <figure className="flex flex-col gap-2">
-            <figcaption className="text-xs text-fg-muted/60">Thiết kế (tham chiếu)</figcaption>
+            <figcaption className="text-xs text-fg-muted/65">Thiết kế (tham chiếu)</figcaption>
             <img src="/figma-ref/mt-create-modal-design.png" alt="Thiết kế modal tạo yêu cầu bảo trì" className="max-w-[660px] rounded-sm border border-dashed border-line/30" />
           </figure>
         </div>

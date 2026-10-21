@@ -60,10 +60,13 @@ export function DonutGauge({ segments, totalLabel = 'Tổng', total, size = 180,
         role="img"
         aria-label={`${totalLabel} ${sum}: ${summary}`}
       >
+        {/* role="img" đã mô tả đủ (aria-label); SVG recharts bên trong ẩn khỏi trình đọc màn hình. */}
+        <div aria-hidden="true">
         <PieChart width={size} height={size}>
           {/* Track */}
           <Pie
             data={[{ v: 1 }]}
+            rootTabIndex={-1}
             dataKey="v"
             innerRadius={inner}
             outerRadius={outer}
@@ -74,7 +77,9 @@ export function DonutGauge({ segments, totalLabel = 'Tổng', total, size = 180,
             endAngle={-270}
           />
           <Pie
-            data={segments.map((s) => ({ ...s }))}
+            // Không truyền `id` (recharts gắn thành id của <path> → trùng id khi có nhiều donut); không tab vào SVG.
+            data={segments.map(({ id: _id, ...s }) => s)}
+            rootTabIndex={-1}
             dataKey="value"
             nameKey="label"
             innerRadius={inner}
@@ -91,6 +96,7 @@ export function DonutGauge({ segments, totalLabel = 'Tổng', total, size = 180,
           </Pie>
           <Tooltip content={<ChartTooltip />} />
         </PieChart>
+        </div>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3">
           <span className="text-3xl font-bold leading-6 text-success">{sum}</span>
           <span className="text-md leading-[15px] text-fg-muted">{totalLabel}</span>

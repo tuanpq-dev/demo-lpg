@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '../Button';
 import { Checkbox } from '../Checkbox';
@@ -37,6 +37,7 @@ export function ChecklistEditor({
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const inputs = useRef(new Map<string, HTMLInputElement>());
+  const hintId = useId();
   /** Dòng vừa thêm – focus ngay sau lần render kế tiếp (không chờ requestAnimationFrame). */
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
   useEffect(() => {
@@ -104,7 +105,7 @@ export function ChecklistEditor({
       </div>
 
       <ol className="flex flex-col overflow-hidden rounded-lg border border-line/30">
-        {items.length === 0 && <li className="px-4 py-4 text-sm text-fg-muted/60">{emptyText}</li>}
+        {items.length === 0 && <li className="px-4 py-4 text-sm text-fg-muted/65">{emptyText}</li>}
         {items.map((it, i) => (
           <li
             key={it.id}
@@ -156,9 +157,9 @@ export function ChecklistEditor({
               onKeyDown={(e) => onRowKey(e, i, it.id)}
               placeholder="Nhập nội dung công việc…"
               aria-label={`Bước ${i + 1}`}
-              aria-description="Alt + mũi tên lên/xuống để đổi thứ tự"
+              aria-describedby={hintId}
               className={cn(
-                'min-w-0 flex-1 rounded-sm bg-transparent px-1 py-0.5 text-base text-fg placeholder:text-fg-secondary/50 focus:bg-surface-sunken focus:outline-none',
+                'min-w-0 flex-1 rounded-sm bg-transparent px-1 py-0.5 text-base text-fg placeholder:text-fg-secondary/60 focus:bg-surface-sunken focus:outline-none',
                 it.done && 'text-fg-secondary line-through',
               )}
             />
@@ -173,6 +174,9 @@ export function ChecklistEditor({
           </li>
         ))}
       </ol>
+      <span id={hintId} className="sr-only">
+        Alt + mũi tên lên/xuống để đổi thứ tự
+      </span>
     </section>
   );
 }

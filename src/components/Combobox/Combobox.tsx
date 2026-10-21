@@ -79,7 +79,9 @@ export function Combobox(props: ComboboxProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selected: string[] = props.multiple ? [...props.value] : props.value ? [props.value] : [];
+  const multiValue = props.multiple ? props.value : undefined;
+  const singleValue = props.multiple ? undefined : props.value;
+  const selected: string[] = useMemo(() => (multiValue ? [...multiValue] : singleValue ? [singleValue] : []), [multiValue, singleValue]);
   const labelOf = (v: string) => options.find((o) => o.value === v)?.label ?? v;
 
   const filtered = useMemo(() => {
@@ -89,7 +91,7 @@ export function Combobox(props: ComboboxProps) {
         (!props.multiple || !selected.includes(o.value)) &&
         (!q || o.label.toLowerCase().includes(q) || o.meta?.toLowerCase().includes(q)),
     );
-  }, [options, query, props.multiple, selected.join('|')]);
+  }, [options, query, props.multiple, selected]);
 
   useEffect(() => setActive(0), [query, open]);
 
@@ -163,7 +165,9 @@ export function Combobox(props: ComboboxProps) {
 
   return (
     <div ref={rootRef} className={cn('relative flex w-full flex-col gap-2', className)}>
+      {/* Click vào khung (ngoài ô nhập) chỉ là tiện ích chuột → focus ô nhập; bàn phím dùng chính ô nhập. */}
       <div
+        role="presentation"
         className={cn(
           'flex h-[35px] w-full items-center gap-2 rounded-lg border bg-surface-sunken px-3 text-base',
           disabled && 'cursor-not-allowed opacity-50',
@@ -193,7 +197,7 @@ export function Combobox(props: ComboboxProps) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent text-fg placeholder:text-fg-secondary/50 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-fg placeholder:text-fg-secondary/60 focus:outline-none"
         />
         {!props.multiple && props.clearable !== false && single && (
           <button
@@ -217,8 +221,10 @@ export function Combobox(props: ComboboxProps) {
           aria-multiselectable={props.multiple || undefined}
           className="absolute left-0 top-[39px] z-30 max-h-56 w-full overflow-auto rounded-md border border-line bg-surface-sunken py-1 shadow-card"
         >
-          {filtered.length === 0 && <li className="px-3 py-2 text-sm text-fg-muted/60">{emptyText}</li>}
+          {filtered.length === 0 && <li className="px-3 py-2 text-sm text-fg-muted/65">{emptyText}</li>}
           {filtered.map((o, i) => (
+            // Bàn phím xử lý ở phần tử cha (aria-activedescendant) – option chỉ cần click chuột.
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <li
               key={o.value}
               id={`${uid}-opt-${i}`}

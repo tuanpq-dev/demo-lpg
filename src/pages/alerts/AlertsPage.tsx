@@ -157,7 +157,7 @@ export default function AlertsPage() {
   ];
 
   const columns: DataTableColumn<AlertRecord>[] = [
-    { id: 'time', header: 'Thời gian', width: 81, cell: (a) => (a.daysAgo === 0 ? a.time : <span title={dayLabel(a.daysAgo)}>{a.time}<span className="block text-2xs text-fg-muted/60">{dayLabel(a.daysAgo)}</span></span>) },
+    { id: 'time', header: 'Thời gian', width: 81, cell: (a) => (a.daysAgo === 0 ? a.time : <span title={dayLabel(a.daysAgo)}>{a.time}<span className="block text-2xs text-fg-muted/65">{dayLabel(a.daysAgo)}</span></span>) },
     { id: 'severity', header: 'Mức độ', width: 110, cell: (a) => <Badge variant="severity" value={a.severity} /> },
     { id: 'code', header: 'Mã CB', width: 90 },
     { id: 'message', header: 'Nội dung', align: 'start', width: 260, className: 'max-w-[260px] truncate text-fg', cell: (a) => <span title={a.message}>{a.message}</span> },

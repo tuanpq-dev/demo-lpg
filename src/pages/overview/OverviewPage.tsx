@@ -26,6 +26,7 @@ import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useLiveData } from '@/data/live';
 import { applyLive, useOverviewData } from '@/data/overview';
+import { useAnnounceChange } from '@/lib/announce';
 import { parseQuality } from '@/features/scene';
 
 const nf = (v: number) => v.toLocaleString('en-US');
@@ -70,6 +71,14 @@ export default function OverviewPage() {
   // Mọi tag: KPI, danh sách theo dõi, nhãn bản đồ 2.5D và cảnh 3D dùng chung một đăng ký.
   const liveData = useLiveData();
 
+  const view = data ? applyLive(data, liveData) : undefined;
+  const lostCount = view
+    ? view.kpis.filter((k) => k.signalLost).length + view.watchlist.filter((r) => r.signalLost).length + view.map.markers.filter((m) => m.showSignalLostIcon).length
+    : 0;
+  useAnnounceChange(lostCount, (n, prev) =>
+    n > 0 ? `Mất tín hiệu ở ${n} điểm đo trên Tổng quan.` : prev > 0 ? 'Các điểm đo trên Tổng quan đã có tín hiệu trở lại.' : '',
+  );
+
   const header = (
     <PageHeader
       actions={
@@ -110,7 +119,7 @@ export default function OverviewPage() {
   }
 
   // Ghép số liệu trực tiếp lúc render (Date.now() → "Mất tín hiệu" khi tag quá 10 s; useLiveData tự hẹn giờ vẽ lại).
-  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = applyLive(data, liveData);
+  const { kpis, map, charts, systemHealth, priorityAlarms, watchlist, recentEvents } = view!;
 
   return (
     <Page

@@ -62,7 +62,8 @@ export function Modal({
   );
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={onKeyDown}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation" onKeyDown={onKeyDown}>
+      {/* Nền mờ: click để đóng (chuột); bàn phím đóng bằng Esc (useDialog). */}
       <div aria-hidden="true" className="absolute inset-0 bg-black/60" onClick={dismissOnBackdrop ? onClose : undefined} />
       <div
         ref={panelRef}

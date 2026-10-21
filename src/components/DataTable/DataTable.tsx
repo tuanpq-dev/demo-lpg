@@ -32,7 +32,7 @@ export type DataTableProps<T> = {
   columns: readonly DataTableColumn<T>[];
   rows: readonly T[];
   getRowId: (row: T) => string;
-  /** aria-label của bảng. */
+  /** Tên bảng – thành <caption> ẩn (tên truy cập). */
   label: string;
 
   /** Bật cột checkbox. Controlled: `selectedIds` + `onSelectionChange`. */
@@ -108,7 +108,9 @@ export function DataTable<T>({
   return (
     <div className={cn('flex flex-col', className)}>
       <div className="overflow-auto" style={{ maxHeight }}>
-        <table aria-label={label} className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-sm">
+          {/* caption = tên truy cập của bảng (ẩn hiển thị). */}
+          <caption className="sr-only">{label}</caption>
           <thead>
             <tr className="border-b border-line/30">
               {selectable && (
@@ -142,7 +144,7 @@ export function DataTable<T>({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={colCount} className="px-4 py-12 text-center text-base text-fg-muted/60">
+                <td colSpan={colCount} className="px-4 py-12 text-center text-base text-fg-muted/65">
                   {emptyState}
                 </td>
               </tr>

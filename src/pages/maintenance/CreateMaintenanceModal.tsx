@@ -476,7 +476,7 @@ export function CreateMaintenanceModal({
               })}
             </ul>
           </div>
-          <p className="text-2xs text-fg-muted/60">* AI chỉ hỗ trợ thông tin và góp ý. Admin là người xác nhận nội dung cuối cùng của yêu cầu bảo trì.</p>
+          <p className="text-2xs text-fg-muted/65">* AI chỉ hỗ trợ thông tin và góp ý. Admin là người xác nhận nội dung cuối cùng của yêu cầu bảo trì.</p>
         </section>
       )}
 
@@ -499,35 +499,39 @@ export function CreateMaintenanceModal({
             Ghi chú &amp; An toàn
           </h3>
           <Textarea label="Ghi chú nội bộ" value={form.notes} onChange={(v) => set('notes', v)} rows={4} placeholder="Thêm ghi chú nội bộ hoặc lưu ý an toàn…" className="[&>label]:sr-only" />
-          <label className="flex cursor-pointer items-start gap-3 text-sm text-fg-secondary">
-            <Checkbox label="Yêu cầu Giấy phép Làm việc (PTW)" checked={form.requiresPermit} onChange={(v) => set('requiresPermit', v)} className="mt-0.5" />
-            <span aria-hidden="true">Công việc yêu cầu tuân thủ quy trình Giấy phép Làm việc (Permit to Work - PTW).</span>
-          </label>
+          {/* Nhãn hiển thị = tên truy cập (WCAG 2.5.3), bấm chữ cũng chọn; không lồng <label>. */}
+          <Checkbox
+            showLabel
+            label="Công việc yêu cầu tuân thủ quy trình Giấy phép Làm việc (Permit to Work - PTW)."
+            checked={form.requiresPermit}
+            onChange={(v) => set('requiresPermit', v)}
+            className="items-start gap-3"
+          />
         </section>
       </div>
 
       {/* Tổng quan */}
       <dl aria-label="Tổng quan yêu cầu" className="flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-line/30 bg-surface-raised px-4 py-3">
         <div className="flex flex-col gap-0.5">
-          <dt className="text-2xs uppercase tracking-label text-fg-muted/60">Tổng quan</dt>
+          <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Tổng quan</dt>
           <dd className="text-sm text-fg">
             {form.device ? 1 : 0} Thiết bị • {steps} Bước thực hiện
           </dd>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-line/30 pl-8">
-          <dt className="text-2xs uppercase tracking-label text-fg-muted/60">Mức độ</dt>
+          <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Mức độ</dt>
           <dd className={cn('text-sm font-semibold', form.priority === 'critical' ? 'text-danger' : form.priority === 'high' ? 'text-warning' : 'text-fg')}>
             {form.priority === 'critical' && '! '}
             {PRIORITY_TEXT[form.priority]}
           </dd>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-line/30 pl-8">
-          <dt className="text-2xs uppercase tracking-label text-fg-muted/60">Thời lượng dự kiến</dt>
+          <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Thời lượng dự kiến</dt>
           <dd className="text-sm text-fg">{hours !== null && hours > 0 ? `${hours} giờ` : '–'}</dd>
         </div>
         {form.requiresPermit && (
           <div className="flex flex-col gap-0.5 border-l border-line/30 pl-8">
-            <dt className="text-2xs uppercase tracking-label text-fg-muted/60">An toàn</dt>
+            <dt className="text-2xs uppercase tracking-label text-fg-muted/65">An toàn</dt>
             <dd className="text-sm text-warning">Cần PTW</dd>
           </div>
         )}

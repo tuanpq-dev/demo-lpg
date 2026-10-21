@@ -440,9 +440,11 @@ export function EditGizmo({
     const add = c.addEventListener.bind(c) as (t: string, l: (e: { value: unknown }) => void) => void;
     const remove = c.removeEventListener.bind(c) as (t: string, l: (e: { value: unknown }) => void) => void;
     add('dragging-changed', onDrag);
+    // `state.current` là object trạng thái dùng chung (không đổi tham chiếu) – giữ lại cho cleanup.
+    const shared = state.current;
     return () => {
       remove('dragging-changed', onDrag);
-      state.current.dragging = false;
+      shared.dragging = false;
     };
   }, [key, edit.mode, state]);
 

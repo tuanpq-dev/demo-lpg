@@ -5,7 +5,7 @@ export function Placeholder({ label, height, className }: { label: string; heigh
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-xl border border-dashed border-line/50 bg-surface/40 text-sm text-fg-muted/60',
+        'flex items-center justify-center rounded-xl border border-dashed border-line/50 bg-surface/40 text-sm text-fg-muted/65',
         className,
       )}
       style={{ minHeight: height }}

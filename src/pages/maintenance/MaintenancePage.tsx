@@ -390,7 +390,7 @@ export default function MaintenancePage() {
                   <ol className="flex flex-col gap-1 text-sm text-fg">
                     {open.checklist.map((c, i) => (
                       <li key={c.id} className={cn('flex gap-2', c.done && 'text-fg-secondary line-through')}>
-                        <span className="tabular-nums text-fg-muted/60">{i + 1}.</span>
+                        <span className="tabular-nums text-fg-muted/65">{i + 1}.</span>
                         {c.text}
                       </li>
                     ))}

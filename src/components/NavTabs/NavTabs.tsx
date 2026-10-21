@@ -36,7 +36,7 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
 
   return (
     <nav aria-label={label} className={className}>
-      <div role="tablist" aria-orientation="horizontal" className="flex items-center gap-11">
+      <div role="tablist" aria-label={label} aria-orientation="horizontal" className="flex items-center gap-11">
         {items.map((item) => {
           const active = item.id === value;
           return (

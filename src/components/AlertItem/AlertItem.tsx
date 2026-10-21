@@ -55,7 +55,7 @@ export function AlertItem({
     >
       <div className="flex w-full items-center justify-between gap-3">
         <span className={cn('text-sm font-bold', codeTone[severity])}>{code}</span>
-        <span className="shrink-0 text-2xs text-fg-muted/60">{time}</span>
+        <span className="shrink-0 text-2xs text-fg-muted/65">{time}</span>
       </div>
       <p className="text-sm text-fg-muted/70">{message}</p>
     </Tag>

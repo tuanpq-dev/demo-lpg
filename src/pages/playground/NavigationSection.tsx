@@ -25,7 +25,7 @@ function Demo({ title, node, children }: { title: string; node: string; children
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline gap-3">
         <h3 className="text-md font-semibold">{title}</h3>
-        <span className="font-mono text-xs text-fg-muted/60">Figma {node}</span>
+        <span className="font-mono text-xs text-fg-muted/65">Figma {node}</span>
       </div>
       <div className="flex flex-col gap-4 rounded-lg border border-dashed border-line/30 p-4">{children}</div>
     </div>
@@ -33,7 +33,7 @@ function Demo({ title, node, children }: { title: string; node: string; children
 }
 
 function StateLine({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-xs text-fg-muted/60">{children}</p>;
+  return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;
 }
 
 // ---------------- Dữ liệu mẫu (Figma) ----------------
@@ -201,7 +201,7 @@ export function NavigationSection() {
                 <Badge variant="status" value={a.status} />
               </li>
             ))}
-            {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-fg-muted/60">Không có cảnh báo phù hợp.</li>}
+            {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-fg-muted/65">Không có cảnh báo phù hợp.</li>}
           </ul>
         </div>
         <StateLine>

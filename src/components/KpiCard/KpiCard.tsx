@@ -141,6 +141,7 @@ export function KpiCard({
             max={progress.max}
             tone={progress.tone ?? 'success'}
             track={compact ? 'solid' : 'subtle'}
+            label={label}
             className="mt-2"
           />
         )}

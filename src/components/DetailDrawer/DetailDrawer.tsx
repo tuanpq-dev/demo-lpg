@@ -53,7 +53,8 @@ export function DetailDrawer({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end" onKeyDown={onKeyDown}>
+    <div className="fixed inset-0 z-50 flex justify-end" role="presentation" onKeyDown={onKeyDown}>
+      {/* Nền mờ: click để đóng (chuột); bàn phím đóng bằng Esc (useDialog). */}
       <div aria-hidden="true" className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         ref={panelRef}

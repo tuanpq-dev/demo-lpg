@@ -405,7 +405,6 @@ export function attachToPipe(scene: SceneConfig, id: string, pipeId: string): Sc
     objects: scene.objects.map((o) => {
       if (o.id !== id) return o;
       const { position: _p, rotation: _r, elevation: _e, ...rest } = o;
-      void _p, _r, _e;
       return { ...rest, attach: { pipe: pipeId, t } };
     }),
   };
