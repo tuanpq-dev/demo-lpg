@@ -11,6 +11,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# Cấu hình dev không bí mật (VITE_API_URL=http://localhost:3000)
+!.env.development
 
 # Log
 logs
