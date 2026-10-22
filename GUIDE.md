@@ -17,9 +17,9 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 
 | Lệnh / URL | Tác dụng |
 |---|---|
-| `npm run dev` | Dev server Vite (mặc định http://localhost:5173); `/api/*` chuyển tới backend `localhost:3000` |
+| `npm run dev` | Dev server Vite (mặc định http://localhost:5173); gọi backend thẳng ở `VITE_API_URL` (`.env.development`: http://localhost:3000) qua CORS |
 | Backend | Repo riêng `../demo-lpg-server` (`npm run db:up` + `npm run dev` ở đó) – mục 9 |
-| `/login` | Đăng nhập (mọi trang khác cần đăng nhập; `VITE_AUTH=off` = bỏ đăng nhập, phiên giả admin) |
+| `/login` · `/register` · `/pending` | Đăng nhập · đăng ký · "đang chờ duyệt" (mọi trang khác cần đăng nhập; `VITE_AUTH=off` = bỏ đăng nhập, phiên giả admin) |
 | `npm run build` · `npm run typecheck` | Build production (gồm `tsc -b`) · chỉ kiểm tra kiểu |
 | `/overview?map=3d` | Bản đồ 3D thay cho ảnh 2.5D |
 | `/overview?map=3d&edit=1` | Chế độ sửa nhanh trên bản đồ (kéo/xoay, Copy JSON) – chỉ engineer/admin |
@@ -67,7 +67,8 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
 | `public/figma-ref/` | Ảnh chụp Figma để so | Đối chiếu thiết kế |
 | `packages/shared/src/` | Hợp đồng dữ liệu FE/BE: `scene/` (SceneConfig, specs, migrate, parse), `live.ts`, `alerts.ts`, `maintenance.ts`, `roles.ts`, `auth.ts`. FE dùng mã nguồn (alias), backend (repo riêng) dùng bản build `dist/` | Đổi kiểu dữ liệu dùng chung, thêm quyền |
-| `src/app/auth/`, `src/data/auth.ts`, `src/features/auth/` | Đăng nhập phía FE: `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`, client gọi `/api/auth/*` + `apiFetch`, logic phiên thuần | Đổi luồng đăng nhập, gọi API có token |
+| `src/api/` | Gọi backend: `client.ts` (fetch wrapper, lỗi có kiểu, refresh khi 401), `types.ts` (types + zod của hợp đồng API), `auth.ts` (phiên đăng nhập) | Thêm endpoint, đổi hợp đồng API |
+| `src/app/auth/`, `src/features/auth/`, `src/pages/login/` | `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`; logic thuần (phiên, quyền, thông báo lỗi); trang `/login`, `/register`, `/pending` | Đổi luồng/giao diện đăng nhập |
 
 ---
 
@@ -637,7 +638,7 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 4. Component: `render` + `userEvent` + truy vấn theo vai trò/tên (`getByRole('tab', { name: … })`) – đồng thời kiểm tra a11y.
 5. `npm run test:run` và `npm run lint` phải sạch trước khi commit; hàm logic mới có test trong cùng commit.
 
-**Hiện có** (≈ 138 test FE + shared; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
+**Hiện có** (≈ 165 test FE + shared; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
 
 **Kiểm tra accessibility**
 - Tự động khi viết code: `npm run lint` (jsx-a11y: tên truy cập, nhãn ô nhập, không `tabindex` > 0, phần tử có click phải dùng được bằng phím).
@@ -675,7 +676,7 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | Danh sách tag cảm biến | `SENSOR_TAGS` = khoá của `liveBase` | API danh mục tag |
 | Kho cảnh của Editor | `LocalStorageRepository` (chỉ trên trình duyệt hiện tại) | Bản HTTP của `SceneRepository` |
 | Quyền vào `/editor` | Theo vai trò đăng nhập (engineer/admin); chỉ ẩn ở FE – chưa có API lưu cảnh để BE chặn | API scene (`@Roles(...rolesFor('scene:write'))`) |
-| Dữ liệu qua backend | Backend mới có xác thực + quản lý user + audit; Cảnh báo/Bảo trì/Cảnh 3D vẫn mock ở FE | Endpoint nghiệp vụ (GUIDE backend "Thêm endpoint") rồi thay `fetch*` bằng `apiFetch` |
+| Dữ liệu qua backend | Backend mới có xác thực + quản lý user + audit; Cảnh báo/Bảo trì/Cảnh 3D vẫn mock ở FE | Endpoint nghiệp vụ (GUIDE backend "Thêm endpoint") rồi thay `fetch*` bằng `api.request` (mục 9f) |
 | Đăng nhập SSO | Chỉ `local` (mật khẩu argon2 trong DB) | OIDC/Entra ID/LDAP qua `CredentialsAuthProvider` / `startSession` |
 | Ống trong Editor | Vẽ/sửa được (3D-4); điểm gập chỉ kéo ngang, chưa tự đi tránh thiết bị, nhánh T chỉ là đầu ống nằm trên ống khác | Kéo theo Y, auto-route, tee có cấu trúc |
 | Bơm/lọc nâng 0.3 m trong cảnh mẫu | `elevation: 0.3` (dữ liệu cũ để khớp cổng ống) – bảng Kiểm tra báo "lơ lửng" | Thêm bệ (asset/tham số) hoặc hạ xuống sàn + dời điểm ống |
@@ -691,41 +692,109 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 
 ## 9. Đăng nhập (frontend) và backend
 
-Backend (NestJS + Prisma/PostgreSQL) ở **repo riêng** `../demo-lpg-server` – cấu trúc, cách chạy, luồng đăng nhập chi tiết, cách thêm endpoint có phân quyền: `GUIDE.md` của repo đó. Repo này giữ phần FE + hợp đồng dùng chung `packages/shared` (backend phụ thuộc qua `file:../demo-lpg/packages/shared`).
+Backend (NestJS + Prisma/PostgreSQL) ở **repo riêng** `../demo-lpg-server` (có GUIDE.md riêng). FE gọi backend **trực tiếp** qua CORS – không proxy – và tự định nghĩa types + zod của hợp đồng API trong `src/api/types.ts` (không dùng `packages/shared` cho phần này).
 
-**Chạy cùng backend**: `npm run dev` ở cả hai repo (backend `localhost:3000`, FE `localhost:5173` – Vite proxy `/api/*` sang backend nên cookie refresh là first-party). Không có backend: `VITE_AUTH=off npm run dev` (phiên giả admin).
+### 9a. Biến môi trường
 
-| File | Vai trò |
-|---|---|
-| `packages/shared/src/roles.ts` | `ROLES`, `PERMISSIONS`, `can()`, `rolesFor()` – nguồn duy nhất cho BE (`@Roles`) và FE (`useCan`) |
-| `packages/shared/src/auth.ts` | Schema/kiểu `LoginRequest`, `AuthSession`, `User`… (FE chỉ `import type`) |
-| `src/data/auth.ts` | Client `/api/auth/*`: access token chỉ trong bộ nhớ, refresh một luồng (Web Locks giữa các tab), `apiFetch` (gắn Bearer, gặp 401 → refresh 1 lần rồi gọi lại), `AUTH_MODE` |
-| `src/app/auth/AuthProvider.tsx` | `AuthProvider`, `useAuth`, `useCan` – khôi phục phiên khi mở app, hẹn refresh trước hạn 60 s |
-| `src/app/auth/RequireAuth.tsx` | Route bảo vệ: chưa đăng nhập → `/login?next=<trang>` |
-| `src/features/auth/session.ts` | Thuần (có test): `refreshDelayMs`, `isExpiring`, `safeRedirect` (chặn chuyển hướng mở), `loginUrl` |
-| `src/pages/login/LoginPage.tsx` | Trang `/login` (lỗi chung, báo phút chờ khi bị khoá) |
+| Biến | Ở đâu | Giá trị |
+|---|---|---|
+| `VITE_API_URL` | `.env.development` (commit sẵn) · Netlify: Site settings → Environment variables · ghi đè cục bộ: `.env.development.local` | Gốc URL backend, không "/" cuối. Dev: `http://localhost:3000` |
+| `VITE_AUTH` | `.env` / `.env.local` / `netlify.toml` | `api` (mặc định) · `off` = không đăng nhập, phiên giả admin (demo tĩnh) |
+
+Mẫu: `.env.example`. Thiếu `VITE_API_URL` khi `VITE_AUTH=api` → mọi gọi API báo `CONFIG_ERROR` ("Chưa cấu hình địa chỉ máy chủ").
+
+### 9b. Chạy cùng backend
+
+```bash
+# Terminal 1 – backend (repo ../demo-lpg-server, xem GUIDE.md của repo đó)
+cd ../demo-lpg-server && npm run db:up && npm run dev     # http://localhost:3000, CORS cho http://localhost:5173
+# Terminal 2 – frontend
+npm run dev                                                # http://localhost:5173 → gọi http://localhost:3000
+```
+
+- Mở bằng `http://localhost:5173` (không phải `127.0.0.1` nếu backend chưa cho origin đó) – backend chỉ nhận origin trong `CORS_ORIGINS`.
+- Cookie refresh do backend đặt (`HttpOnly`, `Path=/auth`); FE gửi `credentials: 'include'`. `localhost:5173` và `localhost:3000` cùng site nên `SameSite=Lax/Strict` vẫn gửi được; production khác site cần backend đặt `SameSite=None; Secure`.
+- Không có backend: `VITE_AUTH=off npm run dev`. Backend tắt khi đang `api` → trang đăng nhập báo "Không kết nối được máy chủ".
+
+### 9c. Hợp đồng API (`src/api/types.ts`)
+
+| Endpoint | Gửi | Nhận |
+|---|---|---|
+| `POST /auth/register` | `{email, name, password}` | 201 `{message}` (tài khoản chờ duyệt) |
+| `POST /auth/login` | `{email, password}` | 200 `{accessToken, user}` + cookie refresh |
+| `POST /auth/refresh` | cookie | 200 `{accessToken}` |
+| `POST /auth/logout` | cookie | 204 |
+| `GET /auth/me` | `Authorization: Bearer` | 200 `user = {id, email, name, role, status}` |
+| Lỗi | – | `{error: {code, message, details?}}` – code: `INVALID_CREDENTIALS`, `ACCOUNT_PENDING`, `VALIDATION_ERROR`, `RATE_LIMITED`, `UNAUTHORIZED` (+ mã khác → hiện `message` của backend) |
+
+Mọi response đi qua zod: sai hợp đồng → `ApiError` mã `CONTRACT_ERROR` nêu trường sai (vd `role: Invalid enum value`). Lỗi phía FE: `NETWORK_ERROR` (không gọi được máy chủ), `CONFIG_ERROR`, `UNKNOWN` (lỗi HTTP không có thân `{error}`).
+
+### 9d. Luồng đăng nhập
 
 ```mermaid
 sequenceDiagram
-  participant P as AuthProvider
-  participant C as data/auth.ts
-  participant A as Backend /api/auth
-  P->>C: init() khi mở app / F5
-  C->>A: POST /refresh (cookie HttpOnly)
-  A-->>C: 200 phiên → authenticated · 401 → anonymous → RequireAuth chuyển /login?next=…
-  Note over C: Đăng nhập: POST /login → accessToken (bộ nhớ) + cookie
-  Note over C: 60 s trước hạn hoặc gặp 401 → refresh MỘT luồng (backend coi hai lần dùng cùng token là bị đánh cắp)
-  Note over C: Đăng xuất: POST /logout → anonymous + báo các tab khác (BroadcastChannel)
+  participant U as Người dùng
+  participant P as AuthProvider / RequireAuth
+  participant S as api/auth.ts
+  participant C as api/client.ts
+  participant B as Backend :3000
+  Note over P,B: Mở app / F5 (access token chỉ ở bộ nhớ nên mất)
+  P->>S: init()
+  S->>C: refresh()
+  C->>B: POST /auth/refresh (cookie)
+  alt còn phiên
+    B-->>C: 200 {accessToken}
+    S->>C: GET /auth/me (Bearer)
+    C-->>P: user → authenticated
+  else hết phiên / mất mạng
+    B-->>C: 401 · lỗi mạng
+    C-->>P: anonymous → /login?next=<trang>
+  end
+  U->>S: Đăng nhập (email, mật khẩu)
+  S->>C: POST /auth/login
+  alt đúng
+    B-->>C: 200 {accessToken, user} + Set-Cookie
+    C-->>P: authenticated → quay lại trang định vào
+  else lỗi
+    B-->>C: {error:{code}} (INVALID_CREDENTIALS · ACCOUNT_PENDING · RATE_LIMITED)
+    C-->>U: thông báo theo mã
+  end
+  Note over C,B: Request có Bearer gặp 401 → MỘT lần POST /auth/refresh (gộp mọi request cùng lúc + Web Locks giữa các tab) → gọi lại
+  Note over C,P: Refresh bị từ chối → onSessionLost → anonymous → /login
+  U->>S: Đăng xuất (menu tài khoản trên header)
+  S->>B: POST /auth/logout → 204 · xoá token + báo các tab khác
 ```
+
+Đăng ký: `/register` → `POST /auth/register` → `/pending` ("Tài khoản đang chờ duyệt" + `message` của backend). Đăng nhập tài khoản chưa duyệt → `ACCOUNT_PENDING` → thông báo + liên kết `/pending`.
+
+### 9e. File
+
+| File | Vai trò |
+|---|---|
+| `src/api/client.ts` | `createApiClient` / `api`: baseURL `VITE_API_URL`, `credentials: 'include'`, Bearer, `ApiError {code, message, status, retryAfter?, details?}`, validate zod, 401 → refresh một luồng → gọi lại, `onSessionLost` |
+| `src/api/types.ts` | Types + zod của hợp đồng (User, LoginResponse, RefreshResponse, RegisterResponse, thân lỗi) |
+| `src/api/auth.ts` | `createAuthService` / `authService`: init (refresh + me), login, register, logout, refresh chủ động, đồng bộ tab; `AUTH_MODE`, phiên giả khi `VITE_AUTH=off` |
+| `src/api/test-utils.ts` | `mockFetch`, `json`, `apiError`, `USER` – dùng trong test |
+| `src/app/auth/AuthProvider.tsx` | `AuthProvider`, `useAuth`, `useCan`; hẹn refresh 60 s trước `exp` của JWT |
+| `src/app/auth/RequireAuth.tsx` | Route bảo vệ: chưa đăng nhập → `/login?next=…` |
+| `src/features/auth/session.ts` | Thuần: `tokenExpiresAt` (đọc `exp`), `refreshDelayMs`, `safeRedirect` (chặn chuyển hướng mở), `loginUrl` |
+| `src/features/auth/permissions.ts` | Vai trò + quyền phía FE (`can`, `ROLE_LABELS`) – chỉ ẩn/hiện |
+| `src/features/auth/errors.ts` | `authErrorMessage(err)` – câu hiển thị theo mã lỗi |
+| `src/pages/login/LoginPage.tsx` · `src/pages/login/RegisterPage.tsx` · `src/pages/login/PendingPage.tsx` · `src/pages/login/AuthLayout.tsx` | Các trang công khai + khung chung |
 
 | Vai trò | FE hiển thị |
 |---|---|
 | viewer | chỉ xem: không chọn dòng/xác nhận cảnh báo, không tạo/sửa bảo trì |
 | operator | + xác nhận/hoàn thành/phân công cảnh báo, tạo/sửa yêu cầu bảo trì |
 | engineer | + `/editor`, sửa nhanh `?edit=1` ở Tổng quan |
-| admin | mọi quyền (quản lý user hiện chỉ có API) |
+| admin | mọi quyền |
 
-**Gọi API thật trong trang**: trong `src/data/<màn>.ts` thay thân `fetchX` bằng `apiFetch('/<đường dẫn>')` (đã có token + refresh); ẩn nút bằng `useCan('<quyền>')` – chỉ là UX, backend kiểm tra lại.
+### 9f. Gọi endpoint mới có xác thực
+
+1. Thêm schema zod + type vào `src/api/types.ts` (đúng hợp đồng backend).
+2. Trong `src/data/<màn>.ts`: `api.request('/alerts', { schema: AlertListSchema })` (`import { api } from '@/api/client'`) – tự gắn Bearer, tự refresh khi 401, lỗi là `ApiError`.
+3. Ẩn nút theo quyền bằng `useCan('<quyền>')` (chỉ UX – backend kiểm tra lại).
+4. Test với `mockFetch` (`src/api/test-utils.ts`), mẫu: `src/api/client.test.ts`.
 
 ---
 
