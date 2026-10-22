@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/app/auth';
+import { canUseEditor } from '@/app/editorAccess';
 import { plantMapImage } from '@/assets/digital-twin';
 import {
   AlertItem,
@@ -48,8 +50,9 @@ export default function OverviewPage() {
   const sceneParam = params.get('scene');
   const sceneId = sceneParam ?? DEFAULT_SCENE_ID;
   const map3d = params.get('map') === '3d' || !!sceneParam;
-  // Dev: ?edit=1 → kéo/xoay object + Copy JSON (chưa lưu).
-  const editMode = params.get('edit') === '1';
+  // Dev: ?edit=1 → kéo/xoay object + Copy JSON (chưa lưu). Chỉ vai trò sửa được cảnh (engineer/admin).
+  const { user } = useAuth();
+  const editMode = params.get('edit') === '1' && canUseEditor(params.toString(), user?.role);
   // ?quality=low|medium|high ghi đè preset 3D (mặc định tự chọn theo FPS).
   const quality = parseQuality(params.get('quality')) ?? 'auto';
   // WebGL lỗi → về ảnh 2.5D kèm thông báo nhỏ; bật lại 3D thì xoá thông báo.

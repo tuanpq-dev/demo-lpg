@@ -17,13 +17,15 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 
 | Lệnh / URL | Tác dụng |
 |---|---|
-| `npm run dev` | Dev server Vite (mặc định http://localhost:5173) |
+| `npm run dev` | Dev server Vite (mặc định http://localhost:5173); `/api/*` chuyển tới backend `localhost:3000` |
+| Backend | Repo riêng `../demo-lpg-server` (`npm run db:up` + `npm run dev` ở đó) – mục 9 |
+| `/login` | Đăng nhập (mọi trang khác cần đăng nhập; `VITE_AUTH=off` = bỏ đăng nhập, phiên giả admin) |
 | `npm run build` · `npm run typecheck` | Build production (gồm `tsc -b`) · chỉ kiểm tra kiểu |
 | `/overview?map=3d` | Bản đồ 3D thay cho ảnh 2.5D |
-| `/overview?map=3d&edit=1` | Chế độ sửa nhanh trên bản đồ (kéo/xoay, Copy JSON) |
+| `/overview?map=3d&edit=1` | Chế độ sửa nhanh trên bản đồ (kéo/xoay, Copy JSON) – chỉ engineer/admin |
 | `/overview?map=3d&quality=low` | Ép preset 3D `low` / `medium` / `high` (mặc định tự chọn theo FPS) |
 | `/overview?scene=tram-chiet-nap` | Mở cảnh 3D khác (cảnh mẫu hoặc cảnh lưu từ Editor), luôn ở 3D |
-| `/editor?edit=1` | Scene Editor (không có `?edit=1` → về `/overview`) |
+| `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
 | `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
 - Deploy (Netlify): `netlify.toml` (build `npm run build`, publish `dist`, Node 20, chuyển `/*` → `/index.html` status 200) – không thêm file `_redirects` vào `public/` để tránh 2 nguồn cấu hình.
@@ -46,6 +48,8 @@ src/
 ├─ lib/                tiện ích chung (cn, store, dialog, focus…)
 ├─ assets/digital-twin/    SVG/PNG từ Figma + sổ đăng ký icon
 └─ styles/             tokens.css (màu, bo góc…) + global.css
+
+packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alerts, maintenance, roles, auth)
 ```
 
 | Thư mục | Chứa gì | Khi nào cần vào |
@@ -62,6 +66,8 @@ src/
 | `src/assets/digital-twin/` | Icon + ảnh bản đồ, đăng ký trong `src/assets/digital-twin/index.ts` | Thêm icon từ Figma |
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
 | `public/figma-ref/` | Ảnh chụp Figma để so | Đối chiếu thiết kế |
+| `packages/shared/src/` | Hợp đồng dữ liệu FE/BE: `scene/` (SceneConfig, specs, migrate, parse), `live.ts`, `alerts.ts`, `maintenance.ts`, `roles.ts`, `auth.ts`. FE dùng mã nguồn (alias), backend (repo riêng) dùng bản build `dist/` | Đổi kiểu dữ liệu dùng chung, thêm quyền |
+| `src/app/auth/`, `src/data/auth.ts`, `src/features/auth/` | Đăng nhập phía FE: `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`, client gọi `/api/auth/*` + `apiFetch`, logic phiên thuần | Đổi luồng đăng nhập, gọi API có token |
 
 ---
 
@@ -100,7 +106,8 @@ flowchart LR
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
 | 1 | `src/main.tsx` | Khai báo route; trang có chart/3D lazy-load; `/editor` đi qua `EditorRoute` (kiểm quyền) |
-| 2 | `src/app/editorAccess.ts` | `canUseEditor()` – `?edit=1` hoặc `VITE_SCENE_EDITOR=true` |
+| 2 | `src/app/auth/RequireAuth.tsx` | Route bảo vệ: chưa đăng nhập → `/login?next=…` |
+| 2b | `src/app/editorAccess.ts` | `canUseEditor(search, role)` – có quyền `scene:write` (engineer/admin); `VITE_AUTH=off` → `?edit=1` như cũ |
 | 3 | `src/app/Page.tsx` | `Page` = `AppLayout` + `RoutedAppHeader` (tab active theo URL) |
 | 4 | `src/app/navigation.ts` | `NAV_ROUTES` – thứ tự, nhãn, icon, đường dẫn menu |
 | 5 | `src/components/AppLayout/AppLayout.tsx` | 3 biến thể: `full`, `sidebar` (326px), `workspace` (cao 1 màn hình) |
@@ -544,7 +551,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` | `src/app/Page.tsx` | `#layout` (bản gắn router) |
+| AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` (`detail` hiện trong menu), `userMenu` + `onUserMenuSelect` (menu tài khoản – Đăng xuất) | `src/app/Page.tsx` | `#layout` (bản gắn router) |
 | PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions` | mọi trang | `#layout` |
 | AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
 
@@ -630,7 +637,7 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 4. Component: `render` + `userEvent` + truy vấn theo vai trò/tên (`getByRole('tab', { name: … })`) – đồng thời kiểm tra a11y.
 5. `npm run test:run` và `npm run lint` phải sạch trước khi commit; hàm logic mới có test trong cùng commit.
 
-**Hiện có** (≈ 92 test): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
+**Hiện có** (≈ 138 test FE + shared; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
 
 **Kiểm tra accessibility**
 - Tự động khi viết code: `npm run lint` (jsx-a11y: tên truy cập, nhãn ô nhập, không `tabindex` > 0, phần tử có click phải dùng được bằng phím).
@@ -651,9 +658,9 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 
 Bảng rộng: `DataTable minWidth` → cuộn ngang trong khung, `stickyFirst`/`stickyActions` giữ cột mã/cột "Xem". Ảnh chụp kiểm tra responsive để trong `scratch/` (đã gitignore).
 
-**Kiểm tra đường dẫn trong GUIDE**: mọi đường dẫn file src/… nhắc tới trong file này phải tồn tại (mẫu có <…> hoặc * bị bỏ qua) – chạy:
+**Kiểm tra đường dẫn trong GUIDE**: mọi đường dẫn file src/… (kể cả `packages/shared/src/…`) nhắc tới trong file này phải tồn tại (mẫu có <…> hoặc * bị bỏ qua) – chạy:
 ```bash
-grep -oE 'src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | sort -u | while read p; do [ -e "$p" ] || echo "THIẾU $p"; done
+grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | sort -u | while read p; do [ -e "$p" ] || echo "THIẾU $p"; done
 ```
 
 ---
@@ -667,7 +674,9 @@ grep -oE 'src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | sort -u | while read
 | Quy đổi mức bồn → thể tích | Công thức bồn trụ nằm (bỏ qua đáy) – `src/features/tank/volume.ts` | Bảng dung tích thật từ khách (`strappingVolume`) |
 | Danh sách tag cảm biến | `SENSOR_TAGS` = khoá của `liveBase` | API danh mục tag |
 | Kho cảnh của Editor | `LocalStorageRepository` (chỉ trên trình duyệt hiện tại) | Bản HTTP của `SceneRepository` |
-| Quyền vào `/editor` | `?edit=1` hoặc `VITE_SCENE_EDITOR` | Phân quyền thật theo vai trò |
+| Quyền vào `/editor` | Theo vai trò đăng nhập (engineer/admin); chỉ ẩn ở FE – chưa có API lưu cảnh để BE chặn | API scene (`@Roles(...rolesFor('scene:write'))`) |
+| Dữ liệu qua backend | Backend mới có xác thực + quản lý user + audit; Cảnh báo/Bảo trì/Cảnh 3D vẫn mock ở FE | Endpoint nghiệp vụ (GUIDE backend "Thêm endpoint") rồi thay `fetch*` bằng `apiFetch` |
+| Đăng nhập SSO | Chỉ `local` (mật khẩu argon2 trong DB) | OIDC/Entra ID/LDAP qua `CredentialsAuthProvider` / `startSession` |
 | Ống trong Editor | Vẽ/sửa được (3D-4); điểm gập chỉ kéo ngang, chưa tự đi tránh thiết bị, nhánh T chỉ là đầu ống nằm trên ống khác | Kéo theo Y, auto-route, tee có cấu trúc |
 | Bơm/lọc nâng 0.3 m trong cảnh mẫu | `elevation: 0.3` (dữ liệu cũ để khớp cổng ống) – bảng Kiểm tra báo "lơ lửng" | Thêm bệ (asset/tham số) hoặc hạ xuống sàn + dời điểm ống |
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
@@ -680,5 +689,45 @@ grep -oE 'src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | sort -u | while read
 
 ---
 
-Cập nhật: 21/10/2026.
-Khi thêm tính năng mới, cập nhật mục 4–6.
+## 9. Đăng nhập (frontend) và backend
+
+Backend (NestJS + Prisma/PostgreSQL) ở **repo riêng** `../demo-lpg-server` – cấu trúc, cách chạy, luồng đăng nhập chi tiết, cách thêm endpoint có phân quyền: `GUIDE.md` của repo đó. Repo này giữ phần FE + hợp đồng dùng chung `packages/shared` (backend phụ thuộc qua `file:../demo-lpg/packages/shared`).
+
+**Chạy cùng backend**: `npm run dev` ở cả hai repo (backend `localhost:3000`, FE `localhost:5173` – Vite proxy `/api/*` sang backend nên cookie refresh là first-party). Không có backend: `VITE_AUTH=off npm run dev` (phiên giả admin).
+
+| File | Vai trò |
+|---|---|
+| `packages/shared/src/roles.ts` | `ROLES`, `PERMISSIONS`, `can()`, `rolesFor()` – nguồn duy nhất cho BE (`@Roles`) và FE (`useCan`) |
+| `packages/shared/src/auth.ts` | Schema/kiểu `LoginRequest`, `AuthSession`, `User`… (FE chỉ `import type`) |
+| `src/data/auth.ts` | Client `/api/auth/*`: access token chỉ trong bộ nhớ, refresh một luồng (Web Locks giữa các tab), `apiFetch` (gắn Bearer, gặp 401 → refresh 1 lần rồi gọi lại), `AUTH_MODE` |
+| `src/app/auth/AuthProvider.tsx` | `AuthProvider`, `useAuth`, `useCan` – khôi phục phiên khi mở app, hẹn refresh trước hạn 60 s |
+| `src/app/auth/RequireAuth.tsx` | Route bảo vệ: chưa đăng nhập → `/login?next=<trang>` |
+| `src/features/auth/session.ts` | Thuần (có test): `refreshDelayMs`, `isExpiring`, `safeRedirect` (chặn chuyển hướng mở), `loginUrl` |
+| `src/pages/login/LoginPage.tsx` | Trang `/login` (lỗi chung, báo phút chờ khi bị khoá) |
+
+```mermaid
+sequenceDiagram
+  participant P as AuthProvider
+  participant C as data/auth.ts
+  participant A as Backend /api/auth
+  P->>C: init() khi mở app / F5
+  C->>A: POST /refresh (cookie HttpOnly)
+  A-->>C: 200 phiên → authenticated · 401 → anonymous → RequireAuth chuyển /login?next=…
+  Note over C: Đăng nhập: POST /login → accessToken (bộ nhớ) + cookie
+  Note over C: 60 s trước hạn hoặc gặp 401 → refresh MỘT luồng (backend coi hai lần dùng cùng token là bị đánh cắp)
+  Note over C: Đăng xuất: POST /logout → anonymous + báo các tab khác (BroadcastChannel)
+```
+
+| Vai trò | FE hiển thị |
+|---|---|
+| viewer | chỉ xem: không chọn dòng/xác nhận cảnh báo, không tạo/sửa bảo trì |
+| operator | + xác nhận/hoàn thành/phân công cảnh báo, tạo/sửa yêu cầu bảo trì |
+| engineer | + `/editor`, sửa nhanh `?edit=1` ở Tổng quan |
+| admin | mọi quyền (quản lý user hiện chỉ có API) |
+
+**Gọi API thật trong trang**: trong `src/data/<màn>.ts` thay thân `fetchX` bằng `apiFetch('/<đường dẫn>')` (đã có token + refresh); ẩn nút bằng `useCan('<quyền>')` – chỉ là UX, backend kiểm tra lại.
+
+---
+
+Cập nhật: 22/10/2026.
+Khi thêm tính năng mới, cập nhật mục 4–6 (đăng nhập: mục 9; backend: GUIDE của `../demo-lpg-server`).

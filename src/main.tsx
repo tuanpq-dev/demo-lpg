@@ -2,7 +2,9 @@ import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from 'react-router-dom';
 import './styles/global.css';
+import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
+import LoginPage from './pages/login/LoginPage';
 import SimplePage from './pages/SimplePage';
 
 // Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
@@ -20,10 +22,11 @@ function Root() {
   );
 }
 
-/** /editor chỉ mở khi có quyền (xem canUseEditor) – không thì về Tổng quan. */
+/** /editor chỉ mở khi có quyền (engineer/admin – xem canUseEditor) – không thì về Tổng quan. */
 function EditorRoute() {
   const { search } = useLocation();
-  return canUseEditor(search) ? <EditorPage /> : <Navigate to="/overview" replace />;
+  const { user } = useAuth();
+  return canUseEditor(search, user?.role) ? <EditorPage /> : <Navigate to="/overview" replace />;
 }
 
 // Data router (createBrowserRouter) để dùng useBlocker – Editor chặn rời trang khi chưa lưu.
@@ -31,21 +34,30 @@ const router = createBrowserRouter([
   {
     element: <Root />,
     children: [
-      { path: '/', element: <Navigate to="/overview" replace /> },
-      { path: '/overview', element: <OverviewPage /> },
-      { path: '/map', element: <SimplePage section="Bản đồ nội khu" title="Bản đồ nội khu" /> },
-      { path: '/alerts', element: <AlertsPage /> },
-      { path: '/maintenance', element: <MaintenancePage /> },
-      { path: '/reports', element: <SimplePage section="Báo cáo" title="Báo cáo" /> },
-      { path: '/editor', element: <EditorRoute /> },
-      { path: '/playground', element: <PlaygroundPage /> },
-      { path: '*', element: <Navigate to="/overview" replace /> },
+      { path: '/login', element: <LoginPage /> },
+      {
+        // Mọi trang còn lại cần đăng nhập (chưa đăng nhập → /login?next=…).
+        element: <RequireAuth />,
+        children: [
+          { path: '/', element: <Navigate to="/overview" replace /> },
+          { path: '/overview', element: <OverviewPage /> },
+          { path: '/map', element: <SimplePage section="Bản đồ nội khu" title="Bản đồ nội khu" /> },
+          { path: '/alerts', element: <AlertsPage /> },
+          { path: '/maintenance', element: <MaintenancePage /> },
+          { path: '/reports', element: <SimplePage section="Báo cáo" title="Báo cáo" /> },
+          { path: '/editor', element: <EditorRoute /> },
+          { path: '/playground', element: <PlaygroundPage /> },
+          { path: '*', element: <Navigate to="/overview" replace /> },
+        ],
+      },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>,
 );

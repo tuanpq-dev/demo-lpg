@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -11,7 +14,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build:shared": "npm run build -w @demo-lpg/shared"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -25,7 +29,8 @@
     "three": "^0.170.0",
     "zod": "^3.23.8",
     "zundo": "^2.3.0",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "@demo-lpg/shared": "*"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

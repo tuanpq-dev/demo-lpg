@@ -2,29 +2,20 @@
  * Mock data màn Cảnh báo – 5 dòng đầu nguyên văn Figma 70:3032, 15 dòng bổ sung để thử lọc/phân trang.
  * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts.ts).
  */
-import type { Severity, WorkStatus } from '@/components';
+import type { Alert, AlertStatus } from '@demo-lpg/shared/alerts';
 
-/** Trạng thái xử lý của cảnh báo (dùng chung với Badge status). */
-export type AlertStatus = Extract<WorkStatus, 'unacknowledged' | 'in-progress' | 'done'>;
+/** Trạng thái xử lý của cảnh báo (dùng chung với Badge status) – định nghĩa ở packages/shared. */
+export type { AlertStatus };
 
-export type AlertRecord = {
-  id: string;
+/**
+ * Cảnh báo trong mock = hợp đồng API `Alert` (packages/shared/src/alerts.ts) nhưng thời điểm ghi TƯƠNG ĐỐI
+ * (`daysAgo` + `time`) thay cho `occurredAt` để demo luôn "hôm nay".
+ */
+export type AlertRecord = Omit<Alert, 'occurredAt'> & {
   /** Số ngày trước hôm nay (0 = hôm nay). Thời điểm thật = hôm nay − daysAgo, lúc `time`. */
   daysAgo: number;
   /** "HH:mm:ss" */
   time: string;
-  severity: Severity;
-  /** Mã cảnh báo hiển thị (cột "Mã CB"). */
-  code: string;
-  message: string;
-  device: string;
-  area: string;
-  value: string;
-  threshold: string;
-  /** Đơn vị: "bar", "% LEL", "°C", "m³/h". */
-  unit: string;
-  status: AlertStatus;
-  assignee: string | null;
 };
 
 export const ALERT_ASSIGNEES = ['Nguyễn Văn A', 'Trần Văn B', 'Lê Thị C', 'Phạm Văn D'] as const;
