@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isExpiring, loginUrl, refreshDelayMs, safeRedirect } from './session';
+import { loginUrl, refreshDelayMs, safeRedirect, tokenExpiresAt } from './session';
 
 describe('refreshDelayMs', () => {
   test('refresh trước hạn 60 s', () => expect(refreshDelayMs(900_000, 0)).toBe(840_000));
@@ -8,14 +8,6 @@ describe('refreshDelayMs', () => {
     expect(refreshDelayMs(0, 10_000)).toBe(5_000);
   });
   test('lead tuỳ chỉnh', () => expect(refreshDelayMs(100_000, 0, 10_000)).toBe(90_000));
-});
-
-describe('isExpiring', () => {
-  test('ranh giới 5 s', () => {
-    expect(isExpiring(10_000, 4_999)).toBe(false);
-    expect(isExpiring(10_000, 5_000)).toBe(true);
-    expect(isExpiring(10_000, 20_000)).toBe(true);
-  });
 });
 
 describe('safeRedirect', () => {
@@ -42,5 +34,19 @@ describe('loginUrl', () => {
   test('trang mặc định / trang đăng nhập → không kèm next', () => {
     expect(loginUrl({ pathname: '/overview' })).toBe('/login');
     expect(loginUrl({ pathname: '/login' })).toBe('/login');
+  });
+});
+
+describe('tokenExpiresAt', () => {
+  const jwt = (payload: unknown) => `h.${btoa(JSON.stringify(payload)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')}.s`;
+  test('đọc exp (giây) → ms', () => expect(tokenExpiresAt(jwt({ sub: 'u', exp: 1_800_000_000 }))).toBe(1_800_000_000_000));
+  test('không có exp / exp không phải số → null', () => {
+    expect(tokenExpiresAt(jwt({ sub: 'u' }))).toBeNull();
+    expect(tokenExpiresAt(jwt({ exp: '1' }))).toBeNull();
+  });
+  test('không phải JWT / payload hỏng → null', () => {
+    expect(tokenExpiresAt('opaque-token')).toBeNull();
+    expect(tokenExpiresAt('a.%%%.c')).toBeNull();
+    expect(tokenExpiresAt('')).toBeNull();
   });
 });
