@@ -3,55 +3,13 @@ import { plantDayKey } from '@/lib/plantTime';
  * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
  * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này.
  */
-import type { Severity } from '@/components';
 
-export type MaintenanceStatus = 'pending' | 'assigned' | 'in-progress' | 'review' | 'done';
-export type MaintenanceType = 'periodic' | 'incident' | 'inspection';
+// Kiểu dữ liệu = hợp đồng API dùng chung FE/BE (packages/shared/src/maintenance.ts).
+import type { MaintenanceRequest, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId } from '@demo-lpg/shared/maintenance';
+export type { MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId };
 
-export type MaintenanceRecord = {
-  id: string;
-  /** "MT-00128" */
-  code: string;
-  /** Cột "Nội dung". */
-  title: string;
-  description?: string;
-  device: string;
-  area: string;
-  type: MaintenanceType;
-  priority: Severity;
-  status: MaintenanceStatus;
-  assignee: string | null;
-  /** "yyyy-mm-dd" */
-  createdAt: string;
-  /** "yyyy-mm-ddTHH:mm" */
-  dueAt: string;
-  /** "yyyy-mm-dd" khi hoàn thành. */
-  completedAt: string | null;
-  /** 0–100 */
-  progress: number;
-  /** Cảnh báo gốc (nếu tạo từ /alerts). */
-  sourceAlertId?: string;
+export type MaintenanceRecord = MaintenanceRequest;
 
-  // ---- Trường của form "Tạo yêu cầu bảo trì" (ảnh thiết kế) – tuỳ chọn để dữ liệu cũ vẫn hợp lệ ----
-  /** Nguồn tạo yêu cầu. */
-  source?: MaintenanceSource;
-  /** Mã tham chiếu / cảnh báo, ví dụ "ALT-00128". */
-  referenceCode?: string;
-  /** "yyyy-mm-ddTHH:mm" */
-  startAt?: string;
-  department?: string;
-  shift?: ShiftId;
-  /** Người phối hợp. */
-  collaborators?: string[];
-  checklist?: { id: string; text: string; done: boolean }[];
-  attachments?: { id: string; name: string; size: number }[];
-  /** Ghi chú nội bộ / lưu ý an toàn. */
-  notes?: string;
-  /** Yêu cầu Giấy phép Làm việc (Permit to Work – PTW). */
-  requiresPermit?: boolean;
-};
-
-export type MaintenanceSource = 'alert' | 'manual' | 'schedule' | 'inspection';
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },
   { value: 'manual', label: 'Tạo thủ công' },
@@ -59,7 +17,6 @@ export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'inspection', label: 'Từ kiểm tra hiện trường' },
 ];
 
-export type ShiftId = 'shift-1' | 'shift-2' | 'shift-3';
 export const SHIFTS: { value: ShiftId; label: string; from: number; to: number }[] = [
   { value: 'shift-1', label: 'Ca 1 (06:00 - 14:00)', from: 6, to: 14 },
   { value: 'shift-2', label: 'Ca 2 (14:00 - 22:00)', from: 14, to: 22 },

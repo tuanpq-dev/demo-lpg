@@ -19,6 +19,7 @@ import {
   type Severity,
   type TabItem,
 } from '@/components';
+import { useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
@@ -90,6 +91,8 @@ function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sect
 /** Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. */
 export default function MaintenancePage() {
   const { status, data, error, refetch, create, assign, advance, complete } = useMaintenance();
+  // Tạo/sửa yêu cầu: operator trở lên (UX – backend kiểm tra lại khi có API).
+  const canWrite = useCan('maintenance:write');
   const alerts = useAlerts();
   const [notice, setNotice] = useState('');
   const all = useMemo(() => data ?? [], [data]);
@@ -114,7 +117,7 @@ export default function MaintenancePage() {
   const open = openId ? all.find((r) => r.id === openId) ?? null : null;
 
   // ---- Modal tạo yêu cầu: điều khiển qua URL (?create=1&device=&from=) để /alerts mở sẵn được.
-  const createOpen = search.get('create') === '1';
+  const createOpen = canWrite && search.get('create') === '1';
   const fromAlert = search.get('from');
   const sourceAlert = fromAlert ? alerts.data?.find((a) => a.id === fromAlert) : undefined;
   const closeCreate = () => setExtra({ create: null, device: null, from: null });
@@ -215,9 +218,11 @@ export default function MaintenancePage() {
           <ExportButton onClick={() => exportCsv(table.filtered, now)} />
           <LiveDataButton />
           <RefreshButton onClick={refetch} />
-          <Button variant="primary" icon={<Icon name="add" />} onClick={() => setExtra({ create: '1' })}>
-            Tạo yêu cầu bảo trì
-          </Button>
+          {canWrite && (
+            <Button variant="primary" icon={<Icon name="add" />} onClick={() => setExtra({ create: '1' })}>
+              Tạo yêu cầu bảo trì
+            </Button>
+          )}
         </>
       }
     />
@@ -438,7 +443,7 @@ export default function MaintenancePage() {
           open &&
           (open.status === 'done' ? (
             <span className="text-sm text-success">Yêu cầu đã hoàn thành.</span>
-          ) : (
+          ) : !canWrite ? null : (
             <>
               <Select
                 variant="button"

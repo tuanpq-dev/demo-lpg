@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 /** ESLint 9 (flat config): TypeScript + React hooks + accessibility (jsx-a11y, mức recommended). `npm run lint`. */
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'scratch', 'node_modules', 'public'] },
+  { ignores: ['**/dist', '**/coverage', 'scratch', '**/node_modules', 'public'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended, jsxA11y.flatConfigs.recommended],

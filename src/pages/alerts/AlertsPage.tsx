@@ -19,6 +19,7 @@ import {
   type Severity,
   type TabItem,
 } from '@/components';
+import { useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
@@ -97,6 +98,9 @@ function exportCsv(rows: readonly AlertRecord[]) {
 export default function AlertsPage() {
   const { status, data, error, refetch, acknowledge, complete, assign } = useAlerts();
   const navigate = useNavigate();
+  // Ẩn thao tác theo vai trò (UX) – backend kiểm tra lại quyền khi có API.
+  const canAck = useCan('alert:acknowledge');
+  const canCreateMaintenance = useCan('maintenance:write');
   const [notice, setNotice] = useState('');
   const all = useMemo(() => data ?? [], [data]);
 
@@ -263,7 +267,7 @@ export default function AlertsPage() {
           onAdvancedFilter={() => table.reset(['range'])}
         />
 
-        {selected.length > 0 && (
+        {canAck && selected.length > 0 && (
           <div
             role="toolbar"
             aria-label="Thao tác hàng loạt"
@@ -298,7 +302,7 @@ export default function AlertsPage() {
             columns={columns}
             rows={table.pageRows}
             getRowId={(a) => a.id}
-            selectable
+            selectable={canAck}
             selectedIds={selected}
             onSelectionChange={setSelected}
             rowActions={(a) => <TableActionButton label={`Xem chi tiết ${a.code}`} onClick={() => setOpenId(a.id)} />}
@@ -318,17 +322,28 @@ export default function AlertsPage() {
         alert={openAlert ? toDetail(openAlert) : null}
         readingClassName={openAlert ? readingTone[openAlert.severity] : undefined}
         onClose={() => setOpenId(null)}
-        onCreateMaintenance={(a) =>
-          navigate(`/maintenance?create=1&device=${encodeURIComponent(a.device)}&from=${encodeURIComponent(a.id)}`)
+        onCreateMaintenance={
+          canCreateMaintenance
+            ? (a) =>
+                navigate(`/maintenance?create=1&device=${encodeURIComponent(a.device)}&from=${encodeURIComponent(a.id)}`)
+            : undefined
         }
-        onAcknowledge={(id) => {
-          void acknowledge([id]);
-          setNotice('Đã xác nhận cảnh báo.');
-        }}
-        onComplete={(id) => {
-          void complete([id]);
-          setNotice('Đã đánh dấu hoàn thành.');
-        }}
+        onAcknowledge={
+          canAck
+            ? (id) => {
+                void acknowledge([id]);
+                setNotice('Đã xác nhận cảnh báo.');
+              }
+            : undefined
+        }
+        onComplete={
+          canAck
+            ? (id) => {
+                void complete([id]);
+                setNotice('Đã đánh dấu hoàn thành.');
+              }
+            : undefined
+        }
       />
     </Page>
   );

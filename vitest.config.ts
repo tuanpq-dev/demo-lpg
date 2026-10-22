@@ -12,14 +12,14 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'node',
-      include: ['src/**/*.test.{ts,tsx}'],
+      include: ['src/**/*.test.{ts,tsx}', 'packages/shared/src/**/*.test.ts'],
       setupFiles: ['src/test/setup.ts'],
       restoreMocks: true,
       coverage: {
         provider: 'v8',
         reporter: ['text', 'html'],
         // Chỉ thư mục logic – không đặt mục tiêu % cho UI.
-        include: ['src/features/**/*.ts', 'src/data/**/*.ts', 'src/lib/**/*.ts', 'src/app/useTableFilters.ts'],
+        include: ['src/features/**/*.ts', 'packages/shared/src/**/*.ts', 'src/data/**/*.ts', 'src/lib/**/*.ts', 'src/app/useTableFilters.ts'],
         exclude: ['**/*.test.ts', 'src/test/**'],
       },
     },

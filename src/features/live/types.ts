@@ -4,22 +4,9 @@
  * Module thuần (không React/three).
  */
 
-/** Chất lượng tín hiệu theo chuẩn OPC (Good / Uncertain / Bad). */
-export type TagQuality = 'good' | 'uncertain' | 'bad';
-
-/** Giá trị đo hoặc trạng thái (chuỗi: "running", "fault"…). */
-export type LiveValue = number | string;
-
-export type TagValue = {
-  value: LiveValue;
-  unit?: string;
-  /** Thời điểm đo (ms epoch) – dùng để phát hiện tín hiệu "đứng" (quá STALE_MS không cập nhật). */
-  ts: number;
-  quality: TagQuality;
-};
-
-/** Số liệu theo tag cảm biến. Tag không có trong map = chưa/không có dữ liệu. */
-export type LiveData = Record<string, TagValue>;
+/** Kiểu dữ liệu tag dùng chung FE/BE – định nghĩa ở `packages/shared/src/live.ts` (kèm schema zod cho BE). */
+export type { LiveData, LiveValue, TagQuality, TagValue } from '@demo-lpg/shared/live';
+import type { LiveData } from '@demo-lpg/shared/live';
 
 /** Trạng thái kết nối của nguồn: connecting = đang kết nối (lần đầu hoặc thử lại sau khi mất). */
 export type LiveSourceStatus = 'connected' | 'connecting' | 'disconnected';

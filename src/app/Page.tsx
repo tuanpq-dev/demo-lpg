@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ROLE_LABELS } from '@demo-lpg/shared/roles';
 import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
+import { useAuth } from './auth';
 import { LiveAnnouncer } from './LiveAnnouncer';
 import { NAV_ROUTES, navIdFromPath } from './navigation';
 
@@ -7,6 +9,7 @@ import { NAV_ROUTES, navIdFromPath } from './navigation';
 export function RoutedAppHeader() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <AppHeader
@@ -16,11 +19,22 @@ export function RoutedAppHeader() {
         const path = NAV_ROUTES.find((r) => r.id === id)?.path;
         if (path) navigate(path);
       }}
-      user={{ name: 'Admin' }}
+      user={{
+        name: user?.name ?? '—',
+        detail: user ? `${user.email} · ${ROLE_LABELS[user.role]}` : undefined,
+      }}
+      userMenu={USER_MENU}
+      onUserMenuSelect={async (id) => {
+        if (id !== 'logout') return;
+        await logout();
+        navigate('/login', { replace: true });
+      }}
       notificationCount={2}
     />
   );
 }
+
+const USER_MENU = [{ id: 'logout', label: 'Đăng xuất' }] as const;
 
 /** AppLayout với header đã gắn router – dùng cho mọi trang. */
 export function Page(props: Omit<AppLayoutProps, 'header'>) {
