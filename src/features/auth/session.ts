@@ -8,9 +8,20 @@ export function refreshDelayMs(expiresAt: number, now: number, leadMs = 60_000):
   return Math.max(5_000, expiresAt - now - leadMs);
 }
 
-/** Token sắp hết hạn (≤ `marginMs`) → nên refresh trước khi gọi API. */
-export function isExpiring(expiresAt: number, now: number, marginMs = 5_000): boolean {
-  return expiresAt - now <= marginMs;
+/**
+ * Thời điểm hết hạn (ms epoch) đọc từ claim `exp` của JWT – CHỈ để hẹn refresh sớm, không xác thực chữ ký.
+ * Không phải JWT / không có exp → null (khi đó chỉ refresh lúc gặp 401).
+ */
+export function tokenExpiresAt(token: string): number | null {
+  const part = token.split('.')[1];
+  if (!part) return null;
+  try {
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '='));
+    const exp = (JSON.parse(json) as { exp?: unknown }).exp;
+    return typeof exp === 'number' && Number.isFinite(exp) ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
 }
 
 export const DEFAULT_AFTER_LOGIN = '/overview';
@@ -24,7 +35,7 @@ export function safeRedirect(target: string | null | undefined, fallback = DEFAU
   // Ký tự điều khiển (xuống dòng, tab…) – trình duyệt có thể bỏ qua → "/\t/evil.com" thành "//evil.com".
   if ([...target].some((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f)) return fallback;
   const path = target.split(/[?#]/)[0];
-  if (path === '/login' || path.startsWith('/login/')) return fallback;
+  if (['/login', '/register', '/pending'].some((p) => path === p || path.startsWith(`${p}/`))) return fallback;
   return target;
 }
 

@@ -1,5 +1,5 @@
-import { can, type Role } from '@demo-lpg/shared/roles';
-import { AUTH_MODE } from '@/data/auth';
+import { AUTH_MODE } from '@/api/auth';
+import { can, type Role } from '@/features/auth/permissions';
 
 /**
  * Quyền vào Scene Editor (/editor) và sửa nhanh cảnh (`?edit=1` ở Tổng quan) – CHỈ là UX, backend kiểm tra lại khi lưu.
