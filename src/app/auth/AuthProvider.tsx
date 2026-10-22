@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, ty
 import { authService as defaultService, type AuthService, type AuthState } from '@/api/auth';
 import type { LoginRequest, RegisterRequest, User } from '@/api/types';
 import { can, type Permission } from '@/features/auth/permissions';
+import { refreshDelayMs } from '@/features/auth/session';
 
 export type AuthContextValue = AuthState & {
   login(input: LoginRequest): Promise<User>;
@@ -14,8 +15,8 @@ export type AuthContextValue = AuthState & {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Phiên đăng nhập cho cả app: khôi phục phiên khi mở (POST /auth/refresh + GET /auth/me).
- * `service` thay được trong test.
+ * Phiên đăng nhập cho cả app: khôi phục phiên khi mở (POST /auth/refresh + GET /auth/me),
+ * refresh chủ động 60 s trước `exp` của access token (nếu đọc được). `service` thay được trong test.
  */
 export function AuthProvider({ service = defaultService, children }: { service?: AuthService; children: ReactNode }) {
   const state = useSyncExternalStore(service.subscribe, service.getState);
@@ -23,6 +24,13 @@ export function AuthProvider({ service = defaultService, children }: { service?:
   useEffect(() => {
     void service.init();
   }, [service]);
+
+  useEffect(() => {
+    const exp = service.expiresAt();
+    if (state.status !== 'authenticated' || exp === null) return;
+    const id = window.setTimeout(() => void service.refresh(), refreshDelayMs(exp, Date.now()));
+    return () => window.clearTimeout(id);
+  }, [service, state]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

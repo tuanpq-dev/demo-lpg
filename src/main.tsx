@@ -5,6 +5,8 @@ import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
 import LoginPage from './pages/login/LoginPage';
+import PendingPage from './pages/login/PendingPage';
+import RegisterPage from './pages/login/RegisterPage';
 import SimplePage from './pages/SimplePage';
 
 // Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
@@ -34,7 +36,10 @@ const router = createBrowserRouter([
   {
     element: <Root />,
     children: [
+      // Công khai: đăng nhập, đăng ký, chờ duyệt.
       { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/pending', element: <PendingPage /> },
       {
         // Mọi trang còn lại cần đăng nhập (chưa đăng nhập → /login?next=…).
         element: <RequireAuth />,
