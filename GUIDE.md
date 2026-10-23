@@ -7,7 +7,7 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 
 ## 1. Dự án làm gì
 
-- Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**.
+- Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**, **Chi tiết tài sản** (`/map/:assetId` – tab "Bản đồ nội khu", hiện có V-101).
 - Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `public/figma-ref/`.
 - Dữ liệu hiện là **mock** (`src/mocks/`), đi qua lớp `src/data/` để sau thay bằng API mà không sửa UI.
 - Bản đồ nhà máy có 2 kiểu: ảnh 2.5D (mặc định) và cảnh 3D (three.js) dựng từ JSON `SceneConfig`.
@@ -25,6 +25,8 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 | `/overview?map=3d&edit=1` | Chế độ sửa nhanh trên bản đồ (kéo/xoay, Copy JSON) – chỉ engineer/admin |
 | `/overview?map=3d&quality=low` | Ép preset 3D `low` / `medium` / `high` (mặc định tự chọn theo FPS) |
 | `/overview?scene=tram-chiet-nap` | Mở cảnh 3D khác (cảnh mẫu hoặc cảnh lưu từ Editor), luôn ở 3D |
+| `/overview?map=3d&focus=V-101` | Mở 3D và bay tới object (thêm chế độ xem "<nhãn object>") – nút "Xem trên bản đồ" của trang chi tiết |
+| `/map` · `/map/V-101` | Tab "Bản đồ nội khu": `/map` mở thẳng chi tiết "Bồn LPG V-101" (như ảnh 5D). `/map/v-101` → `/map/V-101`; mã lạ → "Không tìm thấy tài sản"; `/operations/V-101` (link cũ) → `/map/V-101`; `?hide=alert,sensor` ẩn loại sự kiện; `?create=1` mở modal tạo yêu cầu bảo trì |
 | `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
 | `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
@@ -39,12 +41,14 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 src/
 ├─ main.tsx            khai báo route (createBrowserRouter)
 ├─ app/                "keo" nối router + dữ liệu vào component
-├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, editor, playground)
+├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, editor, playground)
 ├─ components/         component THUẦN (không import router/data), barrel index.ts
 ├─ data/               hook + hàm dữ liệu theo màn (bọc mock, chỗ thay API)
 ├─ mocks/              dữ liệu giả từ Figma; mocks/scenes/*.json = cảnh 3D
 ├─ features/scene/     engine 3D: kiểu SceneConfig, validate, Viewer, asset
 ├─ features/scene-editor/  logic Editor (store, ops, validate, nháp)
+├─ features/live/      kiểu số liệu trực tiếp, quy tắc mất tín hiệu, tags.ts (tên tag giả định – một chỗ)
+├─ features/tank/      volume.ts (mức → % thể tích), layers.ts (3 lớp trong bồn)
 ├─ lib/                tiện ích chung (cn, store, dialog, focus…)
 ├─ assets/digital-twin/    SVG/PNG từ Figma + sổ đăng ký icon
 └─ styles/             tokens.css (màu, bo góc…) + global.css
@@ -55,17 +59,17 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Thư mục | Chứa gì | Khi nào cần vào |
 |---|---|---|
 | `src/main.tsx` | Danh sách route, lazy-load trang | Thêm trang / đổi đường dẫn |
-| `src/app/` | `Page.tsx` (layout + header có router), `navigation.ts` (menu), `useTableFilters.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `editorAccess.ts`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
-| `src/pages/` | Trang ghép component: `src/pages/overview/`, `src/pages/alerts/`, `src/pages/maintenance/`, `src/pages/editor/`, `src/pages/playground/`, `src/pages/SimplePage.tsx` | Sửa bố cục/hành vi một màn |
+| `src/app/` | `Page.tsx` (layout + header có router), `navigation.ts` (menu), `useTableFilters.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `AssetModelPanel.tsx` (mô hình 3D tài sản + ảnh dự phòng), `editorAccess.ts`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
+| `src/pages/` | Trang ghép component: `src/pages/overview/`, `src/pages/alerts/`, `src/pages/maintenance/`, `src/pages/asset/` (`AssetDetailPage`), `src/pages/editor/`, `src/pages/playground/`, `src/pages/SimplePage.tsx` | Sửa bố cục/hành vi một màn |
 | `src/components/` | 40+ component thuần, mỗi cái một thư mục `<Tên>/` | Sửa giao diện dùng chung |
-| `src/data/` | `src/data/overview.ts`, `src/data/alerts.ts`, `src/data/maintenance.ts`, `src/data/scene.ts`, `src/data/sceneRepository.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
-| `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
+| `src/data/` | `src/data/overview.ts`, `src/data/alerts.ts`, `src/data/maintenance.ts`, `src/data/assetDetail.ts`, `src/data/scene.ts`, `src/data/sceneRepository.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
+| `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
 | `src/features/scene/` | Viewer 3D + asset + validate zod | Mọi thứ về bản đồ 3D |
 | `src/features/scene-editor/` | Store undo/redo, thao tác thuần, kiểm tra, nháp | Logic của `/editor` |
-| `src/lib/` | `cn`, `createCollectionStore`, `useDialog`, `useRovingFocus`, `tokens`, `useNow`, `useElementSize` | Viết hook/tiện ích dùng lại |
+| `src/lib/` | `cn`, `createCollectionStore`, `useDialog`, `useRovingFocus`, `tokens`, `useNow`, `useElementSize`, `useFullscreen` | Viết hook/tiện ích dùng lại |
 | `src/assets/digital-twin/` | Icon + ảnh bản đồ, đăng ký trong `src/assets/digital-twin/index.ts` | Thêm icon từ Figma |
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
-| `public/figma-ref/` | Ảnh chụp Figma để so | Đối chiếu thiết kế |
+| `public/figma-ref/` | Ảnh chụp Figma để so; ảnh người dùng gửi không có node: `mt-create-modal-design.png`, `asset-v101-design.png` | Đối chiếu thiết kế |
 | `packages/shared/src/` | Hợp đồng dữ liệu FE/BE: `scene/` (SceneConfig, specs, migrate, parse), `live.ts`, `alerts.ts`, `maintenance.ts`, `roles.ts`, `auth.ts`. FE dùng mã nguồn (alias), backend (repo riêng) dùng bản build `dist/` | Đổi kiểu dữ liệu dùng chung, thêm quyền |
 | `src/api/` | Gọi backend: `client.ts` (fetch wrapper, lỗi có kiểu, refresh khi 401), `types.ts` (types + zod của hợp đồng API), `auth.ts` (phiên đăng nhập) | Thêm endpoint, đổi hợp đồng API |
 | `src/app/auth/`, `src/features/auth/`, `src/pages/login/` | `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`; logic thuần (phiên, quyền, thông báo lỗi); trang `/login`, `/register`, `/pending` | Đổi luồng/giao diện đăng nhập |
@@ -394,6 +398,49 @@ Phím tắt Editor: xem bảng trong `CLAUDE.md` mục 6b. Đặc biệt: **W** 
 
 Vì sao không dùng TransformControls để di chuyển: gizmo kéo theo mặt phẳng hướng về camera (tay nắm giữa/mặt XY, YZ) nên khi đổi góc nhìn trục Y bị lẫn vào → object lơ lửng/lún. Kéo bằng tia ∩ mặt sàn y = 0 cố định không phụ thuộc camera; frame có tia gần song song sàn (|dot| < 0.05) bị bỏ để object không vọt ra xa.
 
+### 4h. Chi tiết tài sản `/map/:assetId` (GĐ 5D)
+
+Theo ảnh người dùng gửi `public/figma-ref/asset-v101-design.png` (chưa có node Figma). Menu "Bản đồ nội khu" (`path: '/map'`) sáng cho mọi đường dẫn bắt đầu bằng `/map` (`navIdFromPath` so tiền tố).
+
+| URL | Kết quả |
+|---|---|
+| `/map` | `<Navigate>` → `/map/V-101` (`DEFAULT_ASSET_ID` trong `src/app/assetRoutes.ts`) – chưa có bản đồ toàn nhà máy |
+| `/map/V-101` | Trang chi tiết |
+| `/map/v-101?…` | → `/map/V-101?…` (`resolveAssetId` không phân biệt hoa thường, giữ query) |
+| `/map/XYZ` | "Không tìm thấy tài sản" (`NotFoundPage`), URL giữ nguyên, tab vẫn sáng, nút "Mở V-101" |
+| `/operations/:id` | Link cũ → `/map/:id` (giữ query) |
+| route lạ (`*`) | "Không tìm thấy trang" (`src/pages/NotFoundPage.tsx`), không tự về Tổng quan |
+
+Link tới trang chi tiết: dùng `assetPath(id)` (`src/app/assetRoutes.ts`, file nhẹ để router trong bundle chính import không kéo mock); kiểm tra có trang bằng `resolveAssetId` (`src/data/assetDetail.ts`). Đang có: Tổng quan – click object trên bản đồ 3D (`PlantMap onSelect`) và dòng "Theo dõi thiết bị" (`AssetWatchlist onAssetClick` + `canOpen`: chỉ dòng có trang mới là nút).
+
+```
+URL /map/V-101
+  → AssetDetailRoute (chuẩn hoá mã / không tìm thấy) → AssetDetailPage (src/pages/asset/AssetDetailPage.tsx)
+      useAssetDetail('V-101')            src/data/assetDetail.ts
+        ├─ fetchAssetDetail → mocks/assets.ts (kích thước bồn, định mức, ngưỡng, tag, số tạm) + sự kiện
+        ├─ useLiveData(4 tag của V-101)  → TagValue
+        └─ deriveAssetLive(detail, live, now)   thuần, có test
+             ├─ reading(): pending / lost (Mất tín hiệu) / ok + trạng thái theo ngưỡng
+             └─ tankLayers(LT-101, LT-101W, kích thước)  features/tank/layers.ts
+                  → % + m³ của LPG lỏng / pha hơi / nước đáy (làm tròn sao cho tổng = 100.0)
+      useAlerts → deriveRelatedAlerts (thiết bị liên quan: V-101, PSV-101, các tag của bồn)
+      useMaintenance → deriveMaintenanceSummary (việc chưa xong hạn sớm nhất · hoàn thành gần nhất, `now`)
+      useTableFilters(EVENT_PARAMS) → bảng sự kiện, `?hide=` = loại đang ẩn (chú thích là nút bật/tắt)
+```
+
+| Vùng | Component | Ghi chú |
+|---|---|---|
+| Trái | `AssetModelPanel` (src/app) | Cảnh riêng `mocks/scenes/v-101.json`; nhãn "V-101 DOME / Temp" từ TT-101; nút toàn màn hình (`useFullscreen`); WebGL lỗi / cảnh lỗi → `assetV101Image` (WebP chụp từ chính cảnh) |
+| Giữa | 6 `KpiCard dense` + Card "Trạng thái tồn chứa" (`TankCutawayDiagram`, `TankLayerList`) | "Mức bồn" = % thể tích toàn bộ chất lỏng (LPG + nước) – có tooltip ⓘ; khác dòng "LPG lỏng" |
+| Phải | `DonutGauge center`, `AlertItem layout="inline"`, `MaintenanceSummaryCard` | "Xem tất cả" / "Lịch sử cảnh báo" → `/alerts?q=V-101&range=30d` |
+| Dưới | `DataTable` 5 dòng + chú thích lọc | "Xem toàn bộ nhật ký" tắt (chưa có trang) |
+
+- **Một nguồn thông số**: tên tag giả định ở `src/features/live/tags.ts` (`SYSTEM_TAGS`, `V101_TAGS`, `VAPORIZER_TAGS`); kích thước bồn, áp suất **định mức thiết kế** (12.0 bar – thông số chế tạo) và **ngưỡng cảnh báo** (áp suất 10.5 / 12, nhiệt độ 40 / 50, mức 85/95/15/5, nước đáy 3 / 5 %) ở `src/mocks/assets.ts`. Cảnh 3D là JSON nên vẫn ghi chuỗi tag/ngưỡng → `src/mocks/assets.test.ts` so JSON với hai file trên (đổi một bên mà quên bên kia → test đỏ).
+- **Số tạm** (`placeholders` trong `mocks/assets.ts`, mỗi mục `{ value, isPlaceholder: true, note }`): xu hướng thể tích 1 h, tồn kho Nm³, số ngày dự kiến, sức khỏe thiết bị, tình trạng hồ sơ. UI hiện như ảnh, ghi chú nằm ở tooltip/aria của thẻ.
+- **Tạo yêu cầu bảo trì**: `?create=1` → `CreateMaintenanceModal` (dùng lại của /maintenance), thiết bị = tài sản; tạo xong: thông báo + link "Xem trong Bảo trì" (`/maintenance?open=<id>`), `announce()`.
+- **Thêm tài sản khác**: thêm mục vào `assetMocks` (+ tag vào `tags.ts`, cảnh `mocks/scenes/<id>.json`, ảnh dự phòng trong `FALLBACK_IMAGE` của trang). Mã lạ → Card lỗi liệt kê mã có.
+- Chụp lại ảnh dự phòng khi đổi cảnh: script `e2e/fallback.mjs` trong scratchpad (vùng 3D ở dpr 2 → PIL WebP q78, ~17 KB).
+
 ### 4g. Design system: tokens → primitives → nghiệp vụ
 
 ```mermaid
@@ -525,8 +572,8 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | Button | `src/components/Button/Button.tsx` | `variant` (primary/ghost/icon/toolbar/overlay/link), `size`, `icon`, `pressed` | mọi trang | `#primitives` |
 | Badge | `src/components/Badge/Badge.tsx` | `variant` (severity/status/count), `value`, `size` | Cảnh báo, Bảo trì | `#primitives` |
 | StatusDot | `src/components/StatusDot/StatusDot.tsx` | `status`, `shape`, `pulse`, `label` | `src/app/HeaderActions.tsx` | `#primitives` |
-| StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone`, `pulse`, `children` | Tổng quan | `#layout` |
-| Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerVariant`, `tone`, `padding`, `bodyClassName` | mọi trang | `#primitives` |
+| StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone` (+ `neutral`), `size` (md 36px / sm badge), `pulse`, `children` | Tổng quan, Chi tiết tài sản | `#layout`, `#asset` |
+| Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerEnd` (phần tử tuỳ ý bên phải header), `headerVariant`, `tone`, `padding`, `bodyClassName`; header tự xuống dòng khi hẹp | mọi trang | `#primitives` |
 | Divider | `src/components/Divider/Divider.tsx` | `orientation`, `tone` | trong AppHeader, DetailDrawer | `#primitives` |
 | ProgressBar | `src/components/ProgressBar/ProgressBar.tsx` | `value`, `max`, `tone`, `size`, `label` (bắt buộc – tên truy cập) | Bảo trì, trong KpiCard/CategoryBarList | `#primitives` |
 | Icon (+ TempIcons, EditorIcons) | `src/components/Icon/Icon.tsx` | `name` (IconName), `box`, `label` | mọi trang | `#primitives`, `#editor` |
@@ -560,17 +607,17 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost` | qua `src/app/kpi.tsx` | `#business` |
+| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn) | qua `src/app/kpi.tsx`; Chi tiết tài sản | `#business`, `#asset` |
 | SystemHealthCard | `src/components/SystemHealthCard/SystemHealthCard.tsx` | `value`, `caption`, `stats` | Tổng quan | `#business` |
-| AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick` | Tổng quan | `#business` |
+| AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick`, `layout` (stacked / inline = icon + nội dung + giờ một dòng), `tone` (danger/warning/success) | Tổng quan, Chi tiết tài sản | `#business`, `#asset` |
 | AlertCard | `src/components/AlertCard/AlertCard.tsx` | dữ liệu `AlertCardData` + `onClick(id)` | Cảnh báo | `#business` |
 | PriorityTaskCard | `src/components/PriorityTaskCard/PriorityTaskCard.tsx` | dữ liệu `PriorityTaskData` + `onDetail` | Bảo trì | `#forms` |
-| AssetRow, AssetWatchlist | `src/components/AssetRow/AssetRow.tsx` | `assets`, `onAssetClick`, dòng `signalLost` | Tổng quan | `#business` |
+| AssetRow, AssetWatchlist | `src/components/AssetRow/AssetRow.tsx` | `assets`, `onAssetClick`, `canOpen` (dòng nào bấm được), dòng `signalLost` | Tổng quan | `#business` |
 | EventTimeline, RecentEventsCard | `src/components/EventTimeline/EventTimeline.tsx` | `events`, `variant` (event/schedule) | Bảo trì, Tổng quan | `#forms`, `#business` |
 | DetailDrawer | `src/components/DetailDrawer/DetailDrawer.tsx` | `open`, `title`, `badges`, `fields`, `actions` | Bảo trì | `#forms` |
 | AlertDetailDrawer | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | `alert`, `onAcknowledge`, `onComplete`, `onCreateMaintenance` | Cảnh báo | `#business` (mục Trạng thái) |
 | Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size` | form Bảo trì, Editor | `#forms` |
-| PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`; chung `onSelect`, `onRendererChange`, `notice` | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
+| PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`, `focus` (id object → thêm view bay tới, chọn sẵn); chung `onSelect`, `onRendererChange`, `notice` | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
 
 **GĐ4B – Chart & bảng**
 
@@ -579,10 +626,19 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | ChartCard (+ ChartTooltip) | `src/components/ChartCard/ChartCard.tsx` | `title`, `description`, `height`, `action` | Tổng quan | `#charts` |
 | AreaTrendChart, LineTrendChart | `src/components/TrendChart/TrendChart.tsx` | `data` (TrendPoint[]), `domain`, `unit`, `format` | Tổng quan | `#charts` |
 | CategoryBarList | `src/components/CategoryBarList/CategoryBarList.tsx` | `items`, `max`, `unit` | Tổng quan | `#charts` |
-| DonutGauge | `src/components/DonutGauge/DonutGauge.tsx` | `segments`, `total`, `totalLabel` | Tổng quan | `#charts` |
+| DonutGauge | `src/components/DonutGauge/DonutGauge.tsx` | `segments`, `total`, `totalLabel`, `center` ({ value, caption, tone } thay chữ giữa), `ringWidth`, `label` (aria) | Tổng quan, Chi tiết tài sản | `#charts`, `#asset` |
 | FilterBar | `src/components/FilterBar/FilterBar.tsx` | `search`, `filters`, `values`, `onValuesChange`, `onAdvancedFilter` | Cảnh báo, Bảo trì | `#navigation` |
 | DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `label` (→ `<caption>`), `selectable`, `selectedIds`, `rowActions`, `pagination`, `minWidth` (cuộn ngang trong khung), `stickyFirst`, `stickyActions` | Cảnh báo, Bảo trì | `#charts` |
 | Pagination | `src/components/Pagination/Pagination.tsx` | `page`, `pageCount`, `onPageChange` | trong DataTable | `#charts` (qua DataTable) |
+
+**GĐ5D – Chi tiết tài sản** (ảnh `public/figma-ref/asset-v101-design.png`, chưa có node Figma)
+
+| Tên | File | Props chính | Dùng ở | Playground |
+|---|---|---|---|---|
+| TankCutawayDiagram | `src/components/TankCutawayDiagram/TankCutawayDiagram.tsx` | `layers` (`levelPct`, `waterPct` theo chiều cao để vẽ + 3 `%` thể tích cho nhãn; null = không vẽ), `state` (pending/lost), `length`, `diameter` (giữ tỉ lệ), `label` (→ `<title>`) | Chi tiết tài sản | `#asset` |
+| TankLayerList | `src/components/TankLayerList/TankLayerList.tsx` | `items` ({ id, label, value, tone }), `title` – `<dl>` | Chi tiết tài sản | `#asset` |
+| MaintenanceSummaryCard | `src/components/MaintenanceSummaryCard/MaintenanceSummaryCard.tsx` | `next` ({ date, note, overdue }), `last`, `records` ({ value, status, hint }) – ngày đã định dạng sẵn | Chi tiết tài sản | `#asset` |
+| AssetModelPanel (src/app) | `src/app/AssetModelPanel.tsx` | `sceneId`, `assetName`, `liveData`, `tag`, `description` (văn bản thay canvas), `fallbackImage` | Chi tiết tài sản | – |
 
 ---
 
@@ -674,6 +730,11 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | Số liệu trực tiếp | `MockLiveSource` (`src/data/live`) dao động quanh `src/mocks/scenes/live.ts` mỗi 2 giây, giả lập mất kết nối/tag lỗi | `WebSocketLiveSource` cùng interface `LiveDataSource` |
 | Quy đổi mức bồn → thể tích | Công thức bồn trụ nằm (bỏ qua đáy) – `src/features/tank/volume.ts` | Bảng dung tích thật từ khách (`strappingVolume`) |
 | Danh sách tag cảm biến | `SENSOR_TAGS` = khoá của `liveBase` | API danh mục tag |
+| Tên tag giả định | Gom ở `src/features/live/tags.ts` (INV-TOTAL, PT-100, FQ-100, LT-101, **LT-101W** mặt nước đáy, PT-101 áp suất bồn V-101, TT-101, **PT-201** áp suất đầu vào hóa hơi, TT-201). Cảnh JSON ghi chuỗi → `src/mocks/assets.test.ts` canh khớp | Danh sách tag SCADA thật – đổi trong `tags.ts` rồi sửa JSON theo test |
+| Kích thước V-101 | Trang chi tiết: D 1,9 m × L 4,8 m ≈ 13,6 m³ (suy từ ảnh: 10,4 m³ = 76,2 %) – `src/mocks/assets.ts` + `mocks/scenes/v-101.json`. **Cảnh Tổng quan vẫn vẽ V-101 theo mặc định 4,4 × 11 m (≈ 167 m³)**: đổi sẽ dời cổng ống và lệch bố cục ảnh Figma Tổng quan, nên chưa dùng chung một nguồn kích thước (test ghi nhận lệch) | Kích thước thật của khách → cập nhật cả hai cảnh (dời điểm ống) |
+| Số tạm trang chi tiết tài sản | `placeholders` (`isPlaceholder: true` + `note`) trong `src/mocks/assets.ts`: xu hướng thể tích 1 h, tồn kho 152,0 Nm³, "Dự kiến 12 ngày", sức khỏe 98 %, tình trạng hồ sơ 100 % | Định nghĩa + nguồn từ khách |
+| Nước đáy bồn | Tag `LT-101W` (giả định), ngưỡng 3 % / 5 % thể tích (giả định) | Tag + ngưỡng thật |
+| "Xem toàn bộ nhật ký" (chi tiết tài sản) | Nút tắt – chưa có trang nhật ký | Thiết kế + API nhật ký |
 | Kho cảnh của Editor | `LocalStorageRepository` (chỉ trên trình duyệt hiện tại) | Bản HTTP của `SceneRepository` |
 | Quyền vào `/editor` | Theo vai trò đăng nhập (engineer/admin); chỉ ẩn ở FE – chưa có API lưu cảnh để BE chặn | API scene (`@Roles(...rolesFor('scene:write'))`) |
 | Dữ liệu qua backend | Backend mới có xác thực + quản lý user + audit; Cảnh báo/Bảo trì/Cảnh 3D vẫn mock ở FE | Endpoint nghiệp vụ (GUIDE backend "Thêm endpoint") rồi thay `fetch*` bằng `api.request` (mục 9f) |
@@ -684,7 +745,7 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | Tệp đính kèm | Chỉ giữ tên/kích thước, không upload | API lưu tệp |
 | KPI Tổng quan | Tồn kho / Mức bồn / Áp suất / Tiêu thụ lấy từ tag trực tiếp (mock); Cảnh báo, Sức khỏe và số chuông thông báo (2) vẫn tĩnh | API (hoặc derive từ dữ liệu thật) |
 | Màu chưa đạt tương phản AA | `danger`, `danger-strong` alpha 70/80, chữ menu chưa chọn (xem `CLAUDE.md` mục 7) | Duyệt màu với designer |
-| Thiết kế | Drawer, thao tác hàng loạt, form, checkbox checked, trang `/map` `/reports`, Editor chưa có trong Figma | Designer |
+| Thiết kế | Drawer, thao tác hàng loạt, form, checkbox checked, trang `/reports`, bản đồ toàn nhà máy cho `/map`, trang 404, Editor chưa có trong Figma; trang chi tiết tài sản chỉ có ảnh (không node) | Designer |
 | Icon tạm | `src/components/Icon/TempIcons.tsx`, `src/components/Icon/EditorIcons.tsx`, `src/pages/editor/AssetGlyph.tsx` | Asset từ Figma |
 | Cần khách xác nhận | Danh sách ở `CLAUDE.md` mục 7 ("Cần xác nhận") | Khách/PO |
 
