@@ -66,6 +66,8 @@ import mapZoomOut from './map-zoom-out.svg';
 export { default as avatarAdmin } from './avatar-admin.png';
 /** 53:244 – ảnh bản đồ 2.5D (2730×1536, KHÔNG có nhãn – nhãn là overlay HTML). */
 export { default as plantMapImage } from './plant-map.png';
+/** Ảnh tĩnh bồn V-101 (chụp từ SceneViewer cảnh v-101, góc isometric) – dự phòng khi WebGL lỗi ở trang chi tiết. */
+export { default as assetV101Image } from './asset-v101.webp';
 
 export const icons = {
   /** 70:5215 – nút "Tạo yêu cầu bảo trì", 16.125×16.125 trong khung 18 */

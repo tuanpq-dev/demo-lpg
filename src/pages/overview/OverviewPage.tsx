@@ -28,6 +28,8 @@ import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useLiveData } from '@/data/live';
 import { applyLive, useOverviewData } from '@/data/overview';
+import { resolveAssetId } from '@/data/assetDetail';
+import { assetPath } from '@/app/assetRoutes';
 import { useAnnounceChange } from '@/lib/announce';
 import { parseQuality } from '@/features/scene';
 
@@ -49,7 +51,9 @@ export default function OverviewPage() {
   // ?scene=<id>: cảnh khác (mẫu hoặc lưu từ /editor) – luôn 3D vì ảnh 2.5D chỉ có cho khu bồn LPG.
   const sceneParam = params.get('scene');
   const sceneId = sceneParam ?? DEFAULT_SCENE_ID;
-  const map3d = params.get('map') === '3d' || !!sceneParam;
+  // ?focus=<id object>: bay tới object khi mở (nút "Xem trên bản đồ" của trang chi tiết tài sản) – luôn 3D.
+  const focus = params.get('focus') ?? undefined;
+  const map3d = params.get('map') === '3d' || !!sceneParam || !!focus;
   // Dev: ?edit=1 → kéo/xoay object + Copy JSON (chưa lưu). Chỉ vai trò sửa được cảnh (engineer/admin).
   const { user } = useAuth();
   const editMode = params.get('edit') === '1' && canUseEditor(params.toString(), user?.role);
@@ -65,12 +69,19 @@ export default function OverviewPage() {
         else {
           p.delete('map');
           p.delete('scene');
+          p.delete('focus');
         }
         return p;
       },
       { replace: true },
     );
   };
+  // Thiết bị có trang chi tiết (/map/:id) → click trên bản đồ 3D / "Theo dõi thiết bị" mở trang đó.
+  const openAsset = (id: string) => {
+    const asset = resolveAssetId(id);
+    if (asset) navigate(assetPath(asset));
+  };
+  const canOpenAsset = (id: string) => resolveAssetId(id) !== null;
   // Mọi tag: KPI, danh sách theo dõi, nhãn bản đồ 2.5D và cảnh 3D dùng chung một đăng ký.
   const liveData = useLiveData();
 
@@ -147,7 +158,7 @@ export default function OverviewPage() {
               />
             ))}
           </Card>
-          <AssetWatchlist assets={watchlist} />
+          <AssetWatchlist assets={watchlist} onAssetClick={openAsset} canOpen={canOpenAsset} />
           <RecentEventsCard events={recentEvents} />
         </>
       }
@@ -163,6 +174,8 @@ export default function OverviewPage() {
       {map3d ? (
         <ConnectedPlantMap
           sceneId={sceneId}
+          focus={focus}
+          onSelect={editMode ? undefined : openAsset}
           editable={editMode}
           liveData={liveData}
           quality={quality}

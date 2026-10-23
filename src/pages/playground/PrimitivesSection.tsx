@@ -28,7 +28,7 @@ const statuses: WorkStatus[] = ['unacknowledged', 'pending', 'in-progress', 'don
 const dots: DotStatus[] = ['success', 'warning', 'danger', 'offline', 'live'];
 
 const alarms = [
-  { code: 'PT-101', time: '10 phút trước', text: 'Áp suất đầu vào hóa hơi cao.', critical: true },
+  { code: 'PT-201', time: '10 phút trước', text: 'Áp suất đầu vào hóa hơi cao.', critical: true },
   { code: 'TT-302', time: '24 phút trước', text: 'Nhiệt độ tiệm cận giới hạn trên.' },
   { code: 'LT-101', time: '1 giờ trước', text: 'Mức bồn V-101 giảm nhanh bất thường.' },
 ];

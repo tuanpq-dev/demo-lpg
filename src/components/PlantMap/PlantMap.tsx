@@ -16,12 +16,14 @@ import type {
   SceneConfig,
   SceneEditState,
   SceneQuality,
+  SceneView,
   SceneViewerHandle,
   Vec3,
   ZoomLimits,
 } from '@/features/scene';
 import { cn } from '@/lib/cn';
 import { useElementSize } from '@/lib/useElementSize';
+import { useFullscreen } from '@/lib/useFullscreen';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
 import { SegmentedControl } from '../SegmentedControl';
@@ -89,6 +91,11 @@ export type PlantMapThreeProps = CommonProps & {
    * Không truyền → hiện thông báo ngay trong khung bản đồ.
    */
   onFallback?: (reason: string) => void;
+  /**
+   * Id object cần nhắm khi mở (vd `?focus=V-101` ở Tổng quan): thêm chế độ xem "<nhãn object>" (bay vừa khít object)
+   * và chọn sẵn. Id không có trong cảnh → bỏ qua.
+   */
+  focus?: string;
 };
 
 export type PlantMapProps = PlantMapImageProps | PlantMapThreeProps;
@@ -105,19 +112,6 @@ export function PlantMap(props: PlantMapProps) {
 // ---------------------------------------------------------------------------
 // Khung + điều khiển dùng chung
 
-function useFullscreen(ref: RefObject<HTMLElement>) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  useEffect(() => {
-    const onFs = () => setIsFullscreen(document.fullscreenElement === ref.current);
-    document.addEventListener('fullscreenchange', onFs);
-    return () => document.removeEventListener('fullscreenchange', onFs);
-  }, [ref]);
-  const toggle = () => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void ref.current?.requestFullscreen?.();
-  };
-  return { isFullscreen, toggle };
-}
 
 type MapShellProps = Pick<CommonProps, 'onRendererChange' | 'height' | 'notice' | 'className'> & {
   views: readonly { id: string; label: string }[];
@@ -243,7 +237,16 @@ function applyTransform(c: SceneConfig, id: string, t: { position: Vec3; rotatio
   };
 }
 
-const ALL_VIEW = [{ id: 'all', label: 'Toàn cảnh' }];
+const ALL_VIEW: SceneView[] = [{ id: 'all', label: 'Toàn cảnh' }];
+
+/** Chế độ xem của cảnh + view "nhắm object" (prop `focus`) ở cuối. */
+function viewsWithFocus(scene: SceneConfig, focus?: string): { views: SceneView[]; focusView?: SceneView } {
+  const base = scene.views?.length ? scene.views : ALL_VIEW;
+  const obj = focus ? scene.objects.find((o) => o.id === focus) : undefined;
+  if (!obj) return { views: base };
+  const focusView: SceneView = { id: `focus:${obj.id}`, label: obj.label ?? obj.id, objectIds: [obj.id] };
+  return { views: [...base, focusView], focusView };
+}
 
 function PlantMapThree({
   scene,
@@ -251,6 +254,7 @@ function PlantMapThree({
   editable,
   quality,
   onFallback,
+  focus,
   alt,
   onSelect,
   onRendererChange,
@@ -265,8 +269,8 @@ function PlantMapThree({
   const [limits, setLimits] = useState<ZoomLimits>({ canZoomIn: true, canZoomOut: true });
 
   // ----- Chế độ xem (từ scene.views), quản lý nội bộ -----
-  const views = scene.views?.length ? scene.views : ALL_VIEW;
-  const [viewId, setViewId] = useState(views[0]!.id);
+  const { views, focusView } = viewsWithFocus(scene, focus);
+  const [viewId, setViewId] = useState((focusView ?? views[0]!).id);
 
   // ----- Chế độ sửa: bản nháp + object đang chọn + công cụ -----
   const [draft, setDraft] = useState<SceneConfig>(scene);
@@ -277,8 +281,9 @@ function PlantMapThree({
   useEffect(() => {
     setDraft(scene);
     setSelected(null);
-    setViewId((scene.views?.length ? scene.views : ALL_VIEW)[0]!.id);
-  }, [scene]);
+    const v = viewsWithFocus(scene, focus);
+    setViewId((v.focusView ?? v.views[0]!).id);
+  }, [scene, focus]);
   useEffect(() => {
     if (!editable) return;
     const onEsc = (e: globalThis.KeyboardEvent) => e.key === 'Escape' && setSelected(null);
@@ -287,7 +292,7 @@ function PlantMapThree({
   }, [editable]);
 
   const config = editable ? draft : scene;
-  const view = config.views?.find((v) => v.id === viewId);
+  const view = focusView && viewId === focusView.id ? focusView : config.views?.find((v) => v.id === viewId);
   const selectedObj = selected ? config.objects.find((o) => o.id === selected) : undefined;
   const edit: SceneEditState | undefined = editable
     ? {

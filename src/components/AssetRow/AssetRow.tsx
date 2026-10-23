@@ -60,18 +60,20 @@ export type AssetWatchlistProps = {
   title?: string;
   assets: readonly AssetRowData[];
   onAssetClick?: (id: string) => void;
+  /** Dòng nào bấm được (có trang chi tiết); bỏ trống = mọi dòng khi có `onAssetClick`. */
+  canOpen?: (id: string) => boolean;
   action?: { label: string; onClick?: () => void };
   className?: string;
 };
 
 /** Card "Theo dõi thiết bị" – sidebar Tổng quan (Figma 53:495). */
-export function AssetWatchlist({ title = 'Theo dõi thiết bị', assets, onAssetClick, action, className }: AssetWatchlistProps) {
+export function AssetWatchlist({ title = 'Theo dõi thiết bị', assets, onAssetClick, canOpen, action, className }: AssetWatchlistProps) {
   return (
     <Card title={title} headerVariant="plain" action={action} className={className}>
       <ul className="flex flex-col gap-2">
         {assets.map((a) => (
           <li key={a.id}>
-            <AssetRow {...a} onClick={onAssetClick} />
+            <AssetRow {...a} onClick={!canOpen || canOpen(a.id) ? onAssetClick : undefined} />
           </li>
         ))}
       </ul>
