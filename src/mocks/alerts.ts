@@ -3,6 +3,7 @@
  * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts.ts).
  */
 import type { Alert, AlertStatus } from '@demo-lpg/shared/alerts';
+import { VAPORIZER_TAGS } from '@/features/live/tags';
 
 /** Trạng thái xử lý của cảnh báo (dùng chung với Badge status) – định nghĩa ở packages/shared. */
 export type { AlertStatus };
@@ -41,7 +42,7 @@ export const alertRecords: AlertRecord[] = [
   { id: 'ALT-00116', daysAgo: 1, time: '15:28:55', severity: 'critical', code: 'ALT-00116', message: 'Van an toàn PSV-101 kích hoạt', device: 'PSV-101', area: 'Bồn chứa', value: '12.4', threshold: '12.0', unit: 'bar', status: 'done', assignee: 'Phạm Văn D' },
   { id: 'ALT-00115', daysAgo: 1, time: '11:10:03', severity: 'medium', code: 'ALT-00115', message: 'Nhiệt độ máy hóa hơi E-101B dao động', device: 'E-101B', area: 'Trạm hóa hơi', value: '52', threshold: '55', unit: '°C', status: 'in-progress', assignee: 'Nguyễn Văn A' },
   { id: 'ALT-00114', daysAgo: 1, time: '07:44:19', severity: 'low', code: 'ALT-00114', message: 'Pin cảm biến GS-02 yếu', device: 'GS-02', area: 'Khu nạp xuất', value: '15', threshold: '20', unit: '%', status: 'done', assignee: 'Lê Thị C' },
-  { id: 'ALT-00113', daysAgo: 3, time: '20:16:37', severity: 'high', code: 'ALT-00113', message: 'Áp suất đầu vào hóa hơi cao', device: 'PT-101', area: 'Trạm hóa hơi', value: '9.8', threshold: '9.5', unit: 'bar', status: 'done', assignee: 'Trần Văn B' },
+  { id: 'ALT-00113', daysAgo: 3, time: '20:16:37', severity: 'high', code: 'ALT-00113', message: 'Áp suất đầu vào hóa hơi cao', device: VAPORIZER_TAGS.inletPressure, area: 'Trạm hóa hơi', value: '9.8', threshold: '9.5', unit: 'bar', status: 'done', assignee: 'Trần Văn B' },
   { id: 'ALT-00112', daysAgo: 3, time: '14:02:50', severity: 'medium', code: 'ALT-00112', message: 'Mức bồn V-101 giảm nhanh bất thường', device: 'LT-101', area: 'Bồn chứa', value: '-4.2', threshold: '-3.0', unit: '%/h', status: 'done', assignee: 'Phạm Văn D' },
   { id: 'ALT-00111', daysAgo: 5, time: '09:37:26', severity: 'low', code: 'ALT-00111', message: 'Bơm P-101B chuyển sang Standby ngoài lịch', device: 'P-101B', area: 'Khu bơm', value: '0', threshold: '1', unit: 'lần', status: 'done', assignee: 'Nguyễn Văn A' },
   { id: 'ALT-00110', daysAgo: 12, time: '16:48:08', severity: 'critical', code: 'ALT-00110', message: 'Áp suất bồn V-102 vượt ngưỡng', device: 'V-102', area: 'Bồn chứa', value: '11.2', threshold: '10.5', unit: 'bar', status: 'done', assignee: 'Trần Văn B' },

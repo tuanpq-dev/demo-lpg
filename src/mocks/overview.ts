@@ -10,14 +10,15 @@ import type {
   TimelineEvent,
   TrendPoint,
 } from '@/components';
+import { SYSTEM_TAGS, V101_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { KpiMock } from './types';
 
 export const overviewKpis: KpiMock[] = [
-  { id: 'inventory', label: 'Tồn kho', icon: 'kpiInventory', iconBox: 16, value: '152,340', unit: 'Nm³', sub: '+2.5%', subTone: 'success', live: { tag: 'INV-TOTAL', digits: 0 } },
+  { id: 'inventory', label: 'Tồn kho', icon: 'kpiInventory', iconBox: 16, value: '152,340', unit: 'Nm³', sub: '+2.5%', subTone: 'success', live: { tag: SYSTEM_TAGS.inventory, digits: 0 } },
   // Figma 53:241 "Đang chạy" có opacity-0 (ẩn) → chỉ hiện "—". Giá trị = % THỂ TÍCH quy đổi từ mức chiều cao LT-101.
-  { id: 'tank-level', label: 'Mức bồn V-101', value: '76.02', unit: '%', subTone: 'success', subIcon: 'kpiDash', subDim: true, live: { tag: 'LT-101', digits: 2, transform: 'tank-volume' } },
-  { id: 'pressure', label: 'Áp suất hệ thống', value: '1.82', unit: 'bar', sub: 'Ổn định', subTone: 'success', subDim: true, live: { tag: 'PT-100', digits: 2 } },
-  { id: 'consumption', label: 'Tiêu thụ', icon: 'kpiFlow', iconBox: 16, value: '203', unit: 'Nm³/h', sub: 'Bình thường', subTone: 'warning-soft', subDim: true, live: { tag: 'FQ-100', digits: 0 } },
+  { id: 'tank-level', label: 'Mức bồn V-101', value: '76.02', unit: '%', subTone: 'success', subIcon: 'kpiDash', subDim: true, live: { tag: V101_TAGS.level, digits: 2, transform: 'tank-volume' } },
+  { id: 'pressure', label: 'Áp suất hệ thống', value: '1.82', unit: 'bar', sub: 'Ổn định', subTone: 'success', subDim: true, live: { tag: SYSTEM_TAGS.pressure, digits: 2 } },
+  { id: 'consumption', label: 'Tiêu thụ', icon: 'kpiFlow', iconBox: 16, value: '203', unit: 'Nm³/h', sub: 'Bình thường', subTone: 'warning-soft', subDim: true, live: { tag: SYSTEM_TAGS.consumption, digits: 0 } },
   { id: 'alerts', label: 'Cảnh báo', icon: 'kpiDanger', iconBox: 24, value: '2', unit: 'Active', variant: 'danger', action: 'Xem chi tiết' },
   { id: 'health', label: 'Sức khỏe thiết bị', value: '98.7', unit: '%', variant: 'with-progress', tone: 'success', progress: 98.7 },
 ];
@@ -33,17 +34,18 @@ export const systemHealth: { value: number; caption: string; stats: HealthStat[]
 };
 
 export const priorityAlarms: AlertItemData[] = [
-  { id: 'a1', code: 'PT-101', message: 'Áp suất đầu vào hóa hơi cao.', time: '10 phút trước', severity: 'critical' },
+  // Figma 53:470 ghi PT-101; PT-101 nay là áp suất bồn V-101 → áp suất đầu vào hóa hơi là PT-201 (CLAUDE.md mục 8).
+  { id: 'a1', code: VAPORIZER_TAGS.inletPressure, message: 'Áp suất đầu vào hóa hơi cao.', time: '10 phút trước', severity: 'critical' },
   { id: 'a2', code: 'TT-302', message: 'Nhiệt độ tiệm cận giới hạn trên.', time: '24 phút trước', severity: 'high' },
-  { id: 'a3', code: 'LT-101', message: 'Mức bồn V-101 giảm nhanh bất thường.', time: '1 giờ trước', severity: 'high' },
+  { id: 'a3', code: V101_TAGS.level, message: 'Mức bồn V-101 giảm nhanh bất thường.', time: '1 giờ trước', severity: 'high' },
 ];
 
 /** `live`: tag quyết định dòng (mất tín hiệu → "Mất tín hiệu"; trạng thái chuỗi xấu → nhãn + tone theo FIELD_META). */
 export const watchlist: (AssetRowData & { live?: { tag: string; field: string } })[] = [
-  { id: 'pr-101', name: 'PR-101', statusLabel: 'Bình thường', tone: 'success', live: { tag: 'PT-201', field: 'pressure' } },
+  { id: 'pr-101', name: 'PR-101', statusLabel: 'Bình thường', tone: 'success', live: { tag: VAPORIZER_TAGS.inletPressure, field: 'pressure' } },
   { id: 'f-101', name: 'F-101', statusLabel: 'Bình thường', tone: 'success', live: { tag: 'PDT-101', field: 'pressure' } },
   { id: 'p-101a', name: 'P-101A', statusLabel: 'Đang chạy', tone: 'success', live: { tag: 'P-101A.STATE', field: 'state' } },
-  { id: 'v-101', name: 'V-101', statusLabel: 'Ổn định', tone: 'success', live: { tag: 'LT-101', field: 'level' } },
+  { id: 'v-101', name: 'V-101', statusLabel: 'Ổn định', tone: 'success', live: { tag: V101_TAGS.level, field: 'level' } },
 ];
 
 export const recentEvents: TimelineEvent[] = [

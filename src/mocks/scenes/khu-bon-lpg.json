@@ -19,7 +19,7 @@
     { "id": "LS-01", "asset": "loading-station", "position": [-6, 0, 16], "label": "Trạm nạp", "bindings": { "state": "LOAD-01.STATE", "flow": "FT-001" } },
     { "id": "FN-01", "asset": "fence", "position": [-6.4, 0, 9.5], "path": [[-5.5, 0, 0], [5.5, 0, 0]] },
 
-    { "id": "V-101", "asset": "tank-horizontal", "position": [8.3, 0, 15.4], "label": "Bồn V-101", "marker": { "title": "Khu bồn LPG", "field": "level" }, "bindings": { "level": "LT-101", "pressure": "PT-101", "temperature": { "tag": "TT-101", "warn": 40, "danger": 50 } } },
+    { "id": "V-101", "asset": "tank-horizontal", "position": [8.3, 0, 15.4], "label": "Bồn V-101", "marker": { "title": "Khu bồn LPG", "field": "level" }, "bindings": { "level": "LT-101", "pressure": { "tag": "PT-101", "warn": 10.5, "danger": 12 }, "temperature": { "tag": "TT-101", "warn": 40, "danger": 50 } } },
     { "id": "FN-02", "asset": "fence", "position": [8.3, 0, 15.4], "path": [[-9.25, 0, -4.5], [9.25, 0, -4.5], [9.25, 0, 4.5], [-9.25, 0, 4.5], [-9.25, 0, -4.5]] },
     { "id": "XV-101", "asset": "valve", "attach": { "pipe": "PL-06", "t": 0.69 }, "label": "Van XV-101", "bindings": { "position": "XV-101.POS" } },
 
