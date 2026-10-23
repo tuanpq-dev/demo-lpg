@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react';
-import type { AuthUser } from '@demo-lpg/shared/auth';
-import { can, type Permission } from '@demo-lpg/shared/roles';
-import { authClient as defaultClient, type AuthClient, type AuthState } from '@/data/auth';
+import { authService as defaultService, type AuthService, type AuthState } from '@/api/auth';
+import type { LoginRequest, RegisterRequest, User } from '@/api/types';
+import { can, type Permission } from '@/features/auth/permissions';
 import { refreshDelayMs } from '@/features/auth/session';
 
 export type AuthContextValue = AuthState & {
-  login(email: string, password: string): Promise<AuthUser>;
+  login(input: LoginRequest): Promise<User>;
+  register(input: RegisterRequest): Promise<string>;
   logout(): Promise<void>;
   /** Ẩn/hiện theo quyền – CHỈ là UX, backend kiểm tra lại mọi request. */
   can(permission: Permission): boolean;
@@ -14,32 +15,32 @@ export type AuthContextValue = AuthState & {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Phiên đăng nhập cho cả app: khôi phục phiên khi mở (refresh bằng cookie), tự refresh trước khi access token hết hạn.
- * `client` thay được trong test (`createAuthClient` với fetch giả).
+ * Phiên đăng nhập cho cả app: khôi phục phiên khi mở (POST /auth/refresh + GET /auth/me),
+ * refresh chủ động 60 s trước `exp` của access token (nếu đọc được). `service` thay được trong test.
  */
-export function AuthProvider({ client = defaultClient, children }: { client?: AuthClient; children: ReactNode }) {
-  const state = useSyncExternalStore(client.subscribe, client.getState);
+export function AuthProvider({ service = defaultService, children }: { service?: AuthService; children: ReactNode }) {
+  const state = useSyncExternalStore(service.subscribe, service.getState);
 
   useEffect(() => {
-    void client.init();
-  }, [client]);
+    void service.init();
+  }, [service]);
 
-  // Mỗi phiên mới (login/refresh tạo state mới) → hẹn refresh trước hạn 60 s.
   useEffect(() => {
-    const exp = client.expiresAt();
+    const exp = service.expiresAt();
     if (state.status !== 'authenticated' || exp === null) return;
-    const id = window.setTimeout(() => void client.refresh(), refreshDelayMs(exp, Date.now()));
+    const id = window.setTimeout(() => void service.refresh(), refreshDelayMs(exp, Date.now()));
     return () => window.clearTimeout(id);
-  }, [client, state]);
+  }, [service, state]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       ...state,
-      login: client.login,
-      logout: client.logout,
+      login: service.login,
+      register: service.register,
+      logout: service.logout,
       can: (p) => can(state.user?.role, p),
     }),
-    [client, state],
+    [service, state],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,19 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Icon, TextField } from '@/components';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Button, TextField } from '@/components';
 import { useAuth } from '@/app/auth';
-import { AuthError } from '@/data/auth';
+import { ApiError } from '@/api/client';
+import { authErrorMessage } from '@/features/auth/errors';
 import { safeRedirect } from '@/features/auth/session';
-
-function lockMessage(err: AuthError): string {
-  if (!err.retryAfter) return err.message;
-  const minutes = Math.ceil(err.retryAfter / 60);
-  return `${err.message} (khoảng ${minutes} phút)`;
-}
+import { AuthLayout, formErrorClass } from './AuthLayout';
 
 /**
- * /login – chưa có thiết kế Figma, dựng theo token (logo + thẻ form giữa màn hình).
- * Thông báo lỗi không phân biệt "sai email" và "sai mật khẩu" (backend trả cùng một câu).
+ * /login – lỗi hiển thị theo mã (sai mật khẩu, chờ duyệt, quá nhiều lần thử, không kết nối được máy chủ…).
+ * Đăng nhập xong quay lại trang định vào (`?next=`, chỉ đường dẫn nội bộ).
  */
 export default function LoginPage() {
   const { status, login } = useAuth();
@@ -22,17 +18,16 @@ export default function LoginPage() {
   const next = safeRedirect(params.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ text: string; pending: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
-  const errorRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Vào trang → focus ô email (effect thay cho autoFocus – quy ước a11y của dự án).
   useEffect(() => {
     formRef.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
   }, []);
-
-  // Lỗi mới → đưa focus tới thông báo (trình đọc màn hình đọc ngay, role="alert").
+  // Lỗi mới → focus thông báo (role="alert" để trình đọc màn hình đọc ngay).
   useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
@@ -42,79 +37,63 @@ export default function LoginPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setError('Nhập email và mật khẩu');
+      setError({ text: 'Nhập email và mật khẩu', pending: false });
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      await login({ email: email.trim(), password });
       navigate(next, { replace: true });
     } catch (err) {
       setPassword('');
-      setError(err instanceof AuthError ? (err.kind === 'locked' ? lockMessage(err) : err.message) : 'Đăng nhập thất bại');
+      setError({ text: authErrorMessage(err), pending: err instanceof ApiError && err.code === 'ACCOUNT_PENDING' });
       setBusy(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-bg-app px-4 py-10">
-      <div className="w-full max-w-[400px]">
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
-            <Icon name="logo" box={20} />
-          </span>
-          <div className="flex flex-col">
-            <span className="text-lg text-fg">Plant Control</span>
-            <span className="text-2xs text-fg-muted">Operational Intelligence</span>
-          </div>
+    <AuthLayout>
+      <form ref={formRef} onSubmit={submit} noValidate aria-labelledby="login-title" className="flex flex-col gap-4">
+        <div>
+          <h1 id="login-title" className="text-xl font-semibold text-fg">
+            Đăng nhập
+          </h1>
+          <p className="mt-1 text-sm text-fg-muted">Dùng tài khoản đã được quản trị viên duyệt.</p>
         </div>
-        <form
-          ref={formRef}
-          onSubmit={submit}
-          noValidate
-          aria-labelledby="login-title"
-          className="flex flex-col gap-4 rounded-xl border border-line-card bg-surface p-6 shadow-card"
-        >
-          <div>
-            <h1 id="login-title" className="text-xl font-semibold text-fg">
-              Đăng nhập
-            </h1>
-            <p className="mt-1 text-sm text-fg-muted">Dùng tài khoản được quản trị viên cấp.</p>
+        {error && (
+          <div ref={errorRef} role="alert" tabIndex={-1} className={formErrorClass}>
+            {error.text}
+            {error.pending && (
+              <>
+                {' '}
+                <Link to="/pending" className="text-accent underline">
+                  Xem trạng thái
+                </Link>
+              </>
+            )}
           </div>
-          {error && (
-            <p
-              ref={errorRef}
-              role="alert"
-              tabIndex={-1}
-              className="rounded-md border border-danger-strong/50 bg-danger/10 px-3 py-2 text-sm text-fg"
-            >
-              {error}
-            </p>
-          )}
-          <TextField
-            label="Email"
-            type="email"
-            name="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={setEmail}
-          />
-          <TextField
-            label="Mật khẩu"
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={setPassword}
-          />
-          <Button type="submit" variant="primary" disabled={busy} className="mt-2 h-10">
-            {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
-          </Button>
-        </form>
-      </div>
-    </main>
+        )}
+        <TextField label="Email" type="email" name="email" autoComplete="username" required value={email} onChange={setEmail} />
+        <TextField
+          label="Mật khẩu"
+          type="password"
+          name="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={setPassword}
+        />
+        <Button type="submit" variant="primary" disabled={busy} className="mt-2 h-10">
+          {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
+        </Button>
+        <p className="text-center text-sm text-fg-muted">
+          Chưa có tài khoản?{' '}
+          <Link to="/register" className="text-accent underline">
+            Đăng ký
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

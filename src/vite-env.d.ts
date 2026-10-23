@@ -5,6 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_SCENE_EDITOR?: string;
   /** "off" → không đăng nhập (phiên giả admin, demo tĩnh); mặc định "api" (đăng nhập qua backend). */
   readonly VITE_AUTH?: string;
-  /** Gốc URL API (mặc định "/api", Vite dev proxy chuyển tới backend). */
+  /** Gốc URL backend, vd "http://localhost:3000" (.env.development); production đặt trong Netlify. */
   readonly VITE_API_URL?: string;
 }

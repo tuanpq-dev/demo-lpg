@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ROLE_LABELS } from '@demo-lpg/shared/roles';
 import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
+import { ROLE_LABELS } from '@/features/auth/permissions';
 import { useAuth } from './auth';
 import { LiveAnnouncer } from './LiveAnnouncer';
 import { NAV_ROUTES, navIdFromPath } from './navigation';

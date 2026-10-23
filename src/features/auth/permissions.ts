@@ -1,0 +1,34 @@
+/**
+ * Vai trò + quyền phía FE – CHỈ dùng để ẩn/hiện (UX); backend kiểm tra lại mọi request.
+ * FE tự định nghĩa (không phụ thuộc packages/shared). Giá trị `role` phải khớp `user.role` backend trả về
+ * (schema ở src/api/types.ts) – ⚠ hợp đồng API chưa liệt kê tập giá trị role, đang dùng 4 vai trò của dự án.
+ */
+export const ROLES = ['viewer', 'operator', 'engineer', 'admin'] as const;
+export type Role = (typeof ROLES)[number];
+
+export const ROLE_LABELS: Record<Role, string> = {
+  viewer: 'Người xem',
+  operator: 'Vận hành',
+  engineer: 'Kỹ sư',
+  admin: 'Quản trị',
+};
+
+/** Quyền → vai trò tối thiểu (vai trò sau có mọi quyền vai trò trước). */
+export const PERMISSIONS = {
+  'alert:acknowledge': 'operator',
+  'maintenance:write': 'operator',
+  'scene:write': 'engineer',
+  'user:manage': 'admin',
+} as const satisfies Record<string, Role>;
+
+export type Permission = keyof typeof PERMISSIONS;
+
+export function isRole(value: unknown): value is Role {
+  return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
+}
+
+/** Chưa đăng nhập / vai trò lạ → false. */
+export function can(role: Role | null | undefined, permission: Permission): boolean {
+  if (!isRole(role)) return false;
+  return ROLES.indexOf(role) >= ROLES.indexOf(PERMISSIONS[permission]);
+}
