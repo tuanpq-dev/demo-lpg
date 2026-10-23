@@ -17,6 +17,8 @@ export type CardProps = Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   icon?: ReactNode;
   /** Link bên phải header, ví dụ { label: 'Xem tất cả' } (53:468). */
   action?: CardAction;
+  /** Phần tử tuỳ ý bên phải header (sau `action`), ví dụ nút icon toàn màn hình. */
+  headerEnd?: ReactNode;
   /**
    * - bar:   header có nền surface-muted/10 + viền dưới (53:459 "Cảnh báo ưu tiên")
    * - plain: tiêu đề nằm trong padding của card (53:496 "Theo dõi thiết bị")
@@ -45,6 +47,7 @@ export function Card({
   title,
   icon,
   action,
+  headerEnd,
   headerVariant = 'bar',
   tone = 'default',
   radius = 'xl',
@@ -54,7 +57,7 @@ export function Card({
   children,
   ...rest
 }: CardProps) {
-  const hasHeader = title !== undefined || action !== undefined;
+  const hasHeader = title !== undefined || action !== undefined || headerEnd !== undefined;
 
   const actionNode = action ? (
     action.href ? (
@@ -67,6 +70,13 @@ export function Card({
       </Button>
     )
   ) : null;
+  const endNode =
+    actionNode || headerEnd ? (
+      <div className="flex min-w-0 max-w-full shrink-0 items-center gap-2">
+        {actionNode}
+        {headerEnd}
+      </div>
+    ) : null;
 
   const heading = (
     <div className="flex min-w-0 items-center gap-2">
@@ -86,16 +96,16 @@ export function Card({
       {...rest}
     >
       {hasHeader && headerVariant === 'bar' && (
-        <header className="flex items-center justify-between gap-3 border-b border-line/30 bg-surface-muted/10 px-4 pb-[13px] pt-3">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line/30 bg-surface-muted/10 px-4 pb-[13px] pt-3">
           {heading}
-          {actionNode}
+          {endNode}
         </header>
       )}
       <div className={cn('flex flex-1 flex-col', padding === 'md' && 'p-4', bodyClassName)}>
         {hasHeader && headerVariant === 'plain' && (
-          <header className="mb-4 flex items-center justify-between gap-3">
+          <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
             {heading}
-            {actionNode}
+            {endNode}
           </header>
         )}
         {children}

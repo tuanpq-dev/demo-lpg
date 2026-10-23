@@ -1,0 +1,15 @@
+{
+  "id": "v-101",
+  "name": "Bồn LPG V-101",
+  "version": 1,
+  "schemaVersion": 2,
+  "camera": { "position": [24, 20.6, 26.5], "target": [0, 1.4, 0.2], "zoom": 100 },
+  "thresholds": {
+    "level": { "warn": 85, "danger": 95, "lowWarn": 15, "lowDanger": 5 }
+  },
+  "objects": [
+    { "id": "V-101", "asset": "tank-horizontal", "params": { "length": 4.8, "diameter": 1.9 }, "position": [0, 0, 0], "label": "Bồn V-101", "bindings": { "level": "LT-101", "pressure": { "tag": "PT-101", "warn": 10.5, "danger": 12 }, "temperature": { "tag": "TT-101", "warn": 40, "danger": 50 } } },
+    { "id": "FN-01", "asset": "fence", "params": { "height": 1.1 }, "position": [0, 0, 0], "path": [[-3.9, 0, -2.2], [3.9, 0, -2.2], [3.9, 0, 2.6], [-3.9, 0, 2.6], [-3.9, 0, -2.2]] }
+  ],
+  "pipes": []
+}

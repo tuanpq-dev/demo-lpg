@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Card } from '../Card';
-import { SignalLostIcon } from '../Icon';
+import { InfoIcon, SignalLostIcon } from '../Icon';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
 
 export type KpiVariant = 'default' | 'danger' | 'with-progress' | 'compact';
@@ -10,6 +10,12 @@ export type KpiSubTone = KpiTone | 'muted' | 'warning-soft';
 
 export type KpiCardProps = {
   label: string;
+  /**
+   * Định nghĩa/ghi chú của chỉ số (vd "Mức bồn = % thể tích toàn bộ chất lỏng"): tooltip khi rê chuột + đọc kèm nhãn
+   * cho trình đọc màn hình. `hintIcon` hiện thêm icon ⓘ cạnh nhãn.
+   */
+  hint?: string;
+  hintIcon?: boolean;
   /** Icon trong khung (15–24px tuỳ màn); đặt cuối hàng tiêu đề, hoặc đầu nếu iconPosition="start". */
   icon?: ReactNode;
   iconPosition?: 'start' | 'end';
@@ -39,6 +45,11 @@ export type KpiCardProps = {
   tone?: KpiTone;
   /** Tô nhãn theo tone (KPI Cảnh báo 70:2964–70:2995). */
   toneLabel?: boolean;
+  /**
+   * Thẻ thấp (~104px, trang chi tiết tài sản): padding dọc 14px, dòng phụ 11px. Dùng với default (kèm progress
+   * tuỳ chọn). Không đổi kích thước số.
+   */
+  dense?: boolean;
   /** Viền theo tone (KPI "Quá hạn" 70:5058) – chỉ áp dụng cho compact. */
   outlined?: boolean;
   /** compact: viền line-card (Bảo trì) thay vì line/30 (Cảnh báo). */
@@ -66,6 +77,8 @@ const subToneClass: Record<KpiSubTone, string> = {
 
 export function KpiCard({
   label,
+  hint,
+  hintIcon,
   icon,
   iconPosition = 'end',
   value,
@@ -82,6 +95,7 @@ export function KpiCard({
   progress,
   action,
   signalLost,
+  dense,
   className,
 }: KpiCardProps) {
   const compact = variant === 'compact';
@@ -115,13 +129,18 @@ export function KpiCard({
       radius={compact ? 'lg' : 'xl'}
       className={cn('h-full', className)}
       // with-progress: số nằm ngay dưới nhãn (Figma 53:207), không dàn đều theo chiều cao như các thẻ khác.
-      bodyClassName={cn(compact ? 'gap-2' : variant === 'with-progress' ? 'gap-0 py-[18px]' : 'justify-between gap-0')}
+      bodyClassName={cn(
+        compact ? 'gap-2' : variant === 'with-progress' ? 'gap-0 py-[18px]' : 'justify-between gap-0',
+        dense && 'justify-start gap-1 py-3.5',
+      )}
     >
       {/* Hàng tiêu đề */}
       <div className={cn('flex items-center', iconPosition === 'start' ? 'gap-1' : 'justify-between gap-2')}>
         {iconPosition === 'start' && icon}
-        <span className={labelClass} title={label}>
-          {label}
+        <span className={cn(labelClass, hintIcon && 'flex items-center gap-1')} title={hint ? `${label} – ${hint}` : label}>
+          {hintIcon ? <span className="truncate">{label}</span> : label}
+          {hintIcon && <InfoIcon size={14} className="shrink-0 text-fg-secondary" />}
+          {hint && <span className="sr-only">. {hint}</span>}
         </span>
         {iconPosition === 'end' && icon}
       </div>
@@ -142,18 +161,18 @@ export function KpiCard({
             tone={progress.tone ?? 'success'}
             track={compact ? 'solid' : 'subtle'}
             label={label}
-            className="mt-2"
+            className={dense ? 'mt-1.5' : 'mt-2'}
           />
         )}
 
         {signalLost ? (
-          <div className="flex h-6 items-center gap-1 text-md text-fg-secondary" role="status">
-            <SignalLostIcon size={16} className="shrink-0" />
+          <div className={cn('flex items-center gap-1 text-fg-secondary', dense ? 'h-4 text-xs' : 'h-6 text-md')} role="status">
+            <SignalLostIcon size={dense ? 12 : 16} className="shrink-0" />
             <span className="truncate">Mất tín hiệu</span>
           </div>
         ) : (
           (sub !== undefined || subIcon) && (
-            <div className={cn('flex h-6 items-center gap-1 text-md', subToneClass[subTone], subDim && 'opacity-70')}>
+            <div className={cn('flex items-center gap-1', dense ? 'h-4 text-xs' : 'h-6 text-md', subToneClass[subTone], subDim && 'opacity-70')}>
               {subIcon}
               {sub !== undefined && <span className="truncate">{sub}</span>}
             </div>

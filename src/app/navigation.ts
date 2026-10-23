@@ -15,7 +15,9 @@ export const NAV_ROUTES: readonly NavRoute[] = [
   { id: 'reports', label: 'Báo cáo', path: '/reports', icon: 'navReport' },
 ];
 
-/** Tìm mục nav ứng với pathname (khớp tiền tố, ví dụ /alerts/123 → alerts). */
+const matches = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
+
+/** Tìm mục nav ứng với pathname theo tiền tố (/alerts/123 → alerts; /map, /map/V-101 → map). */
 export function navIdFromPath(pathname: string): string {
-  return NAV_ROUTES.find((r) => r.path && (pathname === r.path || pathname.startsWith(`${r.path}/`)))?.id ?? '';
+  return NAV_ROUTES.find((r) => r.path && matches(pathname, r.path))?.id ?? '';
 }

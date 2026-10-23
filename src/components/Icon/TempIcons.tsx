@@ -1,5 +1,5 @@
 /**
- * ⚠ ICON TẠM – chỉ có trong ảnh thiết kế modal "Tạo yêu cầu bảo trì" (chưa có node Figma / MCP bị giới hạn).
+ * ⚠ ICON TẠM – chỉ có trong ảnh thiết kế (modal "Tạo yêu cầu bảo trì", trang chi tiết tài sản; chưa có node Figma).
  * Vẽ tối giản theo `currentColor` để màu theo token. Thay bằng asset Figma qua <Icon name="…" /> khi có.
  * Tất cả đều trang trí (aria-hidden); nhãn nằm ở phần tử chứa.
  */
@@ -155,5 +155,48 @@ export const SignalLostIcon = ({ size = 16, ...p }: P) => (
 export const MenuIcon = ({ size = 20, ...p }: P) => (
   <svg {...tempIconBase(size, p)}>
     <path d="M4 7h16M4 12h16M4 17h16" />
+  </svg>
+);
+
+// ---- Trang chi tiết tài sản (ảnh "Bồn LPG V-101", chưa có node Figma) ----
+
+/** Vòng tròn có dấu chấm than – cảnh báo liên quan (warning/danger theo màu chữ). */
+export const AlertCircleIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7.5v5.5M12 16.5h.01" />
+  </svg>
+);
+
+/** Đồng hồ có mũi tên quay ngược – "Lịch sử cảnh báo", "Bảo trì gần nhất". */
+export const HistoryIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" />
+    <path d="M3.5 4.5V8h3.5" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+
+/** Bản đồ gấp – "Xem trên bản đồ". */
+export const MapIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m3 6.5 6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5Z" />
+    <path d="M9 4v13.5M15 6.5V20" />
+  </svg>
+);
+
+/** Khung ngắm 4 góc + chấm giữa – nút toàn màn hình của "Mô hình tài sản". */
+export const FocusIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15" />
+    <circle cx="12" cy="12" r="2.5" />
+  </svg>
+);
+
+/** Thông tin (chữ i trong vòng tròn) – nhãn có định nghĩa (KpiCard `hint`). */
+export const InfoIcon = ({ size = 14, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5.5M12 7.5h.01" />
   </svg>
 );

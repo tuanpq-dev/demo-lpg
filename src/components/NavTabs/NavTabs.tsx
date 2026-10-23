@@ -119,7 +119,8 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
         className="flex h-[41px] items-center gap-2 rounded-md px-2 text-md font-semibold text-primary hover:bg-surface-muted/40"
       >
         <MenuIcon />
-        <span>{current?.label ?? 'Menu'}</span>
+        {/* Nhãn dài ("Bản đồ nội khu") không xuống dòng; màn rất hẹp thì cắt "…". */}
+        <span className="max-w-[40vw] truncate whitespace-nowrap">{current?.label ?? 'Menu'}</span>
         <span className="sr-only">– mở menu điều hướng</span>
       </button>
       {open && (

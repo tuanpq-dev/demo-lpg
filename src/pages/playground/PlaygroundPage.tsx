@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AssetSection } from './AssetSection';
 import { BusinessSection } from './BusinessSection';
 import { EditorSection } from './EditorSection';
 import { FormsSection } from './FormsSection';
@@ -25,6 +26,10 @@ export default function PlaygroundPage() {
         <h1 className="text-3xl font-bold">Component Playground</h1>
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
+
+      <Section id="asset" title="10. Chi tiết tài sản (GĐ 5D): hình cắt bồn, lớp tồn chứa, KPI dense, bảo trì">
+        <AssetSection />
+      </Section>
 
       <Section id="editor" title="9. Scene Editor (3D-3): NumberField, Vec3Field, TreeView, Checkbox có nhãn, icon">
         <EditorSection />

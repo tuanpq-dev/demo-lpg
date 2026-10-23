@@ -114,6 +114,8 @@ const seeds: Seed[] = [
   { code: 'MT-00103', title: 'Kiểm tra cân xe bồn', device: 'WB-01', area: 'Khu nạp xuất', type: 'inspection', priority: 'low', status: 'done', assignee: 'Lê Thị C', created: -36, due: -29, completed: -29, progress: 100 },
   { code: 'MT-00102', title: 'Bảo dưỡng định kỳ máy phát dự phòng', device: 'G-01', area: 'Khu vực B', type: 'periodic', priority: 'medium', status: 'done', assignee: 'Phạm Văn D', created: -40, due: -33, completed: -34, progress: 100 },
   { code: 'MT-00101', title: 'Thay cảm biến nhiệt TT-302', device: 'TT-302', area: 'Tuyến chính', type: 'incident', priority: 'high', status: 'done', assignee: 'Nguyễn Văn A', created: -44, due: -40, completed: -41, progress: 100 },
+  // Trang chi tiết V-101: "Bảo trì gần nhất" (ảnh ghi 12/3/2024 → ngày tương đối, không dùng năm 2024).
+  { code: 'MT-00100', title: 'Bảo dưỡng định kỳ bồn V-101', device: 'V-101', area: 'Bồn chứa', type: 'periodic', priority: 'medium', status: 'done', assignee: 'Nguyễn Văn A', created: -52, due: -45, completed: -46, progress: 100 },
 ];
 
 export const maintenanceRecords: MaintenanceRecord[] = seeds.map(({ created, due, dueTime, completed, ...s }) => ({
