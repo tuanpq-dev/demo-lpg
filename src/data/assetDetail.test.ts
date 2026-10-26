@@ -164,8 +164,10 @@ describe('tóm tắt bảo trì', () => {
     expect(s.last).toMatchObject({ date: '8 Tháng 9, 2026' });
     expect(s.last!.record.code).toBe('M4');
   });
-  it('hạn hôm nay chưa quá hạn; không có bản ghi → rỗng', () => {
-    expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T08:00')], 'V-101', NOW).next).toMatchObject({ overdue: false, daysLeft: 0 });
+  // ĐỔI 26/10/2026 (quá hạn theo giờ): trước đây hạn 08:00 hôm nay lúc 10:00 vẫn "chưa quá hạn".
+  it('hạn hôm nay: chưa tới giờ → chưa quá hạn, đã qua giờ → quá hạn; không có bản ghi → rỗng', () => {
+    expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T16:00')], 'V-101', NOW).next).toMatchObject({ overdue: false, daysLeft: 0 });
+    expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T08:00')], 'V-101', NOW).next).toMatchObject({ overdue: true, daysLeft: 0, dueText: 'Quá hạn từ 08:00' });
     expect(deriveMaintenanceSummary([], 'V-101', NOW)).toEqual({ next: undefined, last: undefined });
   });
   it('formatLongDate', () => {
