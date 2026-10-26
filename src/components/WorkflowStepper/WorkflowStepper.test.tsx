@@ -21,4 +21,11 @@ describe('WorkflowStepper', () => {
     rerender(<WorkflowStepper steps={steps} completed={3} current={null} label="x" />);
     expect(container.querySelectorAll('[aria-current]')).toHaveLength(0);
   });
+  test('nhãn phụ (Tạm dừng) ở bước đang thực hiện – không đổi bước', () => {
+    const withNote = steps.map((s, i) => (i === 2 ? { ...s, note: 'Gặp sự cố', noteTone: 'danger' as const } : s));
+    render(<WorkflowStepper steps={withNote} completed={3} current={3} label="x" />);
+    const li = screen.getByRole('navigation', { name: 'x' }).querySelectorAll('li');
+    expect(li[2]).toHaveTextContent('Đang thực hiện – đã xong, Gặp sự cố');
+    expect(li[3]).toHaveAttribute('aria-current', 'step');
+  });
 });

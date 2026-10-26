@@ -58,7 +58,7 @@ describe('canTransition – không nhảy bước', () => {
     expect(NEXT_ACTION_LABEL.pending).toBe('Tiếp nhận ngay');
     expect(NEXT_ACTION_LABEL.assigned).toBe('Bắt đầu thực hiện');
     expect(NEXT_ACTION_LABEL['in-progress']).toBe('Chuyển nghiệm thu');
-    expect(NEXT_ACTION_LABEL.review).toBe('Nghiệm thu xong');
+    expect(NEXT_ACTION_LABEL.review).toBe('Nghiệm thu đạt');
     expect(NEXT_ACTION_LABEL.done).toBeUndefined();
     expect(NEXT_ACTION_LABEL.cancelled).toBeUndefined();
   });
