@@ -1,12 +1,13 @@
 import { cn } from '@/lib/cn';
 
-export type ProgressTone = 'success' | 'accent' | 'info' | 'warning' | 'neutral';
+export type ProgressTone = 'success' | 'primary' | 'accent' | 'info' | 'warning' | 'neutral';
 
 export type ProgressBarProps = {
   value: number;
   max?: number;
   /**
    * - success: sức khỏe thiết bị (53:212)
+   * - primary: tiến độ checklist chi tiết bảo trì (ảnh MT-00128, pixel #22D3EE)
    * - accent:  Xưởng 1 (53:349)
    * - info:    "Đang thực hiện" trang Bảo trì (70:5099)
    * - warning: Xưởng 2 – warning-soft (53:357)
@@ -24,6 +25,7 @@ export type ProgressBarProps = {
 
 const toneClass: Record<ProgressTone, string> = {
   success: 'bg-success',
+  primary: 'bg-primary',
   accent: 'bg-accent',
   info: 'bg-info',
   warning: 'bg-warning-soft',

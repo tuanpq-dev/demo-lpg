@@ -32,7 +32,7 @@ export type SegmentedControlProps = {
 
 const fieldTone: Record<SegmentedTone, string> = {
   neutral: 'bg-surface-muted text-fg',
-  danger: 'bg-danger text-fg',
+  danger: 'bg-danger-solid text-fg', // nền đặc có chữ trắng → danger-solid (5.07:1; `danger` chỉ 3.34:1)
   warning: 'bg-warning text-fg-inverse',
   info: 'bg-info text-fg-inverse',
 };

@@ -23,6 +23,8 @@ export type ColorToken =
   | 'warning'
   | 'warning-soft'
   | 'danger'
+  | 'danger-text'
+  | 'danger-solid'
   | 'danger-strong'
   | 'neutral'
   | 'bg-canvas'

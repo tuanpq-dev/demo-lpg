@@ -1,7 +1,11 @@
 import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
+import { checklistProgress, toggleChecklistItem } from '@/features/maintenance/checklist';
+import { isPastDue } from '@/features/maintenance/deadline';
+import { addNoteRecord, advanceRecord, assignRecord, cancelRecord, type AssignInput } from '@/features/maintenance/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
-import { daysFromToday, plantMonthKey } from '@/lib/plantTime';
+import { appNow } from '@/lib/demoNow';
+import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/mocks/alerts';
 import {
   CHECKLIST_TEMPLATES,
@@ -12,6 +16,10 @@ import {
   SOURCE_OPTIONS,
   isoDay,
   maintenanceRecords,
+  type MaintenanceAttachment,
+  type MaintenanceChecklistItem,
+  type MaintenanceHistoryEntry,
+  type MaintenanceNote,
   type MaintenanceRecord,
   type MaintenanceSource,
   type MaintenanceStatus,
@@ -20,7 +28,17 @@ import {
 } from '@/mocks/maintenance';
 import type { KpiMock } from '@/mocks/types';
 
-export type { MaintenanceRecord, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId };
+export type {
+  MaintenanceAttachment,
+  MaintenanceChecklistItem,
+  MaintenanceHistoryEntry,
+  MaintenanceNote,
+  MaintenanceRecord,
+  MaintenanceSource,
+  MaintenanceStatus,
+  MaintenanceType,
+  ShiftId,
+};
 export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, SHIFTS, SOURCE_OPTIONS };
 
 // ============================================================================
@@ -33,13 +51,29 @@ export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, SHIFTS
 /** Số ngày từ hôm nay (giờ nhà máy) tới hạn (âm = đã qua). */
 export const daysUntilDue = (r: MaintenanceRecord, now: Date) => daysFromToday(r.dueAt, now);
 
-/** Quá hạn = hạn (theo ngày, giờ nhà máy) trước hôm nay và chưa hoàn thành. Hạn = hôm nay → chưa quá hạn. */
-export const isOverdue = (r: MaintenanceRecord, now: Date) => r.status !== 'done' && daysUntilDue(r, now) < 0;
+/** Hạn có giờ thật (false = chỉ có ngày → "Cuối ngày", quá hạn sau 23:59:59). */
+export const dueHasTime = (r: Pick<MaintenanceRecord, 'dueHasTime'>) => r.dueHasTime !== false;
 
+/** "16:00" hoặc "Cuối ngày" (hạn chỉ có ngày). */
+export const dueTimeLabel = (r: Pick<MaintenanceRecord, 'dueAt' | 'dueHasTime'>) => (dueHasTime(r) ? r.dueAt.slice(11, 16) : 'Cuối ngày');
+
+/** Còn mở = chưa hoàn thành và chưa hủy. */
+export const isOpen = (r: Pick<MaintenanceRecord, 'status'>) => r.status !== 'done' && r.status !== 'cancelled';
+
+/**
+ * Quá hạn = còn mở và now ≥ giờ hạn (giờ nhà máy; hạn chỉ có ngày = 23:59) – MỘT quy tắc cho danh sách, KPI,
+ * thẻ ưu tiên, lịch và trang chi tiết (`features/maintenance/deadline.ts`). Đã xong / đã hủy → không.
+ */
+export const isOverdue = (r: MaintenanceRecord, now: Date) => isOpen(r) && isPastDue(r.dueAt, now, dueHasTime(r));
+
+/**
+ * "Quá hạn 2 ngày" · "Quá hạn từ 16:00" (hạn hôm nay đã qua giờ) · "Hết hạn hôm nay" (hôm nay, chưa tới giờ) ·
+ * "Hết hạn ngày mai" · "Còn N ngày".
+ */
 export function dueLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
   if (d < 0) return `Quá hạn ${-d} ngày`;
-  if (d === 0) return 'Hết hạn hôm nay';
+  if (d === 0) return isPastDue(r.dueAt, now, dueHasTime(r)) ? (dueHasTime(r) ? `Quá hạn từ ${dueTimeLabel(r)}` : 'Quá hạn hôm nay') : 'Hết hạn hôm nay';
   if (d === 1) return 'Hết hạn ngày mai';
   return `Còn ${d} ngày`;
 }
@@ -50,10 +84,10 @@ export const formatDate = (iso: string) => {
   return `${d}/${m}/${y}`;
 };
 
-/** "Hôm nay, 14:00" / "Ngày mai, 08:30" / "20/10/2026, 17:00" (Lịch sắp tới 70:4902). */
+/** "Hôm nay, 14:00" / "Ngày mai, 08:30" / "20/10/2026, Cuối ngày" (Lịch sắp tới 70:4902). */
 export function scheduleLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
-  const time = r.dueAt.slice(11, 16);
+  const time = dueTimeLabel(r);
   const day = d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : formatDate(r.dueAt);
   return `${day}, ${time}`;
 }
@@ -68,6 +102,7 @@ export const STATUS_LABEL: Record<MaintenanceStatus, string> = {
   'in-progress': 'Đang thực hiện',
   review: 'Chờ nghiệm thu',
   done: 'Hoàn thành',
+  cancelled: 'Đã hủy',
 };
 
 /** Trạng thái bảo trì → giá trị Badge status. */
@@ -77,6 +112,7 @@ export const STATUS_BADGE: Record<MaintenanceStatus, WorkStatus> = {
   'in-progress': 'in-progress',
   review: 'review',
   done: 'done',
+  cancelled: 'cancelled',
 };
 
 export const TYPE_OPTIONS: SelectOption<MaintenanceType>[] = [
@@ -112,9 +148,9 @@ export function deviceIcon(device: string): IconName {
 // Lọc (dùng với useTableFilters)
 // ============================================================================
 
-export type MaintenanceTab = 'all' | MaintenanceStatus | 'overdue';
+export type MaintenanceTab = 'all' | Exclude<MaintenanceStatus, 'cancelled'> | 'overdue';
 
-/** ?tab=&q=&area=&priority=&type=&range=&sort=&page=&open= */
+/** ?tab=&q=&area=&priority=&type=&range=&sort=&page= (`?open=<id>` cũ → chuyển hướng /maintenance/:id). Đã hủy chỉ hiện ở tab "Tất cả". */
 export const MAINTENANCE_PARAMS = {
   tab: { values: ['all', 'pending', 'assigned', 'in-progress', 'review', 'done', 'overdue'], default: 'all' },
   q: { default: '' },
@@ -166,7 +202,7 @@ const SEVERITY_RANK: Record<Severity, number> = { critical: 0, high: 1, medium: 
 /** 3 việc ưu tiên: chưa xong, mức Nghiêm trọng/Cao; quá hạn trước, rồi hạn gần nhất, rồi mức độ (70:4969). */
 export function derivePriorityTasks(rows: readonly MaintenanceRecord[], now: Date, limit = 3): PriorityTaskData[] {
   return rows
-    .filter((r) => r.status !== 'done' && (r.priority === 'critical' || r.priority === 'high'))
+    .filter((r) => isOpen(r) && (r.priority === 'critical' || r.priority === 'high'))
     .sort((a, b) => daysUntilDue(a, now) - daysUntilDue(b, now) || SEVERITY_RANK[a.priority] - SEVERITY_RANK[b.priority])
     .slice(0, limit)
     .map((r) => ({
@@ -181,10 +217,10 @@ export function derivePriorityTasks(rows: readonly MaintenanceRecord[], now: Dat
     }));
 }
 
-/** Lịch sắp tới: việc ĐỊNH KỲ chưa xong, hạn từ hôm nay trở đi, gần nhất trước (70:4889). */
+/** Lịch sắp tới: việc ĐỊNH KỲ còn mở, chưa tới giờ hạn (đã quá giờ → sang "Quá hạn"), gần nhất trước (70:4889). */
 export function deriveSchedule(rows: readonly MaintenanceRecord[], now: Date, limit = 3): TimelineEvent[] {
   return rows
-    .filter((r) => r.type === 'periodic' && r.status !== 'done' && daysUntilDue(r, now) >= 0)
+    .filter((r) => r.type === 'periodic' && isOpen(r) && !isPastDue(r.dueAt, now, dueHasTime(r)))
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
     .slice(0, limit)
     .map((r, i) => ({ id: r.id, time: scheduleLabel(r, now), title: r.title, location: r.area, active: i === 0 }));
@@ -198,8 +234,10 @@ const inMonth = (iso: string | null, monthOffset: number, now: Date) => !!iso &&
  * - Tổng yêu cầu = tạo trong tháng; dòng phụ = % so với số tạo tháng trước.
  * - Đang thực hiện: thanh = đang thực hiện / (đang thực hiện + chờ nghiệm thu + hoàn thành trong tháng).
  * - Đã hoàn thành = hoàn thành trong tháng.
+ * - Yêu cầu đã hủy không tính vào KPI nào.
  */
-export function deriveMaintenanceKpis(rows: readonly MaintenanceRecord[], now: Date): KpiMock[] {
+export function deriveMaintenanceKpis(all: readonly MaintenanceRecord[], now: Date): KpiMock[] {
+  const rows = all.filter((r) => r.status !== 'cancelled');
   const thisMonth = rows.filter((r) => inMonth(r.createdAt, 0, now)).length;
   const lastMonth = rows.filter((r) => inMonth(r.createdAt, -1, now)).length;
   const trend = lastMonth ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;
@@ -252,7 +290,7 @@ export type NewMaintenanceInput = {
   referenceCode?: string;
   /** "yyyy-mm-ddTHH:mm" */
   startAt?: string;
-  /** "yyyy-mm-ddTHH:mm" (hoặc "yyyy-mm-dd" → 17:00) */
+  /** "yyyy-mm-ddTHH:mm" (hoặc "yyyy-mm-dd" → hạn chỉ có ngày: lưu T23:59 + `dueHasTime: false`) */
   dueAt: string;
   assignee: string | null;
   collaborators?: string[];
@@ -260,16 +298,27 @@ export type NewMaintenanceInput = {
   shift?: ShiftId;
   checklist?: { id: string; text: string; done: boolean }[];
   attachments?: { id: string; name: string; size: number }[];
+  /** Ghi chú của form → ghi chú đầu tiên trong luồng "Ghi chú kỹ thuật". */
   notes?: string;
   requiresPermit?: boolean;
   sourceAlertId?: string;
+  /** Người tạo (người đang đăng nhập; mặc định 'Admin'). */
+  createdBy?: string;
 };
 
 /** POST /maintenance – tạo yêu cầu mới; có người phụ trách → "Đã phân công", không → "Chờ tiếp nhận". */
 export async function createMaintenance(input: NewMaintenanceInput): Promise<MaintenanceRecord> {
+  const now = appNow();
+  const at = plantDateTimeKey(now);
   const maxNo = Math.max(0, ...db.map((r) => Number(r.code.replace(/\D/g, '')) || 0));
   const code = `MT-${String(maxNo + 1).padStart(5, '0')}`;
   const checklist = (input.checklist ?? []).filter((c) => c.text.trim());
+  const createdBy = input.createdBy ?? 'Admin';
+  const note = input.notes?.trim();
+  const history: MaintenanceHistoryEntry[] = [
+    { id: 'h1', at, kind: 'create', text: input.sourceAlertId ? `Tạo yêu cầu từ cảnh báo ${input.sourceAlertId}` : 'Tạo yêu cầu', actor: createdBy },
+  ];
+  if (input.assignee) history.push({ id: 'h2', at, kind: 'assign', text: `Phân công: ${input.assignee}`, actor: createdBy });
   const record: MaintenanceRecord = {
     id: code,
     code,
@@ -282,9 +331,11 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
     status: input.assignee ? 'assigned' : 'pending',
     assignee: input.assignee,
     createdAt: isoDay(0),
-    dueAt: input.dueAt.length === 10 ? `${input.dueAt}T17:00` : input.dueAt,
+    createdBy,
+    dueAt: input.dueAt.length === 10 ? `${input.dueAt}T23:59` : input.dueAt,
+    dueHasTime: input.dueAt.length === 10 ? false : undefined,
     completedAt: null,
-    progress: checklist.length ? Math.round((checklist.filter((c) => c.done).length / checklist.length) * 100) : 0,
+    progress: checklistProgress(checklist).percent,
     sourceAlertId: input.sourceAlertId,
     source: input.source,
     referenceCode: input.referenceCode?.trim() || undefined,
@@ -294,7 +345,8 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
     collaborators: input.collaborators?.length ? input.collaborators : undefined,
     checklist: checklist.length ? checklist : undefined,
     attachments: input.attachments?.length ? input.attachments.map(({ id, name, size }) => ({ id, name, size })) : undefined,
-    notes: input.notes?.trim() || undefined,
+    notes: note ? [{ id: 'n1', author: createdBy, at, text: note }] : undefined,
+    history,
     requiresPermit: input.requiresPermit || undefined,
   };
   db = [record, ...db];
@@ -302,45 +354,50 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
   return record;
 }
 
-/** Phân công: gán người; "Chờ tiếp nhận" → "Đã phân công". */
-export const assignMaintenance = async (ids: readonly string[], assignee: string) =>
-  patch(ids, (r) => (r.status === 'done' ? r : { ...r, assignee, status: r.status === 'pending' ? 'assigned' : r.status }));
+/** Người thao tác: người đang đăng nhập; chưa có đăng nhập → 'Admin'. */
+const DEFAULT_ACTOR = 'Admin';
+const ctx = (actor?: string) => ({ actor: actor || DEFAULT_ACTOR, now: appNow() });
 
-/** Chuyển bước kế tiếp: Đã phân công → Đang thực hiện → Chờ nghiệm thu → Hoàn thành. */
-export const advanceMaintenance = async (id: string) =>
+/** Phân công (một hoặc nhiều): gán người; "Chờ tiếp nhận" → "Đã phân công". Đã xong / đã hủy giữ nguyên. */
+export const assignMaintenance = async (ids: readonly string[], input: AssignInput | string, actor?: string) =>
+  patch(ids, (r) => assignRecord(r, typeof input === 'string' ? { assignee: input } : input, ctx(actor)));
+
+/** Sang bước kế tiếp – đúng một bước (Tiếp nhận → Bắt đầu → Nghiệm thu → Hoàn thành), ghi lịch sử. */
+export const advanceMaintenance = async (id: string, actor?: string) => patch([id], (r) => advanceRecord(r, ctx(actor)));
+
+/** Hủy yêu cầu (chưa hoàn thành), lý do không bắt buộc – ghi lịch sử. */
+export const cancelMaintenance = async (id: string, reason?: string, actor?: string) =>
+  patch([id], (r) => cancelRecord(r, { ...ctx(actor), reason }));
+
+/** Hoàn thành hàng loạt (bảng) – bỏ qua yêu cầu đã hủy. */
+export const completeMaintenance = async (ids: readonly string[]) =>
+  patch(ids, (r) =>
+    isOpen(r) ? { ...r, status: 'done', progress: r.checklist?.length ? r.progress : 100, completedAt: isoDay(0) } : r,
+  );
+
+/** Tick / bỏ tick một mục checklist; tiến độ bản ghi tính lại từ checklist. */
+export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
   patch([id], (r) => {
-    switch (r.status) {
-      case 'pending':
-      case 'assigned':
-        return { ...r, status: 'in-progress', progress: Math.max(r.progress, 10), assignee: r.assignee ?? 'Admin' };
-      case 'in-progress':
-        return { ...r, status: 'review', progress: 100 };
-      case 'review':
-        return { ...r, status: 'done', progress: 100, completedAt: isoDay(0) };
-      default:
-        return r;
-    }
+    if (!r.checklist) return r;
+    const checklist = toggleChecklistItem(r.checklist, itemId, appNow());
+    return { ...r, checklist, progress: checklistProgress(checklist).percent };
   });
 
-export const completeMaintenance = async (ids: readonly string[]) =>
-  patch(ids, (r) => (r.status === 'done' ? r : { ...r, status: 'done', progress: 100, completedAt: isoDay(0) }));
+/** Thêm ghi chú kỹ thuật. */
+export const addMaintenanceNote = async (id: string, text: string, actor?: string) =>
+  patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
 
-/** Nhãn nút "bước kế tiếp" trong drawer. */
-export const NEXT_STEP_LABEL: Partial<Record<MaintenanceStatus, string>> = {
-  pending: 'Tiếp nhận & bắt đầu',
-  assigned: 'Bắt đầu thực hiện',
-  'in-progress': 'Chuyển nghiệm thu',
-  review: 'Nghiệm thu xong',
-};
-
-/** Hook: `{ status, data, error, refetch, create, assign, advance, complete }`. */
+/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, complete, toggleChecklist, addNote }`. */
 export function useMaintenance() {
   return {
     ...store.useCollection(),
     create: createMaintenance,
     assign: assignMaintenance,
     advance: advanceMaintenance,
+    cancel: cancelMaintenance,
     complete: completeMaintenance,
+    toggleChecklist: toggleMaintenanceChecklist,
+    addNote: addMaintenanceNote,
   };
 }
 

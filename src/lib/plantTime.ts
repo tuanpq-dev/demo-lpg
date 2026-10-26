@@ -36,3 +36,22 @@ export function plantMonthKey(now: Date, offset = 0, timeZone?: string): string 
   const d = new Date(Date.UTC(y!, m! - 1 + offset, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
+
+/** Giờ nhà máy lệch UTC cố định +7 (Asia/Bangkok không đổi giờ mùa hè). */
+const PLANT_UTC_OFFSET_MS = 7 * 3_600_000;
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** "yyyy-mm-ddTHH:mm" (giờ nhà máy) của thời điểm `now`. */
+export function plantDateTimeKey(now: Date): string {
+  const t = new Date(now.getTime() + PLANT_UTC_OFFSET_MS);
+  return `${t.getUTCFullYear()}-${pad2(t.getUTCMonth() + 1)}-${pad2(t.getUTCDate())}T${pad2(t.getUTCHours())}:${pad2(t.getUTCMinutes())}`;
+}
+
+/** "yyyy-mm-ddTHH:mm[:ss]" (giờ nhà máy, không kèm múi giờ) → thời điểm tuyệt đối. Sai định dạng → null. */
+export function parsePlantDateTime(s: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+  if (!m) return null;
+  const [y, mo, d, h, mi, se] = m.slice(1).map((v) => Number(v ?? 0));
+  if (mo! < 1 || mo! > 12 || d! < 1 || d! > 31 || h! > 23 || mi! > 59 || se! > 59) return null;
+  return new Date(Date.UTC(y!, mo! - 1, d!, h!, mi!, se!) - PLANT_UTC_OFFSET_MS);
+}

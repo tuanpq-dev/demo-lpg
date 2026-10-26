@@ -48,7 +48,7 @@ export function ExportButton({ onClick }: ActionProps) {
 const LIVE_STATUS = {
   connected: { dot: 'live', label: 'Dữ liệu trực tiếp', className: undefined },
   connecting: { dot: 'warning', label: 'Đang kết nối lại…', className: 'text-warning' },
-  disconnected: { dot: 'danger', label: 'Mất kết nối', className: 'text-danger-strong' },
+  disconnected: { dot: 'danger', label: 'Mất kết nối', className: 'text-danger-text' },
 } as const;
 
 /**

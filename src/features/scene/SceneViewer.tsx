@@ -1131,7 +1131,7 @@ function DangerGlow({ obj, color }: { obj: ResolvedObject; color: Color }) {
 const readingTone: Record<ObjectStatus, string> = {
   normal: 'text-fg',
   warning: 'text-warning',
-  danger: 'text-danger-strong',
+  danger: 'text-danger-text',
   offline: 'text-neutral',
 };
 

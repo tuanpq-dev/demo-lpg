@@ -207,7 +207,7 @@ export type MaintenanceSummary = {
 /** Tóm tắt bảo trì của một thiết bị. Ngày/quá hạn theo giờ nhà máy (`now` truyền vào). */
 export function deriveMaintenanceSummary(rows: readonly MaintenanceRecord[], device: string, now: Date): MaintenanceSummary {
   const mine = rows.filter((r) => r.device === device);
-  const next = mine.filter((r) => r.status !== 'done').sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
+  const next = mine.filter((r) => r.status !== 'done' && r.status !== 'cancelled').sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
   const last = mine
     .filter((r) => r.status === 'done' && r.completedAt)
     .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];

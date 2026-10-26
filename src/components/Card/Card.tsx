@@ -22,8 +22,9 @@ export type CardProps = Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   /**
    * - bar:   header có nền surface-muted/10 + viền dưới (53:459 "Cảnh báo ưu tiên")
    * - plain: tiêu đề nằm trong padding của card (53:496 "Theo dõi thiết bị")
+   * - divided: như plain + đường kẻ dưới tiêu đề (ảnh chi tiết yêu cầu bảo trì MT-00128)
    */
-  headerVariant?: 'bar' | 'plain';
+  headerVariant?: 'bar' | 'plain' | 'divided';
   /** Màu viền: strong (line-card – KPI Bảo trì 70:4508), danger (KPI "Cảnh báo" 53:213), success (53:201), accent. */
   tone?: CardTone;
   /** xl = 12px (Tổng quan), lg = 8px (Cảnh báo/Bảo trì). */
@@ -102,8 +103,13 @@ export function Card({
         </header>
       )}
       <div className={cn('flex flex-1 flex-col', padding === 'md' && 'p-4', bodyClassName)}>
-        {hasHeader && headerVariant === 'plain' && (
-          <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {hasHeader && headerVariant !== 'bar' && (
+          <header
+            className={cn(
+              'flex flex-wrap items-center justify-between gap-3',
+              headerVariant === 'divided' ? 'mb-3 border-b border-line/30 pb-2' : 'mb-4',
+            )}
+          >
             {heading}
             {endNode}
           </header>

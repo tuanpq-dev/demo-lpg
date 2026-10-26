@@ -138,7 +138,7 @@ export function PrimitivesSection() {
               <div key={a.code}>
                 <div className={a.critical ? 'flex flex-col gap-2.5 bg-danger-strong/15 px-4 py-2.5' : 'flex flex-col gap-2.5 px-4 py-2.5'}>
                   <div className="flex items-center justify-between">
-                    <span className={a.critical ? 'text-sm font-bold text-danger-strong/75' : 'text-sm font-bold text-warning-soft'}>
+                    <span className={a.critical ? 'text-sm font-bold text-danger-text' : 'text-sm font-bold text-warning-soft'}>
                       {a.code}
                     </span>
                     <span className="text-2xs text-fg-muted/65">{a.time}</span>

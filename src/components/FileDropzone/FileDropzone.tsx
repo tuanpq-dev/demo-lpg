@@ -97,7 +97,7 @@ export function FileDropzone({ files, onChange, accept, maxSizeMB = 20, label = 
         />
       </div>
       {error && (
-        <p id={errId} role="alert" className="text-sm text-danger">
+        <p id={errId} role="alert" className="text-sm text-danger-text">
           {error}
         </p>
       )}
@@ -105,6 +105,7 @@ export function FileDropzone({ files, onChange, accept, maxSizeMB = 20, label = 
         <ul className="flex flex-col gap-2" aria-label="Tệp đã đính kèm">
           {files.map((f) => (
             <li key={f.id} className="flex items-center gap-3 rounded-lg border border-line/30 bg-surface-raised/40 px-3 py-2">
+              {/* eslint-disable-next-line no-restricted-syntax -- icon PDF, không phải chữ */}
               <FileIcon className={/\.pdf$/i.test(f.name) ? 'text-danger' : 'text-accent'} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm text-fg">{f.name}</span>

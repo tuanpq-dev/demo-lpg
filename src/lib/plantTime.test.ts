@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { dayNumber, daysFromToday, plantDayKey, plantMonthKey } from './plantTime';
+import { dayNumber, daysFromToday, parsePlantDateTime, plantDateTimeKey, plantDayKey, plantMonthKey } from './plantTime';
 
 describe('plantTime – ngày theo giờ nhà máy (Asia/Bangkok, UTC+7)', () => {
   test('qua nửa đêm Bangkok trước nửa đêm UTC', () => {
@@ -19,5 +19,22 @@ describe('plantTime – ngày theo giờ nhà máy (Asia/Bangkok, UTC+7)', () =>
   test('tháng hiện tại và dời tháng', () => {
     expect(plantMonthKey(new Date('2026-10-31T17:30:00Z'))).toBe('2026-11'); // 00:30 ngày 1/11 ICT
     expect(plantMonthKey(new Date('2026-01-10T00:00:00Z'), -1)).toBe('2025-12');
+  });
+});
+
+describe('plantDateTimeKey / parsePlantDateTime', () => {
+  test('giờ nhà máy, qua nửa đêm Bangkok', () => {
+    expect(plantDateTimeKey(new Date('2026-10-26T16:59:00Z'))).toBe('2026-10-26T23:59');
+    expect(plantDateTimeKey(new Date('2026-10-26T17:00:00Z'))).toBe('2026-10-27T00:00');
+    expect(plantDateTimeKey(new Date('2026-12-31T17:00:00Z'))).toBe('2027-01-01T00:00');
+  });
+  test('đọc lại = cùng thời điểm (chạy hai chiều)', () => {
+    const t = new Date('2026-10-26T04:45:00Z');
+    expect(parsePlantDateTime(plantDateTimeKey(t))!.getTime()).toBe(t.getTime());
+  });
+  test('sai định dạng / ngoài giới hạn → null', () => {
+    for (const v of ['', '2026-10-26', '2026-10-26 10:00', '2026-00-10T10:00', '2026-10-26T24:00', '2026-10-26T10:60']) {
+      expect(parsePlantDateTime(v)).toBeNull();
+    }
   });
 });

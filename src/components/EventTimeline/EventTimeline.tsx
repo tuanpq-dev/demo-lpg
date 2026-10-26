@@ -10,6 +10,18 @@ export type TimelineEvent = {
   location?: string;
   /** Sự kiện đang diễn ra / gần nhất – vòng accent (mặc định: sự kiện đầu tiên). */
   active?: boolean;
+  /** variant="history": màu chấm (danger tô cả tiêu đề) – ảnh MT-00128 "Lịch sử xử lý". */
+  tone?: TimelineTone;
+};
+
+export type TimelineTone = 'success' | 'neutral' | 'info' | 'warning' | 'danger';
+
+const historyDot: Record<TimelineTone, string> = {
+  success: 'bg-success',
+  neutral: 'bg-neutral/70',
+  info: 'bg-info',
+  warning: 'bg-warning',
+  danger: 'bg-danger-strong',
 };
 
 export type EventTimelineProps = {
@@ -17,8 +29,9 @@ export type EventTimelineProps = {
   /**
    * - event:    chấm 12px, tiêu đề rồi giờ (Sự kiện gần đây 53:532)
    * - schedule: chấm 16px, giờ rồi tiêu đề 14px rồi vị trí kèm icon ghim (Lịch sắp tới 70:4895)
+   * - history:  chấm đặc 8px theo `tone`, tiêu đề trái + giờ phải trên một dòng (Lịch sử xử lý – ảnh MT-00128)
    */
-  variant?: 'event' | 'schedule';
+  variant?: 'event' | 'schedule' | 'history';
   /** Click vào một mục (render thành button). */
   onEventClick?: (id: string) => void;
   className?: string;
@@ -45,6 +58,7 @@ function PinIcon() {
  * Màu lấy từ ảnh chụp Figma (node chưa có design context).
  */
 export function EventTimeline({ events, variant = 'event', onEventClick, className }: EventTimelineProps) {
+  if (variant === 'history') return <HistoryTimeline events={events} className={className} />;
   const hasActive = events.some((e) => e.active !== undefined);
   const schedule = variant === 'schedule';
   return (
@@ -89,6 +103,24 @@ export function EventTimeline({ events, variant = 'event', onEventClick, classNa
                 </span>
               )}
             </Tag>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function HistoryTimeline({ events, className }: Pick<EventTimelineProps, 'events' | 'className'>) {
+  return (
+    <ol className={cn('relative flex flex-col gap-4', className)}>
+      <span aria-hidden="true" className="absolute bottom-2 left-[3.5px] top-2 w-px bg-line/60" />
+      {events.map((e) => {
+        const tone = e.tone ?? 'neutral';
+        return (
+          <li key={e.id} className="relative flex items-baseline gap-3">
+            <span aria-hidden="true" className={cn('relative top-[-1px] size-2 shrink-0 self-center rounded-full', historyDot[tone])} />
+            <span className={cn('min-w-0 flex-1 text-base', tone === 'danger' ? 'text-danger-text' : 'text-fg-secondary')}>{e.title}</span>
+            <time className="shrink-0 text-sm tabular-nums text-fg-secondary">{e.time}</time>
           </li>
         );
       })}

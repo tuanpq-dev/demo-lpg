@@ -43,6 +43,11 @@ export type DataTableProps<T> = {
   /** Nội dung cột "Thao tác" cuối hàng. Bỏ trống → không có cột. */
   rowActions?: (row: T) => ReactNode;
   actionsHeader?: ReactNode;
+  /**
+   * Bấm vào vùng trống của hàng (chuột) → mở bản ghi. Bỏ qua khi bấm vào nút/link/ô chọn trong hàng.
+   * Chỉ là tiện ích chuột: bàn phím dùng nút trong hàng (cột mã / "Xem chi tiết") – hàng không nhận focus.
+   */
+  onRowClick?: (row: T) => void;
 
   /** Hiển thị khi `rows` rỗng. */
   emptyState?: ReactNode;
@@ -81,6 +86,7 @@ export function DataTable<T>({
   selectedIds = [],
   onSelectionChange,
   rowActions,
+  onRowClick,
   actionsHeader = 'Thao tác',
   emptyState = 'Không có dữ liệu',
   density = 'comfortable',
@@ -169,8 +175,17 @@ export function DataTable<T>({
                   <tr
                     key={id}
                     aria-selected={selectable ? isSel : undefined}
+                    onClick={
+                      onRowClick
+                        ? (e) => {
+                            if ((e.target as HTMLElement).closest('button, a, input, label, select, textarea')) return;
+                            onRowClick(row);
+                          }
+                        : undefined
+                    }
                     className={cn(
                       rowH,
+                      onRowClick && 'cursor-pointer',
                       'border-b border-line/20 transition-colors last:border-b-0',
                       isSel ? 'bg-info/5' : 'hover:bg-surface-muted/10',
                     )}

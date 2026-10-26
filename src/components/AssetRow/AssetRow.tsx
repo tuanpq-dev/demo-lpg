@@ -24,7 +24,7 @@ export type AssetRowProps = AssetRowData & {
 const textTone: Record<AssetTone, string> = {
   success: 'text-success',
   warning: 'text-warning',
-  danger: 'text-danger-strong',
+  danger: 'text-danger-text',
   offline: 'text-fg-secondary',
 };
 
