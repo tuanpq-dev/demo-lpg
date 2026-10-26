@@ -5,7 +5,7 @@ import { InfoIcon, SignalLostIcon } from '../Icon';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
 
 export type KpiVariant = 'default' | 'danger' | 'with-progress' | 'compact';
-export type KpiTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+export type KpiTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'primary';
 export type KpiSubTone = KpiTone | 'muted' | 'warning-soft';
 
 export type KpiCardProps = {
@@ -63,6 +63,10 @@ export type KpiCardProps = {
    * (ảnh MT-00128). Dùng `label`, `value`, `unit`, `tone`, `signalLost`, `hint`; bỏ qua variant/icon/progress/sub.
    */
   size?: 'md' | 'sm';
+  /**
+   * sm: ô thông tin to hơn – nhãn 14px, giá trị 16px đậm, đệm 14px (5 ô đầu modal "Cập nhật tiến độ bảo trì"; ảnh thiết kế).
+   */
+  emphasis?: boolean;
   className?: string;
 };
 
@@ -72,6 +76,7 @@ const valueTone: Record<KpiTone, string> = {
   warning: 'text-warning',
   danger: 'text-danger-text',
   info: 'text-info',
+  primary: 'text-primary',
 };
 
 const subToneClass: Record<KpiSubTone, string> = {
@@ -102,12 +107,13 @@ export function KpiCard({
   signalLost,
   dense,
   size = 'md',
+  emphasis,
   className,
 }: KpiCardProps) {
   if (size === 'sm') {
     return (
-      <div className={cn('flex min-w-0 flex-col gap-0.5 rounded-md border border-line/30 px-2.5 py-2', className)}>
-        <span className="truncate text-sm text-fg-secondary" title={hint ? `${label} – ${hint}` : undefined}>
+      <div className={cn('flex min-w-0 flex-col rounded-md border border-line/30', emphasis ? 'gap-1 px-3.5 py-3' : 'gap-0.5 px-2.5 py-2', className)}>
+        <span className={cn('truncate text-fg-secondary', emphasis ? 'text-base' : 'text-sm')} title={hint ? `${label} – ${hint}` : undefined}>
           {label}
           {hint && <span className="sr-only">. {hint}</span>}
         </span>
@@ -117,7 +123,13 @@ export function KpiCard({
             Mất tín hiệu
           </span>
         ) : (
-          <span className={cn('truncate text-base tabular-nums', tone === 'neutral' ? 'text-fg' : cn('font-bold', valueTone[tone]))}>
+          <span
+            className={cn(
+              'truncate tabular-nums',
+              emphasis ? 'text-md font-semibold' : 'text-base',
+              tone === 'neutral' ? 'text-fg' : cn('font-bold', valueTone[tone]),
+            )}
+          >
             {value}
             {unit && (unit.startsWith('°') || unit === '%' ? unit : ` ${unit}`)}
           </span>

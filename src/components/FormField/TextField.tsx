@@ -38,6 +38,8 @@ export type TextareaProps = Common &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange' | 'className' | 'id'> & {
     /** Hiện bộ đếm "x/maxLength". */
     showCount?: boolean;
+    /** Kiểu nhãn (FormField `labelVariant`). */
+    labelVariant?: 'field' | 'section';
   };
 
 /** Ô nhập nhiều dòng có nhãn + lỗi + bộ đếm ký tự tuỳ chọn. */
@@ -52,10 +54,12 @@ export function Textarea({
   rows = 4,
   maxLength,
   showCount,
+  labelVariant,
   ...rest
 }: TextareaProps) {
   return (
     <FormField
+      labelVariant={labelVariant}
       label={label}
       required={required}
       hint={showCount && maxLength && !hint ? `${value.length}/${maxLength} ký tự` : hint}

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Badge, Button, FileIcon, FormField, Modal, Select, Textarea } from '@/components';
 import { DEPARTMENTS, PEOPLE, SHIFTS, type MaintenanceAttachment, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
 import type { AssignInput } from '@/features/maintenance/workflow';
@@ -127,7 +127,88 @@ export function CancelMaintenanceModal({
   );
 }
 
-/** "Xem" tệp khi chưa có backend: modal giữ chỗ, gắn nhãn "Dữ liệu mẫu". */
+/**
+ * "Nghiệm thu đạt" (chờ nghiệm thu → hoàn thành) – hộp xác nhận. Đường DUY NHẤT sang "Hoàn thành".
+ * Quyền: `maintenance:review` (kỹ sư / quản trị) – UX; TODO(backend) kiểm tra lại ở API.
+ */
+export function AcceptReviewModal({ record, onClose, onConfirm }: { record: MaintenanceRecord; onClose: () => void; onConfirm: () => Promise<void> }) {
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Nghiệm thu đạt ${record.code}?`}
+      description="Yêu cầu chuyển sang “Hoàn thành”, ghi ngày hoàn thành và lịch sử. Không thể chỉnh tiến độ sau khi nghiệm thu."
+      onSubmit={(e) => {
+        e.preventDefault();
+        void onConfirm();
+      }}
+      footer={
+        <>
+          <Button onClick={onClose}>Để sau</Button>
+          <Button type="submit" variant="primary">
+            Xác nhận nghiệm thu đạt
+          </Button>
+        </>
+      }
+    >
+      <p className="text-base text-fg-secondary">{record.title}</p>
+    </Modal>
+  );
+}
+
+/** "Yêu cầu làm lại" – lý do BẮT BUỘC; yêu cầu lùi về "Đang thực hiện", lý do ghi vào lịch sử. */
+export function ReworkModal({ record, onClose, onConfirm }: { record: MaintenanceRecord; onClose: () => void; onConfirm: (reason: string) => Promise<void> }) {
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+  const wrapRef = useRef<HTMLDivElement>(null);
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      dismissOnBackdrop={false}
+      title={`Yêu cầu làm lại ${record.code}`}
+      description="Yêu cầu quay về “Đang thực hiện” để người phụ trách xử lý tiếp. Lý do được ghi vào lịch sử xử lý."
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!reason.trim()) {
+          setError('Nhập lý do yêu cầu làm lại.');
+          wrapRef.current?.querySelector('textarea')?.focus();
+          return;
+        }
+        void onConfirm(reason);
+      }}
+      footer={
+        <>
+          <Button onClick={onClose}>Hủy</Button>
+          <Button type="submit" variant="primary">
+            Gửi yêu cầu làm lại
+          </Button>
+        </>
+      }
+    >
+      <div ref={wrapRef}>
+        <Textarea
+          label="Lý do làm lại"
+          required
+          value={reason}
+          onChange={(v) => {
+            setReason(v);
+            if (error) setError('');
+          }}
+          error={error || undefined}
+          maxLength={500}
+          showCount
+          rows={3}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * "Xem" tệp khi chưa có backend: modal giữ chỗ. Tệp mẫu → nhãn "Dữ liệu mẫu" + tải bản .txt; tệp tạm (`isTemp`, thêm ở
+ * modal cập nhật tiến độ) → nhãn "Chưa tải lên máy chủ", không có nội dung để tải.
+ */
 export function ViewAttachmentModal({
   attachment,
   meta,
@@ -140,6 +221,7 @@ export function ViewAttachmentModal({
   onDownload: () => void;
 }) {
   const descId = useId();
+  const temp = !!attachment.isTemp;
   return (
     <Modal
       open
@@ -148,7 +230,7 @@ export function ViewAttachmentModal({
       title={attachment.name}
       footer={
         <>
-          <Button onClick={onDownload}>Tải bản mẫu (.txt)</Button>
+          {!temp && <Button onClick={onDownload}>Tải bản mẫu (.txt)</Button>}
           <Button variant="primary" onClick={onClose}>
             Đóng
           </Button>
@@ -157,8 +239,8 @@ export function ViewAttachmentModal({
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <Badge variant="tag" tone="neutral">
-            Dữ liệu mẫu
+          <Badge variant="tag" tone={temp ? 'warning' : 'neutral'}>
+            {temp ? 'Chưa tải lên máy chủ' : 'Dữ liệu mẫu'}
           </Badge>
           <span className="text-sm text-fg-secondary">{meta}</span>
         </div>
@@ -166,7 +248,9 @@ export function ViewAttachmentModal({
           <div className="flex flex-col items-center gap-2">
             <FileIcon size={32} className="text-fg-secondary" />
             <p id={descId} className="max-w-[420px] text-base text-fg-secondary">
-              Chưa có tệp thật – bản demo chưa nối kho lưu trữ. Xem trước sẽ hiện ở đây khi có backend.
+              {temp
+                ? 'Tệp được thêm khi cập nhật tiến độ nhưng chưa tải lên máy chủ (bản demo chưa nối kho lưu trữ) – chỉ còn tên và dung lượng.'
+                : 'Chưa có tệp thật – bản demo chưa nối kho lưu trữ. Xem trước sẽ hiện ở đây khi có backend.'}
             </p>
           </div>
         </div>

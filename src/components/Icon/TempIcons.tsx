@@ -294,3 +294,37 @@ export const ClipboardCheckIcon = ({ size = 18, ...p }: P) => (
   </svg>
 );
 
+
+// ---- Modal "Cập nhật tiến độ bảo trì" (ảnh thiết kế, chưa có node Figma) ----
+
+/** Vòng tròn + tam giác phát – "Đang thực hiện". */
+export const PlayCircleIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 8.6v6.8l5.4-3.4Z" />
+  </svg>
+);
+
+/** Vòng tròn + hai vạch – "Tạm dừng". */
+export const PauseCircleIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 9v6M14 9v6" />
+  </svg>
+);
+
+/** Bát giác có dấu chấm than – "Gặp sự cố". */
+export const AlertOctagonIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3Z" />
+    <path d="M12 7.5v5.5M12 16.5h.01" />
+  </svg>
+);
+
+/** Khay + mũi tên lên – ô "Tải tệp lên". */
+export const UploadTrayIcon = ({ size = 22, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
+  </svg>
+);

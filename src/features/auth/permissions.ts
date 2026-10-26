@@ -17,6 +17,8 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const PERMISSIONS = {
   'alert:acknowledge': 'operator',
   'maintenance:write': 'operator',
+  // Nghiệm thu đạt / Yêu cầu làm lại (chi tiết bảo trì). TODO(backend): @Roles tương ứng khi có endpoint bảo trì.
+  'maintenance:review': 'engineer',
   'scene:write': 'engineer',
   'user:manage': 'admin',
 } as const satisfies Record<string, Role>;
