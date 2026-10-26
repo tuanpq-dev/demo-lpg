@@ -15,6 +15,7 @@ import { DEFAULT_ASSET_ID, assetPath } from './app/assetRoutes';
 const OverviewPage = lazy(() => import('./pages/overview/OverviewPage'));
 const AlertsPage = lazy(() => import('./pages/alerts/AlertsPage'));
 const MaintenancePage = lazy(() => import('./pages/maintenance/MaintenancePage'));
+const MaintenanceDetailPage = lazy(() => import('./pages/maintenance/MaintenanceDetailPage'));
 const PlaygroundPage = lazy(() => import('./pages/playground/PlaygroundPage'));
 const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 const AssetDetailPage = lazy(() => import('./pages/asset/AssetDetailPage'));
@@ -62,6 +63,8 @@ const router = createBrowserRouter([
           { path: '/operations/:assetId', element: <LegacyAssetRedirect /> },
           { path: '/alerts', element: <AlertsPage /> },
           { path: '/maintenance', element: <MaintenancePage /> },
+          // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
+          { path: '/maintenance/:id', element: <MaintenanceDetailPage /> },
           { path: '/reports', element: <SimplePage section="Báo cáo" title="Báo cáo" /> },
           { path: '/editor', element: <EditorRoute /> },
           { path: '/playground', element: <PlaygroundPage /> },

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { appNow } from './demoNow';
 
-/** Thời điểm hiện tại, cập nhật mỗi `intervalMs`. */
+/** Thời điểm hiện tại (`appNow` – có thể dời bằng `?now=` ở dev/demo), cập nhật mỗi `intervalMs`. */
 export function useNow(intervalMs = 1000) {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState(appNow);
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), intervalMs);
+    const id = window.setInterval(() => setNow(appNow()), intervalMs);
     return () => window.clearInterval(id);
   }, [intervalMs]);
   return now;

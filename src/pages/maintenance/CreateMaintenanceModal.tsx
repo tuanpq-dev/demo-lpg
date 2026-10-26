@@ -289,9 +289,10 @@ export function CreateMaintenanceModal({
       {/* Liên kết cảnh báo */}
       {alert && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-danger-strong/30 bg-danger-strong/10 px-4 py-3">
+          {/* eslint-disable-next-line no-restricted-syntax -- icon, không phải chữ */}
           <AlertTriangleIcon className="shrink-0 text-danger-strong" />
           <p className="min-w-0 flex-1 text-sm text-fg">
-            Liên kết với cảnh báo <span className="font-semibold text-danger-strong">{alert.code}</span> ({alert.message} tại{' '}
+            Liên kết với cảnh báo <span className="font-semibold text-danger-text">{alert.code}</span> ({alert.message} tại{' '}
             {alert.area} {alert.device})
           </p>
           <Badge variant="severity" value={alert.severity} size="md" />
@@ -520,7 +521,7 @@ export function CreateMaintenanceModal({
         </div>
         <div className="flex flex-col gap-0.5 border-l border-line/30 pl-8">
           <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Mức độ</dt>
-          <dd className={cn('text-sm font-semibold', form.priority === 'critical' ? 'text-danger' : form.priority === 'high' ? 'text-warning' : 'text-fg')}>
+          <dd className={cn('text-sm font-semibold', form.priority === 'critical' ? 'text-danger-text' : form.priority === 'high' ? 'text-warning' : 'text-fg')}>
             {form.priority === 'critical' && '! '}
             {PRIORITY_TEXT[form.priority]}
           </dd>

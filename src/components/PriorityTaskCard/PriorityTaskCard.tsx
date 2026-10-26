@@ -70,7 +70,7 @@ export function PriorityTaskCard({
             <Icon name={deviceIcon} />
             {device}
           </span>
-          <span className={cn('flex items-center gap-1', overdue ? 'text-danger' : 'text-fg-secondary')}>
+          <span className={cn('flex items-center gap-1', overdue ? 'text-danger-text' : 'text-fg-secondary')}>
             <Icon name={overdue ? 'mtDueOverdue' : 'mtDue'} />
             {dueLabel}
           </span>

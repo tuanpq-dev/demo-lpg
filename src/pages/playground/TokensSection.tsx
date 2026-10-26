@@ -51,6 +51,8 @@ const colorGroups: { title: string; tokens: { name: string }[] }[] = [
       { name: 'warning' },
       { name: 'warning-soft' },
       { name: 'danger' },
+      { name: 'danger-text' },
+      { name: 'danger-solid' },
       { name: 'danger-strong' },
       { name: 'neutral' },
     ],
@@ -81,6 +83,42 @@ const radiusClass: Record<(typeof radii)[number], string> = {
   full: 'rounded-full',
 };
 
+/** Mục đích 4 token đỏ – cùng nội dung với GUIDE.md mục 4g. */
+const RED_TOKENS = [
+  {
+    name: 'danger',
+    use: 'VIỀN, NỀN có độ mờ (bg-danger/10), CHẤM, ICON. Không dùng cho chữ.',
+    sample: (
+      <span className="inline-flex items-center gap-2 rounded-sm border border-danger bg-danger/10 px-2 py-1">
+        <span className="size-2 rounded-full bg-danger" />
+        <span className="text-sm text-danger-text">viền + nền /10 + chấm</span>
+      </span>
+    ),
+    contrast: 'Làm chữ chỉ 3.3–4.4:1 → không đạt AA.',
+  },
+  {
+    name: 'danger-text',
+    use: 'MỌI CHỮ đỏ cỡ thường (nhãn, mã cảnh báo, lỗi form, link "Xem chi tiết", số nhỏ).',
+    sample: <span className="text-base text-danger-text">Cần chỉ định kỹ thuật viên · ALT-00128 · 11.8 bar</span>,
+    contrast: '5.5:1 trên surface; ≥ 4.8:1 trên mọi nền tối/đỏ mờ đang dùng. Sáng hơn Figma ~20 % (đã duyệt).',
+  },
+  {
+    name: 'danger-strong',
+    use: 'Viền/vòng sáng cảnh báo, icon, và SỐ LỚN (≥ 24px thường / ≥ 18.66px đậm – số KPI, đồng hồ quá hạn).',
+    sample: (
+      // eslint-disable-next-line no-restricted-syntax -- mẫu chữ lớn 28px đậm
+      <span className="text-kpi font-bold text-danger-strong">12</span>
+    ),
+    contrast: '4.54:1 trên surface – chỉ đạt AA cho CHỮ LỚN (chuẩn 3:1).',
+  },
+  {
+    name: 'danger-solid',
+    use: 'NỀN ĐẶC có chữ trắng (ô chọn "Nghiêm trọng" của SegmentedControl field…).',
+    sample: <span className="inline-block rounded-md bg-danger-solid px-3 py-1 text-sm font-semibold text-fg">Nghiêm trọng</span>,
+    contrast: 'Chữ fg trên nền 5.07:1 (nền danger cũ 3.34:1).',
+  },
+] as const;
+
 export function TokensSection() {
   return (
     <div className="flex flex-col gap-8">
@@ -101,6 +139,28 @@ export function TokensSection() {
           </div>
         </div>
       ))}
+
+      <div>
+        <h3 className="mb-3 text-md font-semibold">Bốn token đỏ – dùng cho gì (để không dùng nhầm)</h3>
+        <p className="mb-3 text-sm text-fg-secondary">
+          ESLint chặn <code>text-danger</code> trần, <code>text-danger-strong</code> cho chữ thường và mọi độ mờ trên chữ đỏ (
+          <code>text-danger*/NN</code>). Tỉ lệ đo trên nền card <code>surface</code> #111827.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {RED_TOKENS.map((t) => (
+            <div key={t.name} className="flex flex-col gap-2 rounded-lg border border-line/30 bg-surface p-3">
+              <div className="flex items-center gap-2">
+                <span className="size-5 shrink-0 rounded-sm border border-line/30" style={{ backgroundColor: `rgb(var(--color-${t.name}))` }} />
+                <code className="text-sm text-fg">{t.name}</code>
+                <span className="font-mono text-xs text-fg-muted/70">{tokenHex(t.name)}</span>
+              </div>
+              <p className="text-sm text-fg-secondary">{t.use}</p>
+              <div className="rounded-md border border-line/30 bg-bg-app p-2">{t.sample}</div>
+              <p className="text-xs text-fg-secondary">{t.contrast}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div>
         <h3 className="mb-3 text-md font-semibold">Border alpha (line)</h3>

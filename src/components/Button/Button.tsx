@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'icon' | 'toolbar' | 'overlay' | 'link';
+export type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'subtle' | 'icon' | 'toolbar' | 'overlay' | 'link';
 export type ButtonSize = 'sm' | 'md';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -11,6 +11,8 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
    * - icon:    nút vuông chỉ có icon (70:4045 làm mới). `pressed` → nền accent/40 (70:2890)
    * - toolbar: nút icon trong thanh lọc, nền surface-muted, viền line, bo 6px, cao 34px (70:3028)
    * - overlay: nút icon vuông 32px nổi trên bản đồ, nền surface-raised/90, viền line/30 (53:310)
+   * - outline: viền + chữ primary, nền trong (ảnh MT-00128: "Tiếp nhận ngay", "Phân công người xử lý")
+   * - subtle:  nền chip xám, chữ fg, không viền màu (ảnh MT-00128: "Hủy yêu cầu", "Thêm ghi chú")
    * - link:    chữ accent, không nền (53:468 "Xem tất cả", "Chi tiết")
    */
   variant?: ButtonVariant;
@@ -30,6 +32,8 @@ const variantClass: Record<ButtonVariant, string> = {
   primary: 'rounded-lg bg-primary font-semibold text-fg-inverse backdrop-blur-[4px] hover:bg-primary/90',
   ghost:
     'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
+  outline: 'rounded-md border border-primary/80 bg-transparent font-semibold text-primary hover:bg-primary/10',
+  subtle: 'rounded-md border border-line/30 bg-surface-chip/70 text-fg hover:bg-surface-chip',
   icon: 'rounded-lg border border-accent/30 text-fg backdrop-blur-[4px] hover:border-accent/60',
   toolbar: 'rounded-md border border-line bg-surface-muted text-fg hover:border-accent/60',
   overlay: 'rounded-lg border border-line/30 bg-surface-raised/90 text-fg shadow-card backdrop-blur-[4px] hover:border-accent/60',
@@ -39,6 +43,8 @@ const variantClass: Record<ButtonVariant, string> = {
 const sizeClass: Record<Exclude<ButtonVariant, 'link'>, Record<ButtonSize, string>> = {
   primary: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm' },
   ghost: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm' },
+  outline: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm' },
+  subtle: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-xs' },
   // Figma 70:4045: 46×36 = padding 17 (16 + border) + icon 12
   icon: { md: 'h-9 px-4', sm: 'h-7 px-2.5' },
   toolbar: { md: 'h-[34px] px-[9px]', sm: 'h-7 px-1.5' },

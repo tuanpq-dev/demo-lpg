@@ -23,7 +23,7 @@ const toneClass: Record<TankLayerTone, string> = {
   neutral: 'text-fg',
   warning: 'text-warning',
   success: 'text-success',
-  danger: 'text-danger',
+  danger: 'text-danger-text',
   muted: 'text-fg-secondary',
 };
 

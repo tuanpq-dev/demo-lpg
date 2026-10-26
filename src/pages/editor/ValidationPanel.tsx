@@ -29,7 +29,7 @@ export function ValidationPanel({ issues, onPick }: { issues: EditorIssue[]; onP
                 <span
                   className={cn(
                     'inline-block rounded-xs px-1.5 py-0.5 text-2xs font-semibold',
-                    i.severity === 'error' ? 'bg-danger/15 text-danger-strong' : 'bg-warning/15 text-warning',
+                    i.severity === 'error' ? 'bg-danger/15 text-danger-text' : 'bg-warning/15 text-warning',
                   )}
                 >
                   {i.severity === 'error' ? 'Lỗi' : 'Cảnh báo'}

@@ -36,7 +36,7 @@ export type DonutGaugeProps = {
   className?: string;
 };
 
-const centerTone = { success: 'text-success', warning: 'text-warning', danger: 'text-danger' } as const;
+const centerTone = { success: 'text-success', warning: 'text-warning', danger: 'text-danger-text' } as const;
 
 const segColor: Record<DonutSegmentTone, ColorToken> = {
   success: 'success',

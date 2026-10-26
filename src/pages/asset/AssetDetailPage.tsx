@@ -69,7 +69,7 @@ const EVENT_TONE: Record<AssetEventType, { text: string; dot: string }> = {
   sensor: { text: 'text-info', dot: 'bg-info' },
   operation: { text: 'text-warning', dot: 'bg-warning' },
   system: { text: 'text-fg-secondary', dot: 'bg-fg-secondary' },
-  alert: { text: 'text-danger', dot: 'bg-danger' },
+  alert: { text: 'text-danger-text', dot: 'bg-danger' },
 };
 
 const statusTone = (s: string): StatusPillTone => (s === 'danger' ? 'danger' : s === 'warning' ? 'warning' : s === 'normal' ? 'success' : 'neutral');
@@ -471,7 +471,7 @@ function AssetDetailPage({ assetId }: { assetId: string }) {
       {created && (
         <div className="fixed bottom-6 right-6 z-40 flex items-center gap-3 rounded-lg border border-success/30 bg-surface-raised px-4 py-3 text-sm shadow-card">
           <span className="text-success">Đã tạo yêu cầu {created.code}.</span>
-          <Link to={`/maintenance?open=${encodeURIComponent(created.id)}`} className="text-accent underline hover:text-info">
+          <Link to={`/maintenance/${encodeURIComponent(created.id)}`} className="text-accent underline hover:text-info">
             Xem trong Bảo trì
           </Link>
           <Button variant="icon" size="sm" aria-label="Đóng thông báo" onClick={() => setCreated(null)} icon={<CloseIcon size={12} />} />

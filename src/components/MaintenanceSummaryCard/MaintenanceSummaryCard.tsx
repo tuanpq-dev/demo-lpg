@@ -44,7 +44,7 @@ export function MaintenanceSummaryCard({ title = 'Bảo trì', next, last, recor
         label="Lần bảo trì tiếp theo"
         value={next?.date ?? 'Chưa lên lịch'}
         note={next?.note}
-        noteTone={next?.overdue ? 'text-danger' : undefined}
+        noteTone={next?.overdue ? 'text-danger-text' : undefined}
       />
       <Row icon={<HistoryIcon size={16} />} label="Bảo trì gần nhất" value={last?.date ?? 'Chưa có'} note={last?.note} />
       {records && (

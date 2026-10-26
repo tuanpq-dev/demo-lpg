@@ -58,6 +58,11 @@ export type KpiCardProps = {
   progress?: { value: number; max?: number; tone?: ProgressTone };
   /** Link cuối thẻ (variant="danger": "Xem chi tiết"). */
   action?: { label: string; onClick?: () => void };
+  /**
+   * sm = ô số liệu nhỏ (nhãn 12–14px, số 14px, viền line/30, không bóng) – "Thiết bị liên quan" ở chi tiết bảo trì
+   * (ảnh MT-00128). Dùng `label`, `value`, `unit`, `tone`, `signalLost`, `hint`; bỏ qua variant/icon/progress/sub.
+   */
+  size?: 'md' | 'sm';
   className?: string;
 };
 
@@ -65,7 +70,7 @@ const valueTone: Record<KpiTone, string> = {
   neutral: 'text-fg',
   success: 'text-success',
   warning: 'text-warning',
-  danger: 'text-danger',
+  danger: 'text-danger-text',
   info: 'text-info',
 };
 
@@ -96,8 +101,30 @@ export function KpiCard({
   action,
   signalLost,
   dense,
+  size = 'md',
   className,
 }: KpiCardProps) {
+  if (size === 'sm') {
+    return (
+      <div className={cn('flex min-w-0 flex-col gap-0.5 rounded-md border border-line/30 px-2.5 py-2', className)}>
+        <span className="truncate text-sm text-fg-secondary" title={hint ? `${label} – ${hint}` : undefined}>
+          {label}
+          {hint && <span className="sr-only">. {hint}</span>}
+        </span>
+        {signalLost ? (
+          <span className="flex items-center gap-1 text-sm text-fg-secondary">
+            <SignalLostIcon size={14} className="shrink-0" />
+            Mất tín hiệu
+          </span>
+        ) : (
+          <span className={cn('truncate text-base tabular-nums', tone === 'neutral' ? 'text-fg' : cn('font-bold', valueTone[tone]))}>
+            {value}
+            {unit && (unit.startsWith('°') || unit === '%' ? unit : ` ${unit}`)}
+          </span>
+        )}
+      </div>
+    );
+  }
   const compact = variant === 'compact';
   const danger = variant === 'danger';
 
@@ -117,9 +144,12 @@ export function KpiCard({
     toneLabel ? valueTone[tone] : compact ? 'text-fg-secondary' : danger ? 'text-fg-muted' : 'text-fg-label',
   );
 
+  // Số KPI là "chữ lớn" WCAG (text-kpi / text-2xl = 28px đậm ≥ 18.66px đậm) → danger-strong được phép (4.54:1 ≥ 3:1).
+  // Kiểm bằng code: test KpiCard (cỡ chữ đi cùng danger-strong) + script e2e quét mọi chữ màu danger-strong trên các trang.
   const numberClass = cn(
     'font-bold',
     compact ? 'text-2xl' : 'text-kpi',
+    // eslint-disable-next-line no-restricted-syntax -- chữ lớn 28px đậm
     signalLost ? 'text-fg-disabled' : danger ? 'text-danger-strong' : valueTone[tone],
   );
 
@@ -150,7 +180,8 @@ export function KpiCard({
         <p className="flex items-baseline gap-1 whitespace-nowrap">
           <span className={numberClass}>{signalLost ? '—' : value}</span>
           {unit && !signalLost && (
-            <span className={cn('text-md', danger ? 'text-danger-strong/70' : 'text-fg-muted')}>{unit}</span>
+            // Đơn vị phụ ("Active"): thứ bậc bằng CỠ (16px thường so với số 28px đậm), không bằng độ mờ.
+            <span className={cn('text-md font-normal', danger ? 'text-danger-text' : 'text-fg-muted')}>{unit}</span>
           )}
         </p>
 
@@ -185,11 +216,13 @@ export function KpiCard({
             type="button"
             onClick={action.onClick}
             className={cn(
-              'self-start rounded-sm text-md hover:underline',
-              danger ? 'text-danger-strong/80' : 'text-accent',
+              // Link không chỉ dựa vào màu: luôn gạch chân + mũi tên (trước: chữ đỏ mờ 80 %, gạch chân khi hover).
+              'self-start rounded-sm text-md underline decoration-1 underline-offset-2 hover:decoration-2',
+              danger ? 'text-danger-text' : 'text-accent',
             )}
           >
             {action.label}
+            <span aria-hidden="true"> →</span>
           </button>
         )}
       </div>

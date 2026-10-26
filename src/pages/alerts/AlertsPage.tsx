@@ -50,7 +50,7 @@ const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
 const PAGE_SIZE = 5;
 
 const readingTone: Record<Severity, string> = {
-  critical: 'text-danger',
+  critical: 'text-danger-text',
   high: 'text-warning',
   medium: 'text-fg',
   low: 'text-fg',

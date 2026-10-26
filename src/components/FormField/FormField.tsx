@@ -22,7 +22,7 @@ export type FormFieldProps = {
 
 /**
  * Khung một trường form: nhãn (dấu * nếu bắt buộc) · control · gợi ý/lỗi.
- * ⚠ Figma chưa có form – style theo token: nhãn 12px text-fg-secondary, lỗi text-danger.
+ * ⚠ Figma chưa có form – style theo token: nhãn 12px text-fg-secondary, lỗi text-danger-text.
  * Dùng chung cho TextField, Textarea, DatePicker và Select variant="field".
  */
 export function FormField({ label, required, hint, error, children, className }: FormFieldProps) {
@@ -37,14 +37,14 @@ export function FormField({ label, required, hint, error, children, className }:
       <label id={labelId} htmlFor={id} className="text-sm font-semibold text-fg-secondary">
         {label}
         {required && (
-          <span className="ml-0.5 text-danger" aria-hidden="true">
+          <span className="ml-0.5 text-danger-text" aria-hidden="true">
             *
           </span>
         )}
       </label>
       {children({ id, labelId, describedBy, invalid: !!error })}
       {error ? (
-        <p id={errorId} className="text-sm text-danger">
+        <p id={errorId} className="text-sm text-danger-text">
           {error}
         </p>
       ) : (

@@ -200,3 +200,97 @@ export const InfoIcon = ({ size = 14, ...p }: P) => (
     <path d="M12 11v5.5M12 7.5h.01" />
   </svg>
 );
+
+// ---- Trang chi tiết yêu cầu bảo trì (ảnh MT-00128, chưa có node Figma) ----
+
+/** Đồng hồ bấm giờ – "Hạn chót xử lý". */
+export const TimerIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="13.5" r="7.5" />
+    <path d="M12 9.5v4l2.5 1.5M10 2.5h4M12 2.5V6" />
+  </svg>
+);
+
+/** Người + dấu cộng – "Phân công". */
+export const UserPlusIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6" />
+  </svg>
+);
+
+/** Người (ô avatar trống ở ô nhập ghi chú). */
+export const UserIcon = ({ size = 14, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20a7 7 0 0 1 14 0" />
+  </svg>
+);
+
+/** Danh sách có dấu tick – "Checklist công việc". */
+export const ListChecksIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m3 6 1.8 1.8L8 4.5M3 13l1.8 1.8L8 11.5M11.5 6.5H21M11.5 13.5H21M4 19.5h17" />
+  </svg>
+);
+
+/** 3 dòng kẻ – "Ghi chú kỹ thuật". */
+export const NotesIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4 6.5h16M4 12h16M4 17.5h10" />
+  </svg>
+);
+
+/** Ảnh (khung + núi + mặt trời) – tệp ảnh. */
+export const ImageIcon = ({ size = 22, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3.5" y="4" width="17" height="16" rx="2" />
+    <circle cx="9" cy="9.5" r="1.6" />
+    <path d="m4 18 5-5 3.5 3.5L15 14l5 4.5" />
+  </svg>
+);
+
+/** Sách mở – tài liệu hướng dẫn (manual). */
+export const BookIcon = ({ size = 22, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z" />
+    <path d="M12 6.5v13M6 8.5c1.5 0 2.8.3 4 .8M6 12c1.5 0 2.8.3 4 .8M14 9.3c1.2-.5 2.5-.8 4-.8M14 12.8c1.2-.5 2.5-.8 4-.8" />
+  </svg>
+);
+
+/** Mũi tên ra ngoài – link mở trang khác (Thiết bị "V-101 ↗"). */
+export const ExternalLinkIcon = ({ size = 12, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+  </svg>
+);
+
+/** Cánh tay robot – "Thiết bị liên quan". */
+export const DeviceArmIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4 20.5h9M6 20.5v-3h5v3M8.5 17.5 6.5 10.5l7-4M13.5 6.5 18 4" />
+    <circle cx="6.5" cy="10.5" r="1.6" />
+    <circle cx="13.5" cy="6.5" r="1.6" />
+    <path d="m18 4 2.5 2.5M18 4l-.5 3.5" />
+  </svg>
+);
+
+/** Bảng kẹp giấy + đồng hồ – trạng thái trống "Kết quả bảo trì". */
+export const ClipboardClockIcon = ({ size = 40, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M15 4.5h2.5a2 2 0 0 1 2 2V11M10.5 21H6.5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2H9" />
+    <rect x="9" y="3" width="6" height="3" rx="1" />
+    <circle cx="16.5" cy="17" r="4.5" />
+    <path d="M16.5 15v2.2l1.4.9" />
+  </svg>
+);
+
+/** Bảng kẹp giấy có dấu tick – "Kết quả bảo trì". */
+export const ClipboardCheckIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="4.5" y="4.5" width="15" height="16.5" rx="2" />
+    <rect x="9" y="3" width="6" height="3" rx="1" />
+    <path d="m9 13.5 2 2 4-4" />
+  </svg>
+);
+

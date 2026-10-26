@@ -22,7 +22,7 @@ export type StatusPillProps = {
 const toneClass: Record<StatusPillTone, string> = {
   success: 'border-success/20 bg-success/10 text-live',
   warning: 'border-warning/20 bg-warning/10 text-warning',
-  danger: 'border-danger-strong/30 bg-danger-strong/10 text-danger-strong',
+  danger: 'border-danger-strong/30 bg-danger-strong/10 text-danger-text',
   neutral: 'border-line/30 bg-surface-muted/20 text-fg-secondary',
 };
 

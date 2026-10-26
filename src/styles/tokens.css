@@ -45,8 +45,11 @@
   --color-live: 13 230 53;            /* #0DE635 – chấm "Dữ liệu trực tiếp" */
   --color-warning: 255 187 67;        /* #FFBB43 – mức "Cao" */
   --color-warning-soft: 255 217 161;  /* #FFD9A1 – chart bar, mã cảnh báo vàng nhạt */
-  --color-danger: 211 73 87;          /* #D34957 – mức "Nghiêm trọng" */
-  --color-danger-strong: 250 36 57;   /* #FA2439 – số liệu/viền cảnh báo đỏ */
+  --color-danger: 211 73 87;          /* #D34957 – mức "Nghiêm trọng": VIỀN, NỀN, CHẤM, ICON (không dùng cho chữ) */
+  --color-danger-text: 220 109 121;   /* #DC6D79 – CHỮ đỏ (= danger pha 20 % trắng, cùng sắc): ≥ 4.8:1 trên mọi nền tối đang dùng
+                                         (danger chỉ 3.3–4.4:1). Duyệt 26/10/2026 vì a11y – sáng hơn Figma ~20 %. */
+  --color-danger-strong: 250 36 57;   /* #FA2439 – viền/vòng sáng cảnh báo + SỐ LỚN (≥ 24px, hoặc ≥ 18.66px đậm – chuẩn "chữ lớn" WCAG, 4.5:1 đủ 3:1) */
+  --color-danger-solid: 180 32 52;    /* #B42034 – NỀN ĐẶC có chữ trắng (nút/ô chọn "Nghiêm trọng"): chữ fg 5.07:1. Duyệt 26/10/2026 */
   --color-neutral: 189 200 210;       /* #BDC8D2 – mức "Thấp"/offline */
 
   /* ---------- Cảnh 3D: scene-* ----------
@@ -88,4 +91,16 @@
   /* ---------- Layout ---------- */
   --header-height: 60px;
   --content-max-width: 1920px;      /* vùng nội dung trang tối đa (màn 2560) */
+
+  /* ---------- Layout chi tiết yêu cầu bảo trì (/maintenance/:id) ----------
+   * ⚠ ƯỚC LƯỢNG TỪ ẢNH MT-00128 (public/figma-ref/mt-detail-design.png, khung 1565, chưa có node Figma).
+   * Có số đo thật từ designer → sửa MỘT chỗ này. Dùng qua class `w-[var(--…)]` / style.
+   */
+  --mt-aside-width: 456px;          /* cột phải ở ≥ wide (ảnh: 1077–1533 px) – dưới wide co theo 3fr */
+  --mt-stepper-height: 94px;        /* thẻ stepper 5 bước */
+  --action-bar-height: 72px;        /* StickyActionBar (ảnh ~71 px) */
+  --checklist-row-height: 38px;     /* chiều cao tối thiểu một mục checklist */
+  --attachment-card-width: 235px;   /* thẻ tệp "Ảnh và tài liệu" (đo lại trên ảnh 1565: 235 × 110) */
+  --attachment-card-height: 110px;
+  --note-avatar-size: 28px;         /* avatar luồng ghi chú */
 }

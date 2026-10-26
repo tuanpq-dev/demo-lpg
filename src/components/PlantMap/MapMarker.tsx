@@ -48,7 +48,7 @@ const valueTone: Record<MapMarkerTone, string> = {
   success: 'text-success',
   accent: 'text-accent',
   warning: 'text-warning',
-  danger: 'text-danger-strong',
+  danger: 'text-danger-text',
   neutral: 'text-neutral',
 };
 

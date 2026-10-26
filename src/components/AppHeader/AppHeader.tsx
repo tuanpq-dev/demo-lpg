@@ -75,14 +75,18 @@ export function AppHeader({
             type="button"
             aria-label={notificationCount ? `Thông báo (${notificationCount} chưa đọc)` : 'Thông báo'}
             onClick={onNotificationsClick}
-            className="relative inline-flex rounded-md opacity-90 transition-opacity hover:opacity-100"
+            className="group relative inline-flex rounded-md"
           >
-            <Icon name="bell" box={24} />
+            {/* Chỉ icon mờ 90 % (Figma) – huy hiệu số không bị làm mờ theo (giữ tương phản chữ). */}
+            <span className="inline-flex opacity-90 transition-opacity group-hover:opacity-100">
+              <Icon name="bell" box={24} />
+            </span>
             {!!notificationCount && (
               <Badge
                 variant="count"
                 value={notificationCount}
                 tone="danger"
+                outlined
                 className="absolute -right-2 -top-1.5"
               />
             )}

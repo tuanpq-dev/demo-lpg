@@ -31,13 +31,15 @@ export type AlertItemProps = AlertItemData & {
 };
 
 const codeTone: Record<Severity, string> = {
-  critical: 'text-danger-strong/75',
+  critical: 'text-danger-text',
   high: 'text-warning-soft',
   medium: 'text-warning-soft',
   low: 'text-fg-secondary',
 };
 
+/** Màu ICON đầu dòng (currentColor) – icon giữ `danger` (luật chữ đỏ chỉ áp cho chữ). */
 const inlineTone: Record<AlertItemTone, string> = {
+  // eslint-disable-next-line no-restricted-syntax -- icon, không phải chữ
   danger: 'text-danger',
   warning: 'text-warning',
   success: 'text-success',

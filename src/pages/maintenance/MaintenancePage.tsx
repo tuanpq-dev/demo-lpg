@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
   Card,
   DataTable,
-  DetailDrawer,
   EventTimeline,
   FilterBar,
   Icon,
   PageHeader,
   PriorityTaskCard,
-  ProgressBar,
   Select,
   TableActionButton,
   Tabs,
@@ -26,10 +25,10 @@ import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useAlerts } from '@/data/alerts';
+import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
 import {
   MAINTENANCE_ASSIGNEES,
   MAINTENANCE_PARAMS,
-  NEXT_STEP_LABEL,
   PRIORITY_OPTIONS,
   RANGE_OPTIONS,
   STATUS_BADGE,
@@ -46,8 +45,6 @@ import {
   sortMaintenance,
   useMaintenance,
   setDeviceDirectory,
-  SHIFTS,
-  SOURCE_OPTIONS,
   type MaintenanceRecord,
   type MaintenanceTab,
   type MaintenanceType,
@@ -90,7 +87,9 @@ function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sect
 
 /** Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. */
 export default function MaintenancePage() {
-  const { status, data, error, refetch, create, assign, advance, complete } = useMaintenance();
+  const { status, data, error, refetch, create, assign, complete } = useMaintenance();
+  const navigate = useNavigate();
+  const location = useLocation();
   // Tạo/sửa yêu cầu: operator trở lên (UX – backend kiểm tra lại khi có API).
   const canWrite = useCan('maintenance:write');
   const alerts = useAlerts();
@@ -109,12 +108,15 @@ export default function MaintenancePage() {
     pageSize: PAGE_SIZE,
     tabKey: 'tab',
   });
-  const { values: f, setValues, selected, setSelected, openId, setOpenId, search, setExtra } = table;
+  const { values: f, setValues, selected, setSelected, search, setExtra } = table;
 
   const kpis = useMemo(() => deriveMaintenanceKpis(all, now), [all, now]);
   const priority = useMemo(() => derivePriorityTasks(all, now), [all, now]);
   const schedule = useMemo(() => deriveSchedule(all, now), [all, now]);
-  const open = openId ? all.find((r) => r.id === openId) ?? null : null;
+  // Chi tiết = trang riêng /maintenance/:id; mang theo URL danh sách hiện tại để "Quay lại" đúng bộ lọc.
+  const listUrl = `${location.pathname}${listSearchOnly(location.search)}`;
+  const openDetail = useCallback((id: string) => navigate(`/maintenance/${id}`, { state: { from: listUrl } }), [navigate, listUrl]);
+  useEffect(() => rememberListSearch(location.search), [location.search]);
 
   // ---- Modal tạo yêu cầu: điều khiển qua URL (?create=1&device=&from=) để /alerts mở sẵn được.
   const createOpen = canWrite && search.get('create') === '1';
@@ -156,7 +158,7 @@ export default function MaintenancePage() {
       cell: (r) => (
         <button
           type="button"
-          onClick={() => setOpenId(r.id)}
+          onClick={() => openDetail(r.id)}
           className={cn('rounded-sm text-base text-info hover:underline', r.status === 'done' && 'text-fg-secondary line-through')}
         >
           {r.code}
@@ -173,7 +175,7 @@ export default function MaintenancePage() {
       header: 'Hạn xử lý',
       width: 100,
       cell: (r) => (
-        <span className={cn('text-base', isOverdue(r, now) ? 'text-danger' : 'text-fg')} title={dueLabel(r, now)}>
+        <span className={cn('text-base', isOverdue(r, now) ? 'text-danger-text' : 'text-fg')} title={dueLabel(r, now)}>
           {formatDate(r.dueAt)}
         </span>
       ),
@@ -228,6 +230,13 @@ export default function MaintenancePage() {
     />
   );
 
+  // Link cũ `?open=<id>` (drawer đã bỏ) → trang chi tiết; bỏ `open` khỏi URL danh sách để "Quay lại" không mở lại.
+  const legacyOpen = search.get('open');
+  if (legacyOpen) {
+    const from = `/maintenance${listSearchOnly(location.search)}`;
+    return <Navigate to={`/maintenance/${encodeURIComponent(legacyOpen)}`} replace state={{ from }} />;
+  }
+
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
@@ -268,7 +277,7 @@ export default function MaintenancePage() {
         {priority.length ? (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             {priority.map((p) => (
-              <PriorityTaskCard key={p.id} {...p} onDetail={setOpenId} />
+              <PriorityTaskCard key={p.id} {...p} onDetail={openDetail} />
             ))}
           </div>
         ) : (
@@ -345,7 +354,8 @@ export default function MaintenancePage() {
                 selectable
                 selectedIds={selected}
                 onSelectionChange={setSelected}
-                rowActions={(r) => <TableActionButton label={`Xem chi tiết ${r.code}`} onClick={() => setOpenId(r.id)} />}
+                rowActions={(r) => <TableActionButton label={`Xem chi tiết ${r.code}`} onClick={() => openDetail(r.id)} />}
+                onRowClick={(r) => openDetail(r.id)}
                 emptyState="Không có yêu cầu bảo trì phù hợp."
                 pagination={{
                   page: table.page,
@@ -361,118 +371,13 @@ export default function MaintenancePage() {
           {/* Lịch sắp tới – 70:4889 */}
           <Card title="Lịch sắp tới" headerVariant="plain" action={{ label: 'Xem lịch', onClick: showSchedule }}>
             {schedule.length ? (
-              <EventTimeline variant="schedule" events={schedule} onEventClick={setOpenId} />
+              <EventTimeline variant="schedule" events={schedule} onEventClick={openDetail} />
             ) : (
               <p className="text-sm text-fg-muted/70">Không có lịch bảo trì định kỳ sắp tới.</p>
             )}
           </Card>
         </div>
       </section>
-
-      <DetailDrawer
-        open={open !== null}
-        onClose={() => setOpenId(null)}
-        contentKey={open?.status}
-        eyebrow="Chi tiết yêu cầu bảo trì"
-        title={open?.code}
-        badges={open && <Badge variant="severity" value={open.priority} size="md" />}
-        description={open?.title}
-        summary={
-          open && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="status" value={STATUS_BADGE[open.status]} withIcon>
-                  {STATUS_LABEL[open.status]}
-                </Badge>
-                {isOverdue(open, now) && <Badge variant="status" value="unacknowledged">{dueLabel(open, now)}</Badge>}
-              </div>
-              <div className="flex items-center gap-3">
-                <ProgressBar value={open.progress} tone={open.status === 'done' ? 'success' : 'info'} track="solid" label="Tiến độ" className="flex-1" />
-                <span className="text-sm tabular-nums text-fg-secondary">{open.progress}%</span>
-              </div>
-              {open.description && <p className="text-sm text-fg-secondary">{open.description}</p>}
-              {open.checklist?.length ? (
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-semibold text-fg-secondary">
-                    Checklist ({open.checklist.filter((c) => c.done).length}/{open.checklist.length})
-                  </span>
-                  <ol className="flex flex-col gap-1 text-sm text-fg">
-                    {open.checklist.map((c, i) => (
-                      <li key={c.id} className={cn('flex gap-2', c.done && 'text-fg-secondary line-through')}>
-                        <span className="tabular-nums text-fg-muted/65">{i + 1}.</span>
-                        {c.text}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ) : null}
-              {open.attachments?.length ? (
-                <p className="text-sm text-fg-secondary">Tệp đính kèm: {open.attachments.map((a) => a.name).join(', ')}</p>
-              ) : null}
-              {open.notes && <p className="text-sm text-fg-secondary">Ghi chú: {open.notes}</p>}
-            </div>
-          )
-        }
-        fields={
-          open
-            ? [
-                { label: 'Loại bảo trì', value: TYPE_LABEL[open.type] },
-                { label: 'Thiết bị', value: <span className="text-info">{open.device}</span> },
-                { label: 'Khu vực', value: open.area },
-                { label: 'Người phụ trách', value: open.assignee ?? '–' },
-                { label: 'Ngày tạo', value: formatDate(open.createdAt) },
-                {
-                  label: 'Hạn xử lý',
-                  value: (
-                    <span className={isOverdue(open, now) ? 'text-danger' : undefined}>
-                      {formatDate(open.dueAt)} · {dueLabel(open, now)}
-                    </span>
-                  ),
-                },
-                ...(open.startAt ? [{ label: 'Bắt đầu dự kiến', value: `${formatDate(open.startAt)} ${open.startAt.slice(11, 16)}` }] : []),
-                ...(open.department ? [{ label: 'Phòng ban', value: open.department }] : []),
-                ...(open.shift ? [{ label: 'Ca vận hành', value: SHIFTS.find((x) => x.value === open.shift)?.label ?? open.shift }] : []),
-                ...(open.collaborators?.length ? [{ label: 'Người phối hợp', value: open.collaborators.join(', ') }] : []),
-                ...(open.source ? [{ label: 'Nguồn tạo', value: SOURCE_OPTIONS.find((x) => x.value === open.source)?.label ?? open.source }] : []),
-                ...(open.referenceCode || open.sourceAlertId ? [{ label: 'Mã tham chiếu', value: open.referenceCode ?? open.sourceAlertId }] : []),
-                ...(open.requiresPermit ? [{ label: 'An toàn', value: <span className="text-warning">Cần Giấy phép Làm việc (PTW)</span> }] : []),
-              ]
-            : []
-        }
-        actions={
-          open &&
-          (open.status === 'done' ? (
-            <span className="text-sm text-success">Yêu cầu đã hoàn thành.</span>
-          ) : !canWrite ? null : (
-            <>
-              <Select
-                variant="button"
-                label={open.assignee ? 'Đổi người phụ trách' : 'Phân công'}
-                options={MAINTENANCE_ASSIGNEES.map((n) => ({ value: n, label: n }))}
-                value={null}
-                onChange={(n) => {
-                  if (!n) return;
-                  void assign([open.id], n);
-                  setNotice(`Đã phân công ${open.code} cho ${n}.`);
-                }}
-                side="top"
-                className="mr-auto"
-              />
-              {NEXT_STEP_LABEL[open.status] && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    void advance(open.id);
-                    setNotice(`${open.code}: ${NEXT_STEP_LABEL[open.status]}.`);
-                  }}
-                >
-                  {NEXT_STEP_LABEL[open.status]}
-                </Button>
-              )}
-            </>
-          ))
-        }
-      />
 
       {/* Mount khi mở để form khởi tạo đúng ngay lần vẽ đầu (không nháy giá trị cũ). */}
       {createOpen && (

@@ -24,7 +24,7 @@ const ALERTS = '/figma-ref/70-2809-alerts.png';
 const MAINT = '/figma-ref/70-3964-maintenance.png';
 
 const valueTone: Record<Severity, string> = {
-  critical: 'text-danger',
+  critical: 'text-danger-text',
   high: 'text-warning',
   medium: 'text-fg',
   low: 'text-fg',

@@ -1,14 +1,81 @@
+import { checklistProgress } from '@/features/maintenance/checklist';
+import { appNow } from '@/lib/demoNow';
 import { plantDayKey } from '@/lib/plantTime';
 /**
  * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
  * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này.
  */
 
-// Kiểu dữ liệu = hợp đồng API dùng chung FE/BE (packages/shared/src/maintenance.ts).
-import type { MaintenanceRequest, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId } from '@demo-lpg/shared/maintenance';
-export type { MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId };
+// Kiểu gốc = hợp đồng API dùng chung FE/BE (packages/shared/src/maintenance.ts). FE MỞ RỘNG thêm cho trang chi tiết
+// (/maintenance/:id) – KHÔNG sửa packages/shared; đưa vào hợp đồng API khi làm backend (CLAUDE.md mục 7).
+import type {
+  MaintenanceRequest,
+  MaintenanceSource,
+  MaintenanceStatus as ApiMaintenanceStatus,
+  MaintenanceType,
+  ShiftId,
+} from '@demo-lpg/shared/maintenance';
+export type { ApiMaintenanceStatus, MaintenanceSource, MaintenanceType, ShiftId };
 
-export type MaintenanceRecord = MaintenanceRequest;
+/** Trạng thái FE = 5 bước của API + `cancelled` (chỉ FE – chưa có trong hợp đồng). */
+export type MaintenanceStatus = ApiMaintenanceStatus | 'cancelled';
+
+/** Mục checklist. `done` giữ như hợp đồng; FE thêm giờ hoàn thành, "Không áp dụng", "Đang làm". */
+export type MaintenanceChecklistItem = {
+  id: string;
+  text: string;
+  done: boolean;
+  /** "yyyy-mm-ddTHH:mm" giờ nhà máy – lúc tick. */
+  doneAt?: string;
+  /** Không áp dụng: luôn khoá, không tính vào tiến độ. */
+  na?: boolean;
+  /** Đang làm (chip nổi bật). */
+  active?: boolean;
+};
+
+/** Ghi chú kỹ thuật (luồng). Hợp đồng API hiện chỉ có `notes: string` (ghi chú của form tạo). */
+export type MaintenanceNote = { id: string; author: string; /** "yyyy-mm-ddTHH:mm" giờ nhà máy */ at: string; text: string };
+
+export type MaintenanceAttachmentKind = 'image' | 'document' | 'manual';
+export type MaintenanceAttachment = { id: string; name: string; size: number; kind?: MaintenanceAttachmentKind };
+
+export type MaintenanceHistoryKind = 'create' | 'notify' | 'priority' | 'assign' | 'accept' | 'start' | 'review' | 'done' | 'cancel';
+export type MaintenanceHistoryEntry = {
+  id: string;
+  /** "yyyy-mm-ddTHH:mm" giờ nhà máy */
+  at: string;
+  kind: MaintenanceHistoryKind;
+  text: string;
+  actor?: string;
+};
+
+/**
+ * Bản ghi FE = hợp đồng API (bỏ `status/checklist/attachments/notes` để mở rộng) + trường của trang chi tiết.
+ * `deadline` = `dueAt`; `workflowStep` KHÔNG lưu – suy từ `status` (`features/maintenance/workflow.ts`).
+ */
+export type MaintenanceRecord = Omit<MaintenanceRequest, 'status' | 'checklist' | 'attachments' | 'notes'> & {
+  status: MaintenanceStatus;
+  /** Bước đã tới khi bị hủy – stepper dừng ở đó. */
+  cancelledFrom?: ApiMaintenanceStatus;
+  cancelReason?: string;
+  /**
+   * false = hạn chỉ có NGÀY (không có giờ riêng): `dueAt` vẫn lưu "…T23:59" cho khớp hợp đồng, hiển thị "Cuối ngày",
+   * quá hạn tính tại 23:59:59. Thiếu / true = `dueAt` là giờ thật. KHÔNG suy từ chuỗi "23:59".
+   */
+  dueHasTime?: boolean;
+  /** Người tạo (ảnh: "Nguyen Abc"). */
+  createdBy?: string;
+  /** "Mục tiêu xử lý". */
+  objectives?: string[];
+  checklist?: MaintenanceChecklistItem[];
+  attachments?: MaintenanceAttachment[];
+  /** Luồng ghi chú kỹ thuật (ghi chú của form tạo → ghi chú đầu tiên). */
+  notes?: MaintenanceNote[];
+  history?: MaintenanceHistoryEntry[];
+};
+
+/** Trường chỉ có ở FE – bỏ đi khi so với hợp đồng API (`contracts.test.ts`). */
+export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history'] as const;
 
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },
@@ -66,12 +133,13 @@ export const MAINTENANCE_ASSIGNEES = ['Nguyễn Văn A', 'Trần Bình', 'Lê Th
 const pad = (n: number) => String(n).padStart(2, '0');
 /** Ngày (local) cách hôm nay `offset` ngày → "yyyy-mm-dd". */
 /** "yyyy-mm-dd" cách hôm nay (giờ nhà máy – khớp cách tính quá hạn) `offset` ngày. */
-export function isoDay(offset = 0, base = new Date()) {
+export function isoDay(offset = 0, base = appNow()) {
   const [y, m, d] = plantDayKey(base).split('-').map(Number);
   const t = new Date(Date.UTC(y!, m! - 1, d! + offset));
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
-const at = (offset: number, time = '17:00') => `${isoDay(offset)}T${time}`;
+/** Không có `dueTime` → hạn chỉ có ngày (`dueHasTime: false`, lưu "T23:59", quá hạn sau 23:59:59). */
+const at = (offset: number, time = '23:59') => `${isoDay(offset)}T${time}`;
 
 type Seed = Omit<MaintenanceRecord, 'id' | 'createdAt' | 'dueAt' | 'completedAt'> & {
   created: number;
@@ -82,7 +150,9 @@ type Seed = Omit<MaintenanceRecord, 'id' | 'createdAt' | 'dueAt' | 'completedAt'
 
 const seeds: Seed[] = [
   // ---- Figma: 3 thẻ ưu tiên (70:4581–70:4621) + bảng (70:5363–70:5441); MT-00128/127 lấy nội dung theo thẻ ----
-  { code: 'MT-00128', title: 'Kiểm tra van an toàn PSV-101', device: 'V-101', area: 'Bồn chứa', type: 'inspection', priority: 'critical', status: 'pending', assignee: 'Nguyễn Văn A', created: -5, due: -2, progress: 0 },
+  // MT-00128 theo ảnh trang chi tiết (26/10/2026): chưa phân công, hạn 16:00 hôm nay, "Khu bồn LPG", tiêu đề V-101, từ ALT-00128.
+  // Figma danh sách ghi "PSV-101", "Quá hạn 2 ngày", người phụ trách Nguyễn Văn A – lệch, ghi CLAUDE.md mục 8.
+  { code: 'MT-00128', title: 'Kiểm tra van an toàn V-101', device: 'V-101', area: 'Khu bồn LPG', type: 'inspection', priority: 'critical', status: 'pending', assignee: null, created: 0, due: 0, dueTime: '16:00', progress: 0, sourceAlertId: 'ALT-00128', source: 'alert', department: 'Bảo trì Cơ khí', shift: 'shift-1' },
   { code: 'MT-00127', title: 'Kiểm tra cảm biến gas GS-01', device: 'GS-01', area: 'Khu nạp xuất', type: 'inspection', priority: 'high', status: 'pending', assignee: 'Trần Bình', created: -2, due: 0, progress: 0 },
   { code: 'MT-00126', title: 'Bảo dưỡng máy hóa hơi E-101A', device: 'E-101A', area: 'Trạm hóa hơi', type: 'periodic', priority: 'high', status: 'assigned', assignee: 'Lê Thị C', created: -6, due: 1, dueTime: '16:00', progress: 0 },
   { code: 'MT-00125', title: 'Cảnh báo rò rỉ Gas nhẹ', device: 'P-203', area: 'Khu bơm', type: 'incident', priority: 'medium', status: 'in-progress', assignee: 'Trần Bình', created: -4, due: 0, progress: 60 },
@@ -95,7 +165,8 @@ const seeds: Seed[] = [
   { code: 'MT-00122', title: 'Kiểm tra rung động bơm P-101A', device: 'P-101A', area: 'Khu bơm', type: 'inspection', priority: 'medium', status: 'pending', assignee: null, created: -1, due: 3, progress: 0 },
   { code: 'MT-00121', title: 'Hiệu chuẩn đồng hồ lưu lượng FT-101', device: 'FT-101', area: 'Tuyến chính', type: 'periodic', priority: 'low', status: 'pending', assignee: null, created: 0, due: 6, progress: 0 },
   { code: 'MT-00119', title: 'Thay gioăng mặt bích tuyến xuất', device: 'L-201', area: 'Tuyến chính', type: 'incident', priority: 'medium', status: 'in-progress', assignee: 'Lê Thị C', created: -8, due: -1, progress: 45 },
-  { code: 'MT-00118', title: 'Vệ sinh bộ lọc F-202', device: 'F-202', area: 'Khu Lọc', type: 'periodic', priority: 'low', status: 'in-progress', assignee: 'Phạm Văn D', created: -6, due: 2, progress: 30 },
+  // Hạn −1 (trước: +2) để KPI "Quá hạn" giữ 04 sau khi MT-00128 hết quá hạn.
+  { code: 'MT-00118', title: 'Vệ sinh bộ lọc F-202', device: 'F-202', area: 'Khu Lọc', type: 'periodic', priority: 'low', status: 'in-progress', assignee: 'Phạm Văn D', created: -6, due: -1, progress: 30 },
   { code: 'MT-00117', title: 'Kiểm tra mức bồn V-102', device: 'V-102', area: 'Bồn chứa', type: 'inspection', priority: 'medium', status: 'in-progress', assignee: 'Nguyễn Văn A', created: -9, due: 4, progress: 70 },
   { code: 'MT-00116', title: 'Sửa cảm biến áp suất PT-102', device: 'PT-102', area: 'Bồn chứa', type: 'incident', priority: 'high', status: 'in-progress', assignee: 'Trần Bình', created: -10, due: 5, progress: 50 },
   { code: 'MT-00115', title: 'Bảo dưỡng máy hóa hơi E-101B', device: 'E-101B', area: 'Trạm hóa hơi', type: 'periodic', priority: 'medium', status: 'review', assignee: 'Lê Thị C', created: -12, due: -3, progress: 100 },
@@ -118,10 +189,57 @@ const seeds: Seed[] = [
   { code: 'MT-00100', title: 'Bảo dưỡng định kỳ bồn V-101', device: 'V-101', area: 'Bồn chứa', type: 'periodic', priority: 'medium', status: 'done', assignee: 'Nguyễn Văn A', created: -52, due: -45, completed: -46, progress: 100 },
 ];
 
-export const maintenanceRecords: MaintenanceRecord[] = seeds.map(({ created, due, dueTime, completed, ...s }) => ({
-  ...s,
-  id: s.code,
-  createdAt: isoDay(created),
-  dueAt: at(due, dueTime),
-  completedAt: completed === undefined ? null : isoDay(completed),
-}));
+const at2 = (time: string, offset = 0) => `${isoDay(offset)}T${time}`;
+
+/** Nội dung trang chi tiết (ảnh MT-00128). Giờ trong ngày theo ảnh; ngày = hôm nay (ảnh ghi 15/10/2023 – dữ liệu mẫu cũ). */
+const DETAILS: Record<string, () => Partial<MaintenanceRecord>> = {
+  'MT-00128': () => ({
+    createdBy: 'Nguyen Abc',
+    description:
+      'Cảnh báo ALT-00128 cho thấy áp suất tại bồn V-101 đang dao động bất thường quanh mức 11.8 bar (vượt ngưỡng cảnh báo 1). Yêu cầu khẩn cấp kiểm tra hoạt động của van an toàn PSV-101.',
+    objectives: [
+      'Đảm bảo van xả áp hoạt động đúng thiết kế, không bị kẹt cơ học.',
+      'Kiểm tra áp suất thực tế tại bồn V-101.',
+      'Kiểm tra cảm biến hành trình báo tín hiệu chính xác về DCS.',
+      'Kiểm tra hệ thống đường ống kết nối.',
+      'Kiểm tra hệ thống làm mát.',
+      'Xác định nguyên nhân dao động áp suất.',
+    ],
+    requiresPermit: true,
+    checklist: [
+      { id: 'c1', text: 'Chuẩn bị dụng cụ và giấy phép làm việc (PTW)', done: true, doneAt: at2('10:15') },
+      { id: 'c2', text: 'Kiểm tra trực quan tình trạng bên ngoài PSV-101', done: true, doneAt: at2('10:45') },
+      { id: 'c3', text: 'Sử dụng thiết bị dò siêu âm kiểm tra rò rỉ khí qua seat', done: false, active: true },
+      { id: 'c4', text: 'Kiểm tra cáp tín hiệu cảm biến hành trình ZSO/ZSC', done: false },
+      { id: 'c5', text: 'Vệ sinh bề mặt tiếp xúc và bu-lông mặt bích', done: false },
+      { id: 'c6', text: 'Ghi nhận thông số áp suất hiện tại lúc kiểm tra', done: false },
+      { id: 'c7', text: 'Trả lại mặt bằng, dọn dẹp và ký đóng PTW', done: false, na: true },
+    ],
+    notes: [{ id: 'n1', author: 'Nguyễn Văn A', at: at2('10:50'), text: 'Kiểm tra trực quan không thấy rò rỉ bên ngoài. Bắt đầu siêu âm.' }],
+    attachments: [
+      { id: 'f1', name: 'hien-truong-psv101.jpg', size: 2_480_000, kind: 'image' },
+      { id: 'f2', name: 'bao-cao-kiem-dinh.pdf', size: 860_000, kind: 'document' },
+      { id: 'f3', name: 'manual-psv101.pdf', size: 4_150_000, kind: 'manual' },
+    ],
+    history: [
+      { id: 'h1', at: at2('08:30'), kind: 'create', text: 'Tạo yêu cầu (Auto-Trigger)', actor: 'Hệ thống' },
+      { id: 'h2', at: at2('08:31'), kind: 'notify', text: 'Gửi thông báo đến bộ phận Bảo trì', actor: 'Hệ thống' },
+      { id: 'h3', at: at2('08:35'), kind: 'priority', text: 'Cập nhật mức ưu tiên: Nghiêm trọng', actor: 'Hệ thống' },
+    ],
+  }),
+};
+
+export const maintenanceRecords: MaintenanceRecord[] = seeds.map(({ created, due, dueTime, completed, ...s }) => {
+  const r: MaintenanceRecord = {
+    ...s,
+    id: s.code,
+    createdAt: isoDay(created),
+    dueAt: at(due, dueTime),
+    ...(dueTime ? {} : { dueHasTime: false }),
+    completedAt: completed === undefined ? null : isoDay(completed),
+    ...DETAILS[s.code]?.(),
+  };
+  // Tiến độ của bản ghi có checklist = tính từ checklist (bỏ mục Không áp dụng).
+  if (r.checklist?.length) r.progress = checklistProgress(r.checklist).percent;
+  return r;
+});
