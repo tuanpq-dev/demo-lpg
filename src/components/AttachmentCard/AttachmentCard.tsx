@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { Badge } from '../Badge';
 import { BookIcon, FileIcon, ImageIcon } from '../Icon';
 
 export type AttachmentKind = 'image' | 'document' | 'manual';
@@ -10,6 +11,10 @@ export type AttachmentCardProps = {
   kind?: AttachmentKind;
   /** Dòng phụ tuỳ chọn, vd "2,4 MB". */
   meta?: string;
+  /** Nhãn cảnh báo nhỏ dưới tên, vd "Chưa tải lên máy chủ" (tệp tạm khi chưa có backend). */
+  notice?: string;
+  /** Giãn hết ô lưới chứa (modal "Cập nhật tiến độ": 4 cột đều) thay vì rộng cố định `--attachment-card-width`. */
+  fluid?: boolean;
   onView?: (id: string) => void;
   onDownload?: (id: string) => void;
   className?: string;
@@ -39,18 +44,23 @@ function MiniButton({ label, onClick, children }: { label: string; onClick?: () 
  * Thẻ tệp đính kèm – "Ảnh và tài liệu" ảnh MT-00128 (kích thước `--attachment-card-width/height` – ước lượng; viền line/30, bo 4px): icon loại tệp
  * ở giữa trên, tên tệp, hai nút "Xem" / "Tải xuống" (tên truy cập kèm tên tệp).
  */
-export function AttachmentCard({ id, name, kind, meta, onView, onDownload, className }: AttachmentCardProps) {
+export function AttachmentCard({ id, name, kind, meta, notice, fluid, onView, onDownload, className }: AttachmentCardProps) {
   const Icon = ICONS[attachmentKind(name, kind)];
   return (
     <article
       aria-label={name}
-      className={cn('flex min-h-[var(--attachment-card-height)] w-[var(--attachment-card-width)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5', className)}
+      className={cn('flex min-h-[var(--attachment-card-height)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5', fluid ? 'w-full min-w-0' : 'w-[var(--attachment-card-width)]', className)}
     >
       <Icon size={24} className="text-fg-secondary" />
       <p className="w-full truncate text-center text-md text-fg-secondary" title={name}>
         {name}
       </p>
       {meta && <p className="-mt-1.5 text-xs text-fg-secondary/70">{meta}</p>}
+      {notice && (
+        <Badge variant="tag" tone="warning" className="-mt-1">
+          {notice}
+        </Badge>
+      )}
       <div className="flex w-full max-w-[176px] gap-2">
         <MiniButton label={`Xem ${name}`} onClick={onView ? () => onView(id) : undefined}>
           Xem

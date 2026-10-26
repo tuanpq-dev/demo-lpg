@@ -21,6 +21,8 @@ export type ModalProps = {
   footerStart?: ReactNode;
   /** Không đóng khi click nền (form đang nhập dở). */
   dismissOnBackdrop?: boolean;
+  /** Màu tiêu đề: primary = modal "Cập nhật tiến độ bảo trì" (ảnh thiết kế, tiêu đề cyan). */
+  titleTone?: 'default' | 'primary';
 };
 
 /**
@@ -41,6 +43,7 @@ export function Modal({
   dismissOnBackdrop = true,
   icon,
   footerStart,
+  titleTone = 'default',
 }: ModalProps) {
   const titleId = useId();
   const descId = useId();
@@ -86,7 +89,7 @@ export function Modal({
             </span>
           )}
           <div className="flex flex-col gap-1">
-            <h2 id={titleId} className="text-xl font-semibold text-fg">
+            <h2 id={titleId} className={cn('text-xl font-semibold', titleTone === 'primary' ? 'text-primary' : 'text-fg')}>
               {title}
             </h2>
             {description && (

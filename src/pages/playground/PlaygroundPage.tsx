@@ -8,6 +8,7 @@ import { LayoutSection } from './LayoutSection';
 import { MaintenanceDetailSection } from './MaintenanceDetailSection';
 import { NavigationSection } from './NavigationSection';
 import { PrimitivesSection } from './PrimitivesSection';
+import { ProgressUpdateSection } from './ProgressUpdateSection';
 import { SceneSection } from './SceneSection';
 import { TokensSection } from './TokensSection';
 
@@ -27,6 +28,10 @@ export default function PlaygroundPage() {
         <h1 className="text-3xl font-bold">Component Playground</h1>
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
+
+      <Section id="progress-update" title="12. Cập nhật tiến độ bảo trì (ảnh thiết kế): modal, StatusOptionCard, ProgressSlider, UploadTile, cờ Tạm dừng/Gặp sự cố">
+        <ProgressUpdateSection />
+      </Section>
 
       <Section id="maintenance-detail" title="11. Chi tiết yêu cầu bảo trì (ảnh MT-00128): stepper, checklist, ghi chú, tệp, hạn chót, phân công">
         <MaintenanceDetailSection />

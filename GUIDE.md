@@ -258,7 +258,7 @@ flowchart TD
 | 2 | `src/data/maintenance.ts` | `daysUntilDue`, `isOverdue`, `dueLabel`; `MAINTENANCE_PARAMS`, `matchMaintenance`, `sortMaintenance`; `derive*`; `createMaintenance`, `advanceMaintenance`; `useMaintenance()`; gợi ý AI mock `suggestForRequest`; nháp form |
 | 3 | `src/pages/maintenance/MaintenancePage.tsx` | KPI, việc ưu tiên, bảng 7 tab (gồm "Quá hạn"), lịch, mở modal theo URL; mã/nút "Xem chi tiết"/dòng/thẻ ưu tiên/lịch → `/maintenance/:id` (mục 4i). `?open=<id>` cũ → chuyển hướng (drawer đã bỏ) |
 | 4 | `src/pages/maintenance/CreateMaintenanceModal.tsx` | Form tạo yêu cầu: `blank()` / `fromAlert()` khởi tạo, `validate()`, lưu nháp |
-| 5 | `src/features/maintenance/*` | Thuần, có test: `workflow.ts` (bước, không nhảy bước, hủy, phân công, ghi chú, lịch sử) · `checklist.ts` (tiến độ bỏ mục N/A, khoá theo trạng thái) · `deadline.ts` (giờ hạn, đếm ngược) |
+| 5 | `src/features/maintenance/*` | Thuần, có test: `workflow.ts` (bước, không nhảy bước, hủy, phân công, ghi chú, lịch sử) · `checklist.ts` (tiến độ bỏ mục N/A, khoá theo trạng thái) · `deadline.ts` (giờ hạn, đếm ngược) · `progress.ts` (modal cập nhật tiến độ, nghiệm thu – mục 4j) |
 
 Quá hạn **không lưu** – tính mỗi lần:
 
@@ -271,6 +271,7 @@ export const isOverdue = (r: MaintenanceRecord, now = new Date()) =>
 |---|---|
 | Quy tắc quá hạn / nhãn hạn | `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
 | Các bước trạng thái | `NEXT_STATUS`, `NEXT_ACTION_LABEL`, `advanceRecord`, `cancelRecord` (`src/features/maintenance/workflow.ts`); nhãn `STATUS_LABEL` (`src/data/maintenance.ts`) |
+| Cập nhật tiến độ / tạm dừng / sự cố / nghiệm thu | `src/features/maintenance/progress.ts` (mục 4j) |
 | Quy tắc quá hạn / giờ hạn | `isPastDue`, `dueInstant`, `deadlineCountdown` (`src/features/maintenance/deadline.ts`); `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
 | Trường của form tạo | `MaintenanceRecord` (`src/mocks/maintenance.ts`), `NewMaintenanceInput` + `createMaintenance` (`src/data/maintenance.ts`), `CreateMaintenanceModal.tsx` |
 | Liên kết từ cảnh báo | `onCreateMaintenance` trong `AlertsPage.tsx`; đọc `from` trong `MaintenancePage.tsx` |
@@ -477,14 +478,55 @@ URL /maintenance/:id
 | Vùng | Component | Ghi chú |
 |---|---|---|
 | Header | `PageHeader` (breadcrumb "Bảo trì / Quản lý bảo trì / MT-…", nút "← Quay lại danh sách" – thêm ngoài Figma), `Badge` severity `chip` + icon · status md · tag md "Bảo trì khẩn cấp" (= ưu tiên Nghiêm trọng) – cùng cỡ 14px thường | "Quản lý bảo trì" và nút quay lại → URL danh sách cũ: `location.state.from` → `sessionStorage` (`rememberListSearch`, bỏ `open/create/device/from`) → `/maintenance` |
-| Dưới header | `WorkflowStepper` | Bước xong = ✓ + primary; `aria-current="step"` ở bước đang chờ; hủy → dừng ở bước đã tới, không còn bước chờ |
+| Dưới header | `WorkflowStepper` | Bước xong = ✓ + primary; `aria-current="step"` ở bước đang chờ; hủy → dừng ở bước đã tới, không còn bước chờ; tạm dừng / gặp sự cố → vẫn bước 3, nhãn phụ dưới "Đang thực hiện" (`note`) |
 | Trái (7fr) | `InfoGrid` · mô tả + mục tiêu · `Checklist` · `NotesThread` · `AttachmentCard` · `EventTimeline variant="history"` · kết quả | Checklist chỉ tick khi assigned/in-progress; pending khoá + gợi ý "Tiếp nhận yêu cầu trước…"; review/done/cancelled chỉ đọc; N/A luôn khoá. Xem tệp = modal giữ chỗ "Dữ liệu mẫu"; Tải xuống = Blob `<tên>-mau.txt` (revokeObjectURL) |
 | Phải (3fr; ≥ wide = `--mt-aside-width`) | `DeadlineCountdownCard` · `AssigneeCard` (+ modal phân công tối giản) · `AlertCard variant="compact"` · `KpiCard size="sm"` | Đồng hồ: số lớn `aria-hidden`, câu theo phút trong `role="timer"`, báo một lần khi chuyển quá hạn. Thiết bị: chấm theo tag xấu nhất |
-| Đáy | `StickyActionBar` | "Hủy yêu cầu" (hộp xác nhận + lý do, ghi lịch sử) · nút bước kế tiếp. Ẩn khi done/cancelled hoặc không có quyền `maintenance:write`. Chèn đệm + `scroll-padding-bottom` → Tab không bị che |
+| Đáy | `StickyActionBar` | "Hủy yêu cầu" (hộp xác nhận + lý do, ghi lịch sử) · theo trạng thái: Chờ tiếp nhận → "Tiếp nhận ngay"; Đã phân công / Đang thực hiện → **"Cập nhật tiến độ"** (modal – mục 4j); Chờ nghiệm thu → "Yêu cầu làm lại" + "Nghiệm thu đạt" (chỉ `maintenance:review`). Ẩn khi done/cancelled hoặc không có quyền `maintenance:write`. Chèn đệm + `scroll-padding-bottom` → Tab không bị che |
 
 - Dưới `xl` (1280): xếp một cột theo thứ tự **Hạn chót → cột trái → Phân công/Cảnh báo/Thiết bị**. Làm bằng thứ tự DOM + đặt ô lưới ở ≥ xl (Hạn chót cột phải hàng 1, cột trái trải 2 hàng), KHÔNG dùng CSS `order` → thứ tự Tab luôn khớp thứ tự nhìn thấy (ô hạn chót không có phần tử nhận focus).
 - Người thao tác (`actor`) = `useAuth().user.name`, không có → `'Admin'`. Quyền chi tiết theo vai trò: TODO khi có backend.
 - Thêm loại lịch sử: `MaintenanceHistoryKind` (`src/mocks/maintenance.ts`) + màu `HISTORY_TONE` (`src/data/maintenanceDetail.ts`).
+- InfoGrid thêm "Tiến độ báo cáo", "Checklist x/y" và (khi có cờ) "Lý do tạm dừng" / "Sự cố đang gặp". Khối Checklist có `id="checklist"` (`tabIndex=-1`): URL `#checklist` → cuộn + focus.
+
+### 4j. Cập nhật tiến độ + nghiệm thu (modal "Cập nhật tiến độ bảo trì")
+
+Theo ảnh `public/figma-ref/mt-progress-modal-design.png` (chưa có node; số đo ước lượng, lệch ghi `CLAUDE.md` mục 8).
+
+```
+Danh sách: badge trạng thái (Đã phân công / Đang thực hiện) → ?progress=<id>      ┐
+Chi tiết: thanh dính đáy "Cập nhật tiến độ" → state dialog='progress'              ┘→ ProgressUpdateModal (src/pages/maintenance)
+  ├─ nháp: loadProgressDraft(id) (sessionStorage, try/catch) – khởi tạo state
+  ├─ Cập nhật tiến độ → validateProgressUpdate → onSubmit(input) → useMaintenance().updateProgress
+  │                       → applyProgressUpdate (features/maintenance/progress.ts) → clearProgressDraft
+  ├─ Lưu nháp → saveProgressDraft (KHÔNG đổi bản ghi) → đóng
+  ├─ Hủy / Esc → đã sửa hoặc có nháp: hỏi ở chân modal → "Bỏ thay đổi" xoá nháp
+  └─ Mở checklist → (đang sửa: lưu nháp) → /maintenance/:id#checklist
+Chờ nghiệm thu: "Nghiệm thu đạt" (AcceptReviewModal → advance: review → done – đường DUY NHẤT sang done)
+                "Yêu cầu làm lại" (ReworkModal, lý do bắt buộc → reworkRecord: review → in-progress)
+Bảng: chọn nhiều → "Chuyển nghiệm thu" → sendToReview (submitForReview: chỉ in-progress; trả { moved, skipped })
+```
+
+| Ô trong modal | Bản ghi | Bắt buộc nội dung | Lịch sử (`kind`) |
+|---|---|---|---|
+| Đang thực hiện | `in-progress`, bỏ `hold` | không | `start` (từ Đã phân công) · `resume` (đang tạm dừng/sự cố) · `progress` |
+| Tạm dừng | `in-progress` + `hold { kind: 'paused', reason, at }` | lý do | `pause` |
+| Gặp sự cố | `in-progress` + `hold { kind: 'blocked', … }` | mô tả | `block` |
+| Hoàn thành | `review` (Chờ nghiệm thu) – khoá khi còn Đã phân công | nội dung đã làm | `review` |
+
+- **Tiến độ báo cáo** `reportedProgress` (0–100, bước 5, được giảm) tách khỏi `progress` (= checklist, bỏ N/A). Thiếu → `reportedProgressOf` lấy tiến độ checklist / `progress`. Thanh trượt mặc định = giá trị đó làm tròn bước 5 (checklist 33 % → 35 %, không tính là thay đổi).
+- **Một lần cập nhật = một dòng lịch sử** (vd "Tạm dừng – lý do: Chờ vật tư · 30% → 45% · đính kèm 1 tệp") + nội dung thành một ghi chú kỹ thuật. Không đổi gì → lỗi "Chưa có thay đổi nào để cập nhật".
+- **Tệp tải lên** (`UploadTile`, luật `UPLOAD_RULES`: jpg/jpeg/png/webp/pdf/docx/xlsx/txt, ≤ 10 MB, ≤ 5 tệp mỗi lần): object URL CHỈ để xem trước trong modal, revoke khi bỏ tệp / đóng modal. Bản ghi chỉ giữ `{ name, size, kind, isTemp: true }` → trang chi tiết hiện nhãn "Chưa tải lên máy chủ", "Xem" = modal giữ chỗ, không tải xuống. TODO(backend): upload thật.
+- **Hạn chót** đỏ khi quá hạn hoặc còn ≤ `NEAR_DUE_MS` (2 giờ) – `isNearOrPastDue` dùng `deadline.ts`.
+- **Quyền** (UX, backend kiểm lại): cập nhật tiến độ = `maintenance:write` (TODO: chỉ người được phân công); nghiệm thu = `maintenance:review` (kỹ sư/quản trị).
+- **Danh sách**: cờ dưới badge ("Tạm dừng" warning, "⚠ Gặp sự cố" danger); tab "Đang thực hiện" vẫn đếm cả hai (status không đổi). Cột "Tiến độ" = tiến độ báo cáo + "Checklist x/y". CSV thêm cột "Tiến độ báo cáo (%)", "Checklist".
+
+| Muốn sửa | Sửa ở |
+|---|---|
+| Ánh xạ ô → trạng thái, bắt buộc nội dung, câu lịch sử | `applyProgressUpdate`, `validateProgressUpdate`, `historyLine` (`progress.ts`) |
+| Ngưỡng "gần hạn" / bước thanh trượt / luật tệp | `NEAR_DUE_MS`, `PROGRESS_STEP`, `UPLOAD_RULES` (`progress.ts`) |
+| Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` |
+| Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenanceDetail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
+| Hộp Nghiệm thu đạt / Yêu cầu làm lại | `AcceptReviewModal`, `ReworkModal` (`MaintenanceDetailDialogs.tsx`) |
 
 ### 4g. Design system: tokens → primitives → nghiệp vụ
 
@@ -625,8 +667,8 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| Button | `src/components/Button/Button.tsx` | `variant` (primary/ghost/outline/subtle/icon/toolbar/overlay/link), `size`, `icon`, `pressed` | mọi trang | `#primitives`, `#maintenance-detail` |
-| Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count · tag – `tone` neutral/primary/muted, `size`), `value` | Cảnh báo, Bảo trì | `#primitives`, `#maintenance-detail` |
+| Button | `src/components/Button/Button.tsx` | `variant` (primary/ghost/outline/subtle/plain/icon/toolbar/overlay/link), `size`, `icon`, `pressed` | mọi trang | `#primitives`, `#maintenance-detail` |
+| Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count · tag – `tone` neutral/primary/muted/warning/danger, `size`), `value` | Cảnh báo, Bảo trì | `#primitives`, `#maintenance-detail`, `#progress-update` |
 | StatusDot | `src/components/StatusDot/StatusDot.tsx` | `status`, `shape`, `pulse`, `label` | `src/app/HeaderActions.tsx` | `#primitives` |
 | StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone` (+ `neutral`), `size` (md 36px / sm badge), `pulse`, `children` | Tổng quan, Chi tiết tài sản | `#layout`, `#asset` |
 | Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerEnd` (phần tử tuỳ ý bên phải header), `headerVariant` (bar/plain/divided), `tone`, `padding`, `bodyClassName`; header tự xuống dòng khi hẹp | mọi trang | `#primitives` |
@@ -644,7 +686,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
 | Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel` | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |
-| FormField + TextField, Textarea, DatePicker | `src/components/FormField/FormField.tsx`, `src/components/FormField/TextField.tsx` | `label`, `value`, `onChange`, `required`, `hint`, `error` | form Bảo trì, Editor | `#forms` |
+| FormField + TextField, Textarea, DatePicker | `src/components/FormField/FormField.tsx`, `src/components/FormField/TextField.tsx` | `label`, `value`, `onChange`, `required`, `hint`, `error`, `labelVariant` (field/section – nhãn 18px như tiêu đề mục) | form Bảo trì, Editor | `#forms` |
 | NumberField, Vec3Field | `src/components/FormField/NumberField.tsx` | `value`, `onChange` (chốt khi Enter/blur), `min`, `max`, `integer`, `unit`, `onClear` | Editor | `#editor` |
 | Checkbox | `src/components/Checkbox/Checkbox.tsx` | `checked`, `onChange`, `indeterminate`, `label`, `showLabel` | trong DataTable, form Bảo trì, Editor | `#editor` |
 | ChecklistEditor | `src/components/ChecklistEditor/ChecklistEditor.tsx` | `items`, `onChange`, `templates` | form Bảo trì | `#forms` |
@@ -663,7 +705,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ) | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì | `#business`, `#asset`, `#maintenance-detail` |
+| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ; `emphasis` = ô thông tin modal tiến độ), `tone` thêm `primary` | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì | `#business`, `#asset`, `#maintenance-detail` |
 | SystemHealthCard | `src/components/SystemHealthCard/SystemHealthCard.tsx` | `value`, `caption`, `stats` | Tổng quan | `#business` |
 | AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick`, `layout` (stacked / inline = icon + nội dung + giờ một dòng), `tone` (danger/warning/success) | Tổng quan, Chi tiết tài sản | `#business`, `#asset` |
 | AlertCard | `src/components/AlertCard/AlertCard.tsx` | dữ liệu `AlertCardData` + `onClick(id)`; `variant="compact"` + `valueLabel` + `footer` (link) | Cảnh báo, Chi tiết bảo trì | `#business`, `#maintenance-detail` |
@@ -672,7 +714,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | EventTimeline, RecentEventsCard | `src/components/EventTimeline/EventTimeline.tsx` | `events` (+ `tone`), `variant` (event/schedule/history) | Bảo trì, Tổng quan, Chi tiết bảo trì | `#forms`, `#business`, `#maintenance-detail` |
 | DetailDrawer | `src/components/DetailDrawer/DetailDrawer.tsx` | `open`, `title`, `badges`, `fields`, `actions` | (Bảo trì đã chuyển sang trang riêng – còn dùng làm khung chung) | `#forms` |
 | AlertDetailDrawer | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | `alert`, `onAcknowledge`, `onComplete`, `onCreateMaintenance` | Cảnh báo | `#business` (mục Trạng thái) |
-| Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size` | form Bảo trì, Editor | `#forms` |
+| Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size`, `titleTone` (primary = modal tiến độ) | form Bảo trì, Editor | `#forms` |
 | PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`, `focus` (id object → thêm view bay tới, chọn sẵn); chung `onSelect`, `onRendererChange`, `notice` | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
 
 **GĐ4B – Chart & bảng**
@@ -700,14 +742,22 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| WorkflowStepper | `src/components/WorkflowStepper/WorkflowStepper.tsx` | `steps`, `completed`, `current` (aria-current="step"; null = không còn bước chờ), `label` | Chi tiết bảo trì | `#maintenance-detail` |
+| WorkflowStepper | `src/components/WorkflowStepper/WorkflowStepper.tsx` | `steps` (+ `note`/`noteTone` nhãn phụ), `completed`, `current` (aria-current="step"; null = không còn bước chờ), `label` | Chi tiết bảo trì | `#maintenance-detail` |
 | InfoGrid | `src/components/InfoGrid/InfoGrid.tsx` | `items` ({ id, label, value, tone default/danger/warning/link, newRow }) – `<dl>` 4/2/1 cột | Chi tiết bảo trì | `#maintenance-detail` |
 | Checklist | `src/components/Checklist/Checklist.tsx` | `items` ({ done, na, active, time }), `progress` (tính sẵn), `onToggle`, `lockHint`; `checklistSummary()` | Chi tiết bảo trì | `#maintenance-detail` |
 | NotesThread | `src/components/NotesThread/NotesThread.tsx` | `notes` ({ author, time đã định dạng, text }), `onAdd` (không có = chỉ đọc), Ctrl+Enter gửi | Chi tiết bảo trì | `#maintenance-detail` |
-| AttachmentCard | `src/components/AttachmentCard/AttachmentCard.tsx` | `id`, `name`, `kind` (image/document/manual – thiếu thì đoán theo đuôi), `meta`, `onView`, `onDownload` | Chi tiết bảo trì | `#maintenance-detail` |
+| AttachmentCard | `src/components/AttachmentCard/AttachmentCard.tsx` | `id`, `name`, `kind` (image/document/manual – thiếu thì đoán theo đuôi), `meta`, `notice` (nhãn nhỏ, vd "Chưa tải lên máy chủ"), `fluid` (giãn theo lưới), `onView`, `onDownload` | Chi tiết bảo trì, modal tiến độ | `#maintenance-detail`, `#progress-update` |
 | DeadlineCountdownCard | `src/components/DeadlineCountdownCard/DeadlineCountdownCard.tsx` | `countdown` ({ clock, overdue, speech } – null = đã đóng), `dueText`, `closedText` | Chi tiết bảo trì | `#maintenance-detail` |
 | AssigneeCard | `src/components/AssigneeCard/AssigneeCard.tsx` | `assignee` (null = chưa phân công), `department`, `shift`, `onAssign`, `assignDisabled` | Chi tiết bảo trì | `#maintenance-detail` |
 | StickyActionBar | `src/components/StickyActionBar/StickyActionBar.tsx` | `label` (tên vùng), `start`, `children` (nút); cao `--action-bar-height` | Chi tiết bảo trì | `#maintenance-detail` |
+
+**Cập nhật tiến độ bảo trì** (ảnh `public/figma-ref/mt-progress-modal-design.png`, chưa có node Figma)
+
+| Tên | File | Props chính | Dùng ở | Playground |
+|---|---|---|---|---|
+| StatusOptionCard / StatusOptionGroup | `src/components/StatusOptionCard/StatusOptionCard.tsx` | Group: `label`/`labelledBy`, `options` ({ id, label, icon, tone primary/warning/danger, disabled, disabledHint }), `value`, `onChange` – `role="radiogroup"`, mũi tên chuyển + chọn (roving tabindex) | Modal tiến độ | `#progress-update` |
+| ProgressSlider | `src/components/ProgressSlider/ProgressSlider.tsx` | `label`, `value`, `onChange`, `min`/`max`/`step` (mặc định 0/100/5), `unit`, `describedBy` – `role="slider"`, phím + kéo/bấm rãnh | Modal tiến độ | `#progress-update` |
+| UploadTile | `src/components/UploadTile/UploadTile.tsx` | `onFiles(File[])`, `accept`, `multiple`, `hint` (đọc kèm), `label` | Modal tiến độ | `#progress-update` |
 
 ---
 
@@ -763,7 +813,9 @@ Log sai khác Figma đã chuẩn hoá: `CLAUDE.md` mục 8. Việc chờ designe
 4. Component: `render` + `userEvent` + truy vấn theo vai trò/tên (`getByRole('tab', { name: … })`) – đồng thời kiểm tra a11y.
 5. `npm run test:run` và `npm run lint` phải sạch trước khi commit; hàm logic mới có test trong cùng commit.
 
-**Hiện có** (≈ 165 test FE + shared; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
+**Node cho test:** máy dev hiện có Node 26 – 10 test dùng router (`createMemoryRouter`) lỗi `AbortSignal` (undici ↔ jsdom), không phải lỗi mã. Chạy bằng Node 20 (bản Netlify): `npx -p node@20 node node_modules/vitest/vitest.mjs run` (hoặc `nvm use 20`).
+
+**Hiện có** (360 test FE + shared, 26/10/2026; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
 
 **Kiểm tra accessibility**
 - Tự động khi viết code: `npm run lint` (jsx-a11y: tên truy cập, nhãn ô nhập, không `tabindex` > 0, phần tử có click phải dùng được bằng phím).
@@ -811,7 +863,9 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | Ống trong Editor | Vẽ/sửa được (3D-4); điểm gập chỉ kéo ngang, chưa tự đi tránh thiết bị, nhánh T chỉ là đầu ống nằm trên ống khác | Kéo theo Y, auto-route, tee có cấu trúc |
 | Bơm/lọc nâng 0.3 m trong cảnh mẫu | `elevation: 0.3` (dữ liệu cũ để khớp cổng ống) – bảng Kiểm tra báo "lơ lửng" | Thêm bệ (asset/tham số) hoặc hạ xuống sàn + dời điểm ống |
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
-| Tệp đính kèm | Chỉ giữ tên/kích thước, không upload | API lưu tệp |
+| Tệp đính kèm | Chỉ giữ tên/kích thước, không upload; tệp thêm ở modal cập nhật tiến độ = `isTemp` ("Chưa tải lên máy chủ", URL xem trước bị thu hồi khi đóng modal) | API lưu tệp |
+| Cập nhật tiến độ / nghiệm thu | `reportedProgress`, `hold`, `attachments[].isTemp`, loại lịch sử mới – chỉ FE (`FE_ONLY_FIELDS`); quyền: tiến độ = `maintenance:write`, nghiệm thu = `maintenance:review` (chỉ ẩn ở FE) | Hợp đồng + endpoint (`CLAUDE.md` mục 7), chỉ người được phân công cập nhật |
+| Modal "Phân công người xử lý" | Hộp tối giản 3 Select | Đợt riêng theo ảnh `public/figma-ref/mt-assign-modal-design.png` + danh mục nhân sự |
 | Chi tiết yêu cầu bảo trì | Trường mở rộng chỉ ở FE (`cancelled`, `dueHasTime`, `createdBy`, `objectives`, luồng `notes[]`, `history[]`, checklist `doneAt/na/active`, `attachments[].kind` – `FE_ONLY_FIELDS`); "Xem" tệp = modal giữ chỗ, "Tải xuống" = `.txt` mẫu; avatar = chữ cái đầu; quyền chi tiết theo vai trò chưa làm | Đưa vào hợp đồng API (`docs/API.md` backend), lưu tệp, ảnh đại diện, quyền theo vai trò |
 | `?now=` / `VITE_FIXED_NOW` (dời / ghim giờ app) | `src/lib/demoNow.ts` – `?now=` chỉ dev hoặc `VITE_DEMO=true`; `VITE_FIXED_NOW` đặt lúc build, mặc định tắt | Không đặt `VITE_DEMO` / `VITE_FIXED_NOW` trên bản công khai |
 | KPI Tổng quan | Tồn kho / Mức bồn / Áp suất / Tiêu thụ lấy từ tag trực tiếp (mock); Cảnh báo, Sức khỏe và số chuông thông báo (2) vẫn tĩnh | API (hoặc derive từ dữ liệu thật) |

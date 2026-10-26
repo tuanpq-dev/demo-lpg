@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { assetPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
@@ -54,25 +54,35 @@ import {
   type MaintenanceRecord,
 } from '@/data/maintenance';
 import {
+  clearProgressDraft,
   formatFileSize,
   formatPlantDateTime,
   historyEvents,
   maintenanceListUrl,
-  mockAttachmentFile,
   relativeDayTime,
   resolveMaintenanceId,
   useRelatedDevice,
 } from '@/data/maintenanceDetail';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineCountdown, deadlineDayLabel } from '@/features/maintenance/deadline';
+import { HOLD_LABEL, canUpdateProgress, reportedProgressOf } from '@/features/maintenance/progress';
 import { NEXT_ACTION_LABEL, WORKFLOW_STEPS, canCancel, workflowPosition } from '@/features/maintenance/workflow';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
-import { AssignMaintenanceModal, CancelMaintenanceModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
+import { downloadSampleAttachment } from './attachments';
+import { AcceptReviewModal, AssignMaintenanceModal, CancelMaintenanceModal, ReworkModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
+import { ProgressUpdateModal } from './ProgressUpdateModal';
 
 const STEPS = WORKFLOW_STEPS.map((s) => ({ id: s.status, label: s.label }));
+/** Bước "Đang thực hiện" kèm nhãn phụ khi tạm dừng / gặp sự cố (vẫn bước 3). */
+function stepsFor(r: MaintenanceRecord) {
+  const hold = r.hold;
+  if (!hold) return STEPS;
+  const noteTone = hold.kind === 'blocked' ? ('danger' as const) : ('warning' as const);
+  return STEPS.map((s) => (s.id === 'in-progress' ? { ...s, note: HOLD_LABEL[hold.kind], noteTone } : s));
+}
 const PRIORITY_LABEL = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
 const FORM_TYPE_LABEL = Object.fromEntries(FORM_TYPE_OPTIONS.map((o) => [o.value, o.label]));
 /** "Ca 1 (06:00 - 14:00)" → "Ca 1" (ảnh chỉ ghi tên ca). */
@@ -198,16 +208,28 @@ function RelatedDeviceCard({ device }: { device: string }) {
  */
 function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; listUrl: string }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const now = useNow(60_000);
   const { user } = useAuth();
-  // TODO(backend): quyền chi tiết theo vai trò (vd chỉ người phụ trách tick checklist, chỉ trưởng ca nghiệm thu / hủy).
+  // TODO(backend): quyền chi tiết theo vai trò – chỉ người được phân công tick checklist / cập nhật tiến độ (cần ánh xạ
+  // user ↔ người phụ trách). Nghiệm thu: `maintenance:review` (kỹ sư / quản trị).
   const canWrite = useCan('maintenance:write');
+  const canReview = useCan('maintenance:review');
   const actor = user?.name || 'Admin';
-  const { advance, cancel, assign, toggleChecklist, addNote } = useMaintenance();
+  const { advance, cancel, assign, toggleChecklist, addNote, updateProgress, rework } = useMaintenance();
   const alerts = useAlerts();
   const alert = r.sourceAlertId ? alerts.data?.find((a) => a.id === r.sourceAlertId) : undefined;
 
-  const [dialog, setDialog] = useState<'assign' | 'cancel' | null>(null);
+  const [dialog, setDialog] = useState<'assign' | 'cancel' | 'progress' | 'accept' | 'rework' | null>(null);
+  const checklistRef = useRef<HTMLDivElement>(null);
+
+  // `#checklist` (nút "Mở checklist" của modal cập nhật tiến độ, từ danh sách hoặc trang này) → cuộn + focus khối Checklist.
+  useEffect(() => {
+    if (location.hash !== '#checklist') return;
+    const el = checklistRef.current;
+    el?.scrollIntoView?.({ block: 'start' });
+    el?.focus({ preventScroll: true });
+  }, [location.hash, location.key]);
   const [viewing, setViewing] = useState<MaintenanceAttachment | null>(null);
 
   const pos = workflowPosition(r);
@@ -216,6 +238,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
   const overdue = isOverdue(r, now);
   const created = r.history?.find((h) => h.kind === 'create')?.at;
   const nextLabel = NEXT_ACTION_LABEL[r.status];
+  const reported = reportedProgressOf(r);
   const closed = r.status === 'done' || r.status === 'cancelled';
   const assetId = resolveAssetId(r.device);
 
@@ -260,7 +283,18 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
       // Đỏ khi quá hạn hoặc đến hạn trong hôm nay (ảnh: "16:00 Hôm nay" đỏ).
       tone: !closed && (overdue || daysFromToday(r.dueAt, now) <= 0) ? 'danger' : 'default',
     },
-    { id: 'status', label: 'Trạng thái', value: STATUS_LABEL[r.status], tone: r.status === 'pending' ? 'warning' : 'default', newRow: true },
+    {
+      id: 'status',
+      label: 'Trạng thái',
+      value: r.hold ? `${STATUS_LABEL[r.status]} · ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status],
+      tone: r.hold?.kind === 'blocked' ? 'danger' : r.status === 'pending' || r.hold ? 'warning' : 'default',
+      newRow: true,
+    },
+    { id: 'reported', label: 'Tiến độ báo cáo', value: `${reported}%` },
+    { id: 'checklist', label: 'Checklist', value: r.checklist?.length ? `${progress.done}/${progress.total}` : 'Không có' },
+    ...(r.hold
+      ? [{ id: 'hold', label: r.hold.kind === 'blocked' ? 'Sự cố đang gặp' : 'Lý do tạm dừng', value: `${r.hold.reason} (${relativeDayTime(r.hold.at, now)})` }]
+      : []),
   ];
 
   const onAdvance = async () => {
@@ -269,16 +303,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
     announce(`${r.code}: ${label} – đã ghi lịch sử.`);
   };
 
-  const download = (a: MaintenanceAttachment) => {
-    const f = mockAttachmentFile(a, r.code);
-    const url = URL.createObjectURL(new Blob([f.content], { type: 'text/plain;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = f.fileName;
-    link.click();
-    URL.revokeObjectURL(url);
-    announce(`Đã tải ${f.fileName} (dữ liệu mẫu).`);
-  };
+  const download = (a: MaintenanceAttachment) => downloadSampleAttachment(a, r.code);
 
   const header = (
     <PageHeader
@@ -293,6 +318,11 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           {r.priority === 'critical' && (
             <Badge variant="tag" size="md">
               Bảo trì khẩn cấp
+            </Badge>
+          )}
+          {r.hold && (
+            <Badge variant="tag" size="md" tone={r.hold.kind === 'blocked' ? 'danger' : 'warning'}>
+              {HOLD_LABEL[r.hold.kind]}
             </Badge>
           )}
           {overdue && (
@@ -312,7 +342,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
 
   return (
     <Page pageHeader={header}>
-      <WorkflowStepper steps={STEPS} completed={pos.completed} current={pos.current} label={`Tiến trình xử lý ${r.code}`} className="min-h-[var(--mt-stepper-height)]" />
+      <WorkflowStepper steps={stepsFor(r)} completed={pos.completed} current={pos.current} label={`Tiến trình xử lý ${r.code}`} className="min-h-[var(--mt-stepper-height)]" />
 
       {/*
         Thứ tự DOM = thứ tự nhìn thấy ở màn hẹp (< xl): Hạn chót → cột trái → phần còn lại của cột phải (Tab khớp).
@@ -345,6 +375,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
             )}
           </Card>
 
+          <div ref={checklistRef} id="checklist" tabIndex={-1} className="scroll-mt-24 rounded-lg">
           <Card
             title="Checklist công việc"
             icon={<ListChecksIcon size={18} className="text-fg-secondary" />}
@@ -371,6 +402,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
               <p className="text-base text-fg-secondary">Yêu cầu chưa có checklist.</p>
             )}
           </Card>
+          </div>
 
           <Card title="Ghi chú kỹ thuật" icon={<NotesIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg">
             <NotesThread
@@ -380,7 +412,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           </Card>
 
           <Card title="Ảnh và tài liệu" icon={<FolderIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg">
-            {/* TODO(backend): tải tệp lên (FileDropzone) khi có API lưu trữ – hiện chỉ xem/tải bản mẫu. */}
+            {/* TODO(backend): tải tệp lên khi có API lưu trữ – hiện chỉ xem/tải bản mẫu; tệp thêm ở modal cập nhật tiến độ chỉ giữ tên/kích thước (isTemp). */}
             {r.attachments?.length ? (
               <div className="flex flex-wrap gap-3">
                 {r.attachments.map((a) => (
@@ -389,8 +421,9 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
                     id={a.id}
                     name={a.name}
                     kind={a.kind}
+                    notice={a.isTemp ? 'Chưa tải lên máy chủ' : undefined}
                     onView={() => setViewing(a)}
-                    onDownload={() => download(a)}
+                    onDownload={a.isTemp ? undefined : () => download(a)}
                   />
                 ))}
               </div>
@@ -462,13 +495,66 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
               Hủy yêu cầu
             </Button>
           )}
-          {nextLabel && (
+          {r.status === 'pending' && nextLabel && (
             <Button variant="outline" onClick={() => void onAdvance()}>
               {nextLabel}
-              {r.status === 'pending' && <SendIcon size={16} />}
+              <SendIcon size={16} />
             </Button>
           )}
+          {canUpdateProgress(r.status) && (
+            <Button variant="outline" onClick={() => setDialog('progress')}>
+              Cập nhật tiến độ
+            </Button>
+          )}
+          {r.status === 'review' && canReview && (
+            <>
+              <Button variant="subtle" onClick={() => setDialog('rework')}>
+                Yêu cầu làm lại
+              </Button>
+              <Button variant="outline" onClick={() => setDialog('accept')}>
+                Nghiệm thu đạt
+              </Button>
+            </>
+          )}
         </StickyActionBar>
+      )}
+
+      {dialog === 'progress' && (
+        <ProgressUpdateModal
+          record={r}
+          onClose={() => setDialog(null)}
+          onOpenChecklist={() => {
+            setDialog(null);
+            navigate({ hash: 'checklist' }, { replace: true, state: location.state });
+          }}
+          onSubmit={async (input) => {
+            await updateProgress(r.id, input, actor);
+            setDialog(null);
+            announce(`Đã cập nhật tiến độ ${r.code} – đã ghi lịch sử.`);
+          }}
+        />
+      )}
+      {dialog === 'accept' && (
+        <AcceptReviewModal
+          record={r}
+          onClose={() => setDialog(null)}
+          onConfirm={async () => {
+            await advance(r.id, actor);
+            setDialog(null);
+            announce(`${r.code}: nghiệm thu đạt – đã hoàn thành.`);
+          }}
+        />
+      )}
+      {dialog === 'rework' && (
+        <ReworkModal
+          record={r}
+          onClose={() => setDialog(null)}
+          onConfirm={async (reason) => {
+            await rework(r.id, reason, actor);
+            setDialog(null);
+            announce(`${r.code}: đã yêu cầu làm lại – quay về Đang thực hiện.`);
+          }}
+        />
       )}
 
       {/* Hộp thoại: chỉ mount khi mở (form khởi tạo đúng ngay lần vẽ đầu). */}
@@ -489,6 +575,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           onClose={() => setDialog(null)}
           onConfirm={async (reason) => {
             await cancel(r.id, reason, actor);
+            clearProgressDraft(r.id);
             setDialog(null);
             announce(`Đã hủy yêu cầu ${r.code}.`);
           }}

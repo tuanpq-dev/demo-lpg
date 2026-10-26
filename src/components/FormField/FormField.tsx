@@ -17,6 +17,8 @@ export type FormFieldProps = {
   error?: string;
   /** Render control với id/aria-describedby/invalid đã nối sẵn. */
   children: (p: FormFieldRenderProps) => ReactNode;
+  /** field = nhãn 12px (mặc định) · section = nhãn như tiêu đề mục 18px (modal "Cập nhật tiến độ": "Nội dung đã thực hiện"). */
+  labelVariant?: 'field' | 'section';
   className?: string;
 };
 
@@ -25,7 +27,7 @@ export type FormFieldProps = {
  * ⚠ Figma chưa có form – style theo token: nhãn 12px text-fg-secondary, lỗi text-danger-text.
  * Dùng chung cho TextField, Textarea, DatePicker và Select variant="field".
  */
-export function FormField({ label, required, hint, error, children, className }: FormFieldProps) {
+export function FormField({ label, required, hint, error, children, labelVariant = 'field', className }: FormFieldProps) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
@@ -33,8 +35,8 @@ export function FormField({ label, required, hint, error, children, className }:
   const describedBy = [errorId, hintId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      <label id={labelId} htmlFor={id} className="text-sm font-semibold text-fg-secondary">
+    <div className={cn('flex flex-col', labelVariant === 'section' ? 'gap-3' : 'gap-1.5', className)}>
+      <label id={labelId} htmlFor={id} className={cn('font-semibold text-fg-secondary', labelVariant === 'section' ? 'text-lg' : 'text-sm')}>
         {label}
         {required && (
           <span className="ml-0.5 text-danger-text" aria-hidden="true">

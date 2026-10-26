@@ -4,6 +4,7 @@
  */
 import type { TimelineEvent, TimelineTone } from '@/components';
 import { daysFromToday, plantDayKey } from '@/lib/plantTime';
+import type { WorkState } from '@/features/maintenance/progress';
 import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord } from '@/mocks/maintenance';
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
@@ -40,7 +41,12 @@ const HISTORY_TONE: Record<MaintenanceHistoryKind, TimelineTone> = {
   assign: 'info',
   accept: 'info',
   start: 'info',
+  progress: 'info',
+  pause: 'warning',
+  block: 'danger',
+  resume: 'success',
   review: 'warning',
+  rework: 'warning',
   done: 'success',
   cancel: 'danger',
 };
@@ -79,12 +85,50 @@ export function formatFileSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+// ---- Nháp modal "Cập nhật tiến độ" (sessionStorage theo mã yêu cầu; không đổi trạng thái bản ghi) ----
+
+/** Nháp chỉ giữ lựa chọn + tiến độ + nội dung; KHÔNG giữ tệp (object URL chết khi đóng modal). */
+export type ProgressDraft = { state: WorkState; progress: number; text: string; /** ISO */ savedAt: string };
+
+const progressDraftKey = (id: string) => `demo-lpg:mt-progress-draft:${id}`;
+const WORK_STATES: readonly WorkState[] = ['working', 'paused', 'blocked', 'completed'];
+
+export function saveProgressDraft(id: string, draft: ProgressDraft): boolean {
+  try {
+    sessionStorage.setItem(progressDraftKey(id), JSON.stringify(draft));
+    return true;
+  } catch {
+    return false; // bộ nhớ không khả dụng (chế độ riêng tư, đầy) – modal báo không lưu được
+  }
+}
+
+/** Nháp đã lưu; hỏng / sai dạng / không đọc được → null. */
+export function loadProgressDraft(id: string): ProgressDraft | null {
+  try {
+    const raw = sessionStorage.getItem(progressDraftKey(id));
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Partial<ProgressDraft>;
+    if (!WORK_STATES.includes(d.state as WorkState) || typeof d.progress !== 'number' || typeof d.text !== 'string') return null;
+    return { state: d.state as WorkState, progress: d.progress, text: d.text, savedAt: typeof d.savedAt === 'string' ? d.savedAt : '' };
+  } catch {
+    return null;
+  }
+}
+
+export function clearProgressDraft(id: string) {
+  try {
+    sessionStorage.removeItem(progressDraftKey(id));
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---- Quay lại danh sách đúng bộ lọc cũ ----
 
 const LIST_SEARCH_KEY = 'demo-lpg:maintenance-list-search';
 
 /** Tham số chỉ dùng một lần (mở drawer cũ / modal tạo) – không lưu vào URL "quay lại". */
-const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from'];
+const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from', 'progress'];
 
 /** Query danh sách bỏ tham số một lần: `?tab=overdue&open=MT-1` → `?tab=overdue`; không còn gì → "". */
 export function listSearchOnly(search: string): string {

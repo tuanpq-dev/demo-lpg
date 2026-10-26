@@ -37,9 +37,33 @@ export type MaintenanceChecklistItem = {
 export type MaintenanceNote = { id: string; author: string; /** "yyyy-mm-ddTHH:mm" giờ nhà máy */ at: string; text: string };
 
 export type MaintenanceAttachmentKind = 'image' | 'document' | 'manual';
-export type MaintenanceAttachment = { id: string; name: string; size: number; kind?: MaintenanceAttachmentKind };
+/**
+ * `isTemp` = tệp thêm trong modal "Cập nhật tiến độ" khi CHƯA có backend: chỉ lưu tên/kích thước/loại – KHÔNG lưu object URL
+ * (URL bị revoke khi đóng modal → link chết). Trang chi tiết hiện nhãn "Chưa tải lên máy chủ". TODO(backend): upload thật.
+ */
+export type MaintenanceAttachment = { id: string; name: string; size: number; kind?: MaintenanceAttachmentKind; isTemp?: boolean };
 
-export type MaintenanceHistoryKind = 'create' | 'notify' | 'priority' | 'assign' | 'accept' | 'start' | 'review' | 'done' | 'cancel';
+export type MaintenanceHistoryKind =
+  | 'create'
+  | 'notify'
+  | 'priority'
+  | 'assign'
+  | 'accept'
+  | 'start'
+  | 'progress'
+  | 'pause'
+  | 'block'
+  | 'resume'
+  | 'review'
+  | 'rework'
+  | 'done'
+  | 'cancel';
+
+/**
+ * Cờ phụ khi đang thực hiện (status vẫn `in-progress`, stepper vẫn bước 3): tạm dừng (lý do bắt buộc) / gặp sự cố (mô tả bắt buộc).
+ * Chỉ FE – đưa vào hợp đồng API khi làm backend.
+ */
+export type MaintenanceHold = { kind: 'paused' | 'blocked'; reason: string; /** "yyyy-mm-ddTHH:mm" giờ nhà máy */ at: string };
 export type MaintenanceHistoryEntry = {
   id: string;
   /** "yyyy-mm-ddTHH:mm" giờ nhà máy */
@@ -59,6 +83,13 @@ export type MaintenanceRecord = Omit<MaintenanceRequest, 'status' | 'checklist' 
   cancelledFrom?: ApiMaintenanceStatus;
   cancelReason?: string;
   /**
+   * Tiến độ người thực hiện BÁO CÁO (0–100, bước 5) – modal "Cập nhật tiến độ". Khác `progress` (= tiến độ checklist, bỏ mục N/A).
+   * Thiếu → coi như bằng `progress`. Được phép giảm.
+   */
+  reportedProgress?: number;
+  /** Tạm dừng / gặp sự cố (chỉ khi `in-progress`). */
+  hold?: MaintenanceHold;
+  /**
    * false = hạn chỉ có NGÀY (không có giờ riêng): `dueAt` vẫn lưu "…T23:59" cho khớp hợp đồng, hiển thị "Cuối ngày",
    * quá hạn tính tại 23:59:59. Thiếu / true = `dueAt` là giờ thật. KHÔNG suy từ chuỗi "23:59".
    */
@@ -75,7 +106,7 @@ export type MaintenanceRecord = Omit<MaintenanceRequest, 'status' | 'checklist' 
 };
 
 /** Trường chỉ có ở FE – bỏ đi khi so với hợp đồng API (`contracts.test.ts`). */
-export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history'] as const;
+export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'reportedProgress', 'hold', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history'] as const;
 
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },
@@ -164,9 +195,9 @@ const seeds: Seed[] = [
   // ---- Bổ sung: tháng này ----
   { code: 'MT-00122', title: 'Kiểm tra rung động bơm P-101A', device: 'P-101A', area: 'Khu bơm', type: 'inspection', priority: 'medium', status: 'pending', assignee: null, created: -1, due: 3, progress: 0 },
   { code: 'MT-00121', title: 'Hiệu chuẩn đồng hồ lưu lượng FT-101', device: 'FT-101', area: 'Tuyến chính', type: 'periodic', priority: 'low', status: 'pending', assignee: null, created: 0, due: 6, progress: 0 },
-  { code: 'MT-00119', title: 'Thay gioăng mặt bích tuyến xuất', device: 'L-201', area: 'Tuyến chính', type: 'incident', priority: 'medium', status: 'in-progress', assignee: 'Lê Thị C', created: -8, due: -1, progress: 45 },
+  { code: 'MT-00119', title: 'Thay gioăng mặt bích tuyến xuất', device: 'L-201', area: 'Tuyến chính', type: 'incident', priority: 'medium', status: 'in-progress', assignee: 'Lê Thị C', created: -8, due: -1, progress: 45, reportedProgress: 40, hold: { kind: 'blocked', reason: 'Gioăng thay thế sai kích cỡ, chờ vật tư đúng chủng loại', at: at(-1, '15:20') } },
   // Hạn −1 (trước: +2) để KPI "Quá hạn" giữ 04 sau khi MT-00128 hết quá hạn.
-  { code: 'MT-00118', title: 'Vệ sinh bộ lọc F-202', device: 'F-202', area: 'Khu Lọc', type: 'periodic', priority: 'low', status: 'in-progress', assignee: 'Phạm Văn D', created: -6, due: -1, progress: 30 },
+  { code: 'MT-00118', title: 'Vệ sinh bộ lọc F-202', device: 'F-202', area: 'Khu Lọc', type: 'periodic', priority: 'low', status: 'in-progress', assignee: 'Phạm Văn D', created: -6, due: -1, progress: 30, hold: { kind: 'paused', reason: 'Chờ dừng tuyến lọc theo lịch vận hành', at: at(-1, '09:10') } },
   { code: 'MT-00117', title: 'Kiểm tra mức bồn V-102', device: 'V-102', area: 'Bồn chứa', type: 'inspection', priority: 'medium', status: 'in-progress', assignee: 'Nguyễn Văn A', created: -9, due: 4, progress: 70 },
   { code: 'MT-00116', title: 'Sửa cảm biến áp suất PT-102', device: 'PT-102', area: 'Bồn chứa', type: 'incident', priority: 'high', status: 'in-progress', assignee: 'Trần Bình', created: -10, due: 5, progress: 50 },
   { code: 'MT-00115', title: 'Bảo dưỡng máy hóa hơi E-101B', device: 'E-101B', area: 'Trạm hóa hơi', type: 'periodic', priority: 'medium', status: 'review', assignee: 'Lê Thị C', created: -12, due: -3, progress: 100 },

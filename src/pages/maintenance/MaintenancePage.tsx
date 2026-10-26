@@ -18,7 +18,7 @@ import {
   type Severity,
   type TabItem,
 } from '@/components';
-import { useCan } from '@/app/auth';
+import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
@@ -26,6 +26,8 @@ import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useAlerts } from '@/data/alerts';
 import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
+import { checklistProgress } from '@/features/maintenance/checklist';
+import { HOLD_LABEL, canUpdateProgress, reportedProgressOf } from '@/features/maintenance/progress';
 import {
   MAINTENANCE_ASSIGNEES,
   MAINTENANCE_PARAMS,
@@ -53,16 +55,17 @@ import { cn } from '@/lib/cn';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { CreateMaintenanceModal } from './CreateMaintenanceModal';
+import { ProgressUpdateModal } from './ProgressUpdateModal';
 
 const PAGE_SIZE = 8;
 const getId = (r: MaintenanceRecord) => r.id;
 
 function exportCsv(rows: readonly MaintenanceRecord[], now: Date) {
-  const head = ['Mã yêu cầu', 'Ngày tạo', 'Nội dung', 'Thiết bị', 'Khu vực', 'Loại', 'Mức độ', 'Người PT', 'Hạn xử lý', 'Trạng thái', 'Tiến độ (%)', 'Quá hạn'];
+  const head = ['Mã yêu cầu', 'Ngày tạo', 'Nội dung', 'Thiết bị', 'Khu vực', 'Loại', 'Mức độ', 'Người PT', 'Hạn xử lý', 'Trạng thái', 'Tiến độ báo cáo (%)', 'Checklist', 'Quá hạn'];
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
-    [r.code, formatDate(r.createdAt), r.title, r.device, r.area, TYPE_LABEL[r.type], pr[r.priority], r.assignee ?? '', formatDate(r.dueAt), STATUS_LABEL[r.status], String(r.progress), isOverdue(r, now) ? 'Có' : '']
+    [r.code, formatDate(r.createdAt), r.title, r.device, r.area, TYPE_LABEL[r.type], pr[r.priority], r.assignee ?? '', formatDate(r.dueAt), r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status], String(reportedProgressOf(r)), checklistText(r), isOverdue(r, now) ? 'Có' : '']
       .map(esc)
       .join(','),
   );
@@ -76,6 +79,30 @@ function exportCsv(rows: readonly MaintenanceRecord[], now: Date) {
   URL.revokeObjectURL(url);
 }
 
+/** "2/6" hoặc "" (không có checklist). */
+const checklistText = (r: MaintenanceRecord) => {
+  if (!r.checklist?.length) return '';
+  const p = checklistProgress(r.checklist);
+  return `${p.done}/${p.total}`;
+};
+
+/** Badge trạng thái + cờ "Tạm dừng"/"Gặp sự cố" (Gặp sự cố nổi bật: nền đỏ nhạt, chữ đỏ). */
+function StatusCell({ r }: { r: MaintenanceRecord }) {
+  return (
+    <span className="inline-flex flex-col items-start gap-1">
+      <Badge variant="status" value={STATUS_BADGE[r.status]} withIcon>
+        {STATUS_LABEL[r.status]}
+      </Badge>
+      {r.hold && (
+        <Badge variant="tag" tone={r.hold.kind === 'blocked' ? 'danger' : 'warning'}>
+          {r.hold.kind === 'blocked' && <span aria-hidden="true">⚠&nbsp;</span>}
+          {HOLD_LABEL[r.hold.kind]}
+        </Badge>
+      )}
+    </span>
+  );
+}
+
 function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sectionTimer'; children: string; id: string }) {
   return (
     <h2 id={id} className="flex items-center gap-2 text-xl font-semibold text-fg">
@@ -87,7 +114,9 @@ function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sect
 
 /** Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. */
 export default function MaintenancePage() {
-  const { status, data, error, refetch, create, assign, complete } = useMaintenance();
+  const { status, data, error, refetch, create, assign, sendToReview, updateProgress } = useMaintenance();
+  const { user } = useAuth();
+  const actor = user?.name || 'Admin';
   const navigate = useNavigate();
   const location = useLocation();
   // Tạo/sửa yêu cầu: operator trở lên (UX – backend kiểm tra lại khi có API).
@@ -123,6 +152,12 @@ export default function MaintenancePage() {
   const fromAlert = search.get('from');
   const sourceAlert = fromAlert ? alerts.data?.find((a) => a.id === fromAlert) : undefined;
   const closeCreate = () => setExtra({ create: null, device: null, from: null });
+
+  // ---- Modal cập nhật tiến độ: ?progress=<id> (badge trạng thái của dòng Đã phân công / Đang thực hiện).
+  // TODO(backend): chỉ người được phân công cập nhật tiến độ (hiện: mọi vai trò có maintenance:write).
+  const progressId = search.get('progress');
+  const progressRecord = canWrite && progressId ? all.find((r) => r.id === progressId && canUpdateProgress(r.status)) : undefined;
+  const closeProgress = () => setExtra({ progress: null });
 
   /** Danh bạ thiết bị → khu vực (bảo trì + cảnh báo) cho ô "Thiết bị"/"Khu vực" của form. */
   const devices = useMemo(() => setDeviceDirectory(all, alerts.data ?? []), [all, alerts.data]);
@@ -184,22 +219,48 @@ export default function MaintenancePage() {
       id: 'status',
       header: 'Trạng thái',
       width: 120,
-      cell: (r) => (
-        <Badge variant="status" value={STATUS_BADGE[r.status]} withIcon>
-          {STATUS_LABEL[r.status]}
-        </Badge>
-      ),
+      cell: (r) =>
+        canWrite && canUpdateProgress(r.status) ? (
+          <button
+            type="button"
+            onClick={() => setExtra({ progress: r.id })}
+            title="Cập nhật tiến độ"
+            className="rounded-md text-left hover:brightness-125"
+          >
+            {/* Tên truy cập = chữ ẩn + chữ hiển thị (không dùng aria-label → khớp WCAG 2.5.3 "label in name"). */}
+            <span className="sr-only">Cập nhật tiến độ {r.code} – trạng thái: </span>
+            <StatusCell r={r} />
+          </button>
+        ) : (
+          <StatusCell r={r} />
+        ),
+    },
+    {
+      id: 'progress',
+      header: 'Tiến độ',
+      width: 96,
+      cell: (r) => {
+        const list = checklistText(r);
+        return (
+          <span className="flex flex-col leading-tight">
+            <span className="text-base tabular-nums text-fg">
+              {reportedProgressOf(r)}%<span className="sr-only"> (tiến độ báo cáo)</span>
+            </span>
+            {list && <span className="text-xs text-fg-secondary">Checklist {list}</span>}
+          </span>
+        );
+      },
     },
   ];
 
-  const runBulk = async (kind: 'assign' | 'complete', name?: string) => {
+  const runBulk = async (kind: 'assign' | 'review', name?: string) => {
     const ids = [...selected];
     if (kind === 'assign' && name) {
       await assign(ids, name);
       setNotice(`Đã phân công ${ids.length} yêu cầu cho ${name}.`);
-    } else if (kind === 'complete') {
-      await complete(ids);
-      setNotice(`Đã đánh dấu hoàn thành ${ids.length} yêu cầu.`);
+    } else if (kind === 'review') {
+      const { moved, skipped } = await sendToReview(ids, actor);
+      setNotice(`Đã chuyển nghiệm thu ${moved} yêu cầu${skipped ? `, bỏ qua ${skipped} (không ở trạng thái Đang thực hiện)` : ''}.`);
     }
     setSelected([]);
   };
@@ -331,7 +392,9 @@ export default function MaintenancePage() {
                   value={null}
                   onChange={(n) => n && runBulk('assign', n)}
                 />
-                <Button onClick={() => runBulk('complete')}>Đánh dấu hoàn thành</Button>
+                <Button onClick={() => runBulk('review')} title="Chỉ áp dụng cho yêu cầu Đang thực hiện">
+                  Chuyển nghiệm thu
+                </Button>
                 <Button variant="link" onClick={() => setSelected([])} className="ml-auto">
                   Bỏ chọn
                 </Button>
@@ -378,6 +441,20 @@ export default function MaintenancePage() {
           </Card>
         </div>
       </section>
+
+      {progressRecord && (
+        <ProgressUpdateModal
+          key={progressRecord.id}
+          record={progressRecord}
+          onClose={closeProgress}
+          onOpenChecklist={() => navigate(`/maintenance/${progressRecord.id}#checklist`, { state: { from: listUrl } })}
+          onSubmit={async (input) => {
+            await updateProgress(progressRecord.id, input, actor);
+            closeProgress();
+            setNotice(`Đã cập nhật tiến độ ${progressRecord.code}.`);
+          }}
+        />
+      )}
 
       {/* Mount khi mở để form khởi tạo đúng ngay lần vẽ đầu (không nháy giá trị cũ). */}
       {createOpen && (

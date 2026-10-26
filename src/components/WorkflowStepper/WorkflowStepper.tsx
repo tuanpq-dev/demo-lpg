@@ -1,6 +1,12 @@
 import { cn } from '@/lib/cn';
 
-export type WorkflowStep = { id: string; label: string };
+export type WorkflowStep = {
+  id: string;
+  label: string;
+  /** Nhãn phụ nhỏ dưới nhãn bước, vd "Tạm dừng" / "Gặp sự cố" ở bước "Đang thực hiện" (bước không đổi). */
+  note?: string;
+  noteTone?: 'warning' | 'danger';
+};
 
 export type WorkflowStepperProps = {
   steps: readonly WorkflowStep[];
@@ -52,9 +58,22 @@ export function WorkflowStepper({ steps, completed, current, label, className }:
                   <span className="size-1.5 rounded-full bg-line" />
                 )}
               </span>
-              <span className={cn('text-base', done ? 'text-primary' : 'text-fg-secondary')}>
-                {s.label}
-                <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước đang chờ' : ' – chưa tới'}</span>
+              <span className={cn('flex flex-col items-center gap-1 text-base', done ? 'text-primary' : 'text-fg-secondary')}>
+                <span>
+                  {s.label}
+                  <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước đang chờ' : ' – chưa tới'}</span>
+                </span>
+                {s.note && (
+                  <span
+                    className={cn(
+                      'rounded-sm border px-1.5 text-xs leading-[18px]',
+                      s.noteTone === 'danger' ? 'border-danger/70 bg-danger/15 text-danger-text' : 'border-warning/50 bg-warning/10 text-warning',
+                    )}
+                  >
+                    <span className="sr-only">, </span>
+                    {s.note}
+                  </span>
+                )}
               </span>
             </li>
           );

@@ -2,6 +2,7 @@ import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
 import { checklistProgress, toggleChecklistItem } from '@/features/maintenance/checklist';
 import { isPastDue } from '@/features/maintenance/deadline';
+import { applyProgressUpdate, reworkRecord, submitForReview, type ProgressUpdateInput } from '@/features/maintenance/progress';
 import { addNoteRecord, advanceRecord, assignRecord, cancelRecord, type AssignInput } from '@/features/maintenance/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
@@ -19,6 +20,7 @@ import {
   type MaintenanceAttachment,
   type MaintenanceChecklistItem,
   type MaintenanceHistoryEntry,
+  type MaintenanceHold,
   type MaintenanceNote,
   type MaintenanceRecord,
   type MaintenanceSource,
@@ -32,6 +34,7 @@ export type {
   MaintenanceAttachment,
   MaintenanceChecklistItem,
   MaintenanceHistoryEntry,
+  MaintenanceHold,
   MaintenanceNote,
   MaintenanceRecord,
   MaintenanceSource,
@@ -369,11 +372,27 @@ export const advanceMaintenance = async (id: string, actor?: string) => patch([i
 export const cancelMaintenance = async (id: string, reason?: string, actor?: string) =>
   patch([id], (r) => cancelRecord(r, { ...ctx(actor), reason }));
 
-/** Hoàn thành hàng loạt (bảng) – bỏ qua yêu cầu đã hủy. */
-export const completeMaintenance = async (ids: readonly string[]) =>
-  patch(ids, (r) =>
-    isOpen(r) ? { ...r, status: 'done', progress: r.checklist?.length ? r.progress : 100, completedAt: isoDay(0) } : r,
-  );
+/**
+ * Chuyển nghiệm thu hàng loạt (bảng): chỉ yêu cầu "Đang thực hiện" → "Chờ nghiệm thu"; dòng khác bỏ qua.
+ * KHÔNG có đường nào nhảy thẳng sang "Hoàn thành" ngoài "Nghiệm thu đạt" (trang chi tiết).
+ */
+export async function sendToReviewMaintenance(ids: readonly string[], actor?: string): Promise<{ moved: number; skipped: number }> {
+  let moved = 0;
+  patch(ids, (r) => {
+    const next = submitForReview(r, ctx(actor));
+    if (next !== r) moved++;
+    return next;
+  });
+  return { moved, skipped: ids.length - moved };
+}
+
+/** Modal "Cập nhật tiến độ": trạng thái công việc + tiến độ báo cáo + nội dung + tệp tạm → một dòng lịch sử. */
+export const updateMaintenanceProgress = async (id: string, input: ProgressUpdateInput, actor?: string) =>
+  patch([id], (r) => applyProgressUpdate(r, input, ctx(actor)));
+
+/** "Yêu cầu làm lại" (chờ nghiệm thu → đang thực hiện), lý do bắt buộc. "Nghiệm thu đạt" = `advance` từ review. */
+export const reworkMaintenance = async (id: string, reason: string, actor?: string) =>
+  patch([id], (r) => reworkRecord(r, reason, ctx(actor)));
 
 /** Tick / bỏ tick một mục checklist; tiến độ bản ghi tính lại từ checklist. */
 export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
@@ -387,7 +406,7 @@ export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
 export const addMaintenanceNote = async (id: string, text: string, actor?: string) =>
   patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
 
-/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, complete, toggleChecklist, addNote }`. */
+/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, sendToReview, updateProgress, rework, toggleChecklist, addNote }`. */
 export function useMaintenance() {
   return {
     ...store.useCollection(),
@@ -395,7 +414,9 @@ export function useMaintenance() {
     assign: assignMaintenance,
     advance: advanceMaintenance,
     cancel: cancelMaintenance,
-    complete: completeMaintenance,
+    sendToReview: sendToReviewMaintenance,
+    updateProgress: updateMaintenanceProgress,
+    rework: reworkMaintenance,
     toggleChecklist: toggleMaintenanceChecklist,
     addNote: addMaintenanceNote,
   };

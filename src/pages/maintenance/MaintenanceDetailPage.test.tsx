@@ -118,7 +118,9 @@ describe('luồng xử lý trên trang chi tiết (đổi dữ liệu – để 
     const stepper = screen.getByRole('navigation', { name: 'Tiến trình xử lý MT-00128' });
     await waitFor(() => expect(within(stepper).getByText(/Đang thực hiện/).closest('li')).toHaveAttribute('aria-current', 'step'));
     expect(screen.getByText('Tiếp nhận yêu cầu – phụ trách: Kỹ sư A')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Bắt đầu thực hiện' })).toBeInTheDocument();
+    // Đã phân công: nút bước kế tiếp nay là "Cập nhật tiến độ" (modal) – không còn "Bắt đầu thực hiện"
+    expect(screen.getByRole('button', { name: 'Cập nhật tiến độ' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Bắt đầu thực hiện' })).toBeNull();
 
     // Checklist mở khoá (Đã phân công) – tick → tiến độ 3/6 · 50%
     const box = screen.getByRole('checkbox', { name: 'Kiểm tra cáp tín hiệu cảm biến hành trình ZSO/ZSC' });
@@ -143,5 +145,113 @@ describe('luồng xử lý trên trang chi tiết (đổi dữ liệu – để 
     expect(screen.getByText('Hủy yêu cầu – lý do: Trùng yêu cầu')).toBeInTheDocument();
     expect(screen.getAllByText('Đã hủy').length).toBeGreaterThan(0);
     expect(screen.getByRole('navigation', { name: 'Tiến trình xử lý MT-00128' }).querySelector('[aria-current]')).toBeNull();
+  });
+});
+
+describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để cuối)', () => {
+  test('danh sách: badge trạng thái mở modal qua ?progress=; Hủy đóng + bỏ query; dòng Chờ tiếp nhận không mở được', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance');
+    await user.click(await screen.findByRole('button', { name: 'Cập nhật tiến độ MT-00125 – trạng thái: Đang thực hiện' }));
+    expect(where()).toBe('/maintenance?progress=MT-00125');
+    const dialog = screen.getByRole('dialog', { name: 'Cập nhật tiến độ bảo trì' });
+    expect(within(dialog).getByText('Ghi nhận tình trạng thực hiện và cập nhật tiến độ công việc MT-00125')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Hủy' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(where()).toBe('/maintenance');
+    expect(screen.queryByRole('button', { name: /Cập nhật tiến độ MT-00122/ })).toBeNull();
+  });
+
+  test('danh sách: "Chuyển nghiệm thu" hàng loạt chỉ áp cho Đang thực hiện, báo số bỏ qua', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance');
+    await user.click(await screen.findByRole('checkbox', { name: 'Chọn hàng MT-00125' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Chọn hàng MT-00127' }));
+    expect(screen.queryByRole('button', { name: 'Đánh dấu hoàn thành' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Chuyển nghiệm thu' }));
+    expect(await screen.findByText('Đã chuyển nghiệm thu 1 yêu cầu, bỏ qua 1 (không ở trạng thái Đang thực hiện).')).toBeInTheDocument();
+  });
+
+  test('chi tiết: bắt đầu (qua modal) → Tạm dừng → Hoàn thành = Chờ nghiệm thu (không done); vận hành không thấy nút nghiệm thu', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance/MT-00126');
+    await screen.findByRole('heading', { level: 1, name: 'Bảo dưỡng máy hóa hơi E-101A' });
+    const bar = () => screen.getByRole('region', { name: 'Thao tác yêu cầu MT-00126' });
+    const stepper = () => screen.getByRole('navigation', { name: 'Tiến trình xử lý MT-00126' });
+    const openModal = async () => {
+      await user.click(within(bar()).getByRole('button', { name: 'Cập nhật tiến độ' }));
+      return screen.getByRole('dialog', { name: 'Cập nhật tiến độ bảo trì' });
+    };
+
+    // 1. Đã phân công: chưa báo hoàn thành được; cập nhật = bắt đầu (một bước), tiến độ 0 → 10
+    let d = await openModal();
+    expect(within(d).getByRole('radio', { name: /Hoàn thành/ })).toHaveAttribute('aria-disabled', 'true');
+    within(d).getByRole('slider').focus();
+    await user.keyboard('{ArrowRight}{ArrowRight}');
+    await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('Bắt đầu thực hiện · 0% → 10%')).toBeInTheDocument();
+
+    // 2. Tạm dừng (lý do bắt buộc) → vẫn bước 3, nhãn phụ ở stepper
+    d = await openModal();
+    await user.click(within(d).getByRole('radio', { name: 'Tạm dừng' }));
+    await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+    expect(within(d).getByText('Nhập lý do tạm dừng.')).toBeInTheDocument();
+    await user.type(within(d).getByRole('textbox', { name: /Lý do tạm dừng/ }), 'Chờ nước nóng');
+    await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(within(stepper()).getByText('Tạm dừng')).toBeInTheDocument();
+    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('Tạm dừng – lý do: Chờ nước nóng · tiến độ 10%')).toBeInTheDocument();
+
+    // 3. Hoàn thành → Chờ nghiệm thu, KHÔNG done
+    d = await openModal();
+    await user.click(within(d).getByRole('radio', { name: 'Hoàn thành' }));
+    await user.type(within(d).getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), 'Đã vệ sinh bộ trao đổi nhiệt');
+    await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByText('Báo hoàn thành – chuyển nghiệm thu · 10% → 100%')).toBeInTheDocument();
+    expect(within(stepper()).getAllByRole('listitem').at(-1)).toHaveAttribute('aria-current', 'step');
+    expect(within(bar()).queryByRole('button', { name: 'Nghiệm thu đạt' })).toBeNull();
+    expect(within(bar()).queryByRole('button', { name: 'Cập nhật tiến độ' })).toBeNull();
+  });
+
+  test('kỹ sư/quản trị: "Yêu cầu làm lại" bắt buộc lý do → Đang thực hiện; "Nghiệm thu đạt" → Hoàn thành', async () => {
+    const role = state.user!.role;
+    state.user!.role = 'admin';
+    try {
+      const user = userEvent.setup();
+      renderAt('/maintenance/MT-00126');
+      await screen.findByRole('heading', { level: 1, name: 'Bảo dưỡng máy hóa hơi E-101A' });
+      const bar = () => screen.getByRole('region', { name: 'Thao tác yêu cầu MT-00126' });
+
+      await user.click(within(bar()).getByRole('button', { name: 'Yêu cầu làm lại' }));
+      let d = screen.getByRole('dialog', { name: 'Yêu cầu làm lại MT-00126' });
+      await user.click(within(d).getByRole('button', { name: 'Gửi yêu cầu làm lại' }));
+      expect(within(d).getByText('Nhập lý do yêu cầu làm lại.')).toBeInTheDocument();
+      await user.type(within(d).getByRole('textbox', { name: /Lý do làm lại/ }), 'Còn cặn ở tấm số 3');
+      await act(async () => {
+        await user.click(within(d).getByRole('button', { name: 'Gửi yêu cầu làm lại' }));
+      });
+      expect(await screen.findByText('Yêu cầu làm lại – lý do: Còn cặn ở tấm số 3')).toBeInTheDocument();
+      expect(within(bar()).getByRole('button', { name: 'Cập nhật tiến độ' })).toBeInTheDocument();
+
+      // Báo hoàn thành lại → nghiệm thu đạt (đường duy nhất sang Hoàn thành)
+      await user.click(within(bar()).getByRole('button', { name: 'Cập nhật tiến độ' }));
+      d = screen.getByRole('dialog', { name: 'Cập nhật tiến độ bảo trì' });
+      await user.click(within(d).getByRole('radio', { name: 'Hoàn thành' }));
+      await user.type(within(d).getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), 'Đã vệ sinh lại');
+      await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+      await user.click(await within(bar()).findByRole('button', { name: 'Nghiệm thu đạt' }));
+      d = screen.getByRole('dialog', { name: 'Nghiệm thu đạt MT-00126?' });
+      await act(async () => {
+        await user.click(within(d).getByRole('button', { name: 'Xác nhận nghiệm thu đạt' }));
+      });
+      await waitFor(() => expect(screen.queryByRole('region', { name: 'Thao tác yêu cầu MT-00126' })).toBeNull());
+      expect(screen.getByText('Nghiệm thu đạt – hoàn thành')).toBeInTheDocument();
+    } finally {
+      state.user!.role = role;
+    }
   });
 });
