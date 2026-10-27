@@ -15,7 +15,7 @@ import {
   shiftOf,
   updateFireAlert,
 } from './alerts';
-import { alertDateTimeLabel, alertGauge, alertMetric, alertOccurredAt, alertPlaybook } from './alertDetail';
+import { alertDateTimeLabel, alertGauge, alertMetric, alertOccurredAt, alertPlaybook, alertRecordedValue, alertShortTimeLabel } from './alertDetail';
 import { alertRecords } from '@/mocks/alerts';
 import { maintenanceRecords } from '@/mocks/maintenance';
 import { HEAT_DETECTORS, nearbySensor, sensorsInArea } from '@/mocks/sensors';
@@ -157,13 +157,46 @@ describe('thanh đo theo cấu hình loại cảnh báo', () => {
   });
 });
 
+describe('thẻ đầu modal phân công', () => {
+  test('"Lúc cảnh báo": giá trị bản ghi / ngưỡng cấu hình; vượt ngưỡng theo chiều; loại không có số → ẩn', () => {
+    expect(alertRecordedValue(alert('x', { kind: 'tank-overpressure', tag: 'PT-101', value: '11.8', threshold: '10.5', unit: 'bar' }))).toEqual({
+      value: '11.8 bar',
+      threshold: '10.5 bar',
+      breached: true,
+    });
+    expect(alertRecordedValue(alert('x', { kind: 'temperature-low', direction: 'below', value: '45', threshold: '50', unit: '°C' }))).toMatchObject({ value: '45°C', breached: true });
+    expect(alertRecordedValue(alert('x', { kind: 'sensor-signal-lost' }))).toBeNull();
+    expect(alertRecordedValue(alert('x', { kind: 'pump-standby' }))).toBeNull();
+    expect(alertRecordedValue(alert('x', { value: 'abc' }))).toBeNull();
+  });
+  test('giờ phát hiện: hôm nay / hôm qua / ngày cụ thể (giờ nhà máy)', () => {
+    const now = new Date('2026-10-27T03:00:00Z'); // 10:00 giờ nhà máy
+    expect(alertShortTimeLabel({ daysAgo: 0, time: '10:45:22' }, now)).toBe('10:45 hôm nay');
+    expect(alertShortTimeLabel({ daysAgo: 1, time: '22:41:30' }, now)).toBe('22:41 hôm qua');
+    expect(alertShortTimeLabel({ daysAgo: 3, time: '20:16:37' }, now)).toBe('20:16 24/10/2026');
+  });
+});
+
 describe('thao tác trên store (mock) – cùng quy tắc với drawer', () => {
   const get = async (id: string) => (await fetchAlerts()).find((a) => a.id === id)!;
+  // Đổi có chủ đích (modal phân công cảnh báo): nhận form thay tên; kết quả kèm số đổi người + câu thông báo.
   test('phân công hàng loạt KHÔNG tự xác nhận; dòng đã hoàn thành bị bỏ qua', async () => {
-    const r = await assignAlerts(['ALT-00126', 'ALT-00124'], 'Trần Bình', 'Tester');
-    expect(r).toEqual({ done: 1, skipped: 1 });
+    const r = await assignAlerts(['ALT-00126', 'ALT-00124'], { assignee: 'Trần Bình', collaborators: [], note: '', notify: false, reason: '' }, 'Tester');
+    expect(r).toEqual({ done: 1, skipped: 1, reassigned: 0, message: 'Đã phân công 1 · bỏ qua 1 (1 đã hoàn thành)' });
     expect(await get('ALT-00126')).toMatchObject({ status: 'unacknowledged', assignee: 'Trần Bình' });
     expect((await get('ALT-00124')).assignee).toBe('Lê Thị C');
+  });
+  test('phân công hàng loạt: dòng của người khác = đổi người cần MỘT lý do chung; dòng đúng người bỏ qua', async () => {
+    const f = { assignee: 'Lê Thị C', collaborators: [], note: '', notify: false, reason: '' };
+    // ALT-00122 đang giao Phạm Văn D → đổi người; thiếu lý do → không ghi gì.
+    expect(await assignAlerts(['ALT-00122', 'ALT-00119'], f, 'Tester')).toMatchObject({ done: 0 });
+    expect((await get('ALT-00122')).assignee).toBe('Phạm Văn D');
+    const r = await assignAlerts(['ALT-00122', 'ALT-00119', 'ALT-00126'], { ...f, assignee: 'Trần Bình', reason: 'Gom việc khu' }, 'Tester');
+    // ALT-00126 đã giao Trần Bình ở test trước → bỏ qua "đã giao đúng người".
+    expect(r).toMatchObject({ done: 2, reassigned: 1, skipped: 1 });
+    expect(await get('ALT-00122')).toMatchObject({ status: 'in-progress', assignee: 'Trần Bình' });
+    expect((await get('ALT-00122')).history!.at(-1)!.text).toBe('Đổi người xử lý: Phạm Văn D → Trần Bình – lý do: Gom việc khu');
+    expect((await get('ALT-00119')).status).toBe('unacknowledged');
   });
   test('hoàn thành hàng loạt: chỉ dòng Đang xử lý, ghi chú chung bắt buộc, không nhảy từ Chưa xác nhận', async () => {
     await expect(completeAlerts(['ALT-00125'], '  ', 'Tester')).rejects.toThrow();

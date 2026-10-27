@@ -120,16 +120,44 @@ describe('drawer chi tiết cảnh báo', () => {
     renderAt('/alerts?alert=ALT-00119');
     const d = await screen.findByRole('dialog', { name: 'Chênh áp lọc F-202 tăng dần' });
     await user.click(within(d).getByRole('button', { name: 'Phân công xử lý' }));
-    const m = await screen.findByRole('dialog', { name: 'Phân công xử lý' });
+    // Đổi có chủ đích: modal mới "Phân công xử lý cảnh báo" (ảnh thiết kế), nút "Xác nhận phân công".
+    const m = await screen.findByRole('dialog', { name: 'Phân công xử lý cảnh báo' });
     // Toàn bộ STAFF – kể cả trưởng ca (manager)
     expect(within(m).getByRole('radio', { name: /Hoàng Minh E/ })).toBeInTheDocument();
     await user.click(within(m).getByRole('radio', { name: /Trần Bình/ }));
-    await user.click(within(m).getByRole('button', { name: 'Phân công' }));
-    expect(screen.queryByRole('dialog', { name: 'Phân công xử lý' })).toBeNull();
+    await user.click(within(m).getByRole('button', { name: 'Xác nhận phân công' }));
+    expect(screen.queryByRole('dialog', { name: 'Phân công xử lý cảnh báo' })).toBeNull();
     expect(within(d).getByText('Trần Bình')).toBeInTheDocument();
     expect(within(d).getByRole('button', { name: 'Xác nhận cảnh báo' })).toBeInTheDocument();
     expect(within(d).getByText(/Nhật ký \(3\)/)).toBeInTheDocument();
     expect(d).toHaveTextContent('Phân công xử lý cho Trần Bình – Vận hành A');
+  });
+
+  test('phân công hàng loạt qua modal: bỏ qua dòng Hoàn thành, dòng của người khác = đổi người cần lý do chung, liệt kê mã trước khi xác nhận', async () => {
+    const user = userEvent.setup();
+    // Lọc cho 3 dòng nằm cùng trang 1: ALT-00128 chưa giao · ALT-00125 đang giao Trần Văn B · ALT-00124 đã hoàn thành
+    renderAt('/alerts?q=ALT-0012');
+    for (const id of ['ALT-00128', 'ALT-00125', 'ALT-00124']) await user.click(await screen.findByRole('checkbox', { name: `Chọn hàng ${id}` }));
+    await user.click(screen.getByRole('button', { name: 'Phân công… (2)' }));
+    const m = await screen.findByRole('dialog', { name: 'Phân công xử lý cảnh báo' });
+    expect(within(m).getByText('Đã chọn 3 cảnh báo')).toBeInTheDocument();
+    expect(within(m).queryByRole('button', { name: 'Nháp' })).toBeNull();
+    await user.click(within(m).getByRole('radio', { name: /Võ Thị F/ }));
+    expect(within(m).getByRole('list', { name: 'Cảnh báo sẽ đổi người' })).toHaveTextContent('ALT-00125: Trần Văn B → Võ Thị F');
+    expect(m).toHaveTextContent('ALT-00124 (đã hoàn thành)');
+    const confirm = within(m).getByRole('button', { name: 'Xác nhận phân công' });
+    expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    await user.click(confirm);
+    expect(screen.getByRole('dialog', { name: 'Phân công xử lý cảnh báo' })).toBeInTheDocument();
+    await user.type(within(m).getByRole('textbox', { name: /Lý do đổi người \(chung\)/ }), 'Gom việc khu lọc');
+    await user.click(confirm);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Phân công xử lý cảnh báo' })).toBeNull());
+    expect(await screen.findByText(/^Đã phân công 2/)).toHaveTextContent('Đã phân công 2 (đổi người 1) · bỏ qua 1 (1 đã hoàn thành) – người phụ trách: Võ Thị F.');
+    // Không tự xác nhận: ALT-00128 vẫn Chưa xác nhận.
+    await user.click(screen.getByRole('button', { name: 'Xem chi tiết ALT-00128' }));
+    const d = await screen.findByRole('dialog', { name: 'Áp suất bồn V-101 vượt ngưỡng' });
+    expect(within(d).getByRole('button', { name: 'Xác nhận cảnh báo' })).toBeInTheDocument();
+    expect(d).toHaveTextContent('Võ Thị F');
   });
 
   test('quy trình: xác nhận → tick hướng dẫn → đánh dấu đã xử lý bắt buộc ghi chú → Hoàn thành; tab + KPI cập nhật', async () => {

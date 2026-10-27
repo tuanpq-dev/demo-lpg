@@ -3,7 +3,7 @@
  * `data/alerts.ts` vì file đó nằm trong bundle chính (`LiveAnnouncer` dùng `useAlerts`): kéo mock tài sản/nhân sự vào
  * đây thì chỉ chunk trang Cảnh báo phải tải.
  */
-import { formatGaugeNumber, gaugeScale, withUnit, type GaugeScale } from '@/features/alerts/gauge';
+import { formatGaugeNumber, gaugeScale, isBreached, withUnit, type GaugeScale } from '@/features/alerts/gauge';
 import { tagSignal } from '@/features/live/signal';
 import { formatDayVi, parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
 import type { AlertDirection, AlertRecord } from '@/mocks/alerts';
@@ -27,6 +27,8 @@ import { formatMeasure } from '@/features/alerts/gauge';
 import { assetMocks } from '@/mocks/assets';
 import { STAFF } from '@/mocks/maintenance';
 import { useLiveData } from './live';
+import type { AlertAssignForm } from '@/features/alerts/assign';
+import { createSessionDraft } from '@/lib/sessionDraft';
 
 /**
  * Người nhận xử lý cảnh báo = TOÀN BỘ `STAFF` (kể cả trưởng ca / quản lý vận hành). Khác bảo trì (chỉ technician +
@@ -39,6 +41,14 @@ export function alertDateTimeLabel(a: Pick<AlertRecord, 'daysAgo' | 'time'>, now
   const [y, m, d] = plantDayKey(now).split('-').map(Number);
   const t = new Date(Date.UTC(y!, m! - 1, d! - a.daysAgo));
   return `${a.time} - ${formatDayVi(t.toISOString())}`;
+}
+
+/** "10:45 hôm nay" · "22:41 hôm qua" · "20:16 24/10/2026" – thẻ đầu modal phân công. */
+export function alertShortTimeLabel(a: Pick<AlertRecord, 'daysAgo' | 'time'>, now: Date): string {
+  const hm = a.time.slice(0, 5);
+  if (a.daysAgo === 0) return `${hm} hôm nay`;
+  if (a.daysAgo === 1) return `${hm} hôm qua`;
+  return `${hm} ${alertDateTimeLabel(a, now).split(' - ')[1]}`;
 }
 
 export type AlertMetric = {
@@ -227,5 +237,38 @@ export function useFireReadings(a: Pick<AlertRecord, 'device' | 'area' | 'tag'>)
     signals,
     equipment: eqCfg.map((e) => ({ id: e.id, name: e.name, temp: e.tempTag ? numberOf(e.tempTag) : undefined, state: equipmentStateView(readingOf(live, e.stateTag, now)) })),
     cross: crossConfirm(signals),
+  };
+}
+
+// ---- Nháp modal "Phân công xử lý cảnh báo" (sessionStorage theo mã; chỉ một cảnh báo – hàng loạt không có nháp) ----
+
+/** Nháp = form phân công trừ ô thông báo (mặc định lại theo mức độ khi mở). */
+export type AlertAssignDraft = Omit<AlertAssignForm, 'notify'> & { /** ISO */ savedAt: string };
+
+const alertAssignDraft = createSessionDraft<AlertAssignDraft>('demo-lpg:alert-assign-draft:', (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const d = raw as Partial<AlertAssignDraft>;
+  const str = (v: unknown): v is string => typeof v === 'string';
+  if (!str(d.note) || !str(d.reason) || !Array.isArray(d.collaborators)) return null;
+  if (d.assignee !== null && !str(d.assignee)) return null;
+  return { assignee: d.assignee ?? null, collaborators: d.collaborators.filter(str), note: d.note, reason: d.reason, savedAt: str(d.savedAt) ? d.savedAt : '' };
+});
+
+export const saveAlertAssignDraft = alertAssignDraft.save;
+export const loadAlertAssignDraft = alertAssignDraft.load;
+export const clearAlertAssignDraft = alertAssignDraft.clear;
+
+/**
+ * "Lúc cảnh báo: 11.8 bar / 10.5 bar" (thẻ đầu modal phân công) – giá trị CỦA BẢN GHI (không phải số trực tiếp) / ngưỡng
+ * (cấu hình tag, thiếu → bản ghi). null = ẩn ô: loại cảnh báo `numericValue: false` hoặc giá trị không phải số.
+ */
+export function alertRecordedValue(a: AlertRecord): { value: string; threshold: string; breached: boolean } | null {
+  if (alertKind(a).numericValue === false) return null;
+  const m = alertMetric(a);
+  if (!Number.isFinite(m.value) || !Number.isFinite(m.threshold)) return null;
+  return {
+    value: withUnit(formatGaugeNumber(m.value), m.unit),
+    threshold: withUnit(formatGaugeNumber(m.threshold), m.unit),
+    breached: isBreached(m.value, m.threshold, m.direction),
   };
 }

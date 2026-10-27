@@ -10,9 +10,7 @@ import {
   type FireUpdateResult,
   type GasUpdateInput,
   type GasUpdateResult,
-  assignAlert,
   canAcknowledge,
-  canAssignAlert,
   canResolve,
   planBulk,
   recordMaintenanceCreated,
@@ -20,6 +18,16 @@ import {
   toggleGuideStep,
   type ResolveResult,
 } from '@/features/alerts/workflow';
+import {
+  applyAlertAssignment,
+  bulkAlertAssignMessage,
+  bulkRowForm,
+  bulkSkippedCount,
+  planBulkAlertAssign,
+  validateAlertAssign,
+  validateBulkAlertAssign,
+  type AlertAssignForm,
+} from '@/features/alerts/assign';
 import { appNow } from '@/lib/demoNow';
 import { withUnit } from '@/features/alerts/gauge';
 import type { AlertRecord, AlertStatus } from '@/mocks/alerts';
@@ -203,12 +211,34 @@ export async function acknowledgeAlerts(ids: readonly string[], by = 'Admin'): P
   return { done: eligible.length, skipped };
 }
 
-/** Phân công – KHÔNG tự xác nhận (drawer và hàng loạt cùng quy tắc). Đã hoàn thành → bỏ qua. */
-export async function assignAlerts(ids: readonly string[], assignee: string, by = 'Admin'): Promise<BulkResult> {
-  const { eligible, skipped } = planBulk(currentAlerts(), ids, canAssignAlert);
+/**
+ * Phân công một cảnh báo (drawer) – KHÔNG tự xác nhận. Đổi người cần lý do; cùng người chỉ sửa phối hợp/ghi chú =
+ * "Cập nhật phân công". Không hợp lệ → false (modal đã kiểm tra trước, hàm thuần kiểm lại).
+ */
+export async function assignOneAlert(id: string, form: AlertAssignForm, by = 'Admin'): Promise<boolean> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a || validateAlertAssign(a, form).length) return false;
   const ctx = ctxOf(by);
-  mutateAlerts(eligible, (a) => assignAlert(a, assignee, ctx));
-  return { done: eligible.length, skipped };
+  mutateAlerts([id], (cur) => applyAlertAssignment(cur, form, ctx));
+  return true;
+}
+
+export type BulkAssignResult = BulkResult & { reassigned: number; message: string };
+
+/**
+ * Phân công hàng loạt (bảng /alerts) – cùng quy tắc với drawer: không tự xác nhận; dòng Hoàn thành / đã giao đúng người
+ * bị bỏ qua; dòng đang giao cho người khác = đổi người với MỘT lý do chung (bắt buộc); người phối hợp gộp với người cũ.
+ */
+export async function assignAlerts(ids: readonly string[], form: AlertAssignForm, by = 'Admin'): Promise<BulkAssignResult> {
+  const plan = planBulkAlertAssign(currentAlerts(), ids, form.assignee);
+  if (validateBulkAlertAssign(plan, form).length) return { done: 0, skipped: ids.length, reassigned: 0, message: 'Chưa phân công – thiếu thông tin.' };
+  const ctx = ctxOf(by);
+  const rows = [...plan.assign, ...plan.reassign];
+  mutateAlerts(
+    rows.map((a) => a.id),
+    (a) => applyAlertAssignment(a, bulkRowForm(a, form), ctx),
+  );
+  return { done: rows.length, skipped: bulkSkippedCount(plan), reassigned: plan.reassign.length, message: bulkAlertAssignMessage(plan) };
 }
 
 /**
@@ -292,6 +322,7 @@ export function useAlerts() {
     acknowledge: acknowledgeAlerts,
     complete: completeAlerts,
     assign: assignAlerts,
+    assignOne: assignOneAlert,
     resolve: resolveOneAlert,
     toggleGuide: toggleAlertGuide,
     addNote: addNoteToAlert,
