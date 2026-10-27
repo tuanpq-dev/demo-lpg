@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AlertDrawerSection } from './AlertDrawerSection';
 import { AssetSection } from './AssetSection';
 import { AssignSection } from './AssignSection';
 import { BusinessSection } from './BusinessSection';
@@ -30,6 +31,10 @@ export default function PlaygroundPage() {
         <h1 className="text-3xl font-bold">Component Playground</h1>
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
+
+      <Section id="alert-drawer" title="15. Chi tiết cảnh báo (ảnh thiết kế): drawer, ThresholdGauge, WorkflowStepper dọc, Checklist plain, KpiCard lg, Button danger, StaffList compact">
+        <AlertDrawerSection />
+      </Section>
 
       <Section id="assign" title="14. Phân công người xử lý (ảnh thiết kế): modal, StaffList/StaffPickerCard, Switch, Avatar">
         <AssignSection />
