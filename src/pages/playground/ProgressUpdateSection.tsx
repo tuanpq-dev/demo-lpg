@@ -19,7 +19,7 @@ import { WORKFLOW_STEPS } from '@/features/maintenance/workflow';
 import { ProgressUpdateModal } from '../maintenance/ProgressUpdateModal';
 import { Demo } from './Demo';
 
-const REF = '/figma-ref/mt-progress-modal-design.png';
+const REF = (import.meta.env.DEV ? '/scratch/figma-ref/mt-progress-modal-design.png' : undefined);
 
 const OPTIONS: StatusOption[] = [
   { id: 'working', label: 'Đang thực hiện', icon: <PlayCircleIcon size={20} /> },

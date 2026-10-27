@@ -13,6 +13,11 @@ import {
 } from '@/components';
 import { Demo } from './Demo';
 
+/** Ảnh Figma chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
+const REF_70_4037_MAINT_BUTTONS = import.meta.env.DEV ? '/scratch/figma-ref/70-4037-maint-buttons.png' : undefined;
+const REF_70_3032_ALERT_TABLE = import.meta.env.DEV ? '/scratch/figma-ref/70-3032-alert-table.png' : undefined;
+const REF_53_458_PRIORITY_ALARMS = import.meta.env.DEV ? '/scratch/figma-ref/53-458-priority-alarms.png' : undefined;
+
 /** Một khối demo: component bên trái, ảnh Figma tham chiếu bên phải. */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -37,7 +42,7 @@ export function PrimitivesSection() {
   return (
     <div className="flex flex-col gap-10">
       {/* ---------------- Button ---------------- */}
-      <Demo title="Button" node="53:124 · 70:4037 · 70:2890" refImg="/figma-ref/70-4037-maint-buttons.png">
+      <Demo title="Button" node="53:124 · 70:4037 · 70:2890" refImg={REF_70_4037_MAINT_BUTTONS}>
         <Row label="ghost / md">
           <Button icon={<Icon name="calendar" />}>Hôm nay</Button>
           <Button icon={<Icon name="download" />}>Xuất báo cáo</Button>
@@ -97,7 +102,7 @@ export function PrimitivesSection() {
       </Demo>
 
       {/* ---------------- Badge ---------------- */}
-      <Demo title="Badge" node="70:3032 (bảng cảnh báo) · 70:5562 · 70:5432" refImg="/figma-ref/70-3032-alert-table.png">
+      <Demo title="Badge" node="70:3032 (bảng cảnh báo) · 70:5562 · 70:5432" refImg={REF_70_3032_ALERT_TABLE}>
         <Row label="severity">
           {severities.map((s) => (
             <Badge key={s} variant="severity" value={s} />
@@ -126,7 +131,7 @@ export function PrimitivesSection() {
       </Demo>
 
       {/* ---------------- Card ---------------- */}
-      <Demo title="Card" node="53:458 · 53:495" refImg="/figma-ref/53-458-priority-alarms.png">
+      <Demo title="Card" node="53:458 · 53:495" refImg={REF_53_458_PRIORITY_ALARMS}>
         <div className="grid gap-4 md:grid-cols-2">
           <Card
             title="Cảnh báo ưu tiên"

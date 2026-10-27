@@ -18,6 +18,9 @@ import {
 import { tankLayers } from '@/features/tank/layers';
 import { Demo } from './Demo';
 
+/** Ảnh Figma chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
+const REF_ASSET_V101_DESIGN = import.meta.env.DEV ? '/scratch/figma-ref/asset-v101-design.png' : undefined;
+
 const DIMS = { length: 4.8, diameter: 1.9 };
 const CASES = [
   { id: 'figma', label: 'Theo ảnh (73 / 5.2)', level: 73, water: 5.2 },
@@ -38,9 +41,9 @@ export function AssetSection() {
     <>
       <p className="text-sm text-fg-muted">
         Trang thật: <Link className="text-accent underline" to="/map/V-101">/map/V-101</Link>. Ảnh thiết kế:{' '}
-        <code>public/figma-ref/asset-v101-design.png</code>.
+        chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu).
       </p>
-      <Demo title="TankCutawayDiagram + TankLayerList (lớp tính bằng tankLayers – tổng 100 %)" refImg="/figma-ref/asset-v101-design.png">
+      <Demo title="TankCutawayDiagram + TankLayerList (lớp tính bằng tankLayers – tổng 100 %)" refImg={REF_ASSET_V101_DESIGN}>
         <SegmentedControl label="Ca thử" size="sm" options={CASES} value={caseId} onChange={(id) => setCaseId(id as typeof caseId)} />
         <div className="grid max-w-[760px] gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <div className="rounded-lg border border-line/30 bg-surface-sunken/40 p-3">

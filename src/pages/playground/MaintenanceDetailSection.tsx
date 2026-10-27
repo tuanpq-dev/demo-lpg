@@ -28,7 +28,7 @@ import { useNow } from '@/lib/useNow';
 import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/mocks/maintenance';
 import { Demo } from './Demo';
 
-const REF = '/figma-ref/mt-detail-design.png';
+const REF = (import.meta.env.DEV ? '/scratch/figma-ref/mt-detail-design.png' : undefined);
 const STEPS = WORKFLOW_STEPS.map((s) => ({ id: s.status, label: s.label }));
 
 const STATUS_CASES = [
@@ -100,7 +100,7 @@ export function MaintenanceDetailSection() {
     <>
       <p className="text-sm text-fg-muted">
         Trang thật: <Link className="text-accent underline" to="/maintenance/MT-00128">/maintenance/MT-00128</Link> (nhóm 3). Ảnh thiết kế:{' '}
-        <code>public/figma-ref/mt-detail-design.png</code>. Lần bấm gần nhất: <span className="text-fg">{log}</span>
+        chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu). Lần bấm gần nhất: <span className="text-fg">{log}</span>
       </p>
 
       <Demo title="Header: Badge severity chip (+ icon) · status md · tag md · WorkflowStepper" refImg={REF}>

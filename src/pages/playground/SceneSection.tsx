@@ -6,6 +6,9 @@ import { SCENE_IDS } from '@/data/scene';
 import type { LiveData, TagValue } from '@/features/scene';
 import { FigmaRef } from './FigmaRef';
 
+/** Ảnh Figma chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
+const REF_53_11_OVERVIEW = import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined;
+
 /** Ghi đè số liệu để xem đủ trạng thái: V-101 warning (mức cao), E-101A danger, C-101 mất tín hiệu (mất tag PT-202). */
 function withIncidents(live: LiveData): LiveData {
   const { 'PT-202': _lost, ...rest } = live;
@@ -86,7 +89,7 @@ export function SceneSection() {
         alt="Cảnh 3D khu bồn LPG"
         onSelect={setSelected}
       />
-      <FigmaRef src="/figma-ref/53-11-overview.png" x={32} y={318} w={1146} h={591} />
+      <FigmaRef src={REF_53_11_OVERVIEW} x={32} y={318} w={1146} h={591} />
     </div>
   );
 }
