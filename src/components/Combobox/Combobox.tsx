@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { Avatar } from '../Avatar';
 import { CloseIcon } from '../Icon';
 
 export type ComboOption = {
@@ -32,23 +33,6 @@ export type ComboboxProps = Common &
     | { multiple?: false; value: string | null; onChange: (value: string | null) => void; clearable?: boolean }
     | { multiple: true; value: readonly string[]; onChange: (value: string[]) => void; clearable?: never }
   );
-
-/** "Nguyễn Văn A" → "NA" (chữ đầu họ + chữ đầu tên). */
-export function initials(name: string) {
-  const w = name.trim().split(/\s+/);
-  return ((w[0]?.[0] ?? '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase();
-}
-
-function Avatar({ name }: { name: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-chip text-2xs font-bold text-primary"
-    >
-      {initials(name)}
-    </span>
-  );
-}
 
 /**
  * Ô chọn có tìm kiếm (ARIA combobox + listbox).
