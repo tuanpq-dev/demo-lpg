@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { cn } from '@/lib/cn';
 import { Badge } from '../Badge';
 import { Checkbox } from '../Checkbox';
+import { CheckCircleIcon } from '../Icon';
 import { ProgressBar } from '../ProgressBar';
 
 export type ChecklistItemView = {
@@ -26,6 +27,11 @@ export type ChecklistProps = {
   onToggle?: (id: string) => void;
   /** Có giá trị → khoá mọi ô + hiện gợi ý này (vd "Tiếp nhận yêu cầu trước…"). */
   lockHint?: string | null;
+  /**
+   * summary = danh sách chỉ đọc gọn (✓ tròn + chữ, không ô/thanh tiến độ) – "Checklist hoàn thành" ở modal Gửi nghiệm thu.
+   * Bỏ qua `onToggle`/`lockHint`.
+   */
+  variant?: 'default' | 'summary';
   className?: string;
 };
 
@@ -37,8 +43,32 @@ export const checklistSummary = (p: ChecklistProgressView) => `${p.done}/${p.tot
  * một hàng viền line/30 bo 4px cao `--checklist-row-height`,
  * checkbox thật + `<label>`; mục xong chữ primary + giờ bên phải; "Đang làm" nổi bật; "Không áp dụng" mờ + luôn khoá.
  */
-export function Checklist({ items, progress, onToggle, lockHint, className }: ChecklistProps) {
+export function Checklist({ items, progress, onToggle, lockHint, variant = 'default', className }: ChecklistProps) {
   const uid = useId();
+  if (variant === 'summary') {
+    return (
+      <ul className={cn('flex flex-col gap-2.5', className)} aria-label={`Checklist: ${progress.done}/${progress.total} hoàn thành`}>
+        {items.map((it) => (
+          <li key={it.id} className={cn('flex items-start gap-2.5 text-base', it.na ? 'text-fg-secondary/65' : 'text-fg-secondary')}>
+            {it.done ? (
+              <CheckCircleIcon size={18} className="mt-px shrink-0 text-success" />
+            ) : (
+              <span aria-hidden="true" className="mt-px size-[18px] shrink-0 rounded-full border-[1.5px] border-fg-secondary/60" />
+            )}
+            <span className="min-w-0">
+              {it.text}
+              <span className="sr-only">{it.na ? ' – không áp dụng' : it.done ? ' – đã xong' : ' – chưa xong'}</span>
+              {it.na && (
+                <span aria-hidden="true" className="ml-2 text-xs">
+                  (Không áp dụng)
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
   const hintId = `${uid}-hint`;
   const locked = !!lockHint || !onToggle;
   return (

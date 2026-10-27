@@ -93,15 +93,17 @@ export type DatePickerProps = Omit<Common, 'value' | 'onChange'> & {
   min?: string;
   max?: string;
   disabled?: boolean;
+  /** Kiểu nhãn (FormField `labelVariant`) – "section" = nhãn 18px như tiêu đề mục (modal nghiệm thu). */
+  labelVariant?: 'field' | 'section';
 };
 
 /**
  * Chọn ngày – dùng <input type="date"> gốc (bàn phím, trình đọc màn hình, lịch của hệ điều hành),
  * style theo token; `color-scheme: dark` để lịch bật lên theo nền tối.
  */
-export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date' }: DatePickerProps) {
+export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date', labelVariant }: DatePickerProps) {
   return (
-    <FormField label={label} required={required} hint={hint} error={error} className={className}>
+    <FormField label={label} required={required} hint={hint} error={error} className={className} labelVariant={labelVariant}>
       {({ id, describedBy, invalid }) => (
         <input
           id={id}

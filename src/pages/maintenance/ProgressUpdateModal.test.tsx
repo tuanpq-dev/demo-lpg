@@ -30,7 +30,7 @@ const record: MaintenanceRecord = {
 const DRAFT_KEY = 'demo-lpg:mt-progress-draft:MT-77';
 
 function setup(overrides: Partial<Parameters<typeof ProgressUpdateModal>[0]> = {}) {
-  const props = { record, onClose: vi.fn(), onSubmit: vi.fn(async () => {}), onOpenChecklist: vi.fn(), ...overrides };
+  const props = { record, onClose: vi.fn(), onSubmit: vi.fn(async () => {}), onOpenChecklist: vi.fn(), onContinueToSubmit: vi.fn(), ...overrides };
   const utils = render(<ProgressUpdateModal {...props} />);
   return { ...props, ...utils, user: userEvent.setup() };
 }
@@ -70,12 +70,17 @@ describe('ProgressUpdateModal', () => {
     expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 
-  test('chọn "Hoàn thành" → thanh trượt 100 % + cảnh báo checklist chưa xong', async () => {
-    const { user } = setup();
+  test('chọn "Hoàn thành" → nút "Tiếp tục gửi nghiệm thu": KHÔNG ghi bản ghi, chuyển nội dung + tệp sang modal Gửi', async () => {
+    const { user, onSubmit, onContinueToSubmit } = setup();
     await user.click(screen.getByRole('radio', { name: 'Hoàn thành' }));
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '100');
     expect(screen.getByText(/Checklist chưa xong hết/)).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nội dung đã hoàn thành/ })).toBeRequired();
+    expect(screen.getByRole('textbox', { name: /Nội dung đã hoàn thành/ })).not.toBeRequired();
+    expect(screen.queryByRole('button', { name: 'Cập nhật tiến độ' })).toBeNull();
+    await user.type(screen.getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), '  Đã thay gioăng ');
+    await user.click(screen.getByRole('button', { name: 'Tiếp tục gửi nghiệm thu' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onContinueToSubmit).toHaveBeenCalledWith({ text: 'Đã thay gioăng', files: [] });
   });
 
   test('Lưu nháp: không gửi (không đổi trạng thái), đóng modal; mở lại khôi phục nháp', async () => {

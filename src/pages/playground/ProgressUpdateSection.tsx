@@ -87,6 +87,10 @@ export function ProgressUpdateSection() {
               setOpen(false);
               setLog(`Gửi: ${JSON.stringify({ ...input, files: input.files?.length ?? 0 })}`);
             }}
+            onContinueToSubmit={(p) => {
+              setOpen(false);
+              setLog(`Tiếp tục gửi nghiệm thu (mục 13): "${p.text}", ${p.files.length} tệp`);
+            }}
           />
         )}
       </Demo>

@@ -1,12 +1,13 @@
 /*
  * Quy trình yêu cầu bảo trì – thuần (không React, không gọi Date.now()). Mỗi thao tác trả bản ghi MỚI + một dòng lịch sử.
  *
- *   pending ──Tiếp nhận──▶ assigned ──Bắt đầu──▶ in-progress ──Chuyển nghiệm thu──▶ review ──Nghiệm thu đạt──▶ done
+ *   pending ──Tiếp nhận──▶ assigned ──Bắt đầu──▶ in-progress ──Gửi nghiệm thu──▶ review ──Nghiệm thu (Đạt)──▶ done
+ *   (in-progress → review và review → done/in-progress CHỈ qua `review.ts`: submitForReview / reviewRecord – cần hồ sơ riêng.)
  *      └──────────────┴──────────────┴──────────────────┴──── Hủy ────▶ cancelled (giữ bước đã tới ở cancelledFrom)
  *
  * Không nhảy bước: chỉ đi tới bước kế tiếp. Hủy được khi chưa hoàn thành / chưa hủy.
  */
-import { plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
+import { plantDateTimeKey } from '@/lib/plantTime';
 import type {
   ApiMaintenanceStatus,
   MaintenanceHistoryEntry,
@@ -55,13 +56,13 @@ export const NEXT_STATUS: Record<MaintenanceStatus, ApiMaintenanceStatus | null>
 
 /**
  * Nhãn bước kế tiếp. Thanh hành động trang chi tiết: pending → "Tiếp nhận ngay"; assigned / in-progress → nút "Cập nhật tiến độ"
- * (modal – `progress.ts`); review → "Nghiệm thu đạt" (+ "Yêu cầu làm lại").
+ * (modal – `progress.ts`) + "Gửi nghiệm thu" (in-progress); review → "Nghiệm thu" (modal – `review.ts`).
  */
 export const NEXT_ACTION_LABEL: Partial<Record<MaintenanceStatus, string>> = {
   pending: 'Tiếp nhận ngay',
   assigned: 'Bắt đầu thực hiện',
-  'in-progress': 'Chuyển nghiệm thu',
-  review: 'Nghiệm thu đạt',
+  'in-progress': 'Gửi nghiệm thu',
+  review: 'Nghiệm thu',
 };
 
 export const canCancel = (s: MaintenanceStatus) => s !== 'done' && s !== 'cancelled';
@@ -81,14 +82,14 @@ function withHistory(r: MaintenanceRecord, kind: MaintenanceHistoryKind, text: s
 }
 
 /**
- * Sang bước kế tiếp (không nhảy bước). Không còn bước → trả nguyên bản ghi.
+ * Tiếp nhận / Bắt đầu – đúng một bước. Đang thực hiện / Chờ nghiệm thu → trả nguyên bản ghi (phải qua modal Gửi nghiệm thu /
+ * Nghiệm thu: `submitForReview` / `reviewRecord` trong `review.ts`, vì cần hồ sơ + người nghiệm thu).
  * - Tiếp nhận: người phụ trách = người đang có, hoặc người thao tác (`actor`).
  * - Bắt đầu: bản ghi không có checklist → tiến độ tối thiểu 10%.
- * - Chuyển nghiệm thu / Nghiệm thu đạt: không có checklist → 100%; có checklist → giữ tiến độ checklist.
  */
 export function advanceRecord(r: MaintenanceRecord, ctx: ActionContext): MaintenanceRecord {
   const next = NEXT_STATUS[r.status];
-  if (!next) return r;
+  if (!next || next === 'review' || next === 'done') return r;
   const hasChecklist = !!r.checklist?.length;
   switch (next) {
     case 'assigned': {
@@ -97,15 +98,6 @@ export function advanceRecord(r: MaintenanceRecord, ctx: ActionContext): Mainten
     }
     case 'in-progress':
       return withHistory({ ...r, status: next, progress: hasChecklist ? r.progress : Math.max(r.progress, 10) }, 'start', 'Bắt đầu thực hiện', ctx);
-    case 'review':
-      return withHistory({ ...r, status: next, progress: hasChecklist ? r.progress : 100, hold: undefined }, 'review', 'Chuyển nghiệm thu', ctx);
-    case 'done':
-      return withHistory(
-        { ...r, status: next, progress: hasChecklist ? r.progress : 100, completedAt: plantDayKey(ctx.now) },
-        'done',
-        'Nghiệm thu đạt – hoàn thành',
-        ctx,
-      );
     default:
       return r;
   }

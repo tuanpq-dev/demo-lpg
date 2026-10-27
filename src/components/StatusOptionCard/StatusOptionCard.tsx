@@ -14,7 +14,15 @@ export type StatusOption<T extends string = string> = {
   disabled?: boolean;
   /** Lý do không chọn được – đọc kèm nhãn + tooltip. */
   disabledHint?: string;
+  /** Tô chữ nhãn theo tone kể cả khi chưa chọn (ảnh nghiệm thu: "Không đạt" chữ đỏ). */
+  toneLabel?: boolean;
 };
+
+/**
+ * - stacked: icon 20px trên nhãn 14px, cao ~76px (modal "Cập nhật tiến độ", "Gửi yêu cầu nghiệm thu")
+ * - inline: chấm radio 18px + nhãn 16px một dòng, cao ~50px (modal "Nghiệm thu yêu cầu bảo trì")
+ */
+export type StatusOptionLayout = 'stacked' | 'inline';
 
 export type StatusOptionCardProps = {
   label: string;
@@ -23,11 +31,25 @@ export type StatusOptionCardProps = {
   tone?: StatusOptionTone;
   disabled?: boolean;
   disabledHint?: string;
+  toneLabel?: boolean;
+  layout?: StatusOptionLayout;
   tabIndex?: number;
   onSelect?: () => void;
   onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
   buttonRef?: (el: HTMLElement | null) => void;
   className?: string;
+};
+
+const labelTone: Record<StatusOptionTone, string> = {
+  primary: 'text-primary',
+  warning: 'text-warning',
+  danger: 'text-danger-text',
+};
+
+const dotTone: Record<StatusOptionTone, string> = {
+  primary: 'border-primary bg-primary',
+  warning: 'border-warning bg-warning',
+  danger: 'border-danger bg-danger',
 };
 
 const checkedClass: Record<StatusOptionTone, string> = {
@@ -55,12 +77,15 @@ export function StatusOptionCard({
   tone = 'primary',
   disabled,
   disabledHint,
+  toneLabel,
+  layout = 'stacked',
   tabIndex,
   onSelect,
   onKeyDown,
   buttonRef,
   className,
 }: StatusOptionCardProps) {
+  const inline = layout === 'inline';
   return (
     <button
       ref={buttonRef}
@@ -73,18 +98,30 @@ export function StatusOptionCard({
       onClick={disabled ? undefined : onSelect}
       onKeyDown={onKeyDown}
       className={cn(
-        'flex min-h-[76px] min-w-0 flex-col items-center justify-center gap-2 rounded-md border px-3 py-3 text-base transition-colors',
+        'flex min-w-0 items-center justify-center rounded-md border px-3 transition-colors',
+        inline ? 'min-h-[50px] flex-row gap-2.5 py-2 text-md' : 'min-h-[76px] flex-col gap-2 py-3 text-base',
         checked ? cn('border-[1.5px] font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary',
         disabled ? 'cursor-not-allowed opacity-50' : !checked && 'hover:border-line hover:text-fg',
         className,
       )}
     >
-      {icon && (
+      {inline && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px]',
+            checked ? dotTone[tone] : 'border-fg-secondary/70',
+          )}
+        >
+          {checked && <span className="size-1.5 rounded-full bg-surface" />}
+        </span>
+      )}
+      {!inline && icon && (
         <span aria-hidden="true" className={cn('shrink-0', checked ? iconTone[tone] : 'text-fg-secondary')}>
           {icon}
         </span>
       )}
-      <span>
+      <span className={cn((toneLabel || (inline && checked)) && labelTone[tone])}>
         {label}
         {disabled && disabledHint && <span className="sr-only"> – {disabledHint}</span>}
       </span>
@@ -99,6 +136,11 @@ export type StatusOptionGroupProps<T extends string> = {
   options: readonly StatusOption<T>[];
   value: T;
   onChange: (id: T) => void;
+  layout?: StatusOptionLayout;
+  /** Số cột ở ≥ md (mặc định 4; 3 = modal nghiệm thu). Dưới md: 4 → 2 cột, 3 → 1 cột. */
+  columns?: 3 | 4;
+  /** aria-describedby cho cả nhóm (cảnh báo/ghi chú dưới nhóm). */
+  describedBy?: string;
   className?: string;
 };
 
@@ -106,14 +148,15 @@ export type StatusOptionGroupProps<T extends string> = {
  * Nhóm ô trạng thái = `role="radiogroup"`; ←/→ (↑/↓) chuyển + chọn luôn, Home/End, bỏ qua ô disabled (useRovingFocus auto).
  * Bố cục: 4 cột ở ≥ md, 2 cột dưới đó.
  */
-export function StatusOptionGroup<T extends string>({ label, labelledBy, options, value, onChange, className }: StatusOptionGroupProps<T>) {
+export function StatusOptionGroup<T extends string>({ label, labelledBy, options, value, onChange, layout, columns = 4, describedBy, className }: StatusOptionGroupProps<T>) {
   const roving = useRovingFocus({ items: options, value, onChange: (id) => onChange(id as T) });
   return (
     <div
       role="radiogroup"
       aria-label={labelledBy ? undefined : label}
       aria-labelledby={labelledBy}
-      className={cn('grid grid-cols-2 gap-3 md:grid-cols-4', className)}
+      aria-describedby={describedBy}
+      className={cn('grid gap-3', columns === 3 ? 'grid-cols-1 sm:grid-cols-3 sm:gap-6 lg:gap-12' : 'grid-cols-2 md:grid-cols-4', className)}
     >
       {options.map((o) => (
         <StatusOptionCard
@@ -121,6 +164,8 @@ export function StatusOptionGroup<T extends string>({ label, labelledBy, options
           label={o.label}
           icon={o.icon}
           tone={o.tone}
+          toneLabel={o.toneLabel}
+          layout={layout}
           checked={o.id === value}
           disabled={o.disabled}
           disabledHint={o.disabledHint}

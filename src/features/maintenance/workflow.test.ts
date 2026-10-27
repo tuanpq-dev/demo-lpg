@@ -57,8 +57,8 @@ describe('canTransition – không nhảy bước', () => {
   test('nhãn nút chính theo trạng thái', () => {
     expect(NEXT_ACTION_LABEL.pending).toBe('Tiếp nhận ngay');
     expect(NEXT_ACTION_LABEL.assigned).toBe('Bắt đầu thực hiện');
-    expect(NEXT_ACTION_LABEL['in-progress']).toBe('Chuyển nghiệm thu');
-    expect(NEXT_ACTION_LABEL.review).toBe('Nghiệm thu đạt');
+    expect(NEXT_ACTION_LABEL['in-progress']).toBe('Gửi nghiệm thu');
+    expect(NEXT_ACTION_LABEL.review).toBe('Nghiệm thu');
     expect(NEXT_ACTION_LABEL.done).toBeUndefined();
     expect(NEXT_ACTION_LABEL.cancelled).toBeUndefined();
   });
@@ -76,20 +76,17 @@ describe('advanceRecord', () => {
   test('đã có người phụ trách → giữ người đó', () => {
     expect(advanceRecord(rec({ assignee: 'Trần Bình' }), ctx).assignee).toBe('Trần Bình');
   });
-  test('đi đủ 4 bước, mỗi lần đúng một bước; hoàn thành ghi ngày giờ nhà máy', () => {
+  test('chỉ đi được 2 bước (Tiếp nhận, Bắt đầu); in-progress / review cần modal Gửi nghiệm thu / Nghiệm thu', () => {
     let r = rec();
     const seen: MaintenanceStatus[] = [];
     for (let i = 0; i < 4; i++) {
       r = advanceRecord(r, ctx);
       seen.push(r.status);
     }
-    expect(seen).toEqual(['assigned', 'in-progress', 'review', 'done']);
-    expect(r.completedAt).toBe('2026-10-26');
-    expect(r.history!.map((h) => h.kind)).toEqual(['accept', 'start', 'review', 'done']);
-  });
-  test('hoàn thành qua nửa đêm Bangkok (17:00 UTC) → ngày mới', () => {
-    const r = advanceRecord(rec({ status: 'review' }), { actor: 'A', now: new Date('2026-10-26T17:00:00Z') });
-    expect(r.completedAt).toBe('2026-10-27');
+    expect(seen).toEqual(['assigned', 'in-progress', 'in-progress', 'in-progress']);
+    expect(r.history!.map((h) => h.kind)).toEqual(['accept', 'start']);
+    const review = rec({ status: 'review' });
+    expect(advanceRecord(review, ctx)).toBe(review);
   });
   test('done / cancelled: không đổi (cùng tham chiếu)', () => {
     const done = rec({ status: 'done' });
@@ -97,11 +94,9 @@ describe('advanceRecord', () => {
     expect(advanceRecord(done, ctx)).toBe(done);
     expect(advanceRecord(cancelled, ctx)).toBe(cancelled);
   });
-  test('không có checklist: bắt đầu ≥ 10%, nghiệm thu = 100%; có checklist: giữ tiến độ checklist', () => {
+  test('không có checklist: bắt đầu ≥ 10%', () => {
     expect(advanceRecord(rec({ status: 'assigned', progress: 0 }), ctx).progress).toBe(10);
-    expect(advanceRecord(rec({ status: 'in-progress', progress: 40 }), ctx).progress).toBe(100);
-    const withList = rec({ status: 'in-progress', progress: 33, checklist: [{ id: 'a', text: 'x', done: true }, { id: 'b', text: 'y', done: false }] });
-    expect(advanceRecord(withList, ctx).progress).toBe(33);
+    expect(advanceRecord(rec({ status: 'assigned', progress: 40 }), ctx).progress).toBe(40);
   });
 });
 
