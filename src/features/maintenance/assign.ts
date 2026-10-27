@@ -8,12 +8,13 @@
  * Tải việc (đang làm / quá hạn / Bận) TÍNH TỪ danh sách yêu cầu, không lưu.
  */
 import { plantDateTimeKey } from '@/lib/plantTime';
+import { BUSY_THRESHOLD, inShift, shiftShortLabel } from '@/features/staff/availability';
 import { SHIFTS, staffByName, type MaintenanceRecord, type MaintenanceStatus, type ShiftId } from '@/mocks/maintenance';
 import { dueInstant, isPastDue } from './deadline';
 import { addNoteRecord, assignRecord, type ActionContext } from './workflow';
 
-/** Bận khi đang làm ≥ 3 việc (người xử lý chính). */
-export const BUSY_THRESHOLD = 3;
+/** Bận khi đang làm ≥ 3 việc (người xử lý chính) – ngưỡng + `inShift` + nhãn ca dùng chung (`features/staff/availability`). */
+export { BUSY_THRESHOLD, inShift, shiftShortLabel };
 
 /** "Đang làm" = Đã phân công + Đang thực hiện (chờ nghiệm thu không tính – đã xong phần thi công). */
 const ACTIVE: readonly MaintenanceStatus[] = ['assigned', 'in-progress'];
@@ -49,14 +50,6 @@ export const workloadLabel = (w: StaffWorkload) => `${w.active} đang làm${w.ov
 export const canAssign = (s: MaintenanceStatus) => s === 'pending';
 export const canReassign = (s: MaintenanceStatus) => s === 'assigned' || s === 'in-progress';
 export const assignMode = (s: MaintenanceStatus): 'assign' | 'reassign' | null => (canAssign(s) ? 'assign' : canReassign(s) ? 'reassign' : null);
-
-/** Giờ "yyyy-mm-ddTHH:mm" có nằm trong khung ca không (ca 3 qua nửa đêm 22:00 → 06:00). */
-export function inShift(dateTime: string, shift: ShiftId): boolean {
-  const s = SHIFTS.find((x) => x.value === shift);
-  const h = Number(dateTime.slice(11, 13));
-  if (!s || !Number.isFinite(h) || dateTime.length < 16) return true;
-  return s.from < s.to ? h >= s.from && h < s.to : h >= s.from || h < s.to;
-}
 
 export type AssignForm = {
   assignee: string | null;
@@ -111,9 +104,6 @@ export type AssignWarning = {
   /** Lệch ca: ca mặc định của người được chọn (khác ca đang chọn) → nút "Đổi sang Ca …" (giữ ca bản ghi cho tới khi bấm). */
   suggestShift?: ShiftId;
 };
-
-/** "Ca 2" (bỏ khung giờ). */
-export const shiftShortLabel = (shift: ShiftId) => SHIFTS.find((s) => s.value === shift)?.label.split(' (')[0] ?? shift;
 
 /**
  * Cảnh báo KHÔNG chặn: người được chọn đang Bận / có việc quá hạn, ca không khớp giờ bắt đầu, hạn đã qua.

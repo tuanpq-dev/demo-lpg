@@ -58,3 +58,33 @@ describe('StaffList', () => {
     expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 });
+
+describe('StaffPickerCard – biến thể có xét ca (phân công cảnh báo)', () => {
+  test('availability: Sẵn sàng / Bận / Ngoài ca, chip tải việc tuỳ chữ, chip gợi ý; người Ngoài ca vẫn chọn được', async () => {
+    const onChange = vi.fn();
+    render(
+      <StaffList
+        label="Chọn nhân sự"
+        value={null}
+        onChange={onChange}
+        items={[
+          { id: 'A', name: 'Trần Bình', subtitle: 'KTV • Áp lực', shiftLabel: 'Ca 1', shiftMatch: true, busy: false, active: 1, overdue: 0, availability: 'available', loadLabel: '1 cảnh báo đang xử lý', suggestion: 'Cùng khu' },
+          { id: 'B', name: 'Lê Thị C', subtitle: 'KTV • Cảm biến', shiftLabel: 'Ca 2', busy: true, active: 3, overdue: 1, availability: 'off-shift', loadLabel: '3 cảnh báo đang xử lý (1 nghiêm trọng)' },
+        ]}
+      />,
+    );
+    const a = screen.getByRole('radio', { name: /Trần Bình/ });
+    expect(a).toHaveAccessibleDescription(/Sẵn sàng/);
+    expect(a).toHaveTextContent('1 cảnh báo đang xử lý');
+    expect(a).toHaveTextContent('Cùng khu');
+    const b = screen.getByRole('radio', { name: /Lê Thị C/ });
+    // Ngoài ca thắng Bận (nhãn do nơi gọi tính) – chip tải việc vẫn hiện.
+    expect(b).toHaveAccessibleDescription(/Ngoài ca/);
+    expect(b).not.toHaveTextContent('Bận');
+    expect(b).toHaveTextContent('3 cảnh báo đang xử lý (1 nghiêm trọng)');
+    expect(b).toHaveClass('border-dashed');
+    expect(b.className).not.toMatch(/opacity/);
+    await userEvent.setup().click(b);
+    expect(onChange).toHaveBeenCalledWith('B');
+  });
+});

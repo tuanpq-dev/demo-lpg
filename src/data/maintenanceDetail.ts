@@ -4,6 +4,7 @@
  */
 import type { TimelineEvent, TimelineTone } from '@/components';
 import { daysFromToday, plantDayKey } from '@/lib/plantTime';
+import { createSessionDraft } from '@/lib/sessionDraft';
 import type { WorkState } from '@/features/maintenance/progress';
 import type { DeviceCondition, SensorStatus, ValveStatus } from '@/features/maintenance/review';
 import type { AssignForm } from '@/features/maintenance/assign';
@@ -199,49 +200,29 @@ export function clearSubmitDraft(id: string) {
 /** Nháp = form phân công (trừ công tắc thông báo – mặc định lại khi mở). */
 export type AssignDraft = Omit<AssignForm, 'notify'> & { /** ISO */ savedAt: string };
 
-const assignDraftKey = (id: string) => `demo-lpg:mt-assign-draft:${id}`;
+/** Nháp đã lưu; hỏng / sai dạng → null. Khoá giữ nguyên `demo-lpg:mt-assign-draft:<id>` (helper chung `lib/sessionDraft`). */
+const assignDraft = createSessionDraft<AssignDraft>('demo-lpg:mt-assign-draft:', (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const d = raw as Partial<AssignDraft>;
+  const str = (v: unknown) => typeof v === 'string';
+  if (!str(d.startAt) || !str(d.dueAt) || !str(d.note) || !str(d.reason) || !Array.isArray(d.collaborators)) return null;
+  if (d.assignee !== null && !str(d.assignee)) return null;
+  const shift = SHIFT_VALUES.includes(d.shift as ShiftId) ? (d.shift as ShiftId) : null;
+  return {
+    assignee: d.assignee ?? null,
+    collaborators: d.collaborators.filter(str) as string[],
+    startAt: d.startAt!,
+    dueAt: d.dueAt!,
+    shift,
+    note: d.note!,
+    reason: d.reason!,
+    savedAt: str(d.savedAt) ? d.savedAt! : '',
+  };
+});
 
-export function saveAssignDraft(id: string, draft: AssignDraft): boolean {
-  try {
-    sessionStorage.setItem(assignDraftKey(id), JSON.stringify(draft));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Nháp đã lưu; hỏng / sai dạng → null. */
-export function loadAssignDraft(id: string): AssignDraft | null {
-  try {
-    const raw = sessionStorage.getItem(assignDraftKey(id));
-    if (!raw) return null;
-    const d = JSON.parse(raw) as Partial<AssignDraft>;
-    const str = (v: unknown) => typeof v === 'string';
-    if (!str(d.startAt) || !str(d.dueAt) || !str(d.note) || !str(d.reason) || !Array.isArray(d.collaborators)) return null;
-    if (d.assignee !== null && !str(d.assignee)) return null;
-    const shift = SHIFT_VALUES.includes(d.shift as ShiftId) ? (d.shift as ShiftId) : null;
-    return {
-      assignee: d.assignee ?? null,
-      collaborators: d.collaborators.filter(str) as string[],
-      startAt: d.startAt!,
-      dueAt: d.dueAt!,
-      shift,
-      note: d.note!,
-      reason: d.reason!,
-      savedAt: str(d.savedAt) ? d.savedAt! : '',
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function clearAssignDraft(id: string) {
-  try {
-    sessionStorage.removeItem(assignDraftKey(id));
-  } catch {
-    /* ignore */
-  }
-}
+export const saveAssignDraft = assignDraft.save;
+export const loadAssignDraft = assignDraft.load;
+export const clearAssignDraft = assignDraft.clear;
 
 // ---- Quay lại danh sách đúng bộ lọc cũ ----
 

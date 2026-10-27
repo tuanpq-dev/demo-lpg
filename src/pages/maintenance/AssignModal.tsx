@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
+  AssignNotices,
   Badge,
   Button,
   Combobox,
@@ -368,48 +369,28 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
             />
           </div>
 
-          {/* Cảnh báo không chặn. Vùng aria-live (polite) chỉ chứa CHỮ (không đặt nút trong vùng live); khối nhìn thấy có nút gợi ý. */}
-          <p aria-live="polite" className="sr-only">
-            {warnings.map((w) => `Cảnh báo: ${w.label}.`).join(' ')}
-          </p>
-          {warnings.length > 0 && (
-            <ul aria-label="Cảnh báo phân công" className="flex flex-col gap-1.5">
-              {warnings.map((w) => (
-                <li key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-fg">
-                  <span className="flex min-w-0 flex-1 items-start gap-2">
-                    <span aria-hidden="true" className="text-warning">
-                      ⚠
-                    </span>
-                    <span>{w.label} – vẫn phân công được.</span>
-                  </span>
-                  {w.suggestShift && (
-                    <Button
-                      variant="link"
-                      onClick={() => {
-                        setShiftTouched(true);
-                        set('shift', w.suggestShift!);
-                        announce(`Đã đổi ca làm việc sang ${shiftShortLabel(w.suggestShift!)}.`);
-                      }}
-                    >
-                      Đổi sang {shiftShortLabel(w.suggestShift)}
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* Lý do chặn – dưới cột phải, trên footer; nút xác nhận aria-describedby trỏ tới đây */}
-          {blocked && (
-            <div id={blockId} className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-fg">
-              <p className="font-semibold">Chưa thể {reassign ? 'đổi người' : 'phân công'} – còn thiếu:</p>
-              <ul className="mt-1 list-disc pl-5">
-                {issues.map((i) => (
-                  <li key={i.id}>{i.label}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Cảnh báo không chặn + lý do chặn (khối dùng chung với modal phân công cảnh báo). */}
+          <AssignNotices
+            warnings={warnings.map((w) => ({
+              id: w.id,
+              label: w.label,
+              action: w.suggestShift && (
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setShiftTouched(true);
+                    set('shift', w.suggestShift!);
+                    announce(`Đã đổi ca làm việc sang ${shiftShortLabel(w.suggestShift!)}.`);
+                  }}
+                >
+                  Đổi sang {shiftShortLabel(w.suggestShift)}
+                </Button>
+              ),
+            }))}
+            issues={issues}
+            blockId={blockId}
+            blockTitle={`Chưa thể ${reassign ? 'đổi người' : 'phân công'} – còn thiếu:`}
+          />
           {error && (
             <p role="alert" className="text-sm text-danger-text">
               {error}
