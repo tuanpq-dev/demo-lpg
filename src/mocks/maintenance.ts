@@ -48,6 +48,7 @@ export type MaintenanceHistoryKind =
   | 'notify'
   | 'priority'
   | 'assign'
+  | 'reassign'
   | 'accept'
   | 'start'
   | 'progress'
@@ -176,16 +177,50 @@ export const SHIFTS: { value: ShiftId; label: string; from: number; to: number }
 
 export const DEPARTMENTS = ['Bảo trì Cơ khí', 'Bảo trì Điện', 'Đo lường – Tự động hóa', 'An toàn – HSE', 'Vận hành'] as const;
 
-/** Danh bạ nhân sự cho "Người phụ trách chính" / "Người phối hợp". */
-export const PEOPLE: { name: string; department: (typeof DEPARTMENTS)[number] }[] = [
-  { name: 'Nguyễn Văn A', department: 'Bảo trì Cơ khí' },
-  { name: 'Trần Bình', department: 'Bảo trì Cơ khí' },
-  { name: 'Lê Thị C', department: 'Đo lường – Tự động hóa' },
-  { name: 'Phạm Văn D', department: 'Bảo trì Điện' },
-  { name: 'Trần Thị B', department: 'An toàn – HSE' },
-  { name: 'Hoàng Minh E', department: 'Vận hành' },
-  { name: 'Võ Thị F', department: 'Đo lường – Tự động hóa' },
+/**
+ * Vai trò nghiệp vụ của nhân sự (khác vai trò đăng nhập):
+ * - technician: nhận việc bảo trì (phân công)
+ * - engineer:   kỹ sư – vừa nhận việc vừa nghiệm thu được (khớp quyền `maintenance:review` của vai trò engineer)
+ * - manager:    quản lý / trưởng ca – chỉ nghiệm thu, KHÔNG nằm trong danh sách phân công
+ */
+export type StaffRole = 'technician' | 'engineer' | 'manager';
+export type StaffMember = {
+  id: string;
+  name: string;
+  title: string;
+  department: (typeof DEPARTMENTS)[number];
+  /** Chuyên môn – dòng phụ trên thẻ nhân sự (modal Phân công). */
+  specialty: string;
+  defaultShift: ShiftId;
+  role: StaffRole;
+};
+
+/**
+ * MỘT nguồn nhân sự cho phân công, form tạo yêu cầu và nghiệm thu. Tên giữ như dữ liệu yêu cầu mẫu (ảnh Figma phân công
+ * ghi "Trần Minh B", "Lê Hoàng C" – CLAUDE.md mục 8). TODO(backend): GET danh mục nhân sự (+ vai trò, ca, chuyên môn).
+ */
+export const STAFF: readonly StaffMember[] = [
+  { id: 's01', name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Chuyên gia Van/Bồn', defaultShift: 'shift-2', role: 'engineer' },
+  { id: 's02', name: 'Trần Bình', title: 'Kỹ thuật viên cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Thiết bị áp lực', defaultShift: 'shift-1', role: 'technician' },
+  { id: 's03', name: 'Lê Thị C', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Cảm biến', defaultShift: 'shift-2', role: 'technician' },
+  { id: 's04', name: 'Phạm Văn D', title: 'Kỹ thuật viên điện', department: 'Bảo trì Điện', specialty: 'Động cơ / Tủ điện', defaultShift: 'shift-1', role: 'technician' },
+  { id: 's05', name: 'Trần Thị B', title: 'Chuyên viên an toàn', department: 'An toàn – HSE', specialty: 'Hệ thống PCCC', defaultShift: 'shift-1', role: 'technician' },
+  { id: 's06', name: 'Võ Thị F', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Lưu lượng / Hiệu chuẩn', defaultShift: 'shift-3', role: 'technician' },
+  { id: 's07', name: 'Trần Hoàng Nam', title: 'Quản lý vận hành', department: 'Vận hành', specialty: 'Quản lý vận hành', defaultShift: 'shift-1', role: 'manager' },
+  { id: 's08', name: 'Trần Văn B', title: 'Quản lý', department: 'Bảo trì Cơ khí', specialty: 'Quản lý bảo trì', defaultShift: 'shift-1', role: 'manager' },
+  // Trước đây có trong danh sách "Người phụ trách chính" (PEOPLE) – nay là trưởng ca (manager) nên không còn chọn để phân công.
+  { id: 's09', name: 'Hoàng Minh E', title: 'Trưởng ca vận hành', department: 'Vận hành', specialty: 'Vận hành khu bồn', defaultShift: 'shift-2', role: 'manager' },
 ];
+
+/** Nhận việc bảo trì (phân công, form tạo yêu cầu, người phối hợp): technician + engineer. */
+export const ASSIGNABLE_STAFF = STAFF.filter((p) => p.role !== 'manager');
+/** Nghiệm thu: manager trước, rồi engineer (giữ thứ tự danh sách người nghiệm thu cũ). */
+export const REVIEWER_STAFF = [...STAFF.filter((p) => p.role === 'manager'), ...STAFF.filter((p) => p.role === 'engineer')];
+/** Tra theo TOÀN BỘ STAFF (kể cả người không còn chọn được) – bản ghi cũ vẫn hiện đúng thông tin. */
+export const staffByName = (name: string | null | undefined) => (name ? STAFF.find((p) => p.name === name) : undefined);
+
+/** Danh bạ cho "Người phụ trách chính" / "Người phối hợp" (form tạo yêu cầu) – suy từ STAFF. */
+export const PEOPLE: { name: string; department: (typeof DEPARTMENTS)[number] }[] = ASSIGNABLE_STAFF.map(({ name, department }) => ({ name, department }));
 
 /** Checklist mẫu – "Chọn checklist mẫu". */
 export const CHECKLIST_TEMPLATES: { id: string; label: string; items: string[] }[] = [
@@ -211,19 +246,11 @@ export const CHECKLIST_TEMPLATES: { id: string; label: string; items: string[] }
   },
 ];
 
-/**
- * Người nghiệm thu (tên + chức danh) – gồm hai tên trong ảnh thiết kế ("Trần Hoàng Nam" ở modal Gửi, "Trần Văn B" ở modal
- * Nghiệm thu). Modal Gửi lọc bỏ người thực hiện. TODO(backend): lấy từ user có vai trò engineer/admin (`maintenance:review`).
- */
-export const REVIEWERS: readonly { name: string; title: string }[] = [
-  { name: 'Trần Hoàng Nam', title: 'Quản lý vận hành' },
-  { name: 'Trần Văn B', title: 'Quản lý' },
-  { name: 'Hoàng Minh E', title: 'Trưởng ca vận hành' },
-  { name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí' },
-];
+/** Người nghiệm thu (tên + chức danh) – suy từ STAFF (manager + engineer). TODO(backend): user có quyền `maintenance:review`. */
+export const REVIEWERS: readonly { name: string; title: string }[] = REVIEWER_STAFF.map(({ name, title }) => ({ name, title }));
 
-export const MAINTENANCE_ASSIGNEES = ['Nguyễn Văn A', 'Trần Bình', 'Lê Thị C', 'Phạm Văn D'] as const;
-// (PEOPLE ở dưới là danh bạ đầy đủ cho form tạo yêu cầu.)
+/** Tên người nhận việc (thao tác hàng loạt). */
+export const MAINTENANCE_ASSIGNEES: readonly string[] = ASSIGNABLE_STAFF.map((p) => p.name);
 
 const pad = (n: number) => String(n).padStart(2, '0');
 /** Ngày (local) cách hôm nay `offset` ngày → "yyyy-mm-dd". */
