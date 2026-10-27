@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AssetSection } from './AssetSection';
+import { AssignSection } from './AssignSection';
 import { BusinessSection } from './BusinessSection';
 import { EditorSection } from './EditorSection';
 import { FormsSection } from './FormsSection';
@@ -29,6 +30,10 @@ export default function PlaygroundPage() {
         <h1 className="text-3xl font-bold">Component Playground</h1>
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
+
+      <Section id="assign" title="14. Phân công người xử lý (ảnh thiết kế): modal, StaffList/StaffPickerCard, Switch, Avatar">
+        <AssignSection />
+      </Section>
 
       <Section id="review" title="13. Nghiệm thu bảo trì (ảnh thiết kế): modal Gửi yêu cầu nghiệm thu, modal Nghiệm thu, biến thể StatusOptionGroup/Checklist/Badge/KpiCard">
         <ReviewSection />

@@ -30,6 +30,7 @@ import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
 import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
+import { bulkAssignMessage, canAssign } from '@/features/maintenance/assign';
 import {
   MAINTENANCE_ASSIGNEES,
   MAINTENANCE_PARAMS,
@@ -58,6 +59,7 @@ import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { CreateMaintenanceModal } from './CreateMaintenanceModal';
 import { ProgressUpdateModal } from './ProgressUpdateModal';
+import { AssignModal } from './AssignModal';
 import { ReviewModal } from './ReviewModal';
 import { SubmitReviewModal } from './SubmitReviewModal';
 
@@ -123,7 +125,7 @@ function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sect
 
 /** Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. */
 export default function MaintenancePage() {
-  const { status, data, error, refetch, create, assign, updateProgress, submitForReview, review } = useMaintenance();
+  const { status, data, error, refetch, create, assign, bulkAssign, updateProgress, submitForReview, review } = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
   const navigate = useNavigate();
@@ -180,6 +182,11 @@ export default function MaintenancePage() {
   const reviewId = search.get('review');
   const reviewRecordRow = canReview && reviewId ? all.find((r) => r.id === reviewId && r.status === 'review') : undefined;
   const closeReview = () => setExtra({ review: null });
+
+  // ---- Phân công (?assign=<id>, badge "Chờ tiếp nhận"): chỉ Chờ tiếp nhận (đổi người làm ở trang chi tiết).
+  const assignId = search.get('assign');
+  const assignRow = canWrite && assignId ? all.find((r) => r.id === assignId && canAssign(r.status)) : undefined;
+  const closeAssign = () => setExtra({ assign: null });
 
   /** Danh bạ thiết bị → khu vực (bảo trì + cảnh báo) cho ô "Thiết bị"/"Khu vực" của form. */
   const devices = useMemo(() => setDeviceDirectory(all, alerts.data ?? []), [all, alerts.data]);
@@ -242,7 +249,13 @@ export default function MaintenancePage() {
       header: 'Trạng thái',
       width: 120,
       cell: (r) =>
-        canReview && r.status === 'review' ? (
+        canWrite && canAssign(r.status) ? (
+          <button type="button" onClick={() => setExtra({ assign: r.id })} title="Phân công người xử lý" className="rounded-md text-left hover:brightness-125">
+            {/* Tên = chữ ẩn + chữ hiển thị ("label in name" – WCAG 2.5.3), cùng cách badge tiến độ/nghiệm thu. */}
+            <span className="sr-only">Phân công {r.code} – trạng thái: </span>
+            <StatusCell r={r} />
+          </button>
+        ) : canReview && r.status === 'review' ? (
           <button type="button" onClick={() => setExtra({ review: r.id })} title="Nghiệm thu" className="rounded-md text-left hover:brightness-125">
             <span className="sr-only">Nghiệm thu {r.code} – trạng thái: </span>
             <StatusCell r={r} />
@@ -281,10 +294,10 @@ export default function MaintenancePage() {
   ];
 
   // Không còn "Chuyển nghiệm thu" hàng loạt: mỗi yêu cầu cần hồ sơ gửi nghiệm thu riêng (modal Gửi yêu cầu nghiệm thu).
+  // Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt); cảnh báo gộp khi người được chọn sẽ thành Bận.
   const runBulkAssign = async (name: string) => {
-    const ids = [...selected];
-    await assign(ids, name);
-    setNotice(`Đã phân công ${ids.length} yêu cầu cho ${name}.`);
+    const { assigned, skippedBy, busyAfter, activeAfter } = await bulkAssign([...selected], name, actor);
+    setNotice(`${bulkAssignMessage(assigned, skippedBy)}.` + (busyAfter && assigned ? ` Lưu ý: ${name} sẽ Bận (${activeAfter} việc đang làm).` : ''));
     setSelected([]);
   };
 
@@ -410,7 +423,7 @@ export default function MaintenancePage() {
                 <span className="text-base font-semibold text-info">Đã chọn {selected.length} yêu cầu</span>
                 <Select
                   variant="button"
-                  label="Phân công"
+                  label="Phân công (chỉ Chờ tiếp nhận)"
                   options={MAINTENANCE_ASSIGNEES.map((n) => ({ value: n, label: n }))}
                   value={null}
                   onChange={(n) => n && runBulkAssign(n)}
@@ -489,6 +502,20 @@ export default function MaintenancePage() {
             await submitForReview(submitRecord.id, input, actor);
             closeSubmit();
             setNotice(`Đã gửi nghiệm thu ${submitRecord.code} – chờ ${input.reviewer} nghiệm thu.`);
+          }}
+        />
+      )}
+      {assignRow && (
+        <AssignModal
+          key={assignRow.id}
+          record={assignRow}
+          records={all}
+          onClose={closeAssign}
+          onSubmit={async (form) => {
+            await assign(assignRow.id, form, actor);
+            closeAssign();
+            // TODO(backend): thông báo đẩy/SMS cho người được phân công.
+            setNotice(`Đã phân công ${assignRow.code} cho ${form.assignee}.`);
           }}
         />
       )}
