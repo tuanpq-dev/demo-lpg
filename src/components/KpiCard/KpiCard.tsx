@@ -67,6 +67,10 @@ export type KpiCardProps = {
    * sm: ô thông tin to hơn – nhãn 14px, giá trị 16px đậm, đệm 14px (5 ô đầu modal "Cập nhật tiến độ bảo trì"; ảnh thiết kế).
    */
   emphasis?: boolean;
+  /** sm: căn giữa nhãn/giá trị (thông số sau bảo trì – modal nghiệm thu). */
+  align?: 'start' | 'center';
+  /** sm: dòng phụ nhỏ dưới giá trị ("Ngưỡng: 10.5", "Hiện tại: 9.6 bar"). */
+  footnote?: ReactNode;
   className?: string;
 };
 
@@ -108,11 +112,20 @@ export function KpiCard({
   dense,
   size = 'md',
   emphasis,
+  align = 'start',
+  footnote,
   className,
 }: KpiCardProps) {
   if (size === 'sm') {
     return (
-      <div className={cn('flex min-w-0 flex-col rounded-md border border-line/30', emphasis ? 'gap-1 px-3.5 py-3' : 'gap-0.5 px-2.5 py-2', className)}>
+      <div
+        className={cn(
+          'flex min-w-0 flex-col rounded-md border border-line/30',
+          emphasis ? 'gap-1 px-3.5 py-3' : 'gap-0.5 px-2.5 py-2',
+          align === 'center' && 'items-center justify-center text-center',
+          className,
+        )}
+      >
         <span className={cn('truncate text-fg-secondary', emphasis ? 'text-base' : 'text-sm')} title={hint ? `${label} – ${hint}` : undefined}>
           {label}
           {hint && <span className="sr-only">. {hint}</span>}
@@ -134,6 +147,7 @@ export function KpiCard({
             {unit && (unit.startsWith('°') || unit === '%' ? unit : ` ${unit}`)}
           </span>
         )}
+        {footnote && <span className="text-sm text-fg-secondary">{footnote}</span>}
       </div>
     );
   }

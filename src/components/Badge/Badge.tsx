@@ -80,14 +80,15 @@ export type BadgeProps = CommonProps &
 export type CountTone = 'neutral' | 'info' | 'danger';
 /**
  * neutral = nền chip + chữ phụ · primary = viền + chữ primary (đang làm) · muted = mờ (không áp dụng) ·
- * warning = "Tạm dừng", "Chưa tải lên máy chủ" · danger = "Gặp sự cố" (chữ `danger-text`, nền đỏ nhạt – nổi bật).
+ * success = "Đủ điều kiện gửi nghiệm thu" · warning = "Tạm dừng", "Chưa tải lên máy chủ" · danger = "Gặp sự cố" (chữ `danger-text`, nền đỏ nhạt – nổi bật).
  */
-export type TagTone = 'neutral' | 'primary' | 'muted' | 'warning' | 'danger';
+export type TagTone = 'neutral' | 'primary' | 'muted' | 'success' | 'warning' | 'danger';
 
 const tagClass: Record<TagTone, string> = {
   neutral: 'border-line bg-surface-chip/60 text-fg-secondary',
   primary: 'border-primary/60 bg-primary/10 text-primary',
   muted: 'border-line/30 bg-surface-muted/60 text-fg-secondary',
+  success: 'border-success/50 bg-success/10 text-success',
   warning: 'border-warning/50 bg-warning/10 text-warning',
   danger: 'border-danger/70 bg-danger/15 text-danger-text',
 };

@@ -27,7 +27,9 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const base =
   'inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-colors ' +
-  'disabled:pointer-events-none disabled:opacity-50';
+  'disabled:pointer-events-none disabled:opacity-50 ' +
+  // aria-disabled: trông như khoá nhưng VẪN nhận focus → trình đọc đọc được lý do (aria-describedby); click bị chặn bên dưới.
+  'aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
 const variantClass: Record<ButtonVariant, string> = {
   primary: 'rounded-lg bg-primary font-semibold text-fg-inverse backdrop-blur-[4px] hover:bg-primary/90',
@@ -57,10 +59,14 @@ const sizeClass: Record<Exclude<ButtonVariant, 'link'>, Record<ButtonSize, strin
 const linkSize: Record<ButtonSize, string> = { md: 'text-sm', sm: 'text-2xs' };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'ghost', size = 'md', icon, pressed, className, children, type = 'button', ...rest },
+  { variant = 'ghost', size = 'md', icon, pressed, className, children, type = 'button', onClick, ...rest },
   ref,
 ) {
   const isIcon = variant === 'icon' || variant === 'toolbar' || variant === 'overlay';
+  // aria-disabled: vẫn focus được (đọc được lý do qua aria-describedby) nhưng KHÔNG hành động. Enter/Space trên nút và
+  // gửi form ngầm (Enter trong ô nhập → "click" nút submit mặc định) đều đi qua sự kiện click → chặn tại đây
+  // (preventDefault = không submit form, không gọi onClick).
+  const inert = rest['aria-disabled'] === true || rest['aria-disabled'] === 'true';
   return (
     <button
       ref={ref}
@@ -75,6 +81,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         className,
       )}
       {...rest}
+      onClick={(e) => {
+        if (inert) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        onClick?.(e);
+      }}
     >
       {icon}
       {!isIcon && children}
