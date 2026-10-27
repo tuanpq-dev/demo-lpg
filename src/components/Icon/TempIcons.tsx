@@ -134,6 +134,14 @@ export const ArrowRightIcon = ({ size = 14, ...p }: P) => (
   </svg>
 );
 
+/** Khiên có dấu × – banner "Quy trình Khẩn cấp (ESD)" (ảnh drawer gas). Icon tạm. */
+export const ShieldAlertIcon = ({ size = 22, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6L12 3Z" fill="currentColor" fillOpacity="0.2" />
+    <path d="m9.5 9.5 5 5M14.5 9.5l-5 5" />
+  </svg>
+);
+
 /** Tam giác cảnh báo (viền) – dải liên kết cảnh báo. */
 export const AlertTriangleIcon = ({ size = 18, ...p }: P) => (
   <svg {...tempIconBase(size, p)}>

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAlerts } from '@/data/alerts';
+import { useAlertList } from '@/data/alertStore';
 import { useLiveStatus } from '@/data/live';
 import { announce, useAnnouncement } from '@/lib/announce';
 
@@ -28,7 +28,7 @@ export function LiveAnnouncer() {
     announce(STATUS_TEXT[status]);
   }, [status]);
 
-  const alerts = useAlerts();
+  const alerts = useAlertList();
   const unack = alerts.data?.filter((a) => a.status === 'unacknowledged').length;
   const prevUnack = useRef<number | undefined>(undefined);
   useEffect(() => {

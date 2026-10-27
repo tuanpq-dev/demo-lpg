@@ -71,6 +71,11 @@ export type KpiCardProps = {
   align?: 'start' | 'center';
   /** sm: dòng phụ nhỏ dưới giá trị ("Ngưỡng: 10.5", "Hiện tại: 9.6 bar"). */
   footnote?: ReactNode;
+  /**
+   * sm: lg = ô thông số lớn – nhãn 12px đậm, SỐ 24px đậm + đơn vị 16px cùng màu, nền nhạt, đệm 16px ("Thông số cảnh báo" ở
+   * drawer chi tiết cảnh báo; ảnh số ~28px → token `xl` 24 vì ô chỉ ~200px trong drawer 440px).
+   */
+  valueSize?: 'md' | 'lg';
   className?: string;
 };
 
@@ -114,8 +119,34 @@ export function KpiCard({
   emphasis,
   align = 'start',
   footnote,
+  valueSize = 'md',
   className,
 }: KpiCardProps) {
+  if (size === 'sm' && valueSize === 'lg') {
+    // Số ≥ 24px đậm = chữ lớn WCAG → danger-strong được phép (đơn vị 16px thường dùng danger-text).
+    // eslint-disable-next-line no-restricted-syntax -- chữ lớn 24px đậm
+    const big = tone === 'danger' ? 'text-danger-strong' : valueTone[tone];
+    return (
+      <div className={cn('flex min-w-0 flex-col gap-1.5 rounded-md border border-line/30 bg-surface-muted/40 px-4 py-3.5', className)}>
+        <span className="truncate text-sm font-semibold text-fg-secondary" title={hint ? `${label} – ${hint}` : undefined}>
+          {label}
+          {hint && <span className="sr-only">. {hint}</span>}
+        </span>
+        {signalLost ? (
+          <span className="flex items-center gap-1 text-base text-fg-secondary">
+            <SignalLostIcon size={16} className="shrink-0" />
+            Mất tín hiệu
+          </span>
+        ) : (
+          <span className="flex items-baseline gap-1.5 whitespace-nowrap tabular-nums">
+            <span className={cn('text-xl font-bold leading-8', big)}>{value}</span>
+            {unit && <span className={cn('text-md', valueTone[tone])}>{unit}</span>}
+          </span>
+        )}
+        {footnote && <span className="text-sm text-fg-secondary">{footnote}</span>}
+      </div>
+    );
+  }
   if (size === 'sm') {
     return (
       <div

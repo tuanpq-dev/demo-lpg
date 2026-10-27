@@ -20,6 +20,8 @@ export type StaffPickerItem = {
   overdue: number;
   /** Giải thích cách tính số việc (tooltip + đọc kèm). */
   workloadHint?: string;
+  /** compact: một chip phụ bên phải (vd "2 cảnh báo đang xử lý"); thay cho hàng chip ca/Bận/số việc. */
+  meta?: string;
 };
 
 export type StaffPickerCardProps = {
@@ -29,6 +31,8 @@ export type StaffPickerCardProps = {
   onSelect?: () => void;
   onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
   buttonRef?: (el: HTMLElement | null) => void;
+  /** Gọn: avatar 32px, tên + "chức danh • phòng ban" một dòng, chip `meta` (phân công cảnh báo). */
+  compact?: boolean;
 };
 
 /** Icon cặp hồ sơ nhỏ trong chip "đang làm" (trang trí). */
@@ -45,8 +49,42 @@ const BriefcaseIcon = () => (
  * (có quá hạn → chip danger).
  * `role="radio"` trong `StaffList` (radiogroup). Được chọn = viền primary + nền primary/10.
  */
-export function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, buttonRef }: StaffPickerCardProps) {
+export function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, buttonRef, compact }: StaffPickerCardProps) {
   const descId = useId();
+  if (compact) {
+    return (
+      <button
+        ref={buttonRef}
+        type="button"
+        role="radio"
+        aria-checked={checked}
+        aria-describedby={descId}
+        tabIndex={tabIndex}
+        onClick={onSelect}
+        onKeyDown={onKeyDown}
+        className={cn(
+          'flex w-full min-w-0 items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors',
+          checked ? 'border-primary bg-primary/10' : 'border-line/30 bg-surface-sunken/30 hover:border-line',
+        )}
+      >
+        <Avatar name={item.name} size="md" />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-base font-semibold text-fg">{item.name}</span>
+          <span id={descId} className="truncate text-sm text-fg-secondary">
+            {item.subtitle}
+            {item.meta && <span className="sr-only">. {item.meta}</span>}
+          </span>
+        </span>
+        {item.meta && (
+          <span aria-hidden="true" className="shrink-0">
+            <Badge variant="tag" tone="neutral">
+              {item.meta}
+            </Badge>
+          </span>
+        )}
+      </button>
+    );
+  }
   return (
     <button
       ref={buttonRef}
@@ -101,6 +139,8 @@ export type StaffListProps = {
   onChange: (id: string) => void;
   /** Hiện khi `items` rỗng (sau khi lọc). */
   emptyState?: ReactNode;
+  /** Thẻ gọn (`StaffPickerCard compact`) – phân công cảnh báo. */
+  compact?: boolean;
   className?: string;
 };
 
@@ -108,17 +148,18 @@ export type StaffListProps = {
  * Danh sách nhân sự = `role="radiogroup"` dọc: ↑/↓ chuyển + chọn, Home/End, Space/Enter chọn (useRovingFocus auto).
  * KHÔNG chọn sẵn: chưa chọn thì Tab vào mục đầu tiên mà không chọn.
  */
-export function StaffList({ label, labelledBy, items, value, onChange, emptyState, className }: StaffListProps) {
+export function StaffList({ label, labelledBy, items, value, onChange, emptyState, compact, className }: StaffListProps) {
   const roving = useRovingFocus({ items, value: value ?? '', onChange, orientation: 'vertical' });
   if (!items.length) {
     return <div className={cn('rounded-md border border-dashed border-line/30 px-4 py-8 text-center text-base text-fg-secondary', className)}>{emptyState ?? 'Không có nhân sự phù hợp.'}</div>;
   }
   return (
-    <div role="radiogroup" aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy} className={cn('flex flex-col gap-3', className)}>
+    <div role="radiogroup" aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy} className={cn('flex flex-col', compact ? 'gap-2' : 'gap-3', className)}>
       {items.map((it) => (
         <StaffPickerCard
           key={it.id}
           item={it}
+          compact={compact}
           checked={it.id === value}
           tabIndex={roving.getTabIndex(it.id)}
           buttonRef={roving.setRef(it.id)}

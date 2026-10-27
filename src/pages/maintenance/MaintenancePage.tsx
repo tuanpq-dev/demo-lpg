@@ -31,6 +31,7 @@ import { checklistProgress } from '@/features/maintenance/checklist';
 import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
 import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
 import { bulkAssignMessage, canAssign } from '@/features/maintenance/assign';
+import { linkedMaintenance } from '@/features/alerts/workflow';
 import {
   MAINTENANCE_ASSIGNEES,
   MAINTENANCE_PARAMS,
@@ -160,9 +161,14 @@ export default function MaintenancePage() {
   useEffect(() => rememberListSearch(location.search), [location.search]);
 
   // ---- Modal tạo yêu cầu: điều khiển qua URL (?create=1&device=&from=) để /alerts mở sẵn được.
-  const createOpen = canWrite && search.get('create') === '1';
   const fromAlert = search.get('from');
   const sourceAlert = fromAlert ? alerts.data?.find((a) => a.id === fromAlert) : undefined;
+  // Cảnh báo đã có yêu cầu (chưa hủy) → không mở form tạo trùng, chuyển sang yêu cầu đó.
+  const linkedFromAlert = fromAlert ? linkedMaintenance(fromAlert, all) : undefined;
+  const createOpen = canWrite && search.get('create') === '1' && !linkedFromAlert;
+  useEffect(() => {
+    if (linkedFromAlert && search.get('create') === '1') navigate(`/maintenance/${linkedFromAlert.id}`, { replace: true });
+  }, [linkedFromAlert, search, navigate]);
   const closeCreate = () => setExtra({ create: null, device: null, from: null });
 
   // ---- Modal cập nhật tiến độ: ?progress=<id> (badge trạng thái của dòng Đã phân công / Đang thực hiện).

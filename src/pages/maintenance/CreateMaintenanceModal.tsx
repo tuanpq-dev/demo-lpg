@@ -102,13 +102,13 @@ function blank(device: string | null): FormState {
 }
 
 /** Điền sẵn từ cảnh báo (ảnh thiết kế: ALT-00128 → "Kiểm tra và khắc phục sự cố tăng áp suất van V-101"). */
-function fromAlert(a: AlertRecord): FormState {
+function fromAlert(a: AlertRecord, title?: string): FormState {
   const startAt = localDateTime(0);
   const priority: Severity = a.severity === 'low' ? 'medium' : a.severity;
   const tpl = templateFor(a.device, a);
   return {
     ...blank(a.device),
-    title: `Kiểm tra và khắc phục: ${a.message.charAt(0).toLowerCase()}${a.message.slice(1)}`,
+    title: title ?? `Kiểm tra và khắc phục: ${a.message.charAt(0).toLowerCase()}${a.message.slice(1)}`,
     description: `${a.message} – giá trị ${a.value} / ngưỡng ${a.threshold} ${a.unit}. Cần kiểm tra ngay lập tức nguyên nhân và xử lý theo quy trình.`,
     type: 'incident',
     priority,
@@ -142,6 +142,7 @@ export function CreateMaintenanceModal({
   devices,
   defaultDevice,
   alert,
+  defaultTitle,
   onSubmit,
   onDraftSaved,
 }: {
@@ -152,12 +153,14 @@ export function CreateMaintenanceModal({
   defaultDevice?: string;
   /** Cảnh báo nguồn (mở từ /alerts). */
   alert?: AlertRecord;
+  /** Tên yêu cầu điền sẵn thay câu suy từ cảnh báo (báo cháy "Báo động giả" → "Kiểm tra đầu báo HD-02"). */
+  defaultTitle?: string;
   onSubmit: (input: NewMaintenanceInput) => Promise<unknown>;
   onDraftSaved?: () => void;
 }) {
   /** Giá trị khởi tạo: cảnh báo nguồn > bản nháp > form trống. */
   const initial = (): { form: FormState; draftAt: string | null } => {
-    if (alert) return { form: fromAlert(alert), draftAt: null };
+    if (alert) return { form: fromAlert(alert, defaultTitle), draftAt: null };
     const draft = loadMaintenanceDraft<FormState>();
     if (draft && !defaultDevice)
       return {
@@ -184,10 +187,10 @@ export function CreateMaintenanceModal({
   useLayoutEffect(() => {
     if (alert && alert.id !== loadedAlert) {
       setLoadedAlert(alert.id);
-      setForm(fromAlert(alert));
+      setForm(fromAlert(alert, defaultTitle));
       setDraftInfo(null);
     }
-  }, [alert, loadedAlert]);
+  }, [alert, loadedAlert, defaultTitle]);
 
   const areaOf = (d: string | null) => (d ? devices.find((x) => x.device === d)?.area ?? 'Khác' : '');
   const suggestion = useMemo(() => suggestForRequest({ device: form.device, alert }), [form.device, alert]);

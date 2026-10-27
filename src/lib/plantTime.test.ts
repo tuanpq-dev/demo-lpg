@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { dayNumber, daysFromToday, parsePlantDateTime, plantDateTimeKey, plantDayKey, plantMonthKey } from './plantTime';
+import { dayNumber, daysFromToday, formatDayVi, parsePlantDateTime, plantDateTimeKey, plantDayKey, plantMonthKey, plantTimeOfDay } from './plantTime';
 
 describe('plantTime – ngày theo giờ nhà máy (Asia/Bangkok, UTC+7)', () => {
   test('qua nửa đêm Bangkok trước nửa đêm UTC', () => {
@@ -36,5 +36,16 @@ describe('plantDateTimeKey / parsePlantDateTime', () => {
     for (const v of ['', '2026-10-26', '2026-10-26 10:00', '2026-00-10T10:00', '2026-10-26T24:00', '2026-10-26T10:60']) {
       expect(parsePlantDateTime(v)).toBeNull();
     }
+  });
+});
+
+describe('plantTimeOfDay / formatDayVi', () => {
+  test('giờ nhà máy có giây, qua nửa đêm UTC vẫn đúng', () => {
+    expect(plantTimeOfDay(new Date('2026-10-27T03:45:22Z'))).toBe('10:45:22');
+    expect(plantTimeOfDay(new Date('2026-10-27T17:00:05Z'))).toBe('00:00:05');
+  });
+  test('dd/mm/yyyy, bỏ phần giờ', () => {
+    expect(formatDayVi('2026-10-12')).toBe('12/10/2026');
+    expect(formatDayVi('2026-01-05T08:00')).toBe('05/01/2026');
   });
 });

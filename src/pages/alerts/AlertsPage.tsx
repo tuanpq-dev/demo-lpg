@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   AlertCard,
-  AlertDetailDrawer,
   Badge,
   Button,
   Card,
@@ -13,21 +11,24 @@ import {
   Select,
   TableActionButton,
   Tabs,
-  type AlertDetailData,
   type DataTableColumn,
   type FilterDef,
   type Severity,
   type TabItem,
 } from '@/components';
-import { useCan } from '@/app/auth';
+import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
+import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
+import { useNow } from '@/lib/useNow';
+import { bulkMessage, canResolve, linkedMaintenance, planBulk } from '@/features/alerts/workflow';
+import { DuplicateFromAlertError, setDeviceDirectory, useMaintenance } from '@/data/maintenance';
+import { ALERT_STAFF } from '@/data/alertDetail';
 import {
-  ALERT_ASSIGNEES,
   ALERT_PARAMS,
   RANGE_OPTIONS,
   SEVERITY_OPTIONS,
@@ -43,6 +44,9 @@ import {
   type AlertShift,
   type AlertTab,
 } from '@/data/alerts';
+import { CreateMaintenanceModal } from '../maintenance/CreateMaintenanceModal';
+import { AlertBulkCompleteModal } from './AlertBulkCompleteModal';
+import { AlertDetailDrawer } from './AlertDetailDrawer';
 
 const getAlertId = (a: AlertRecord) => a.id;
 const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
@@ -57,21 +61,6 @@ const readingTone: Record<Severity, string> = {
 };
 
 const dayLabel = (d: number) => (d === 0 ? 'Hôm nay' : d === 1 ? 'Hôm qua' : `${d} ngày trước`);
-
-function toDetail(a: AlertRecord): AlertDetailData {
-  return {
-    id: a.id,
-    code: a.code,
-    severity: a.severity,
-    status: a.status,
-    message: a.message,
-    device: a.device,
-    area: a.area,
-    time: `${dayLabel(a.daysAgo)}, ${a.time}`,
-    reading: tableValue(a),
-    assignee: a.assignee,
-  };
-}
 
 /** Xuất CSV các cảnh báo đang lọc (UTF-8 BOM để Excel đọc đúng tiếng Việt). */
 function exportCsv(rows: readonly AlertRecord[]) {
@@ -96,8 +85,11 @@ function exportCsv(rows: readonly AlertRecord[]) {
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
-  const { status, data, error, refetch, acknowledge, complete, assign } = useAlerts();
-  const navigate = useNavigate();
+  const { status, data, error, refetch, acknowledge, complete, assign, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, requestSupport } = useAlerts();
+  const maintenance = useMaintenance();
+  const { user } = useAuth();
+  const actor = user?.name || 'Admin';
+  const now = useNow(60_000);
   // Ẩn thao tác theo vai trò (UX) – backend kiểm tra lại quyền khi có API.
   const canAck = useCan('alert:acknowledge');
   const canCreateMaintenance = useCan('maintenance:write');
@@ -133,18 +125,29 @@ export default function AlertsPage() {
 
   const selectedRecords = all.filter((a) => selected.includes(a.id));
   const unackSelected = selectedRecords.filter((a) => a.status === 'unacknowledged').length;
+  const completePlan = planBulk(all, selected, canResolve);
+  const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
 
+  // Hàng loạt dùng CHUNG quy tắc với drawer (features/alerts/workflow): xác nhận chỉ dòng Chưa xác nhận, phân công không
+  // tự xác nhận (bỏ qua dòng đã hoàn thành), hoàn thành chỉ dòng Đang xử lý + một ghi chú chung.
   const runBulk = async (kind: 'ack' | 'assign', assignee?: string) => {
     const ids = [...selected];
     if (kind === 'ack') {
-      await acknowledge(ids);
-      setNotice(`Đã xác nhận ${unackSelected} cảnh báo.`);
+      const r = await acknowledge(ids, actor);
+      setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
     } else if (assignee) {
-      await assign(ids, assignee);
-      setNotice(`Đã phân công ${ids.length} cảnh báo cho ${assignee}.`);
+      const r = await assign(ids, assignee, actor);
+      setNotice(`${bulkMessage('Đã phân công', r.done, r.skipped)} – người phụ trách: ${assignee}.`);
     }
     setSelected([]);
   };
+
+  // ---- Modal "Tạo yêu cầu bảo trì" mở TRÊN drawer (drawer vẫn mở); đóng → focus về nút đã mở.
+  const [createFor, setCreateFor] = useState<{ alert: AlertRecord; title?: string } | null>(null);
+  const maintRecords = maintenance.data;
+  const linkedOf = (id: string) => (maintRecords ? linkedMaintenance(id, maintRecords) : undefined);
+  const openLinked = openAlert ? linkedOf(openAlert.id) : undefined;
+  const devices = useMemo(() => setDeviceDirectory(maintRecords ?? [], all), [maintRecords, all]);
 
   const tabs: TabItem[] = [
     { id: 'all', label: 'Tất cả', count: tabCounts.all },
@@ -280,10 +283,13 @@ export default function AlertsPage() {
             <Select
               variant="button"
               label="Phân công"
-              options={ALERT_ASSIGNEES.map((n) => ({ value: n, label: n }))}
+              options={ALERT_STAFF.map((p) => ({ value: p.name, label: p.name }))}
               value={null}
               onChange={(name) => name && runBulk('assign', name)}
             />
+            <Button disabled={completePlan.eligible.length === 0} onClick={() => setBulkCompleteOpen(true)}>
+              Đánh dấu hoàn thành{completePlan.eligible.length > 0 ? ` (${completePlan.eligible.length})` : ''}
+            </Button>
             <Button variant="link" size="md" onClick={() => setSelected([])} className="ml-auto">
               Bỏ chọn
             </Button>
@@ -319,32 +325,67 @@ export default function AlertsPage() {
       </Card>
 
       <AlertDetailDrawer
-        alert={openAlert ? toDetail(openAlert) : null}
-        readingClassName={openAlert ? readingTone[openAlert.severity] : undefined}
+        alert={openAlert}
         onClose={() => setOpenId(null)}
-        onCreateMaintenance={
-          canCreateMaintenance
-            ? (a) =>
-                navigate(`/maintenance?create=1&device=${encodeURIComponent(a.device)}&from=${encodeURIComponent(a.id)}`)
-            : undefined
-        }
-        onAcknowledge={
-          canAck
-            ? (id) => {
-                void acknowledge([id]);
-                setNotice('Đã xác nhận cảnh báo.');
-              }
-            : undefined
-        }
-        onComplete={
-          canAck
-            ? (id) => {
-                void complete([id]);
-                setNotice('Đã đánh dấu hoàn thành.');
-              }
-            : undefined
-        }
+        now={now}
+        allAlerts={all}
+        maintenance={openLinked ? { id: openLinked.id, code: openLinked.code } : null}
+        canAct={canAck}
+        canCreateMaintenance={canCreateMaintenance}
+        onAcknowledge={(id) => {
+          void acknowledge([id], actor);
+          announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
+        }}
+        onAssign={(id, name) => void assign([id], name, actor)}
+        onResolve={(id, note) => resolve(id, note, actor)}
+        onToggleGuide={(id, step) => void toggleGuide(id, step, actor)}
+        onAddNote={(id, text) => void addNote(id, text, actor)}
+        onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
+        onGasUpdate={(id, input, check) => gasUpdate(id, input, check, actor)}
+        onFireUpdate={(id, input, check) => fireUpdate(id, input, check, actor)}
+        onRequestSupport={(id, input) => void requestSupport(id, input, actor)}
       />
+
+      {createFor && (
+        <CreateMaintenanceModal
+          open
+          onClose={() => setCreateFor(null)}
+          devices={devices}
+          defaultDevice={createFor.alert.device}
+          alert={createFor.alert}
+          defaultTitle={createFor.title}
+          onDraftSaved={() => {
+            setCreateFor(null);
+            announce('Đã lưu nháp yêu cầu bảo trì.');
+          }}
+          onSubmit={async (input) => {
+            const source = createFor.alert;
+            try {
+              const rec = await maintenance.create({ ...input, createdBy: actor });
+              await noteMaintenance(source.id, rec.code, actor);
+              announce(`Đã tạo yêu cầu ${rec.code} từ ${source.code}.`);
+            } catch (e) {
+              if (!(e instanceof DuplicateFromAlertError)) throw e;
+              announce(e.message);
+            }
+            setCreateFor(null);
+          }}
+        />
+      )}
+
+      {bulkCompleteOpen && (
+        <AlertBulkCompleteModal
+          eligible={completePlan.eligible.length}
+          skipped={completePlan.skipped}
+          onClose={() => setBulkCompleteOpen(false)}
+          onConfirm={async (note) => {
+            const r = await complete(selected, note, actor);
+            setBulkCompleteOpen(false);
+            setSelected([]);
+            setNotice(bulkMessage('Đã hoàn thành', r.done, r.skipped));
+          }}
+        />
+      )}
     </Page>
   );
 }

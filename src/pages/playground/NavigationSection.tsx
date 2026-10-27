@@ -54,7 +54,7 @@ type Alert = {
 };
 
 const alerts: Alert[] = [
-  { time: '10:45:22', severity: 'critical', code: 'ALT-00128', text: 'Áp suất bồn V-101 vượt ngưỡng', device: 'V-101', area: 'Bồn chứa', status: 'unacknowledged' },
+  { time: '10:45:22', severity: 'critical', code: 'ALT-00128', text: 'Áp suất bồn V-101 vượt ngưỡng', device: 'V-101', area: 'Khu bồn LPG', status: 'unacknowledged' },
   { time: '09:12:05', severity: 'high', code: 'ALT-00127', text: 'Cảnh báo rò rỉ Gas nhẹ', device: 'GS-04', area: 'Khu nạp xuất', status: 'in-progress' },
   { time: '08:45:10', severity: 'high', code: 'ALT-00126', text: 'Nhiệt độ máy hóa hơi thấp', device: 'E-101A', area: 'Trạm hóa hơi', status: 'unacknowledged' },
   { time: '08:10:00', severity: 'medium', code: 'ALT-00125', text: 'Chênh áp lọc cao', device: 'F-201', area: 'Khu Lọc', status: 'in-progress' },

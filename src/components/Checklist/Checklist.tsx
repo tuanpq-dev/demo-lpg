@@ -30,8 +30,11 @@ export type ChecklistProps = {
   /**
    * summary = danh sách chỉ đọc gọn (✓ tròn + chữ, không ô/thanh tiến độ) – "Checklist hoàn thành" ở modal Gửi nghiệm thu.
    * Bỏ qua `onToggle`/`lockHint`.
+   * plain = ô tròn + chữ, không thanh tiến độ/khung từng dòng ("Hướng dẫn xử lý" ở drawer cảnh báo). Vẫn là checkbox thật
+   * (input ẩn + vòng tròn vẽ, focus hiện viền accent quanh vòng); `onToggle`/`lockHint` như default, nhưng khoá bằng
+   * `aria-disabled` + `aria-describedby` → dòng gợi ý (focus được, không tick được).
    */
-  variant?: 'default' | 'summary';
+  variant?: 'default' | 'summary' | 'plain';
   className?: string;
 };
 
@@ -71,6 +74,65 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
   }
   const hintId = `${uid}-hint`;
   const locked = !!lockHint || !onToggle;
+  if (variant === 'plain') {
+    return (
+      <div className={cn('flex flex-col gap-1.5', className)}>
+        {lockHint && (
+          <p id={hintId} className="text-sm text-fg-secondary">
+            {lockHint}
+          </p>
+        )}
+        <ul className="flex flex-col">
+          {items.map((it) => {
+            const id = `${uid}-${it.id}`;
+            const metaId = `${id}-meta`;
+            const off = locked || !!it.na;
+            return (
+              <li key={it.id} className={cn('flex min-h-10 items-center gap-3 rounded-md px-2.5', !off && 'hover:bg-surface-muted/40')}>
+                {/* Khoá = aria-disabled (KHÔNG `disabled`): vẫn Tab tới được, trình đọc đọc dòng gợi ý (aria-describedby);
+                    click/Space không đổi trạng thái (onChange trả ô về giá trị cũ, không gọi onToggle). */}
+                <input
+                  id={id}
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={it.done}
+                  aria-disabled={off || undefined}
+                  onChange={(e) => {
+                    // Khoá: trả ô về đúng trạng thái (trình duyệt đã đảo trước khi tới đây), không gọi onToggle.
+                    if (off) e.currentTarget.checked = it.done;
+                    else onToggle?.(it.id);
+                  }}
+                  aria-describedby={[it.done && it.time ? metaId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined}
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] peer-aria-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
+                    it.done ? 'border-primary bg-primary text-fg-inverse' : 'border-line',
+                  )}
+                >
+                  {it.done && (
+                    <svg viewBox="0 0 16 16" className="size-3">
+                      <path d="M4 8.5l2.5 2.5L12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <label htmlFor={id} className={cn('min-w-0 flex-1 text-md', it.done ? 'text-primary' : 'text-fg', !off && 'cursor-pointer')}>
+                  {it.text}
+                </label>
+                {it.done && it.time && (
+                  <span id={metaId} className="shrink-0 text-sm tabular-nums text-fg-secondary">
+                    <span className="sr-only">Đã làm lúc </span>
+                    {it.time}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       <ProgressBar value={progress.percent} tone="primary" size="md" track="solid" label="Tiến độ checklist" />

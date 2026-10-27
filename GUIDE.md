@@ -179,12 +179,12 @@ flowchart LR
 ```
 
 - Kiểu: `TagValue = { value: number | string; unit?; ts; quality: 'good' | 'uncertain' | 'bad' }`, `LiveData = Record<tag, TagValue>` (`src/features/live/types.ts`, thuần).
-- Nguồn: interface `LiveDataSource { subscribe(tags, cb) → huỷ; getSnapshot(tags); status; onStatusChange(cb) }`. Bản hiện tại `MockLiveSource` (đổi số mỗi 2 s, kết nối khi có người nghe). **Nối WebSocket/SCADA = viết class mới cùng interface và đổi `liveSource` trong `src/data/live/index.ts`** – UI không sửa.
+- Nguồn: interface `LiveDataSource { subscribe(tags, cb) → huỷ; getSnapshot(tags); status; onStatusChange(cb) }`. Bản hiện tại `MockLiveSource` (đổi số mỗi 2 s, kết nối khi có người nghe; tag không dao động – chuỗi trạng thái như `HD-02.ALARM` – lấy theo giá trị nền `setBase` ở bước kế tiếp). **Nối WebSocket/SCADA = viết class mới cùng interface và đổi `liveSource` trong `src/data/live/index.ts`** – UI không sửa.
 - Quy tắc hiển thị (`src/features/live/signal.ts`): **mất tín hiệu** = quality `bad`, hoặc ≥ 10 s (`STALE_MS`) không cập nhật, hoặc không có tag → "Mất tín hiệu" (xám + `SignalLostIcon`), KHÔNG hiện số cũ; `uncertain` vẫn hiện số. `useLiveData` tự hẹn giờ vẽ lại đúng mốc 10 s (`nextExpiry`) kể cả khi nguồn im lặng. Chưa nhận ảnh chụp đầu → "—" (không báo mất tín hiệu).
 - Áp dụng: KPI (`signalLost` → "—" + "Mất tín hiệu"), dòng theo dõi (`signalLost`, tone offline), marker 2.5D (tone neutral + icon), nhãn 3D (`objectMarker`), màu thiết bị 3D (`objectStatus`: một binding mất tín hiệu → offline nếu không có cảnh báo/sự cố nào khác), tooltip 3D, vệt chảy ống (mất tín hiệu → không chảy).
 - Header "Dữ liệu trực tiếp" (`LiveDataButton`, mọi trang): connected = chấm live · connecting = "Đang kết nối lại…" vàng nhấp nháy · disconnected = "Mất kết nối" đỏ.
 - Trình đọc màn hình: `src/app/LiveAnnouncer.tsx` (một vùng `aria-live="polite"` trong `Page`) đọc khi đổi trạng thái nguồn, khi số cảnh báo chưa xác nhận tăng, và mọi `announce()` (`src/lib/announce.ts`; Tổng quan dùng `useAnnounceChange` báo số điểm đo mất tín hiệu).
-- Giả lập sự cố: `?live=disconnect`, `?live=bad:LT-101,TT-201`, `?live=stale:FT-101` (ghép bằng `;`), thanh "Giả lập nguồn dữ liệu" ở `/playground#scene`, hoặc `window.__liveSimulator` (dev).
+- Giả lập sự cố (**chỉ dev** – `src/data/live/devScenarios.ts` nạp động khi `import.meta.env.DEV`; bản build production không có mã này và bỏ qua `?live=`): `?live=disconnect`, `?live=bad:LT-101,TT-201`, `?live=stale:FT-101`, `?live=gas-rise` / `?live=gas-clear` (ghép bằng `;`), thanh "Giả lập nguồn dữ liệu" ở `/playground#scene`, hoặc `window.__liveSimulator` (dev).
 - Mức bồn: tag `LT-xxx` = mức theo **chiều cao** (% đường kính); KPI "Mức bồn V-101" = **% thể tích** quy đổi bằng `levelPercentToVolumePercent` (`src/features/tank/volume.ts`, bồn trụ nằm, bỏ qua đáy elip; test `npm test`). TODO: bảng dung tích thật từ khách → `strappingVolume`.
 
 | Muốn sửa | Sửa ở |
@@ -211,17 +211,22 @@ sequenceDiagram
   S-->>P: commit danh sách mới, mọi trang cập nhật
   U->>P: bấm Xem chi tiết
   P->>T: setOpenId, URL có alert=id
-  P-->>U: AlertDetailDrawer
+  P-->>U: AlertDetailDrawer (pages/alerts)
+  U->>P: Xác nhận / tick hướng dẫn / ghi chú / Đánh dấu đã xử lý
+  P->>S: hàm thuần features/alerts/workflow → commit, bảng + tab + KPI tính lại
 ```
 
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
-| 1 | `src/mocks/alerts.ts` | `AlertRecord`, `alertRecords`, `ALERT_ASSIGNEES` |
-| 2 | `src/lib/createCollectionStore.ts` | Store danh sách dùng chung giữa trang; `commit` = cập nhật optimistic |
-| 3 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, `fetchAlerts`, `acknowledgeAlerts`/`assignAlerts`/`completeAlerts`, `useAlerts()` |
-| 4 | `src/app/useTableFilters.ts` | Bộ lọc ↔ URL (`replace`), phân trang, số đếm tab, bản ghi đang mở, chọn dòng |
-| 5 | `src/pages/alerts/AlertsPage.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, thao tác hàng loạt, `DataTable`, drawer, xuất CSV |
-| 6 | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | Drawer chi tiết (Xác nhận / Hoàn thành / Tạo yêu cầu bảo trì) |
+| 1 | `src/mocks/alerts.ts` | `AlertRecord` (hợp đồng `Alert` + trường CHỈ FE: `kind`, `direction`, `tag`, `notifiedTime`, `acknowledgedAt`, `resolvedAt`, `guide`, `notes`, `history` – `ALERT_FE_ONLY_FIELDS`), `alertRecords` |
+| 2 | `src/mocks/alertKinds.ts` · `src/mocks/sensors.ts` · `src/mocks/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
+| 3 | `src/data/alertStore.ts` | Store danh sách (nhẹ; `LiveAnnouncer` ở bundle chính chỉ dùng `useAlertList`) |
+| 4 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
+| 5 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, thao tác (`acknowledgeAlerts`/`assignAlerts`/`completeAlerts` trả `{ done, skipped }`, `resolveOneAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` |
+| 6 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF` |
+| 7 | `src/app/useTableFilters.ts` | Bộ lọc ↔ URL (`replace`), phân trang, số đếm tab, bản ghi đang mở, chọn dòng |
+| 8 | `src/pages/alerts/AlertsPage.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, thao tác hàng loạt, `DataTable`, drawer, modal tạo yêu cầu (trên drawer), xuất CSV |
+| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCompleteModal`) | Drawer chi tiết theo ảnh (mục 4m) |
 
 Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` – giá trị mặc định không ghi lên URL.
 
@@ -229,16 +234,22 @@ Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` –
 |---|---|
 | Thêm bộ lọc | `ALERT_PARAMS` + `AlertFilters` + `matchAlert` (`src/data/alerts.ts`), `filterDefs` (`AlertsPage.tsx`) |
 | Cột bảng | Mảng `columns` trong `AlertsPage.tsx` (+ `exportCsv` nếu cần xuất) |
-| Hành vi Xác nhận/Phân công | `acknowledgeAlerts`, `assignAlerts` trong `src/data/alerts.ts` |
+| Hành vi Xác nhận/Phân công/Hoàn thành | Hàm thuần `src/features/alerts/workflow.ts` (drawer và hàng loạt dùng chung); nối store ở `src/data/alerts.ts` |
+| Nguyên nhân / hướng dẫn / panel / nút của một loại cảnh báo | `ALERT_KINDS` (`src/mocks/alertKinds.ts`) + `kind` của bản ghi (`EXTRA` trong `src/mocks/alerts.ts`) |
+| Ngưỡng / chiều cảnh báo | Cấu hình tag `alarms` trong `src/mocks/assets.ts` (bản ghi có `tag`) hoặc `threshold` + `direction` của bản ghi |
 | KPI / thẻ ưu tiên | `deriveAlertKpis`, `derivePriorityCards` trong `src/data/alerts.ts` |
+
+**Người nhận xử lý cảnh báo = TOÀN BỘ `STAFF`** (`ALERT_STAFF`, kể cả trưởng ca/quản lý vận hành) – khác bảo trì (chỉ technician + engineer, `ASSIGNABLE_STAFF`) là **có chủ đích**: cảnh báo thuộc vận hành, trưởng ca thường nhận đầu tiên. Thay `ALERT_ASSIGNEES` cũ.
+
+**Hàng loạt** (thanh "Đã chọn N cảnh báo"): Xác nhận (chỉ Chưa xác nhận) · Phân công (không tự xác nhận, bỏ qua Đã hoàn thành) · **Đánh dấu hoàn thành** (chỉ Đang xử lý, MỘT ghi chú chung bắt buộc – `AlertBulkCompleteModal`). Thông báo "Đã hoàn thành X · bỏ qua N". Không còn đường nào nhảy từ Chưa xác nhận sang Hoàn thành.
 
 ### 4d. Bảo trì: model, quá hạn, modal tạo, liên kết từ cảnh báo
 
 ```mermaid
 flowchart TD
-  A["AlertDetailDrawer: Tạo yêu cầu bảo trì"] --> B["navigate tới /maintenance với query create, device, from"]
-  B --> C["MaintenancePage đọc create, device, from"]
-  C --> D["CreateMaintenanceModal: điền sẵn theo cảnh báo"]
+  A["AlertDetailDrawer: Tạo yêu cầu bảo trì"] --> D
+  B["/maintenance?create=1&device=&from= (link cũ)"] --> C["MaintenancePage: đã có yêu cầu từ cảnh báo → chuyển tới yêu cầu đó"]
+  C --> D["CreateMaintenanceModal: điền sẵn theo cảnh báo (mở TRÊN drawer ở /alerts)"]
   D --> E["useMaintenance create"]
   E --> F["data/maintenance.ts createMaintenance: MT-xxxxx, commit store"]
   F --> G["Bảng + KPI + lịch tự tính lại"]
@@ -275,7 +286,7 @@ export const isOverdue = (r: MaintenanceRecord, now = new Date()) =>
 | Gửi nghiệm thu / nghiệm thu (Đạt · Cần bổ sung · Không đạt) | `src/features/maintenance/review.ts` (mục 4k) |
 | Quy tắc quá hạn / giờ hạn | `isPastDue`, `dueInstant`, `deadlineCountdown` (`src/features/maintenance/deadline.ts`); `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
 | Trường của form tạo | `MaintenanceRecord` (`src/mocks/maintenance.ts`), `NewMaintenanceInput` + `createMaintenance` (`src/data/maintenance.ts`), `CreateMaintenanceModal.tsx` |
-| Liên kết từ cảnh báo | `onCreateMaintenance` trong `AlertsPage.tsx`; đọc `from` trong `MaintenancePage.tsx` |
+| Liên kết từ cảnh báo | Modal mở ở `AlertsPage.tsx` (`createFor`); liên kết = `sourceAlertId` của yêu cầu (`linkedMaintenance` – một cảnh báo chỉ một yêu cầu chưa hủy, `createMaintenance` ném `DuplicateFromAlertError`); `?create=1&from=` ở `MaintenancePage.tsx` |
 
 ### 4e. Bản đồ 3D
 
@@ -650,6 +661,94 @@ Hàng loạt (danh sách): chọn người → bulkAssign → planBulkAssign: CH
 
 Playground mục 14 (`#assign`): modal (phân công / đổi người, dữ liệu mẫu theo ảnh, không ghi store), StaffList, Switch, Avatar.
 
+### 4m. Drawer chi tiết cảnh báo (ảnh, 27/10/2026) – khung chung + panel theo loại
+
+Ảnh tham chiếu: `scratch/figma-ref/alert-drawer-{design,header,body,footer}.png` (áp suất), `alert-drawer-gas-{design,header,body,footer}.png` (khí gas) và `alert-drawer-fire-{design,header,body,footer}.png` (báo cháy) – gitignore, chỉ máy dev, KHÔNG để `public/`. Vẫn là DRAWER (đúng Figma màn Cảnh báo): 440 px, dưới `sm` toàn màn hình; mép trái `border-primary/40`; header cố định, thân cuộn, chân dính đáy (khung `Drawer` dùng chung trong `components/DetailDrawer/`).
+
+**Tổ chức theo loại cảnh báo.** Drawer = khung chung (`pages/alerts/AlertDetailDrawer.tsx`: header, hướng dẫn, tiến trình, ghi chú, nhật ký, chân) + panel thông số theo `ALERT_KINDS[kind].panel`:
+
+| `panel` | File | Loại dùng | Nội dung |
+|---|---|---|---|
+| `threshold` | `pages/alerts/panels/ThresholdPanel.tsx` | áp suất bồn + mọi loại cũ | Giá trị LÚC cảnh báo + "Hiện tại", ngưỡng cấu hình tag, thang một ngưỡng, Thiết bị liên quan, Nguyên nhân |
+| `gas` | `pages/alerts/panels/GasPanel.tsx` | `gas-leak` | Nồng độ LIVE + "Lúc cảnh báo", badge mức theo bands, thang nhiều mức, 4 chỉ số, banner ESD, Cảm biến trong khu |
+| `fire` | `pages/alerts/panels/FirePanel.tsx` | `fire` | "Thông tin báo cháy" (nhiệt độ ĐẦU BÁO live + "Lúc cảnh báo", loại tín hiệu, báo động / thiết bị TÁCH RIÊNG, cập nhật cuối) · "Tín hiệu liên quan" (gas, khói, nút nhấn) · banner xác nhận chéo · "Thiết bị liên quan" (máy trong khu, nhiệt độ máy là tag riêng) |
+| (sau) `vaporizer` | – | hóa khí | thêm panel + giá trị `panel` mới |
+
+Cấu hình một loại (`AlertKindConfig` trong `src/mocks/alertKinds.ts`):
+
+| Trường | Ý nghĩa | gas-leak |
+|---|---|---|
+| `panel` | panel thông số | `'gas'` |
+| `value` | số lớn: `record` (lúc cảnh báo) / `live` (tag) | `'live'` |
+| `scale`, `bands` | thang + mức `{ level, from, to?, label, tone }` – badge, màu thang, banner, điều kiện đóng đều tính từ đây | 0–100; 0–10 Bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD (CHỜ chốt – CLAUDE.md mục 7) |
+| `banner` | hiện khi mức ≥ `fromLevel`; ≥ `esdLevel` đổi câu | từ cấp 2; ≥ 40 "Đã vượt ngưỡng ESD…" |
+| `causes`, `steps` | nguyên nhân (trống → ẩn mục) / hướng dẫn (`{device}`, `{safetyValve}`, `{nearbySensor}`) | không nguyên nhân · 7 bước như ảnh |
+| `actions` | nút phụ ở chân: `assign` · `support` · `maintenance` · `procedure` ("Xem quy trình khẩn cấp", cần `emergency`) | `support`, `maintenance` (**không** `assign`) |
+| `update` | nút chính khi Đang xử lý: `resolve-note` ("Đánh dấu đã xử lý") / `gas-update` ("Cập nhật xử lý", `closeBelow`) / `fire-update` (báo cháy) | `gas-update`, đóng khi < cấp 1 |
+| `defaultOwner` | nhóm phụ trách hiển thị khi chưa phân công cá nhân (KHÔNG ghi `assignee`) | – (fire: "Trực ca") |
+| `falseAlarmMaintenance` | đóng "Báo động giả" → nút "Tạo yêu cầu bảo trì" tên điền sẵn (`{device}`) | – (fire: "Kiểm tra đầu báo {device}") |
+| `crossConfirmTitle`, `emergency` | tiêu đề banner xác nhận chéo · quy trình + danh bạ khẩn cấp (`draft` = nhãn chưa duyệt; liên hệ thiếu `phone` → "Chờ khách cung cấp") | – (fire) |
+| `collapsed` | mục thu gọn mặc định | `progress`, `notes` (Nhật ký vốn thu gọn) |
+| `gauge` | `false` = không vẽ thang (tốc độ thay đổi) | – |
+
+**Thêm loại cảnh báo mới** (vd hóa khí):
+1. Thêm id vào `ALERT_KIND_IDS` + một mục trong `ALERT_KINDS` (loại một ngưỡng chỉ cần `label/causes/steps` trong `PLAYBOOKS` – phần còn lại lấy `THRESHOLD`).
+2. Panel mới: thêm giá trị vào `AlertKindConfig['panel']`, viết `pages/alerts/panels/<Tên>Panel.tsx` (nhận `{ alert, now }`), rẽ nhánh trong `DrawerBody`. Logic thuần (mức, ngưỡng…) đặt ở `features/alerts/` kèm test.
+3. Gán `kind` (và `tag`, `previousValue` nếu cần) cho bản ghi ở `EXTRA` (`src/mocks/alerts.ts`); tag mới thêm vào `features/live/tags.ts` + `mocks/scenes/live.ts` (+ `liveUnit`).
+4. Nút phụ mới: thêm giá trị vào `actions` + nhánh trong `DrawerFooter` + modal riêng (mở TRÊN drawer).
+5. Test: hàm thuần + một test trang (`AlertsPage.test.tsx` / `AlertGasDrawer.test.tsx` làm mẫu); thêm mẫu vào playground mục 15.
+
+**Panel báo cháy – quy tắc** (loại `fire`, FIR-00018):
+- Cấu hình tag ở `mocks/sensors.ts`: `HEAT_DETECTORS` (đầu báo: tag nhiệt độ/báo động/trạng thái, **`alarmAt` 57 °C** – giả định, chờ khách), `AREA_FIRE_SIGNALS` (tín hiệu liên quan theo khu), `AREA_EQUIPMENT` (máy trong khu). Tag giả định: `VAPORIZER_AREA_TAGS` (`features/live/tags.ts`): `HD-02` °C · `HD-02.ALARM` alarm/normal · `HD-02.STATE` online/fault · `SD-02.ALARM` · `MCP-02.STATE` idle/activated · `GS-05` (gas trạm hóa hơi) · `E-101A/B.STATE`. Nhiệt độ máy E-101A = `TT-201` (KHÁC nhiệt độ đầu báo).
+- Trạng thái đầu báo tách 2 dòng: báo động (Đang báo động / Đã phục hồi / Không rõ) + thiết bị (Trực tuyến / Mất kết nối / Lỗi). Mất tín hiệu: không giữ số/trạng thái cũ.
+- Xác nhận chéo (`crossConfirm`, `features/alerts/fire.ts`): khói báo động, gas ≥ cấp 1 (`GAS_BANDS`) hoặc nút nhấn kích hoạt → `EmergencyBanner` "Nhiều tín hiệu cùng báo, nguy cơ cháy cao"; nút nhấn → câu "Nút nhấn khẩn cấp đã được kích hoạt" đứng đầu; `role="alert"` chỉ khi mới hiện / tập nguồn đổi.
+- Chân: Chưa xác nhận → "Xác nhận cảnh báo" + "Phân công xử lý" + "Xem quy trình khẩn cấp" (đúng ảnh, KHÔNG có Tạo yêu cầu bảo trì) · Đang xử lý → "Cập nhật xử lý" (`FireUpdateModal`): Tiếp tục xử lý / Đã xử lý sự cố / Báo động giả, ghi chú BẮT BUỘC cả 3; 2 ô đóng khoá (aria-disabled + lý do) khi đầu báo còn báo động; mất tín hiệu → tick "Đã kiểm tra tại chỗ" bắt buộc (`canCloseFire`) · Hoàn thành → lưu `resolution { kind: handled | false-alarm, closedBy: live | field }` (thống kê); báo động giả → "Tạo yêu cầu bảo trì" điền sẵn "Kiểm tra đầu báo HD-02" (không trùng → "Xem MT-…").
+- `EmergencyProcedureModal`: bước ứng phó + danh bạ từ `ALERT_KINDS.fire.emergency` (BẢN NHÁP – nhãn "Bản nháp, cần bộ phận An toàn duyệt"; Cứu hỏa 114 là link `tel:`, số nội bộ "Chờ khách cung cấp"). Mở trên drawer, Esc/Đóng trả focus.
+- Header mọi loại: khu có mã (`AREA_CODES` ở `mocks/areas.ts`) hiện "Trạm hóa hơi (FZ-02)".
+
+**Phân công cảnh báo gas**: chân drawer gas KHÔNG có nút Phân công (theo ảnh) – phân công qua thao tác hàng loạt ở bảng (tick dòng → "Phân công"). Người phụ trách vẫn hiện ở header.
+
+**Panel gas – quy tắc**: số lớn = nồng độ LIVE (mất tín hiệu → "Mất tín hiệu", không giữ số cũ; thang + banner khi đó dùng giá trị lúc cảnh báo cho thận trọng) · Mức tăng = live − `previousValue` (ảnh chụp lưu cùng cảnh báo) · T/G vượt ngưỡng = bây giờ − lúc phát sinh khi live còn ≥ ngưỡng bản ghi · định dạng MỘT hàm `formatMeasure` / `formatDelta` ("25% LEL", "+11% LEL") · banner `EmergencyBanner`: không đóng được, `role="alert"` chỉ khi mới hiện / đổi mức · "Cập nhật xử lý" (`GasUpdateModal`): Tiếp tục / Đã xử lý xong (khoá aria-disabled + lý do khi live ≥ cấp 1; mất tín hiệu → bắt buộc số đo lại < cấp 1) · "Yêu cầu hỗ trợ" (`SupportRequestModal`): trưởng ca/quản lý + An toàn – HSE từ STAFF, lý do bắt buộc → người phối hợp + lịch sử, KHÔNG gửi thông báo (TODO backend).
+
+```
+AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel threshold (áp suất):
+  ├─ Header: icon theo mức độ · Badge severity chip · mã · tiêu đề · Thiết bị (link /map/<id> nếu có trang) | Khu vực · Thời gian "HH:mm:ss - dd/mm/yyyy" · Người phụ trách · Badge trạng thái
+  ├─ Thông số cảnh báo: KpiCard sm lg "Giá trị lúc cảnh báo" (+ "Hiện tại: x" live / Mất tín hiệu – chỉ khi bản ghi có tag) · "Ngưỡng cho phép" (/"Ngưỡng tối thiểu" khi below)
+  │    └─ ThresholdGauge role=meter: thang 0 → nguy hiểm × 1.2 (cấu hình) | ngưỡng × 1.2 (bản ghi); vượt thang → giá trị × 1.05;
+  │       không vẽ khi loại cảnh báo cấu hình `gauge: false` (tốc độ thay đổi, vd level-drop) – `alertGauge` (data/alertDetail)
+  ├─ Thiết bị liên quan: useRelatedDevice (mã, tên assets.ts, trạng thái xấu nhất, áp suất, nhiệt độ live) | "Chưa có số liệu trực tiếp"
+  ├─ Nguyên nhân có thể + Hướng dẫn xử lý: ALERT_KINDS[kind] – Checklist plain, tick khi Đang xử lý (lưu `guide[stepId]` + lịch sử);
+  │    trước khi xác nhận: ô `aria-disabled` (vẫn Tab tới) + aria-describedby → "Xác nhận cảnh báo để bắt đầu xử lý."
+  ├─ Tiến trình: WorkflowStepper vertical – bước XONG thì quá khứ + giờ ("Đã phát hiện (10:45:22)", "Đã gửi thông báo (…)", "Đã xác nhận (…)",
+  │    "Đã xử lý (…)", "Hoàn thành (…)"), bước đang chờ = tên trạng thái ("Chưa xác nhận" / "Đang xử lý") + "Nhật ký (n)" (<details>, EventTimeline history)
+  ├─ Ghi chú xử lý: ghi chú đã lưu + Textarea + "Lưu ghi chú"
+  └─ Chân: Chưa xác nhận → "Xác nhận cảnh báo" (Button danger = nền danger-solid) · Đang xử lý → "Đánh dấu đã xử lý" (cần ghi chú; ô có nội dung thì dùng luôn) · Hoàn thành → chỉ xem
+         + "Phân công xử lý"/"Đổi người phụ trách" (AlertAssignModal, StaffList compact, toàn STAFF) · "Tạo yêu cầu bảo trì" | "Xem MT-…" (link, nhận focus sau khi tạo)
+```
+
+| Quy tắc | Ở đâu |
+|---|---|
+| Chỉ đi tiến; phân công không đổi trạng thái; đánh dấu đã xử lý bắt buộc ghi chú | `src/features/alerts/workflow.ts` (+ test) |
+| Modal mở TRÊN drawer: Esc chỉ đóng hộp trên cùng, trả focus nút đã mở | `src/lib/useDialog.ts` (ngăn xếp hộp thoại, `useDialog.test.tsx`) |
+| `?alert=<id>` mở thẳng, F5 giữ; Esc đóng + trả focus | `useTableFilters` (`openKey: 'alert'`) + `Drawer` |
+| Không tạo trùng yêu cầu bảo trì | `linkedMaintenance` + `DuplicateFromAlertError` (`createMaintenance`) |
+| Thang đo bật/tắt theo loại cảnh báo | `ALERT_KINDS[kind].gauge` (`src/mocks/alertKinds.ts`) → `alertGauge` |
+| Mức gas, banner, thời gian vượt ngưỡng, điều kiện đóng | `src/features/alerts/bands.ts` (+ test); cập nhật/hỗ trợ: `gasUpdate`, `requestSupport` (`workflow.ts`) |
+| Đầu báo (báo động/thiết bị), tín hiệu liên quan, xác nhận chéo, điều kiện đóng báo cháy | `src/features/alerts/fire.ts` (+ test); `fireUpdate` (`workflow.ts`); số liệu: `useFireReadings` (`data/alertDetail.ts`) |
+
+**Mã mock để thử drawer** (`/alerts?alert=<mã>`; cảnh báo cũ hơn hôm nay cần thêm `&range=30d` để thấy trong bảng – drawer vẫn mở theo URL):
+
+| Mã | Trạng thái mock | Thử gì |
+|---|---|---|
+| FIR-00018 | Chưa xác nhận · **báo cháy** HD-02 · Trạm hóa hơi (FZ-02) · phát sinh 3 phút trước | Như ảnh cháy: 68 °C live, Đang báo động / Trực tuyến, Trực ca (chưa phân công cá nhân), "Xem quy trình khẩn cấp". **Dev:** `&live=fire-cross` (khói báo động → banner xác nhận chéo) · `&live=fire-mcp` (nút nhấn) · `&live=fire-clear` (đầu báo phục hồi → đóng được: thử "Báo động giả" → "Tạo yêu cầu bảo trì") · `&live=bad:HD-02,HD-02.ALARM` (mất tín hiệu → kiểm tra tại chỗ) |
+| ALT-00128 | Chưa xác nhận · V-101 · tag PT-101 | Như ảnh: "Hiện tại" live (thêm `&live=bad:PT-101` → Mất tín hiệu), ngưỡng từ cấu hình (10.5 / nguy hiểm 12 → thang 0–14.4). **Đã có yêu cầu MT-00128** (`sourceAlertId`) → chân hiện "Xem MT-00128" thay nút tạo (không tạo trùng) |
+| ALT-00127 | Đang xử lý · **khí gas** GS-04 · Khu nạp xuất · phát sinh 6 phút trước | Panel gas như ảnh (25% LEL cấp 2, banner cấp 2, 4 cảm biến); "Cập nhật xử lý" → "Đã xử lý xong" khoá (live ≥ 10). **Dev:** `&live=gas-rise` (tăng dần tới 46 → banner "Đã vượt ngưỡng ESD", ~30 s) · `&live=gas-clear` (giảm dần về 6 → "Đã xử lý xong" mở khoá, ~30 s) · `&live=bad:GS-04` (mất tín hiệu → bắt buộc số đo lại). Thử "Tạo yêu cầu bảo trì", "Yêu cầu hỗ trợ" |
+| ALT-00118 | Đã hoàn thành (hôm qua) · khí gas GS-03 | Panel gas chỉ xem (live GS-03 ~8% → Bình thường, không banner) |
+| ALT-00126 | Chưa xác nhận · E-101A · chiều **dưới ngưỡng** | Thử tạo yêu cầu; thang đảo màu, "Ngưỡng tối thiểu", aria-valuetext "dưới ngưỡng"; xác nhận → tick → đánh dấu đã xử lý |
+| ALT-00112 | Đã hoàn thành (3 ngày trước) · loại `level-drop` | **Không vẽ thang** (cấu hình `gauge: false`, −4.2 / −3.0 %/h) – chỉ hai ô số + câu giải thích; chỉ xem |
+
+Playground mục 15 (`#alert-drawer`): drawer theo các trạng thái mẫu (áp suất + GAS "Chưa xác nhận" (chỉ ở playground) / "Đang xử lý" + CHÁY Chưa xác nhận / Đang xử lý / Đã đóng – báo động giả), nút mô phỏng nồng độ GS-04 (tăng/giảm/mất tín hiệu), nút mô phỏng tín hiệu trạm hóa hơi (HD-02 phục hồi/báo động/mất tín hiệu, khói, nút nhấn, GS-05 tăng – dev), (không ghi store), ThresholdGauge (vượt / trong giới hạn / dưới ngưỡng), KpiCard lg, Button danger/lg, StaffList compact, WorkflowStepper dọc, Checklist plain.
+
 ### 4g. Design system: tokens → primitives → nghiệp vụ
 
 ```mermaid
@@ -698,7 +797,7 @@ Mục playground: `#tokens` (1), `#primitives` (2), `#navigation` (3), `#layout`
 3. Màu chữ dùng token (`text-info`, `text-fg-muted`…), không hardcode.
 4. Muốn cột đó có trong file CSV: thêm vào `head` và mảng giá trị trong `exportCsv` (cùng file).
 5. Muốn tìm kiếm theo cột đó: thêm trường vào mảng trong `matchAlert` (`src/data/alerts.ts`).
-6. Muốn hiện trong drawer chi tiết: thêm vào `toDetail()` (cùng file `AlertsPage.tsx`, kiểu `AlertDetailData` của `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx`).
+6. Muốn hiện trong drawer chi tiết: drawer nhận nguyên `AlertRecord` – thêm vào khối tương ứng trong `src/pages/alerts/AlertDetailDrawer.tsx` (`DrawerHeader` / `AlertMetrics` / `RelatedDevice`).
 7. Kiểm tra: `npm run typecheck`, mở `/alerts?range=30d`, gõ giá trị của cột vào ô tìm kiếm.
 8. Bảng Bảo trì làm tương tự ở `src/pages/maintenance/MaintenancePage.tsx` + `src/mocks/maintenance.ts`.
 
@@ -789,7 +888,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| Button | `src/components/Button/Button.tsx` | `variant` (primary/ghost/outline/subtle/plain/icon/toolbar/overlay/link), `size`, `icon`, `pressed` | mọi trang | `#primitives`, `#maintenance-detail` |
+| Button | `src/components/Button/Button.tsx` | `variant` (primary/**danger** – nền `danger-solid`/**info** – nền `info`, "Cập nhật xử lý" gas/ghost/outline/subtle/plain/icon/toolbar/overlay/link), `size` (sm/md/**lg** 44px), `icon`, `pressed`; `buttonClass(variant, size)` cho `<Link>` trông như nút | mọi trang | `#primitives`, `#maintenance-detail`, `#alert-drawer` |
 | Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count · tag – `tone` neutral/primary/muted/success/warning/danger, `size`), `value` | Cảnh báo, Bảo trì | `#primitives`, `#maintenance-detail`, `#progress-update`, `#review` |
 | StatusDot | `src/components/StatusDot/StatusDot.tsx` | `status`, `shape`, `pulse`, `label` | `src/app/HeaderActions.tsx` | `#primitives` |
 | StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone` (+ `neutral`), `size` (md 36px / sm badge), `pulse`, `children` | Tổng quan, Chi tiết tài sản | `#layout`, `#asset` |
@@ -807,7 +906,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | SegmentedControl | `src/components/SegmentedControl/SegmentedControl.tsx` | `options`, `value`, `onChange`, `variant`, `size` | form Bảo trì, PlantMap | `#navigation` |
 | Avatar | `src/components/Avatar/Avatar.tsx` | `name`, `size` sm 24 / md 32 / lg 40; `initials()` dùng chung với NotesThread (cùng người → cùng chữ, "Nguyễn Văn A" → "NA") | Combobox (avatar), thẻ nhân sự | `#assign` |
 | Switch | `src/components/Switch/Switch.tsx` | `label`, `description`, `checked`, `onChange` – `role="switch"` + `aria-checked`, bật = primary | Modal phân công | `#assign` |
-| StaffPicker (StaffList / StaffPickerCard) | `src/components/StaffPicker/StaffPicker.tsx` | List: `label`/`labelledBy`, `items` ({ name, subtitle, shiftLabel, shiftMatch, busy, active, overdue, workloadHint }), `value` (null = chưa chọn), `onChange`, `emptyState` – radiogroup dọc, ↑↓ chuyển + chọn, Space chọn | Modal phân công | `#assign` |
+| StaffPicker (StaffList / StaffPickerCard) | `src/components/StaffPicker/StaffPicker.tsx` | List: `label`/`labelledBy`, `items` ({ name, subtitle, shiftLabel, shiftMatch, busy, active, overdue, workloadHint, `meta` }), `value` (null = chưa chọn), `onChange`, `emptyState`, `compact` (thẻ gọn: avatar 32, tên, "chức danh • phòng ban", chip `meta`) – radiogroup dọc, ↑↓ chuyển + chọn, Space chọn | Modal phân công (bảo trì), phân công cảnh báo (compact) | `#assign`, `#alert-drawer` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
 | Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel` | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |
@@ -830,15 +929,17 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ; `emphasis` = ô thông tin modal tiến độ; `align="center"` + `footnote` = thông số modal nghiệm thu), `tone` thêm `primary` | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì | `#business`, `#asset`, `#maintenance-detail` |
+| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ; `emphasis` = ô thông tin modal tiến độ; `align="center"` + `footnote` = thông số modal nghiệm thu; `valueSize="lg"` = số 24px đậm + đơn vị 16px, nền nhạt – "Thông số cảnh báo"), `tone` thêm `primary` | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì | `#business`, `#asset`, `#maintenance-detail` |
 | SystemHealthCard | `src/components/SystemHealthCard/SystemHealthCard.tsx` | `value`, `caption`, `stats` | Tổng quan | `#business` |
 | AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick`, `layout` (stacked / inline = icon + nội dung + giờ một dòng), `tone` (danger/warning/success) | Tổng quan, Chi tiết tài sản | `#business`, `#asset` |
 | AlertCard | `src/components/AlertCard/AlertCard.tsx` | dữ liệu `AlertCardData` + `onClick(id)`; `variant="compact"` + `valueLabel` + `footer` (link) | Cảnh báo, Chi tiết bảo trì | `#business`, `#maintenance-detail` |
 | PriorityTaskCard | `src/components/PriorityTaskCard/PriorityTaskCard.tsx` | dữ liệu `PriorityTaskData` + `onDetail` | Bảo trì | `#forms` |
 | AssetRow, AssetWatchlist | `src/components/AssetRow/AssetRow.tsx` | `assets`, `onAssetClick`, `canOpen` (dòng nào bấm được), dòng `signalLost` | Tổng quan | `#business` |
 | EventTimeline, RecentEventsCard | `src/components/EventTimeline/EventTimeline.tsx` | `events` (+ `tone`), `variant` (event/schedule/history) | Bảo trì, Tổng quan, Chi tiết bảo trì | `#forms`, `#business`, `#maintenance-detail` |
-| DetailDrawer | `src/components/DetailDrawer/DetailDrawer.tsx` | `open`, `title`, `badges`, `fields`, `actions` | (Bảo trì đã chuyển sang trang riêng – còn dùng làm khung chung) | `#forms` |
-| AlertDetailDrawer | `src/components/AlertDetailDrawer/AlertDetailDrawer.tsx` | `alert`, `onAcknowledge`, `onComplete`, `onCreateMaintenance` | Cảnh báo | `#business` (mục Trạng thái) |
+| Drawer / DetailDrawer | `src/components/DetailDrawer/Drawer.tsx` · `DetailDrawer.tsx` | Drawer (khung): `open`, `onClose`, `labelledBy`, `header` (cố định; hàng đầu chừa `pr-10` cho nút ×), `children` (cuộn), `footer` (dính đáy), `accent` (mép trái primary/40), `contentKey`, `widthClass` (mặc định 440; dưới `sm` toàn màn hình) · DetailDrawer: `title`, `badges`, `fields`, `actions` | Drawer chi tiết cảnh báo (`src/pages/alerts/AlertDetailDrawer.tsx`) | `#forms`, `#alert-drawer` |
+| ThresholdGauge | `src/components/ThresholdGauge/ThresholdGauge.tsx` | `label`, `value`, `min`, `max`, `threshold`, `direction` (above/below – đảo màu), `valueText` (aria-valuetext, nói rõ vượt/dưới ngưỡng hoặc mức), `valueLabel`, `bands` (nhiều mức: đoạn success · warning/60 · warning · danger) + `ticks` (mốc trục, `danger` = chữ danger-text) – `role="meter"` | Drawer cảnh báo (áp suất, gas) | `#alert-drawer` |
+| EmergencyBanner | `src/components/EmergencyBanner/EmergencyBanner.tsx` | `title`, `text`, `stage` (đổi → báo lại) – không đóng được; `role="alert"` chỉ khi mới hiện / đổi `stage` | Drawer cảnh báo gas | `#alert-drawer` |
+| SensorList | `src/components/SensorList/SensorList.tsx` | `label`, `rows` ({ name, valueText (null = mất tín hiệu), levelLabel, tone, highlight }) – dòng gây cảnh báo: vạch trái + chữ đậm | Drawer cảnh báo gas | `#alert-drawer` |
 | Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size`, `titleTone` (primary = modal tiến độ) | form Bảo trì, Editor | `#forms` |
 | PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`, `focus` (id object → thêm view bay tới, chọn sẵn); chung `onSelect`, `onRendererChange`, `notice` | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
 
@@ -867,9 +968,9 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| WorkflowStepper | `src/components/WorkflowStepper/WorkflowStepper.tsx` | `steps` (+ `note`/`noteTone` nhãn phụ), `completed`, `current` (aria-current="step"; null = không còn bước chờ), `label` | Chi tiết bảo trì | `#maintenance-detail` |
-| InfoGrid | `src/components/InfoGrid/InfoGrid.tsx` | `items` ({ id, label, value, tone default/danger/warning/link, newRow }) – `<dl>` 4/2/1 cột | Chi tiết bảo trì | `#maintenance-detail` |
-| Checklist | `src/components/Checklist/Checklist.tsx` | `items` ({ done, na, active, time }), `progress` (tính sẵn), `onToggle`, `lockHint`, `variant="summary"` (chỉ đọc gọn ✓ + chữ – modal Gửi nghiệm thu); `checklistSummary()` | Chi tiết bảo trì | `#maintenance-detail`, `#review` |
+| WorkflowStepper | `src/components/WorkflowStepper/WorkflowStepper.tsx` | `steps` (+ `note`/`noteTone` nhãn phụ, `time` – chỉ dọc), `completed`, `current` (aria-current="step"; null = không còn bước chờ), `label`, `orientation` (horizontal / **vertical** – tiến trình drawer cảnh báo) | Chi tiết bảo trì, drawer cảnh báo | `#maintenance-detail`, `#alert-drawer` |
+| InfoGrid | `src/components/InfoGrid/InfoGrid.tsx` | `items` ({ id, label, value, tone default/danger/warning/link, newRow }) – `<dl>` 4/2/1 cột; `variant="stats"` = hàng chỉ số nhỏ 2 cột → 4 cột từ `sm` (drawer gas) · `variant="pairs"` = luôn 2 cột (khung hẹp – "Thông tin báo cháy") | Chi tiết bảo trì, drawer gas, drawer cháy | `#maintenance-detail`, `#alert-drawer` |
+| Checklist | `src/components/Checklist/Checklist.tsx` | `items` ({ done, na, active, time }), `progress` (tính sẵn), `onToggle`, `lockHint`, `variant="summary"` (chỉ đọc gọn ✓ + chữ – modal Gửi nghiệm thu) / `"plain"` (vòng tròn + chữ, checkbox thật ẩn, không thanh tiến độ – hướng dẫn xử lý cảnh báo); `checklistSummary()` | Chi tiết bảo trì, drawer cảnh báo | `#maintenance-detail`, `#review`, `#alert-drawer` |
 | NotesThread | `src/components/NotesThread/NotesThread.tsx` | `notes` ({ author, time đã định dạng, text }), `onAdd` (không có = chỉ đọc), Ctrl+Enter gửi | Chi tiết bảo trì | `#maintenance-detail` |
 | AttachmentCard | `src/components/AttachmentCard/AttachmentCard.tsx` | `id`, `name`, `kind` (image/document/manual – thiếu thì đoán theo đuôi), `meta`, `notice` (nhãn nhỏ, vd "Chưa tải lên máy chủ"), `fluid` (giãn theo lưới), `onView`, `onDownload` | Chi tiết bảo trì, modal tiến độ | `#maintenance-detail`, `#progress-update` |
 | DeadlineCountdownCard | `src/components/DeadlineCountdownCard/DeadlineCountdownCard.tsx` | `countdown` ({ clock, overdue, speech } – null = đã đóng), `dueText`, `closedText` | Chi tiết bảo trì | `#maintenance-detail` |
@@ -880,7 +981,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| StatusOptionCard / StatusOptionGroup | `src/components/StatusOptionCard/StatusOptionCard.tsx` | Group: `label`/`labelledBy`, `options` ({ id, label, icon, tone primary/warning/danger, `toneLabel` (chữ theo tone khi chưa chọn), disabled, disabledHint }), `value`, `onChange`, `layout` (stacked / inline = chấm radio + chữ một dòng), `columns` (4 / 3), `describedBy` – `role="radiogroup"`, mũi tên chuyển + chọn (roving tabindex) | Modal tiến độ, modal nghiệm thu | `#progress-update`, `#review` |
+| StatusOptionCard / StatusOptionGroup | `src/components/StatusOptionCard/StatusOptionCard.tsx` | Group: `label`/`labelledBy`, `options` ({ id, label, icon, tone primary/warning/danger, `toneLabel` (chữ theo tone khi chưa chọn), disabled, disabledHint, `describedBy` (id lý do hiển thị – thay chữ ẩn) }), `value`, `onChange`, `layout` (stacked / inline = chấm radio + chữ một dòng), `columns` (4 / 3 / 2), `size` (sm = ô inline chữ 14px + khoảng cách 12px – 3 cột trong modal md), `describedBy` – `role="radiogroup"`, mũi tên chuyển + chọn (roving tabindex) | Modal tiến độ, modal nghiệm thu, "Cập nhật xử lý" gas/cháy | `#progress-update`, `#review` |
 | ProgressSlider | `src/components/ProgressSlider/ProgressSlider.tsx` | `label`, `value`, `onChange`, `min`/`max`/`step` (mặc định 0/100/5), `unit`, `describedBy` – `role="slider"`, phím + kéo/bấm rãnh | Modal tiến độ | `#progress-update` |
 | UploadTile | `src/components/UploadTile/UploadTile.tsx` | `onFiles(File[])`, `accept`, `multiple`, `hint` (đọc kèm), `label` | Modal tiến độ | `#progress-update` |
 
@@ -990,12 +1091,13 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
 | Tệp đính kèm | Chỉ giữ tên/kích thước, không upload; tệp thêm ở modal cập nhật tiến độ = `isTemp` ("Chưa tải lên máy chủ", URL xem trước bị thu hồi khi đóng modal) | API lưu tệp |
 | Cập nhật tiến độ / nghiệm thu | `reportedProgress`, `hold`, `attachments[].isTemp`, `submission`, `review`, `reviewFailed`, loại lịch sử mới – chỉ FE (`FE_ONLY_FIELDS`); quyền: tiến độ/gửi = `maintenance:write`, nghiệm thu = `maintenance:review` (chỉ ẩn ở FE); người nghiệm thu = `REVIEWERS` mock | Hợp đồng + endpoint (`CLAUDE.md` mục 7), chỉ người được phân công cập nhật/gửi, danh sách người nghiệm thu = user engineer/admin, cảnh báo khi hết thời gian theo dõi |
+| Drawer chi tiết cảnh báo | Gas: tag GS-01…GS-04 + bands 0/10/20/40 là giả định (chờ khách); "Yêu cầu hỗ trợ" chưa gửi thông báo; kịch bản `?live=…` (cả gas-rise/gas-clear) chỉ dev – `devScenarios.ts` nạp động, không có trong `dist/`. Trường chỉ FE (`ALERT_FE_ONLY_FIELDS`: loại, chiều, tag, `previousValue`, `collaborators`, `closingReading`, giờ gửi thông báo, giờ xác nhận/xử lý, tick hướng dẫn, ghi chú, lịch sử); cấu hình loại = mock `ALERT_KINDS` (`src/mocks/alertKinds.ts`); giờ "Gửi thông báo" mock = phát hiện + 3 s; chỉ ALT-00128 (PT-101) và ALT-00113 (PT-201) có tag | Hợp đồng + endpoint cảnh báo (`CLAUDE.md` mục 7), danh mục playbook, tag thật cho mọi cảnh báo |
 | Phân công / nhân sự | Modal theo ảnh (mục 4l); danh mục nhân sự = mock `STAFF` (vai trò, ca, chuyên môn); tải việc tính từ danh sách yêu cầu trong bộ nhớ; công tắc "Gửi thông báo đẩy và SMS" chỉ là giao diện | API danh mục nhân sự (user + vai trò + ca), `PATCH /maintenance/:id/assign`, gửi thông báo đẩy/SMS (kể cả khi đổi người) |
 | Chi tiết yêu cầu bảo trì | Trường mở rộng chỉ ở FE (`cancelled`, `dueHasTime`, `createdBy`, `objectives`, luồng `notes[]`, `history[]`, checklist `doneAt/na/active`, `attachments[].kind` – `FE_ONLY_FIELDS`); "Xem" tệp = modal giữ chỗ, "Tải xuống" = `.txt` mẫu; avatar = chữ cái đầu; quyền chi tiết theo vai trò chưa làm | Đưa vào hợp đồng API (`docs/API.md` backend), lưu tệp, ảnh đại diện, quyền theo vai trò |
 | `?now=` / `VITE_FIXED_NOW` (dời / ghim giờ app) | `src/lib/demoNow.ts` – `?now=` chỉ dev hoặc `VITE_DEMO=true`; `VITE_FIXED_NOW` đặt lúc build, mặc định tắt | Không đặt `VITE_DEMO` / `VITE_FIXED_NOW` trên bản công khai |
 | KPI Tổng quan | Tồn kho / Mức bồn / Áp suất / Tiêu thụ lấy từ tag trực tiếp (mock); Cảnh báo, Sức khỏe và số chuông thông báo (2) vẫn tĩnh | API (hoặc derive từ dữ liệu thật) |
 | Màu chưa đạt tương phản AA | Đã sửa: chữ đỏ (`danger-text`), chữ menu (`fg-secondary/70`). Còn: chữ `danger-strong` nhỏ ở Tổng quan, Segmented "Nghiêm trọng", số đếm header (xem `CLAUDE.md` mục 7) | Duyệt màu với designer |
-| Thiết kế | Modal phân công / hủy / xem tệp (chi tiết bảo trì), Drawer, thao tác hàng loạt, form, checkbox checked, trang `/reports`, bản đồ toàn nhà máy cho `/map`, trang 404, Editor chưa có trong Figma; trang chi tiết tài sản chỉ có ảnh (không node) | Designer |
+| Thiết kế | Modal phân công / hủy / xem tệp (chi tiết bảo trì), chân drawer cảnh báo sau khi xác nhận + hộp phân công cảnh báo, thao tác hàng loạt, form, checkbox checked, trang `/reports`, bản đồ toàn nhà máy cho `/map`, trang 404, Editor chưa có trong Figma; trang chi tiết tài sản chỉ có ảnh (không node) | Designer |
 | Icon tạm | `src/components/Icon/TempIcons.tsx`, `src/components/Icon/EditorIcons.tsx`, `src/pages/editor/AssetGlyph.tsx` | Asset từ Figma |
 | Cần khách xác nhận | Danh sách ở `CLAUDE.md` mục 7 ("Cần xác nhận") | Khách/PO |
 

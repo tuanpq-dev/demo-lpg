@@ -1,4 +1,4 @@
-import { SYSTEM_TAGS, V101_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import { GAS_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { LiveValue } from '@/features/live/types';
 
 /**
@@ -50,6 +50,20 @@ export const liveBase: Record<string, LiveValue> = {
   'FT-302': 230,
   'XV-301.POS': 100,
   'PT-311': 4.2,
+  // Khí gas khu nạp xuất (% LEL) – theo ảnh drawer gas: GS-01 2 · GS-02 4 · GS-03 8 · GS-04 25 (gây ALT-00127).
+  [GAS_TAGS[0]]: 2,
+  [GAS_TAGS[1]]: 4,
+  [GAS_TAGS[2]]: 8,
+  [GAS_TAGS[3]]: 25,
+  // Báo cháy trạm hóa hơi (FIR-00018): đầu báo nhiệt HD-02 68 °C đang báo động; khói, gas GS-05 (6 % LEL), nút nhấn bình thường.
+  [VAPORIZER_AREA_TAGS.heatTemp]: 68,
+  [VAPORIZER_AREA_TAGS.heatAlarm]: 'alarm',
+  [VAPORIZER_AREA_TAGS.heatState]: 'online',
+  [VAPORIZER_AREA_TAGS.smokeAlarm]: 'normal',
+  [VAPORIZER_AREA_TAGS.callPoint]: 'idle',
+  [VAPORIZER_AREA_TAGS.gas]: 6,
+  [VAPORIZER_AREA_TAGS.runA]: 'running',
+  [VAPORIZER_AREA_TAGS.runB]: 'standby',
 };
 
 /** Đơn vị theo tiền tố tag (SCADA thật gửi kèm đơn vị). */
@@ -62,6 +76,8 @@ export function liveUnit(tag: string): string | undefined {
   if (tag.startsWith('PT-') || tag.startsWith('PDT-')) return 'bar';
   if (tag.startsWith('TT-')) return '°C';
   if (tag.startsWith('FT-')) return 'm³/h';
+  if (tag.startsWith('GS-')) return '% LEL';
+  if (tag.startsWith('HD-')) return '°C';
   return undefined;
 }
 
@@ -90,4 +106,10 @@ export const liveJitter: Record<string, number> = {
   'FT-301': 12,
   'FT-302': 12,
   'PT-311': 0.2,
+  [GAS_TAGS[0]]: 0.3,
+  [GAS_TAGS[1]]: 0.3,
+  [GAS_TAGS[2]]: 0.4,
+  [GAS_TAGS[3]]: 0.6,
+  [VAPORIZER_AREA_TAGS.heatTemp]: 0.5,
+  [VAPORIZER_AREA_TAGS.gas]: 0.3,
 };

@@ -35,4 +35,31 @@ describe('Checklist', () => {
   test('checklistSummary', () => {
     expect(checklistSummary({ done: 2, total: 6, percent: 33 })).toBe('2/6 công việc hoàn thành · 33%');
   });
+
+  test('plain: checkbox thật quanh vòng tròn, tick bằng nhãn, khoá + gợi ý', async () => {
+    const onToggle = vi.fn();
+    const items = [
+      { id: 'a', text: 'Kiểm tra đồng hồ', done: false },
+      { id: 'b', text: 'Xác minh van', done: true, time: '10:58' },
+    ];
+    const { rerender } = render(<Checklist variant="plain" items={items} progress={{ done: 1, total: 2, percent: 50 }} onToggle={onToggle} />);
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    await userEvent.click(screen.getByText('Kiểm tra đồng hồ'));
+    expect(onToggle).toHaveBeenCalledWith('a');
+    expect(screen.getByRole('checkbox', { name: 'Xác minh van' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Xác minh van' })).toHaveAccessibleDescription('Đã làm lúc 10:58');
+    rerender(<Checklist variant="plain" items={items} progress={{ done: 1, total: 2, percent: 50 }} onToggle={onToggle} lockHint="Xác nhận cảnh báo để bắt đầu xử lý." />);
+    onToggle.mockClear();
+    const cb = screen.getByRole('checkbox', { name: 'Kiểm tra đồng hồ' });
+    // aria-disabled (không disabled): vẫn focus được, đọc được gợi ý, nhưng click/Space không tick.
+    expect(cb).toHaveAttribute('aria-disabled', 'true');
+    expect(cb).not.toBeDisabled();
+    expect(cb).toHaveAccessibleDescription('Xác nhận cảnh báo để bắt đầu xử lý.');
+    await userEvent.click(screen.getByText('Kiểm tra đồng hồ'));
+    cb.focus();
+    await userEvent.keyboard(' ');
+    expect(cb).toHaveFocus();
+    expect(cb).not.toBeChecked();
+    expect(onToggle).not.toHaveBeenCalled();
+  });
 });

@@ -55,3 +55,15 @@ export function parsePlantDateTime(s: string): Date | null {
   if (mo! < 1 || mo! > 12 || d! < 1 || d! > 31 || h! > 23 || mi! > 59 || se! > 59) return null;
   return new Date(Date.UTC(y!, mo! - 1, d!, h!, mi!, se!) - PLANT_UTC_OFFSET_MS);
 }
+
+/** "HH:mm:ss" (giờ nhà máy) của thời điểm `now`. */
+export function plantTimeOfDay(now: Date): string {
+  const t = new Date(now.getTime() + PLANT_UTC_OFFSET_MS);
+  return `${pad2(t.getUTCHours())}:${pad2(t.getUTCMinutes())}:${pad2(t.getUTCSeconds())}`;
+}
+
+/** "dd/mm/yyyy" của ngày "yyyy-mm-dd…". */
+export function formatDayVi(isoDay: string): string {
+  const [y, m, d] = isoDay.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}

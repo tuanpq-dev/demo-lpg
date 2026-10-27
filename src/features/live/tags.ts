@@ -36,6 +36,26 @@ export const VAPORIZER_TAGS = {
   temperature: 'TT-201',
 } as const;
 
+/** Cảm biến khí gas khu nạp xuất (đầu dò % LEL) – mã tag = mã thiết bị. Khu của từng cảm biến: `mocks/sensors.ts`. */
+export const GAS_TAGS = ['GS-01', 'GS-02', 'GS-03', 'GS-04'] as const;
+
+/**
+ * Trạm hóa hơi (FZ-02) – báo cháy (FIR-00018, ảnh `scratch/figma-ref/alert-drawer-fire-*.png`). Mã giả định như mọi tag ở đây.
+ * Nhiệt độ ĐẦU BÁO (`heatTemp`) là tag riêng, KHÁC nhiệt độ máy hóa hơi (`VAPORIZER_TAGS.temperature`).
+ * Tag trạng thái là chuỗi: `.ALARM` 'alarm' | 'normal' · `.STATE` đầu báo 'online' | 'fault' · nút nhấn 'idle' | 'activated' ·
+ * máy 'running' | 'standby' | 'fault' | 'stopped'. Cảm biến gas của khu = GS-05 (GS-02 thuộc Khu nạp xuất – CLAUDE.md mục 8).
+ */
+export const VAPORIZER_AREA_TAGS = {
+  heatTemp: 'HD-02',
+  heatAlarm: 'HD-02.ALARM',
+  heatState: 'HD-02.STATE',
+  smokeAlarm: 'SD-02.ALARM',
+  callPoint: 'MCP-02.STATE',
+  gas: 'GS-05',
+  runA: 'E-101A.STATE',
+  runB: 'E-101B.STATE',
+} as const;
+
 /** Bảng tag theo mã thiết bị (trang chi tiết tài sản). */
 export const ASSET_TAGS = {
   'V-101': V101_TAGS,
