@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Outlet, type LoaderFunctionArgs, RouterProvider, createBrowserRouter, redirect, useLocation } from 'react-router-dom';
 import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
@@ -35,12 +35,12 @@ function EditorRoute() {
   return canUseEditor(search, user?.role) ? <EditorPage /> : <Navigate to="/overview" replace />;
 }
 
-/** Đường dẫn cũ /operations/:assetId (GĐ 5D) → /map/:assetId, giữ query (?hide=, ?create=…) để link cũ không hỏng. */
-function LegacyAssetRedirect() {
-  const { assetId = '' } = useParams();
-  const { search } = useLocation();
-  return <Navigate to={`${assetPath(assetId)}${search}`} replace />;
-}
+/**
+ * Chuyển hướng cố định làm bằng `loader` (chạy trước khi render) thay vì phần tử `<Navigate>`: `<Navigate>` render một
+ * khung trống rồi mới chuyển trong effect → màn hình nháy (header biến mất) khi bấm tab "Bản đồ nội khu".
+ * Đường dẫn cũ /operations/:assetId (GĐ 5D) → /map/:assetId, giữ query (?hide=, ?create=…) để link cũ không hỏng.
+ */
+const legacyAssetRedirect = ({ params, request }: LoaderFunctionArgs) => redirect(`${assetPath(params.assetId ?? '')}${new URL(request.url).search}`);
 
 // Data router (createBrowserRouter) để dùng useBlocker – Editor chặn rời trang khi chưa lưu.
 const router = createBrowserRouter([
@@ -55,12 +55,12 @@ const router = createBrowserRouter([
         // Mọi trang còn lại cần đăng nhập (chưa đăng nhập → /login?next=…).
         element: <RequireAuth />,
         children: [
-          { path: '/', element: <Navigate to="/overview" replace /> },
+          { path: '/', loader: () => redirect('/overview') },
           { path: '/overview', element: <OverviewPage /> },
           // Tab "Bản đồ nội khu" mở thẳng trang chi tiết bồn V-101 (như ảnh 5D); chưa có bản đồ toàn nhà máy.
-          { path: '/map', element: <Navigate to={assetPath(DEFAULT_ASSET_ID)} replace /> },
+          { path: '/map', loader: () => redirect(assetPath(DEFAULT_ASSET_ID)) },
           { path: '/map/:assetId', element: <AssetDetailPage /> },
-          { path: '/operations/:assetId', element: <LegacyAssetRedirect /> },
+          { path: '/operations/:assetId', loader: legacyAssetRedirect },
           { path: '/alerts', element: <AlertsPage /> },
           { path: '/maintenance', element: <MaintenancePage /> },
           // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
@@ -78,7 +78,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      {/* v7_startTransition: chuyển trang trong startTransition → khi chunk trang mới đang tải, React GIỮ trang cũ (kể cả
+          header) thay vì hiện fallback trống của Suspense gốc – hết nháy màn hình khi đổi tab lần đầu. */}
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />
     </AuthProvider>
   </React.StrictMode>,
 );

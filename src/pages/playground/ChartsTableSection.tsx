@@ -19,9 +19,9 @@ import { cn } from '@/lib/cn';
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
 
-const OVERVIEW = '/figma-ref/53-11-overview.png';
-const ALERTS = '/figma-ref/70-2809-alerts.png';
-const MAINT = '/figma-ref/70-3964-maintenance.png';
+const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
+const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
+const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
 
 const valueTone: Record<Severity, string> = {
   critical: 'text-danger-text',

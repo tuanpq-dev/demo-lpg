@@ -11,7 +11,8 @@ export function FigmaRef({
   scale = 1,
   caption,
 }: {
-  src: string;
+  /** undefined (bản build) → không vẽ: ảnh Figma chỉ có ở máy dev (`scratch/figma-ref/`, gitignore). */
+  src?: string;
   x: number;
   y: number;
   w: number;
@@ -19,6 +20,7 @@ export function FigmaRef({
   scale?: number;
   caption?: string;
 }) {
+  if (!src) return null;
   return (
     <figure className="flex max-w-full flex-col gap-2">
       <figcaption className="text-xs text-fg-muted/65">{caption ?? 'Figma (tham chiếu)'}</figcaption>

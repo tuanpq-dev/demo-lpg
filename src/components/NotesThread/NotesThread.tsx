@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '../Button';
 import { inputClass } from '../FormField/FormField';
 import { UserIcon } from '../Icon';
+import { initials } from '../Avatar';
 
 export type NoteView = {
   id: string;
@@ -22,14 +23,7 @@ export type NotesThreadProps = {
   className?: string;
 };
 
-/** Chữ cái đầu – avatar tạm. TODO(backend): ảnh đại diện thật (URL từ hồ sơ người dùng) khi có API. */
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
+// Chữ cái đầu dùng chung với Avatar (cùng một người → cùng chữ, vd "Nguyễn Văn A" → "NA"). TODO: gộp hẳn sang <Avatar>.
 
 /**
  * Luồng ghi chú – ảnh MT-00128 (số đo ước lượng): avatar `--note-avatar-size` + bong bóng nền surface-muted/60 (pixel ảnh #232A34) viền line/30 (tên đậm,

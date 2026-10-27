@@ -6,7 +6,10 @@ import type { TimelineEvent, TimelineTone } from '@/components';
 import { daysFromToday, plantDayKey } from '@/lib/plantTime';
 import type { WorkState } from '@/features/maintenance/progress';
 import type { DeviceCondition, SensorStatus, ValveStatus } from '@/features/maintenance/review';
-import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord } from '@/mocks/maintenance';
+import type { AssignForm } from '@/features/maintenance/assign';
+import { SHIFTS, type MaintenanceAttachment, type MaintenanceHistoryKind, type MaintenanceRecord, type ShiftId } from '@/mocks/maintenance';
+
+const SHIFT_VALUES: readonly ShiftId[] = SHIFTS.map((s) => s.value);
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 
@@ -40,6 +43,7 @@ const HISTORY_TONE: Record<MaintenanceHistoryKind, TimelineTone> = {
   notify: 'neutral',
   priority: 'danger',
   assign: 'info',
+  reassign: 'warning',
   accept: 'info',
   start: 'info',
   progress: 'info',
@@ -190,12 +194,61 @@ export function clearSubmitDraft(id: string) {
   }
 }
 
+// ---- Nháp modal "Phân công người xử lý" (sessionStorage theo mã; không đổi trạng thái) ----
+
+/** Nháp = form phân công (trừ công tắc thông báo – mặc định lại khi mở). */
+export type AssignDraft = Omit<AssignForm, 'notify'> & { /** ISO */ savedAt: string };
+
+const assignDraftKey = (id: string) => `demo-lpg:mt-assign-draft:${id}`;
+
+export function saveAssignDraft(id: string, draft: AssignDraft): boolean {
+  try {
+    sessionStorage.setItem(assignDraftKey(id), JSON.stringify(draft));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Nháp đã lưu; hỏng / sai dạng → null. */
+export function loadAssignDraft(id: string): AssignDraft | null {
+  try {
+    const raw = sessionStorage.getItem(assignDraftKey(id));
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Partial<AssignDraft>;
+    const str = (v: unknown) => typeof v === 'string';
+    if (!str(d.startAt) || !str(d.dueAt) || !str(d.note) || !str(d.reason) || !Array.isArray(d.collaborators)) return null;
+    if (d.assignee !== null && !str(d.assignee)) return null;
+    const shift = SHIFT_VALUES.includes(d.shift as ShiftId) ? (d.shift as ShiftId) : null;
+    return {
+      assignee: d.assignee ?? null,
+      collaborators: d.collaborators.filter(str) as string[],
+      startAt: d.startAt!,
+      dueAt: d.dueAt!,
+      shift,
+      note: d.note!,
+      reason: d.reason!,
+      savedAt: str(d.savedAt) ? d.savedAt! : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearAssignDraft(id: string) {
+  try {
+    sessionStorage.removeItem(assignDraftKey(id));
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---- Quay lại danh sách đúng bộ lọc cũ ----
 
 const LIST_SEARCH_KEY = 'demo-lpg:maintenance-list-search';
 
 /** Tham số chỉ dùng một lần (mở drawer cũ / modal tạo) – không lưu vào URL "quay lại". */
-const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from', 'progress', 'submit', 'review'];
+const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from', 'progress', 'submit', 'review', 'assign'];
 
 /** Query danh sách bỏ tham số một lần: `?tab=overdue&open=MT-1` → `?tab=overdue`; không còn gì → "". */
 export function listSearchOnly(search: string): string {

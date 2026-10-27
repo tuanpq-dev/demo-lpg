@@ -331,4 +331,76 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
       Object.assign(state.user!, saved);
     }
   });
+
+  test('phân công: badge "Chờ tiếp nhận" ở danh sách mở modal qua ?assign=; xác nhận → ở lại danh sách, dòng cập nhật', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance');
+    await user.click(await screen.findByRole('button', { name: 'Phân công MT-00122 – trạng thái: Chờ tiếp nhận' }));
+    expect(where()).toBe('/maintenance?assign=MT-00122');
+    const d = screen.getByRole('dialog', { name: 'Phân công người xử lý' });
+    await user.click(within(d).getByRole('radio', { name: /Phạm Văn D/ }));
+    await act(async () => {
+      await user.click(within(d).getByRole('button', { name: 'Xác nhận phân công' }));
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(where()).toBe('/maintenance');
+    expect(screen.getByText('Đã phân công MT-00122 cho Phạm Văn D.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Phân công MT-00122/ })).toBeNull();
+  });
+
+  test('phân công hàng loạt: chỉ dòng Chờ tiếp nhận, báo "đã phân công X, bỏ qua N"', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance');
+    await user.click(await screen.findByRole('checkbox', { name: 'Chọn hàng MT-00121' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Chọn hàng MT-00125' }));
+    await user.click(screen.getByRole('button', { name: /Phân công \(chỉ Chờ tiếp nhận\)/ }));
+    await act(async () => {
+      await user.click(screen.getByRole('option', { name: 'Võ Thị F' }));
+    });
+    expect(await screen.findByText(/^Đã phân công 1 · bỏ qua 1 \(1 không ở Chờ tiếp nhận\)/)).toBeInTheDocument();
+  });
+
+  test('chi tiết: nút "Phân công người xử lý" (Chờ tiếp nhận) → modal → Đã phân công, ở lại trang, lịch sử', async () => {
+    const user = userEvent.setup();
+    renderAt('/maintenance/MT-00127');
+    await screen.findByRole('heading', { level: 1, name: 'Kiểm tra cảm biến gas GS-01' });
+    await user.click(screen.getByRole('button', { name: 'Phân công người xử lý' }));
+    const d = screen.getByRole('dialog', { name: 'Phân công người xử lý' });
+    expect(within(d).getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    await user.click(within(d).getByRole('radio', { name: /Lê Thị C/ }));
+    await user.type(within(d).getByRole('textbox', { name: /Ghi chú phân công/ }), 'Mang máy đo cầm tay');
+    await act(async () => {
+      await user.click(within(d).getByRole('button', { name: 'Xác nhận phân công' }));
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(where()).toBe('/maintenance/MT-00127');
+    expect(screen.getByText('Phân công: Lê Thị C')).toBeInTheDocument();
+    expect(screen.getByText('Phân công: Mang máy đo cầm tay')).toBeInTheDocument();
+    expect(screen.getAllByText('Đã phân công').length).toBeGreaterThan(0);
+  });
+
+  test('đổi người (?assign=1, Đã phân công): lý do bắt buộc → lịch sử "Đổi người xử lý: A → B", xoá nháp tiến độ người cũ', async () => {
+    const user = userEvent.setup();
+    // Nháp tiến độ của người cũ trên trình duyệt này – không được chuyển sang người mới.
+    sessionStorage.setItem('demo-lpg:mt-progress-draft:MT-00124', JSON.stringify({ state: 'working', progress: 40, text: 'nháp cũ', savedAt: '' }));
+    renderAt('/maintenance/MT-00124?assign=1');
+    const d = await screen.findByRole('dialog', { name: 'Đổi người xử lý' });
+    await waitFor(() => expect(where()).toBe('/maintenance/MT-00124'));
+    await user.click(within(d).getByRole('radio', { name: /Nguyễn Văn A/ }));
+    const ok = within(d).getByRole('button', { name: 'Xác nhận đổi người' });
+    expect(ok).toHaveAttribute('aria-disabled', 'true');
+    await user.type(within(d).getByRole('textbox', { name: /Lý do đổi người xử lý/ }), 'Cần kỹ sư van');
+    await act(async () => {
+      await user.click(ok);
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByText('Đổi người xử lý: Phạm Văn D → Nguyễn Văn A – lý do: Cần kỹ sư van')).toBeInTheDocument();
+    expect(sessionStorage.getItem('demo-lpg:mt-progress-draft:MT-00124')).toBeNull();
+  });
+
+  test('Chờ nghiệm thu: không có nút phân công / đổi người', async () => {
+    renderAt('/maintenance/MT-00114');
+    await screen.findByRole('heading', { level: 1, name: 'Kiểm tra họng nạp số 2' });
+    expect(screen.queryByRole('button', { name: /Đổi người xử lý|Phân công người xử lý/ })).toBeNull();
+  });
 });

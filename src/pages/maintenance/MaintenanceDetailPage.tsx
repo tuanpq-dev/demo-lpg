@@ -69,13 +69,15 @@ import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/feature
 import { deadlineCountdown, deadlineDayLabel } from '@/features/maintenance/deadline';
 import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
 import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
+import { assignMode } from '@/features/maintenance/assign';
 import { NEXT_ACTION_LABEL, WORKFLOW_STEPS, canCancel, workflowPosition } from '@/features/maintenance/workflow';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
 import { downloadSampleAttachment } from './attachments';
-import { AssignMaintenanceModal, CancelMaintenanceModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
+import { AssignModal } from './AssignModal';
+import { CancelMaintenanceModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
 import { MaintenanceResult } from './MaintenanceResult';
 import { ProgressUpdateModal } from './ProgressUpdateModal';
 import { ReviewModal } from './ReviewModal';
@@ -224,7 +226,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
   const canWrite = useCan('maintenance:write');
   const canReview = useCan('maintenance:review');
   const actor = user?.name || 'Admin';
-  const { advance, cancel, assign, toggleChecklist, addNote, updateProgress, submitForReview, review } = useMaintenance();
+  const { data: allRecords, advance, cancel, assign, toggleChecklist, addNote, updateProgress, submitForReview, review } = useMaintenance();
   const alerts = useAlerts();
   const alert = r.sourceAlertId ? alerts.data?.find((a) => a.id === r.sourceAlertId) : undefined;
 
@@ -233,15 +235,17 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
     const q = new URLSearchParams(location.search);
     if (q.get('submit') === '1' && r.status === 'in-progress') return 'submit';
     if (q.get('review') === '1' && r.status === 'review') return 'review';
+    if (q.get('assign') === '1' && assignMode(r.status) && canWrite) return 'assign';
     return null;
   });
   /** Nội dung + tệp chuyển từ modal Cập nhật tiến độ ("Tiếp tục gửi nghiệm thu"). */
   const [submitPrefill, setSubmitPrefill] = useState<{ text: string; files: readonly ProgressFile[] } | undefined>();
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    if (!q.has('submit') && !q.has('review')) return;
+    if (!q.has('submit') && !q.has('review') && !q.has('assign')) return;
     q.delete('submit');
     q.delete('review');
+    q.delete('assign');
     const s = q.toString();
     navigate({ search: s ? `?${s}` : '', hash: location.hash }, { replace: true, state: location.state });
     // chỉ lần đầu vào trang
@@ -492,8 +496,9 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
             assignee={r.assignee}
             department={r.department}
             shift={shiftShort(r.shift)}
-            onAssign={canWrite ? () => setDialog('assign') : undefined}
-            assignDisabled={closed}
+            // Phân công (Chờ tiếp nhận) / Đổi người (Đã phân công, Đang thực hiện); Chờ nghiệm thu / xong / hủy: không có nút.
+            onAssign={canWrite && assignMode(r.status) ? () => setDialog('assign') : undefined}
+            assignLabel={assignMode(r.status) === 'assign' ? 'Phân công người xử lý' : 'Đổi người xử lý'}
           />
           <Card title="Cảnh báo liên quan" icon={<AlertTriangleIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg">
             {alert ? (
@@ -607,13 +612,21 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
 
       {/* Hộp thoại: chỉ mount khi mở (form khởi tạo đúng ngay lần vẽ đầu). */}
       {dialog === 'assign' && (
-        <AssignMaintenanceModal
+        <AssignModal
           record={r}
+          records={allRecords ?? []}
           onClose={() => setDialog(null)}
-          onSubmit={async (input) => {
-            await assign([r.id], input, actor);
+          onSubmit={async (form) => {
+            const before = r.assignee;
+            await assign(r.id, form, actor);
+            // Đổi sang người khác: nháp tiến độ / gửi nghiệm thu của người cũ (trên trình duyệt này) không chuyển cho người mới.
+            if (before && before !== form.assignee) {
+              clearProgressDraft(r.id);
+              clearSubmitDraft(r.id);
+            }
             setDialog(null);
-            announce(`Đã phân công ${r.code} cho ${input.assignee}.`);
+            // TODO(backend): gửi thông báo đẩy/SMS cho người được phân công (công tắc trong modal chỉ là giao diện).
+            announce(before && before !== form.assignee ? `${r.code}: đã đổi người xử lý sang ${form.assignee}.` : `Đã phân công ${r.code} cho ${form.assignee}.`);
           }}
         />
       )}

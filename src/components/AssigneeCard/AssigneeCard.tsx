@@ -12,6 +12,8 @@ export type AssigneeCardProps = {
   shift?: string;
   /** Mở hộp phân công. Không truyền = ẩn nút. */
   onAssign?: () => void;
+  /** Nhãn nút (mặc định: có người → "Đổi người xử lý", chưa có → "Phân công người xử lý"). */
+  assignLabel?: string;
   /** Khoá nút (đã hoàn thành / đã hủy / không có quyền). */
   assignDisabled?: boolean;
   className?: string;
@@ -21,7 +23,7 @@ export type AssigneeCardProps = {
  * "Phân công" – ảnh MT-00128 (số đo ước lượng): "Người chịu trách nhiệm chính", ô viền đứt khi chưa phân công
  * (ô "?" 32px + "Chưa phân công" nghiêng + "Cần chỉ định kỹ thuật viên" đỏ), hai ô Phòng ban / Ca trực, nút viền primary.
  */
-export function AssigneeCard({ assignee, assigneeNote, department, shift, onAssign, assignDisabled, className }: AssigneeCardProps) {
+export function AssigneeCard({ assignee, assigneeNote, department, shift, onAssign, assignLabel, assignDisabled, className }: AssigneeCardProps) {
   return (
     <Card title="Phân công" icon={<UserPlusIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg" className={className}>
       <div className="flex flex-col gap-3">
@@ -60,7 +62,7 @@ export function AssigneeCard({ assignee, assigneeNote, department, shift, onAssi
         </dl>
         {onAssign && (
           <Button variant="outline" onClick={onAssign} disabled={assignDisabled} className="w-full">
-            {assignee ? 'Đổi người xử lý' : 'Phân công người xử lý'}
+            {assignLabel ?? (assignee ? 'Đổi người xử lý' : 'Phân công người xử lý')}
           </Button>
         )}
       </div>

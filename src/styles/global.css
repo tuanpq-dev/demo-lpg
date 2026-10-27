@@ -30,6 +30,19 @@
       rgb(var(--color-scene-ground) / 0.62) 100%
     );
   }
+  /* Khung "Đang tải…" chỉ hiện khi tải lâu hơn 200 ms: dữ liệu về nhanh thì không chớp khối xám rồi biến mất.
+     Reduced motion vẫn giữ độ trễ (chỉ rút thời lượng), nên không chớp. */
+  .reveal-delayed {
+    animation: reveal-delayed 150ms ease-out 200ms both;
+  }
+  @keyframes reveal-delayed {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* prefers-reduced-motion: tắt animation/transition CSS (pulse chấm trạng thái, chuyển cảnh…). 3D xử lý trong JS (useReducedMotion). */

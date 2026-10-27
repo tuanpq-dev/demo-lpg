@@ -18,9 +18,9 @@ import {
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
 
-const OVERVIEW = '/figma-ref/53-11-overview.png';
-const ALERTS = '/figma-ref/70-2809-alerts.png';
-const MAINT = '/figma-ref/70-3964-maintenance.png';
+const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
+const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
+const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
 
 function StateLine({ children }: { children: ReactNode }) {
   return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;

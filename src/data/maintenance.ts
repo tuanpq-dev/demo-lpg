@@ -4,7 +4,8 @@ import { checklistProgress, toggleChecklistItem } from '@/features/maintenance/c
 import { isPastDue } from '@/features/maintenance/deadline';
 import { applyProgressUpdate, type ProgressUpdateInput } from '@/features/maintenance/progress';
 import { reviewRecord, submitForReview, type ReviewInput, type SubmitInput } from '@/features/maintenance/review';
-import { addNoteRecord, advanceRecord, assignRecord, cancelRecord, type AssignInput } from '@/features/maintenance/workflow';
+import { applyAssignment, computeWorkloads, initialAssignForm, planBulkAssign, type AssignForm } from '@/features/maintenance/assign';
+import { addNoteRecord, advanceRecord, cancelRecord } from '@/features/maintenance/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
@@ -14,10 +15,13 @@ import {
   DEPARTMENTS,
   MAINTENANCE_ASSIGNEES,
   PEOPLE,
+  ASSIGNABLE_STAFF,
   REVIEWERS,
   SHIFTS,
   SOURCE_OPTIONS,
+  STAFF,
   isoDay,
+  staffByName,
   maintenanceRecords,
   type MaintenanceAttachment,
   type MaintenanceChecklistItem,
@@ -44,7 +48,7 @@ export type {
   MaintenanceType,
   ShiftId,
 };
-export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, REVIEWERS, SHIFTS, SOURCE_OPTIONS };
+export { ASSIGNABLE_STAFF, CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, REVIEWERS, SHIFTS, SOURCE_OPTIONS, STAFF, staffByName };
 
 // ============================================================================
 // Ngày & hạn
@@ -363,9 +367,27 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
 const DEFAULT_ACTOR = 'Admin';
 const ctx = (actor?: string) => ({ actor: actor || DEFAULT_ACTOR, now: appNow() });
 
-/** Phân công (một hoặc nhiều): gán người; "Chờ tiếp nhận" → "Đã phân công". Đã xong / đã hủy giữ nguyên. */
-export const assignMaintenance = async (ids: readonly string[], input: AssignInput | string, actor?: string) =>
-  patch(ids, (r) => assignRecord(r, typeof input === 'string' ? { assignee: input } : input, ctx(actor)));
+/**
+ * Modal "Phân công người xử lý": phân công (Chờ tiếp nhận → Đã phân công) hoặc đổi người (Đã phân công / Đang thực hiện,
+ * lý do bắt buộc) – `applyAssignment` (features/maintenance/assign.ts).
+ */
+export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor)));
+
+/**
+ * Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt), mỗi dòng qua `validateAssign` với hạn sẵn có.
+ * Trả số đã phân công / bỏ qua + cảnh báo gộp khi người được chọn sẽ thành Bận sau cả lô.
+ */
+export async function bulkAssignMaintenance(ids: readonly string[], assignee: string, actor?: string) {
+  const c = ctx(actor);
+  const set = new Set(ids);
+  const plan = planBulkAssign(
+    db.filter((r) => set.has(r.id)),
+    assignee,
+    computeWorkloads(db, c.now),
+  );
+  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c));
+  return { assigned: plan.ids.length, skipped: plan.skipped, skippedBy: plan.skippedBy, busyAfter: plan.busyAfter, activeAfter: plan.activeAfter };
+}
 
 /** Sang bước kế tiếp – đúng một bước (Tiếp nhận → Bắt đầu → Nghiệm thu → Hoàn thành), ghi lịch sử. */
 export const advanceMaintenance = async (id: string, actor?: string) => patch([id], (r) => advanceRecord(r, ctx(actor)));
@@ -403,6 +425,7 @@ export function useMaintenance() {
     ...store.useCollection(),
     create: createMaintenance,
     assign: assignMaintenance,
+    bulkAssign: bulkAssignMaintenance,
     advance: advanceMaintenance,
     cancel: cancelMaintenance,
     updateProgress: updateMaintenanceProgress,
