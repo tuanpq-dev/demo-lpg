@@ -24,6 +24,7 @@ import {
   UPLOAD_ACCEPT,
   UPLOAD_HINT,
   WORK_STATE_OPTIONS,
+  canContinueToSubmit,
   checkUploads,
   defaultReportedProgress,
   isNearOrPastDue,
@@ -33,6 +34,7 @@ import {
   validateProgressUpdate,
   workStateDisabled,
   workStateOf,
+  type ProgressFile,
   type ProgressUpdateErrors,
   type ProgressUpdateInput,
   type WorkState,
@@ -60,6 +62,11 @@ export type ProgressUpdateModalProps = {
   onSubmit: (input: ProgressUpdateInput) => Promise<void>;
   /** "Mở checklist": modal đã tự lưu nháp nếu đang sửa; nơi gọi đóng modal + đưa tới khối Checklist. */
   onOpenChecklist?: () => void;
+  /**
+   * Chọn "Hoàn thành" → nút chính "Tiếp tục gửi nghiệm thu": KHÔNG ghi bản ghi; nơi gọi đóng modal này và mở modal
+   * "Gửi yêu cầu nghiệm thu" với nội dung (→ Tóm tắt) + thông tin tệp đã thêm.
+   */
+  onContinueToSubmit: (prefill: { text: string; files: readonly ProgressFile[] }) => void;
 };
 
 /**
@@ -69,7 +76,7 @@ export type ProgressUpdateModalProps = {
  * Quy tắc trạng thái + lịch sử: `features/maintenance/progress.ts`. Nháp: sessionStorage theo mã (không đổi trạng thái).
  * Chỉ mount khi mở (state khởi tạo bằng hàm khởi tạo của useState).
  */
-export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenChecklist }: ProgressUpdateModalProps) {
+export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenChecklist, onContinueToSubmit }: ProgressUpdateModalProps) {
   const now = useNow(30_000);
   const headingId = useId();
   const checklistLineId = useId();
@@ -131,7 +138,18 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
   const saveDraft = () =>
     saveProgressDraft(r.id, { state, progress, text, savedAt: new Date().toISOString() });
 
+  const continueToSubmit = state === 'completed';
+
   const submit = async () => {
+    if (continueToSubmit) {
+      if (!canContinueToSubmit(r.status, state)) {
+        setErrors({ state: 'Bắt đầu thực hiện trước khi báo hoàn thành.' });
+        return;
+      }
+      clearProgressDraft(r.id);
+      onContinueToSubmit({ text: text.trim(), files: input().files ?? [] });
+      return;
+    }
     const e = validateProgressUpdate(r, input());
     setErrors(e);
     if (e.text) {
@@ -216,7 +234,7 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
         Lưu nháp
       </Button>
       <Button type="submit" variant="primary" disabled={submitting}>
-        Cập nhật tiến độ
+        {continueToSubmit ? 'Tiếp tục gửi nghiệm thu' : 'Cập nhật tiến độ'}
       </Button>
     </>
   );
@@ -298,7 +316,7 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
                   </>
                 )}
                 {state === 'completed' && checklist.done < checklist.total && (
-                  <span className="basis-full text-warning">Checklist chưa xong hết – vẫn báo hoàn thành được, người nghiệm thu sẽ kiểm tra.</span>
+                  <span className="basis-full text-warning">Checklist chưa xong hết – cần hoàn thành checklist (trừ mục Không áp dụng) mới gửi nghiệm thu được.</span>
                 )}
               </>
             ) : (
@@ -394,7 +412,13 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
           rows={4}
           maxLength={1000}
           error={errors.text}
-          hint={requiresText(state) ? 'Bắt buộc – được lưu vào lịch sử xử lý và ghi chú kỹ thuật.' : 'Không bắt buộc – nếu có, được lưu thành ghi chú kỹ thuật.'}
+          hint={
+            continueToSubmit
+              ? 'Nội dung được điền sẵn vào "Tóm tắt công việc" ở bước gửi nghiệm thu.'
+              : requiresText(state)
+                ? 'Bắt buộc – được lưu vào lịch sử xử lý và ghi chú kỹ thuật.'
+                : 'Không bắt buộc – nếu có, được lưu thành ghi chú kỹ thuật.'
+          }
         />
         </div>
 

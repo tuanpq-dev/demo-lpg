@@ -162,14 +162,12 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     expect(screen.queryByRole('button', { name: /Cập nhật tiến độ MT-00122/ })).toBeNull();
   });
 
-  test('danh sách: "Chuyển nghiệm thu" hàng loạt chỉ áp cho Đang thực hiện, báo số bỏ qua', async () => {
+  test('danh sách: không còn "Chuyển nghiệm thu" hàng loạt (mỗi yêu cầu cần hồ sơ riêng)', async () => {
     const user = userEvent.setup();
     renderAt('/maintenance');
     await user.click(await screen.findByRole('checkbox', { name: 'Chọn hàng MT-00125' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Chọn hàng MT-00127' }));
-    expect(screen.queryByRole('button', { name: 'Đánh dấu hoàn thành' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Chuyển nghiệm thu' }));
-    expect(await screen.findByText('Đã chuyển nghiệm thu 1 yêu cầu, bỏ qua 1 (không ở trạng thái Đang thực hiện).')).toBeInTheDocument();
+    expect(screen.getByRole('toolbar', { name: 'Thao tác hàng loạt' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Chuyển nghiệm thu' })).toBeNull();
   });
 
   test('chi tiết: bắt đầu (qua modal) → Tạm dừng → Hoàn thành = Chờ nghiệm thu (không done); vận hành không thấy nút nghiệm thu', async () => {
@@ -205,19 +203,41 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText('Tạm dừng – lý do: Chờ nước nóng · tiến độ 10%')).toBeInTheDocument();
 
-    // 3. Hoàn thành → Chờ nghiệm thu, KHÔNG done
+    // 3. Hoàn thành → "Tiếp tục gửi nghiệm thu" → modal Gửi (nội dung điền sẵn vào Tóm tắt); chưa đủ điều kiện → nút khoá có lý do
     d = await openModal();
     await user.click(within(d).getByRole('radio', { name: 'Hoàn thành' }));
     await user.type(within(d).getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), 'Đã vệ sinh bộ trao đổi nhiệt');
-    await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
+    await user.click(within(d).getByRole('button', { name: 'Tiếp tục gửi nghiệm thu' }));
+    d = await screen.findByRole('dialog', { name: 'Gửi yêu cầu nghiệm thu' });
+    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step'); // chưa đổi trạng thái
+    expect(within(d).getByRole('textbox', { name: /Tóm tắt công việc/ })).toHaveValue('Đã vệ sinh bộ trao đổi nhiệt');
+    expect(within(d).getByText('Chưa đủ điều kiện')).toBeInTheDocument();
+    const send = within(d).getByRole('button', { name: 'Gửi nghiệm thu' });
+    expect(send).toHaveAttribute('aria-disabled', 'true');
+    expect(send).toHaveAccessibleDescription(/Chưa nhập nguyên nhân xác định.*Chưa nhập biện pháp.*Chưa chọn người nghiệm thu/);
+    await user.click(send); // nút khoá: không gửi, modal vẫn mở, trạng thái chưa đổi
+    expect(screen.getByRole('dialog', { name: 'Gửi yêu cầu nghiệm thu' })).toBeInTheDocument();
+    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+
+    await user.type(within(d).getByRole('textbox', { name: /Nguyên nhân xác định/ }), 'Cặn bám');
+    await user.type(within(d).getByRole('textbox', { name: /Biện pháp/ }), 'Súc rửa hóa chất');
+    await user.click(within(d).getByRole('button', { name: /Người nghiệm thu/ }));
+    // người thực hiện (Lê Thị C) không có trong danh sách
+    expect(screen.queryByRole('option', { name: /Lê Thị C/ })).toBeNull();
+    await user.click(screen.getByRole('option', { name: 'Trần Hoàng Nam (Quản lý vận hành)' }));
+    expect(within(d).getByText('Đủ điều kiện gửi nghiệm thu')).toBeInTheDocument();
+    await act(async () => {
+      await user.click(within(d).getByRole('button', { name: 'Gửi nghiệm thu' }));
+    });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByText('Báo hoàn thành – chuyển nghiệm thu · 10% → 100%')).toBeInTheDocument();
+    expect(screen.getByText('Gửi nghiệm thu – người nghiệm thu: Trần Hoàng Nam · 10% → 100%')).toBeInTheDocument();
     expect(within(stepper()).getAllByRole('listitem').at(-1)).toHaveAttribute('aria-current', 'step');
-    expect(within(bar()).queryByRole('button', { name: 'Nghiệm thu đạt' })).toBeNull();
+    // vận hành: không thấy nút Nghiệm thu, không còn Cập nhật tiến độ
+    expect(within(bar()).queryByRole('button', { name: 'Nghiệm thu' })).toBeNull();
     expect(within(bar()).queryByRole('button', { name: 'Cập nhật tiến độ' })).toBeNull();
   });
 
-  test('kỹ sư/quản trị: "Yêu cầu làm lại" bắt buộc lý do → Đang thực hiện; "Nghiệm thu đạt" → Hoàn thành', async () => {
+  test('kỹ sư/quản trị: Cần bổ sung → Không đạt (cờ, ghi chú) → gửi lại → Đạt → khối Kết quả bảo trì', async () => {
     const role = state.user!.role;
     state.user!.role = 'admin';
     try {
@@ -225,33 +245,90 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
       renderAt('/maintenance/MT-00126');
       await screen.findByRole('heading', { level: 1, name: 'Bảo dưỡng máy hóa hơi E-101A' });
       const bar = () => screen.getByRole('region', { name: 'Thao tác yêu cầu MT-00126' });
+      const openReview = async () => {
+        await user.click(await within(bar()).findByRole('button', { name: 'Nghiệm thu' }));
+        return screen.getByRole('dialog', { name: 'Nghiệm thu yêu cầu bảo trì' });
+      };
+      const resubmit = async () => {
+        await user.click(await within(bar()).findByRole('button', { name: 'Gửi nghiệm thu' }));
+        const d = screen.getByRole('dialog', { name: 'Gửi yêu cầu nghiệm thu' });
+        await user.type(within(d).getByRole('textbox', { name: /Tóm tắt công việc/ }), 'Đã bổ sung');
+        await user.type(within(d).getByRole('textbox', { name: /Nguyên nhân xác định/ }), 'Cặn bám');
+        await user.type(within(d).getByRole('textbox', { name: /Biện pháp/ }), 'Súc rửa');
+        await user.click(within(d).getByRole('button', { name: /Người nghiệm thu/ }));
+        await user.click(screen.getByRole('option', { name: /Trần Hoàng Nam/ }));
+        await act(async () => {
+          await user.click(within(d).getByRole('button', { name: 'Gửi nghiệm thu' }));
+        });
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      };
 
-      await user.click(within(bar()).getByRole('button', { name: 'Yêu cầu làm lại' }));
-      let d = screen.getByRole('dialog', { name: 'Yêu cầu làm lại MT-00126' });
-      await user.click(within(d).getByRole('button', { name: 'Gửi yêu cầu làm lại' }));
-      expect(within(d).getByText('Nhập lý do yêu cầu làm lại.')).toBeInTheDocument();
-      await user.type(within(d).getByRole('textbox', { name: /Lý do làm lại/ }), 'Còn cặn ở tấm số 3');
+      // Hồ sơ gửi hiện trong modal; người nghiệm thu = người đăng nhập (chỉ đọc)
+      let d = await openReview();
+      expect(within(d).getByText('Cặn bám')).toBeInTheDocument();
+      expect(within(d).getByRole('textbox', { name: /Người nghiệm thu/ })).toHaveValue('Kỹ sư A');
+      expect(within(d).getByRole('radiogroup', { name: 'Kết quả nghiệm thu' })).toBeInTheDocument();
+
+      // Cần bổ sung: ý kiến bắt buộc → ghi chú của người nghiệm thu; lịch sử chỉ trỏ tới ghi chú
+      await user.click(within(d).getByRole('radio', { name: 'Cần bổ sung' }));
+      await user.click(within(d).getByRole('button', { name: 'Yêu cầu bổ sung' }));
+      expect(within(d).getByText('Nhập nội dung cần bổ sung.')).toBeInTheDocument();
+      await user.type(within(d).getByRole('textbox', { name: /Ý kiến đánh giá/ }), 'Thiếu ảnh tấm số 3');
       await act(async () => {
-        await user.click(within(d).getByRole('button', { name: 'Gửi yêu cầu làm lại' }));
+        await user.click(within(d).getByRole('button', { name: 'Yêu cầu bổ sung' }));
       });
-      expect(await screen.findByText('Yêu cầu làm lại – lý do: Còn cặn ở tấm số 3')).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(screen.getByText('Nghiệm thu: Cần bổ sung – Thiếu ảnh tấm số 3')).toBeInTheDocument();
+      expect(screen.getByText('Nghiệm thu: Cần bổ sung – xem ghi chú kỹ thuật')).toBeInTheDocument();
       expect(within(bar()).getByRole('button', { name: 'Cập nhật tiến độ' })).toBeInTheDocument();
 
-      // Báo hoàn thành lại → nghiệm thu đạt (đường duy nhất sang Hoàn thành)
-      await user.click(within(bar()).getByRole('button', { name: 'Cập nhật tiến độ' }));
-      d = screen.getByRole('dialog', { name: 'Cập nhật tiến độ bảo trì' });
-      await user.click(within(d).getByRole('radio', { name: 'Hoàn thành' }));
-      await user.type(within(d).getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), 'Đã vệ sinh lại');
-      await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
-      await user.click(await within(bar()).findByRole('button', { name: 'Nghiệm thu đạt' }));
-      d = screen.getByRole('dialog', { name: 'Nghiệm thu đạt MT-00126?' });
+      // Gửi lại → Không đạt: cờ "Không đạt nghiệm thu"
+      await resubmit();
+      d = await openReview();
+      await user.click(within(d).getByRole('radio', { name: 'Không đạt' }));
+      await user.type(within(d).getByRole('textbox', { name: /Ý kiến đánh giá/ }), 'Còn rò rỉ');
       await act(async () => {
-        await user.click(within(d).getByRole('button', { name: 'Xác nhận nghiệm thu đạt' }));
+        await user.click(within(d).getByRole('button', { name: 'Xác nhận không đạt' }));
+      });
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(screen.getAllByText('Không đạt nghiệm thu').length).toBeGreaterThan(0);
+      expect(screen.getByText('Nghiệm thu: Không đạt – Còn rò rỉ')).toBeInTheDocument();
+
+      // Gửi lại → Đạt (theo dõi 2 giờ mặc định) → Hoàn thành + khối Kết quả bảo trì
+      await resubmit();
+      expect(screen.queryByText('Không đạt nghiệm thu')).toBeNull();
+      d = await openReview();
+      await act(async () => {
+        await user.click(within(d).getByRole('button', { name: 'Xác nhận hoàn thành' }));
       });
       await waitFor(() => expect(screen.queryByRole('region', { name: 'Thao tác yêu cầu MT-00126' })).toBeNull());
-      expect(screen.getByText('Nghiệm thu đạt – hoàn thành')).toBeInTheDocument();
+      expect(screen.getByText(/Nghiệm thu đạt – hoàn thành · theo dõi thêm 2 giờ/)).toBeInTheDocument();
+      const result = screen.getByText('Kết quả nghiệm thu').closest('dl')!;
+      expect(within(result).getByText('Đạt yêu cầu')).toBeInTheDocument();
+      expect(within(result).getByText('Kỹ sư A')).toBeInTheDocument();
+      expect(within(result).getByText(/^2 giờ – đến \d{2}:\d{2}/)).toBeInTheDocument();
+      expect(within(result).getByText('Súc rửa')).toBeInTheDocument();
     } finally {
       state.user!.role = role;
+    }
+  });
+
+  test('chặn tự nghiệm thu: người đăng nhập = người thực hiện → nút khoá, đọc được lý do (mở qua ?review=1)', async () => {
+    const saved = { ...state.user! };
+    Object.assign(state.user!, { role: 'admin', name: 'Lê Thị C' });
+    try {
+      const user = userEvent.setup();
+      renderAt('/maintenance/MT-00115?review=1');
+      const d = await screen.findByRole('dialog', { name: 'Nghiệm thu yêu cầu bảo trì' });
+      await waitFor(() => expect(where()).toBe('/maintenance/MT-00115'));
+      const ok = within(d).getByRole('button', { name: 'Xác nhận hoàn thành' });
+      expect(ok).toHaveAttribute('aria-disabled', 'true');
+      expect(ok).toHaveAccessibleDescription(/Người thực hiện không được tự nghiệm thu/);
+      await user.click(ok);
+      expect(screen.getByRole('dialog', { name: 'Nghiệm thu yêu cầu bảo trì' })).toBeInTheDocument();
+      expect(screen.getAllByText('Chờ nghiệm thu').length).toBeGreaterThan(0);
+    } finally {
+      Object.assign(state.user!, saved);
     }
   });
 });

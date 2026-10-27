@@ -18,6 +18,7 @@ import {
   type Severity,
   type TabItem,
 } from '@/components';
+import { AUTH_MODE } from '@/api/auth';
 import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
@@ -27,7 +28,8 @@ import { useTableFilters } from '@/app/useTableFilters';
 import { useAlerts } from '@/data/alerts';
 import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
 import { checklistProgress } from '@/features/maintenance/checklist';
-import { HOLD_LABEL, canUpdateProgress, reportedProgressOf } from '@/features/maintenance/progress';
+import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
+import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
 import {
   MAINTENANCE_ASSIGNEES,
   MAINTENANCE_PARAMS,
@@ -56,6 +58,8 @@ import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { CreateMaintenanceModal } from './CreateMaintenanceModal';
 import { ProgressUpdateModal } from './ProgressUpdateModal';
+import { ReviewModal } from './ReviewModal';
+import { SubmitReviewModal } from './SubmitReviewModal';
 
 const PAGE_SIZE = 8;
 const getId = (r: MaintenanceRecord) => r.id;
@@ -99,6 +103,11 @@ function StatusCell({ r }: { r: MaintenanceRecord }) {
           {HOLD_LABEL[r.hold.kind]}
         </Badge>
       )}
+      {r.reviewFailed && r.status === 'in-progress' && (
+        <Badge variant="tag" tone="danger">
+          {REVIEW_FAILED_LABEL}
+        </Badge>
+      )}
     </span>
   );
 }
@@ -114,13 +123,14 @@ function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sect
 
 /** Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. */
 export default function MaintenancePage() {
-  const { status, data, error, refetch, create, assign, sendToReview, updateProgress } = useMaintenance();
+  const { status, data, error, refetch, create, assign, updateProgress, submitForReview, review } = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
   const navigate = useNavigate();
   const location = useLocation();
   // Tạo/sửa yêu cầu: operator trở lên (UX – backend kiểm tra lại khi có API).
   const canWrite = useCan('maintenance:write');
+  const canReview = useCan('maintenance:review');
   const alerts = useAlerts();
   const [notice, setNotice] = useState('');
   const all = useMemo(() => data ?? [], [data]);
@@ -158,6 +168,18 @@ export default function MaintenancePage() {
   const progressId = search.get('progress');
   const progressRecord = canWrite && progressId ? all.find((r) => r.id === progressId && canUpdateProgress(r.status)) : undefined;
   const closeProgress = () => setExtra({ progress: null });
+
+  // ---- Gửi nghiệm thu (?submit=<id>, từ "Tiếp tục gửi nghiệm thu" của modal tiến độ) · Nghiệm thu (?review=<id>, badge "Chờ nghiệm thu").
+  const [submitPrefill, setSubmitPrefill] = useState<{ text: string; files: readonly ProgressFile[] } | undefined>();
+  const submitId = search.get('submit');
+  const submitRecord = canWrite && submitId ? all.find((r) => r.id === submitId && r.status === 'in-progress') : undefined;
+  const closeSubmit = () => {
+    setSubmitPrefill(undefined);
+    setExtra({ submit: null });
+  };
+  const reviewId = search.get('review');
+  const reviewRecordRow = canReview && reviewId ? all.find((r) => r.id === reviewId && r.status === 'review') : undefined;
+  const closeReview = () => setExtra({ review: null });
 
   /** Danh bạ thiết bị → khu vực (bảo trì + cảnh báo) cho ô "Thiết bị"/"Khu vực" của form. */
   const devices = useMemo(() => setDeviceDirectory(all, alerts.data ?? []), [all, alerts.data]);
@@ -220,7 +242,12 @@ export default function MaintenancePage() {
       header: 'Trạng thái',
       width: 120,
       cell: (r) =>
-        canWrite && canUpdateProgress(r.status) ? (
+        canReview && r.status === 'review' ? (
+          <button type="button" onClick={() => setExtra({ review: r.id })} title="Nghiệm thu" className="rounded-md text-left hover:brightness-125">
+            <span className="sr-only">Nghiệm thu {r.code} – trạng thái: </span>
+            <StatusCell r={r} />
+          </button>
+        ) : canWrite && canUpdateProgress(r.status) ? (
           <button
             type="button"
             onClick={() => setExtra({ progress: r.id })}
@@ -253,15 +280,11 @@ export default function MaintenancePage() {
     },
   ];
 
-  const runBulk = async (kind: 'assign' | 'review', name?: string) => {
+  // Không còn "Chuyển nghiệm thu" hàng loạt: mỗi yêu cầu cần hồ sơ gửi nghiệm thu riêng (modal Gửi yêu cầu nghiệm thu).
+  const runBulkAssign = async (name: string) => {
     const ids = [...selected];
-    if (kind === 'assign' && name) {
-      await assign(ids, name);
-      setNotice(`Đã phân công ${ids.length} yêu cầu cho ${name}.`);
-    } else if (kind === 'review') {
-      const { moved, skipped } = await sendToReview(ids, actor);
-      setNotice(`Đã chuyển nghiệm thu ${moved} yêu cầu${skipped ? `, bỏ qua ${skipped} (không ở trạng thái Đang thực hiện)` : ''}.`);
-    }
+    await assign(ids, name);
+    setNotice(`Đã phân công ${ids.length} yêu cầu cho ${name}.`);
     setSelected([]);
   };
 
@@ -390,11 +413,8 @@ export default function MaintenancePage() {
                   label="Phân công"
                   options={MAINTENANCE_ASSIGNEES.map((n) => ({ value: n, label: n }))}
                   value={null}
-                  onChange={(n) => n && runBulk('assign', n)}
+                  onChange={(n) => n && runBulkAssign(n)}
                 />
-                <Button onClick={() => runBulk('review')} title="Chỉ áp dụng cho yêu cầu Đang thực hiện">
-                  Chuyển nghiệm thu
-                </Button>
                 <Button variant="link" onClick={() => setSelected([])} className="ml-auto">
                   Bỏ chọn
                 </Button>
@@ -452,6 +472,40 @@ export default function MaintenancePage() {
             await updateProgress(progressRecord.id, input, actor);
             closeProgress();
             setNotice(`Đã cập nhật tiến độ ${progressRecord.code}.`);
+          }}
+          onContinueToSubmit={(prefill) => {
+            setSubmitPrefill(prefill);
+            setExtra({ progress: null, submit: progressRecord.id });
+          }}
+        />
+      )}
+      {submitRecord && (
+        <SubmitReviewModal
+          key={submitRecord.id}
+          record={submitRecord}
+          prefill={submitPrefill}
+          onClose={closeSubmit}
+          onSubmit={async (input) => {
+            await submitForReview(submitRecord.id, input, actor);
+            closeSubmit();
+            setNotice(`Đã gửi nghiệm thu ${submitRecord.code} – chờ ${input.reviewer} nghiệm thu.`);
+          }}
+        />
+      )}
+      {reviewRecordRow && (
+        <ReviewModal
+          key={reviewRecordRow.id}
+          record={reviewRecordRow}
+          reviewer={resolveReviewer({ authOff: AUTH_MODE === 'off', userName: user?.name, submission: reviewRecordRow.submission })}
+          onClose={closeReview}
+          onSubmit={async (input) => {
+            await review(reviewRecordRow.id, input);
+            closeReview();
+            setNotice(
+              input.result === 'pass'
+                ? `Đã nghiệm thu đạt ${reviewRecordRow.code} – hoàn thành.`
+                : `Đã trả ${reviewRecordRow.code} về Đang thực hiện (${input.result === 'fail' ? 'không đạt' : 'cần bổ sung'}).`,
+            );
           }}
         />
       )}

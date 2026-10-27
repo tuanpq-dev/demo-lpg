@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { assetPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
+import { AUTH_MODE } from '@/api/auth';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import {
@@ -55,6 +56,7 @@ import {
 } from '@/data/maintenance';
 import {
   clearProgressDraft,
+  clearSubmitDraft,
   formatFileSize,
   formatPlantDateTime,
   historyEvents,
@@ -65,23 +67,29 @@ import {
 } from '@/data/maintenanceDetail';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineCountdown, deadlineDayLabel } from '@/features/maintenance/deadline';
-import { HOLD_LABEL, canUpdateProgress, reportedProgressOf } from '@/features/maintenance/progress';
+import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
+import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
 import { NEXT_ACTION_LABEL, WORKFLOW_STEPS, canCancel, workflowPosition } from '@/features/maintenance/workflow';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
 import { downloadSampleAttachment } from './attachments';
-import { AcceptReviewModal, AssignMaintenanceModal, CancelMaintenanceModal, ReworkModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
+import { AssignMaintenanceModal, CancelMaintenanceModal, ViewAttachmentModal } from './MaintenanceDetailDialogs';
+import { MaintenanceResult } from './MaintenanceResult';
 import { ProgressUpdateModal } from './ProgressUpdateModal';
+import { ReviewModal } from './ReviewModal';
+import { SubmitReviewModal } from './SubmitReviewModal';
 
 const STEPS = WORKFLOW_STEPS.map((s) => ({ id: s.status, label: s.label }));
 /** Bước "Đang thực hiện" kèm nhãn phụ khi tạm dừng / gặp sự cố (vẫn bước 3). */
 function stepsFor(r: MaintenanceRecord) {
   const hold = r.hold;
-  if (!hold) return STEPS;
-  const noteTone = hold.kind === 'blocked' ? ('danger' as const) : ('warning' as const);
-  return STEPS.map((s) => (s.id === 'in-progress' ? { ...s, note: HOLD_LABEL[hold.kind], noteTone } : s));
+  // Nhãn phụ dưới "Đang thực hiện": tạm dừng / gặp sự cố; không thì "Không đạt nghiệm thu" (bị trả về).
+  if (!hold && !r.reviewFailed) return STEPS;
+  const note = hold ? HOLD_LABEL[hold.kind] : REVIEW_FAILED_LABEL;
+  const noteTone = !hold || hold.kind === 'blocked' ? ('danger' as const) : ('warning' as const);
+  return STEPS.map((s) => (s.id === 'in-progress' ? { ...s, note, noteTone } : s));
 }
 const PRIORITY_LABEL = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
 const FORM_TYPE_LABEL = Object.fromEntries(FORM_TYPE_OPTIONS.map((o) => [o.value, o.label]));
@@ -216,11 +224,30 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
   const canWrite = useCan('maintenance:write');
   const canReview = useCan('maintenance:review');
   const actor = user?.name || 'Admin';
-  const { advance, cancel, assign, toggleChecklist, addNote, updateProgress, rework } = useMaintenance();
+  const { advance, cancel, assign, toggleChecklist, addNote, updateProgress, submitForReview, review } = useMaintenance();
   const alerts = useAlerts();
   const alert = r.sourceAlertId ? alerts.data?.find((a) => a.id === r.sourceAlertId) : undefined;
 
-  const [dialog, setDialog] = useState<'assign' | 'cancel' | 'progress' | 'accept' | 'rework' | null>(null);
+  // `?submit=1` / `?review=1` (link ngoài, test) → mở sẵn modal Gửi nghiệm thu / Nghiệm thu khi trạng thái cho phép.
+  const [dialog, setDialog] = useState<'assign' | 'cancel' | 'progress' | 'submit' | 'review' | null>(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get('submit') === '1' && r.status === 'in-progress') return 'submit';
+    if (q.get('review') === '1' && r.status === 'review') return 'review';
+    return null;
+  });
+  /** Nội dung + tệp chuyển từ modal Cập nhật tiến độ ("Tiếp tục gửi nghiệm thu"). */
+  const [submitPrefill, setSubmitPrefill] = useState<{ text: string; files: readonly ProgressFile[] } | undefined>();
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (!q.has('submit') && !q.has('review')) return;
+    q.delete('submit');
+    q.delete('review');
+    const s = q.toString();
+    navigate({ search: s ? `?${s}` : '', hash: location.hash }, { replace: true, state: location.state });
+    // chỉ lần đầu vào trang
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const reviewer = resolveReviewer({ authOff: AUTH_MODE === 'off', userName: user?.name, submission: r.submission });
   const checklistRef = useRef<HTMLDivElement>(null);
 
   // `#checklist` (nút "Mở checklist" của modal cập nhật tiến độ, từ danh sách hoặc trang này) → cuộn + focus khối Checklist.
@@ -323,6 +350,11 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           {r.hold && (
             <Badge variant="tag" size="md" tone={r.hold.kind === 'blocked' ? 'danger' : 'warning'}>
               {HOLD_LABEL[r.hold.kind]}
+            </Badge>
+          )}
+          {r.reviewFailed && r.status === 'in-progress' && (
+            <Badge variant="tag" size="md" tone="danger">
+              {REVIEW_FAILED_LABEL}
             </Badge>
           )}
           {overdue && (
@@ -437,7 +469,9 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           </Card>
 
           <Card title="Kết quả bảo trì" icon={<ClipboardCheckIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg">
-            {r.status === 'done' ? (
+            {r.status === 'done' && r.review?.result === 'pass' ? (
+              <MaintenanceResult record={r} />
+            ) : r.status === 'done' ? (
               <p className="text-base text-fg">
                 Hoàn thành ngày {r.completedAt ? formatDate(r.completedAt) : '—'} · tiến độ {r.progress}%.
               </p>
@@ -501,20 +535,20 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
               <SendIcon size={16} />
             </Button>
           )}
+          {r.status === 'in-progress' && (
+            <Button variant="subtle" onClick={() => setDialog('submit')}>
+              Gửi nghiệm thu
+            </Button>
+          )}
           {canUpdateProgress(r.status) && (
             <Button variant="outline" onClick={() => setDialog('progress')}>
               Cập nhật tiến độ
             </Button>
           )}
           {r.status === 'review' && canReview && (
-            <>
-              <Button variant="subtle" onClick={() => setDialog('rework')}>
-                Yêu cầu làm lại
-              </Button>
-              <Button variant="outline" onClick={() => setDialog('accept')}>
-                Nghiệm thu đạt
-              </Button>
-            </>
+            <Button variant="outline" onClick={() => setDialog('review')}>
+              Nghiệm thu
+            </Button>
           )}
         </StickyActionBar>
       )}
@@ -532,27 +566,41 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
             setDialog(null);
             announce(`Đã cập nhật tiến độ ${r.code} – đã ghi lịch sử.`);
           }}
-        />
-      )}
-      {dialog === 'accept' && (
-        <AcceptReviewModal
-          record={r}
-          onClose={() => setDialog(null)}
-          onConfirm={async () => {
-            await advance(r.id, actor);
-            setDialog(null);
-            announce(`${r.code}: nghiệm thu đạt – đã hoàn thành.`);
+          onContinueToSubmit={(prefill) => {
+            setSubmitPrefill(prefill);
+            setDialog('submit');
           }}
         />
       )}
-      {dialog === 'rework' && (
-        <ReworkModal
+      {dialog === 'submit' && (
+        <SubmitReviewModal
           record={r}
-          onClose={() => setDialog(null)}
-          onConfirm={async (reason) => {
-            await rework(r.id, reason, actor);
+          prefill={submitPrefill}
+          onClose={() => {
             setDialog(null);
-            announce(`${r.code}: đã yêu cầu làm lại – quay về Đang thực hiện.`);
+            setSubmitPrefill(undefined);
+          }}
+          onSubmit={async (input) => {
+            await submitForReview(r.id, input, actor);
+            setDialog(null);
+            setSubmitPrefill(undefined);
+            announce(`Đã gửi nghiệm thu ${r.code} – chờ ${input.reviewer} nghiệm thu.`);
+          }}
+        />
+      )}
+      {dialog === 'review' && (
+        <ReviewModal
+          record={r}
+          reviewer={reviewer}
+          onClose={() => setDialog(null)}
+          onSubmit={async (input) => {
+            await review(r.id, input);
+            setDialog(null);
+            announce(
+              input.result === 'pass'
+                ? `${r.code}: nghiệm thu đạt – đã hoàn thành.`
+                : `${r.code}: nghiệm thu ${input.result === 'fail' ? 'không đạt' : 'cần bổ sung'} – quay về Đang thực hiện.`,
+            );
           }}
         />
       )}
@@ -576,6 +624,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           onConfirm={async (reason) => {
             await cancel(r.id, reason, actor);
             clearProgressDraft(r.id);
+            clearSubmitDraft(r.id);
             setDialog(null);
             announce(`Đã hủy yêu cầu ${r.code}.`);
           }}

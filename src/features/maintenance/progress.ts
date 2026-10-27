@@ -5,7 +5,8 @@
  *   Đang thực hiện                 →  in-progress (bỏ cờ tạm dừng/sự cố)
  *   Tạm dừng                       →  in-progress + hold.paused   (lý do bắt buộc)
  *   Gặp sự cố                      →  in-progress + hold.blocked  (mô tả bắt buộc)
- *   Hoàn thành (= "Báo hoàn thành") →  review – KHÔNG nhảy thẳng done; chỉ "Nghiệm thu đạt" mới sang done
+ *   Hoàn thành                     →  KHÔNG ghi gì: nút chính thành "Tiếp tục gửi nghiệm thu" → modal "Gửi yêu cầu nghiệm thu"
+ *                                     (`review.ts` – đường DUY NHẤT sang review; điền sẵn nội dung vào Tóm tắt)
  *
  * Mở được khi `assigned` / `in-progress`. Từ `assigned`: lần cập nhật đầu = "Bắt đầu thực hiện" (đúng một bước); chưa cho
  * "Hoàn thành" ngay (phải qua bước Đang thực hiện – không nhảy bước).
@@ -63,8 +64,11 @@ export function reportedProgressOf(r: Pick<MaintenanceRecord, 'reportedProgress'
 export const defaultReportedProgress = (r: Pick<MaintenanceRecord, 'reportedProgress' | 'progress' | 'checklist'>) =>
   clampProgress(reportedProgressOf(r));
 
-/** Nội dung bắt buộc khi Tạm dừng / Gặp sự cố / Hoàn thành. */
-export const requiresText = (s: WorkState) => s !== 'working';
+/** Nội dung bắt buộc khi Tạm dừng / Gặp sự cố (Hoàn thành: Tóm tắt bắt buộc ở modal Gửi nghiệm thu). */
+export const requiresText = (s: WorkState) => s === 'paused' || s === 'blocked';
+
+/** "Hoàn thành" ở modal tiến độ → chuyển sang modal Gửi nghiệm thu (chỉ khi đang thực hiện). */
+export const canContinueToSubmit = (status: MaintenanceStatus, s: WorkState) => s === 'completed' && status === 'in-progress';
 
 /** Nhãn ô "Nội dung đã thực hiện" theo lựa chọn. */
 export const TEXT_LABEL: Record<WorkState, string> = {
@@ -74,10 +78,9 @@ export const TEXT_LABEL: Record<WorkState, string> = {
   completed: 'Nội dung đã hoàn thành',
 };
 
-const TEXT_REQUIRED_ERROR: Record<Exclude<WorkState, 'working'>, string> = {
+const TEXT_REQUIRED_ERROR: Record<'paused' | 'blocked', string> = {
   paused: 'Nhập lý do tạm dừng.',
   blocked: 'Mô tả sự cố đang gặp.',
-  completed: 'Mô tả nội dung đã hoàn thành trước khi báo hoàn thành.',
 };
 
 /** Tệp đính kèm thêm trong lần cập nhật (chỉ thông tin – không object URL). */
@@ -91,7 +94,8 @@ export function validateProgressUpdate(r: MaintenanceRecord, input: ProgressUpda
   if (!canUpdateProgress(r.status)) return { form: 'Yêu cầu không còn ở bước cập nhật tiến độ.' };
   const errors: ProgressUpdateErrors = {};
   if (workStateDisabled(r.status, input.state)) errors.state = 'Bắt đầu thực hiện trước khi báo hoàn thành.';
-  if (input.state !== 'working' && !input.text.trim()) errors.text = TEXT_REQUIRED_ERROR[input.state];
+  else if (input.state === 'completed') errors.state = 'Báo hoàn thành qua "Tiếp tục gửi nghiệm thu".';
+  if ((input.state === 'paused' || input.state === 'blocked') && !input.text.trim()) errors.text = TEXT_REQUIRED_ERROR[input.state];
   if (errors.state || errors.text) return errors;
   const changed =
     r.status === 'assigned' ||
@@ -110,10 +114,7 @@ function historyLine(r: MaintenanceRecord, input: ProgressUpdateInput, progress:
   const text = input.text.trim();
   const parts: string[] = [];
   let kind: MaintenanceHistoryKind = 'progress';
-  if (input.state === 'completed') {
-    kind = 'review';
-    parts.push('Báo hoàn thành – chuyển nghiệm thu');
-  } else if (input.state === 'paused') {
+  if (input.state === 'paused') {
     kind = 'pause';
     parts.push(`Tạm dừng – lý do: ${text}`);
   } else if (input.state === 'blocked') {
@@ -134,8 +135,8 @@ function historyLine(r: MaintenanceRecord, input: ProgressUpdateInput, progress:
 }
 
 /**
- * Áp dụng lần cập nhật. Không hợp lệ (`validateProgressUpdate`) → trả nguyên bản ghi.
- * - status: completed → review; còn lại → in-progress (từ assigned = bắt đầu, đúng một bước).
+ * Áp dụng lần cập nhật. Không hợp lệ (`validateProgressUpdate`, kể cả "Hoàn thành") → trả nguyên bản ghi.
+ * - status → in-progress (từ assigned = bắt đầu, đúng một bước).
  * - hold: paused/blocked → { kind, reason = nội dung, at }; working/completed → bỏ.
  * - reportedProgress = giá trị thanh trượt (được giảm); `progress` (checklist) giữ nguyên.
  * - Nội dung → một ghi chú kỹ thuật; tệp → `attachments` với `isTemp: true` (chỉ tên/kích thước/loại).
@@ -161,7 +162,7 @@ export function applyProgressUpdate(
   }));
   let next: MaintenanceRecord = {
     ...r,
-    status: input.state === 'completed' ? 'review' : 'in-progress',
+    status: 'in-progress',
     reportedProgress: progress,
     hold: input.state === 'paused' || input.state === 'blocked' ? { kind: input.state, reason: text, at } : undefined,
     attachments: added.length ? [...existing, ...added] : r.attachments,
@@ -170,31 +171,6 @@ export function applyProgressUpdate(
   if (!next.hold) delete next.hold;
   if (text) next = addNoteRecord(next, text, ctx);
   return next;
-}
-
-/** Chuyển nghiệm thu hàng loạt (bảng): chỉ `in-progress` → review; dòng khác trả nguyên (nơi gọi đếm "bỏ qua"). */
-export function submitForReview(r: MaintenanceRecord, ctx: ActionContext): MaintenanceRecord {
-  if (r.status !== 'in-progress') return r;
-  const history = r.history ?? [];
-  const next: MaintenanceRecord = {
-    ...r,
-    status: 'review',
-    history: [...history, { id: `h${history.length + 1}`, at: plantDateTimeKey(ctx.now), kind: 'review', text: 'Chuyển nghiệm thu (thao tác hàng loạt)', actor: ctx.actor }],
-  };
-  delete next.hold;
-  return next;
-}
-
-/** "Yêu cầu làm lại": chỉ từ review, lý do BẮT BUỘC (trống → không đổi) → lùi về in-progress, ghi lịch sử. */
-export function reworkRecord(r: MaintenanceRecord, reason: string, ctx: ActionContext): MaintenanceRecord {
-  const why = reason.trim();
-  if (r.status !== 'review' || !why) return r;
-  const history = r.history ?? [];
-  return {
-    ...r,
-    status: 'in-progress',
-    history: [...history, { id: `h${history.length + 1}`, at: plantDateTimeKey(ctx.now), kind: 'rework', text: `Yêu cầu làm lại – lý do: ${why}`, actor: ctx.actor }],
-  };
 }
 
 /** Hạn chót trong modal: đỏ khi đã quá hạn hoặc còn ≤ `NEAR_DUE_MS`. */

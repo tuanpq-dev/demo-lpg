@@ -2,7 +2,8 @@ import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
 import { checklistProgress, toggleChecklistItem } from '@/features/maintenance/checklist';
 import { isPastDue } from '@/features/maintenance/deadline';
-import { applyProgressUpdate, reworkRecord, submitForReview, type ProgressUpdateInput } from '@/features/maintenance/progress';
+import { applyProgressUpdate, type ProgressUpdateInput } from '@/features/maintenance/progress';
+import { reviewRecord, submitForReview, type ReviewInput, type SubmitInput } from '@/features/maintenance/review';
 import { addNoteRecord, advanceRecord, assignRecord, cancelRecord, type AssignInput } from '@/features/maintenance/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
@@ -13,6 +14,7 @@ import {
   DEPARTMENTS,
   MAINTENANCE_ASSIGNEES,
   PEOPLE,
+  REVIEWERS,
   SHIFTS,
   SOURCE_OPTIONS,
   isoDay,
@@ -42,7 +44,7 @@ export type {
   MaintenanceType,
   ShiftId,
 };
-export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, SHIFTS, SOURCE_OPTIONS };
+export { CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNEES, PEOPLE, REVIEWERS, SHIFTS, SOURCE_OPTIONS };
 
 // ============================================================================
 // Ngày & hạn
@@ -372,27 +374,16 @@ export const advanceMaintenance = async (id: string, actor?: string) => patch([i
 export const cancelMaintenance = async (id: string, reason?: string, actor?: string) =>
   patch([id], (r) => cancelRecord(r, { ...ctx(actor), reason }));
 
-/**
- * Chuyển nghiệm thu hàng loạt (bảng): chỉ yêu cầu "Đang thực hiện" → "Chờ nghiệm thu"; dòng khác bỏ qua.
- * KHÔNG có đường nào nhảy thẳng sang "Hoàn thành" ngoài "Nghiệm thu đạt" (trang chi tiết).
- */
-export async function sendToReviewMaintenance(ids: readonly string[], actor?: string): Promise<{ moved: number; skipped: number }> {
-  let moved = 0;
-  patch(ids, (r) => {
-    const next = submitForReview(r, ctx(actor));
-    if (next !== r) moved++;
-    return next;
-  });
-  return { moved, skipped: ids.length - moved };
-}
-
 /** Modal "Cập nhật tiến độ": trạng thái công việc + tiến độ báo cáo + nội dung + tệp tạm → một dòng lịch sử. */
 export const updateMaintenanceProgress = async (id: string, input: ProgressUpdateInput, actor?: string) =>
   patch([id], (r) => applyProgressUpdate(r, input, ctx(actor)));
 
-/** "Yêu cầu làm lại" (chờ nghiệm thu → đang thực hiện), lý do bắt buộc. "Nghiệm thu đạt" = `advance` từ review. */
-export const reworkMaintenance = async (id: string, reason: string, actor?: string) =>
-  patch([id], (r) => reworkRecord(r, reason, ctx(actor)));
+/** Modal "Gửi yêu cầu nghiệm thu": in-progress → review (đủ điều kiện), lưu hồ sơ + ảnh chụp số liệu. */
+export const submitMaintenanceForReview = async (id: string, input: SubmitInput, actor?: string) =>
+  patch([id], (r) => submitForReview(r, input, ctx(actor)));
+
+/** Modal "Nghiệm thu yêu cầu bảo trì": Đạt → done · Cần bổ sung / Không đạt → in-progress. Người thao tác = người nghiệm thu. */
+export const reviewMaintenance = async (id: string, input: ReviewInput) => patch([id], (r) => reviewRecord(r, input, { now: appNow() }));
 
 /** Tick / bỏ tick một mục checklist; tiến độ bản ghi tính lại từ checklist. */
 export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
@@ -406,7 +397,7 @@ export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
 export const addMaintenanceNote = async (id: string, text: string, actor?: string) =>
   patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
 
-/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, sendToReview, updateProgress, rework, toggleChecklist, addNote }`. */
+/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, updateProgress, submitForReview, review, toggleChecklist, addNote }`. */
 export function useMaintenance() {
   return {
     ...store.useCollection(),
@@ -414,9 +405,9 @@ export function useMaintenance() {
     assign: assignMaintenance,
     advance: advanceMaintenance,
     cancel: cancelMaintenance,
-    sendToReview: sendToReviewMaintenance,
     updateProgress: updateMaintenanceProgress,
-    rework: reworkMaintenance,
+    submitForReview: submitMaintenanceForReview,
+    review: reviewMaintenance,
     toggleChecklist: toggleMaintenanceChecklist,
     addNote: addMaintenanceNote,
   };

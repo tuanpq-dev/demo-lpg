@@ -10,15 +10,14 @@ import {
   defaultReportedProgress,
   isNearOrPastDue,
   reportedProgressOf,
-  reworkRecord,
-  submitForReview,
+  canContinueToSubmit,
+  requiresText,
   uploadKind,
   validateProgressUpdate,
   workStateDisabled,
   workStateOf,
   type ProgressUpdateInput,
 } from './progress';
-import { advanceRecord } from './workflow';
 
 const rec = (patch: Partial<MaintenanceRecord> = {}): MaintenanceRecord => ({
   id: 'MT-1',
@@ -64,21 +63,14 @@ describe('ánh xạ trạng thái công việc → bản ghi', () => {
     expect(r.hold?.kind).toBe('blocked');
   });
 
-  test('Hoàn thành → review (KHÔNG nhảy thẳng done), bỏ cờ', () => {
-    const r = applyProgressUpdate(rec({ hold: { kind: 'blocked', reason: 'x', at: 'y' } }), upd({ state: 'completed', progress: 100, text: 'Xong' }), ctx);
-    expect(r.status).toBe('review');
-    expect(r.completedAt).toBeNull();
-    expect(r.hold).toBeUndefined();
-    expect(workStateOf(r)).toBe('completed');
-  });
-
-  test('chỉ "Nghiệm thu đạt" (advance từ review) mới sang done', () => {
-    const review = applyProgressUpdate(rec(), upd({ state: 'completed', progress: 100, text: 'Xong' }), ctx);
-    // cập nhật thêm khi đã review → không đổi gì
-    expect(applyProgressUpdate(review, upd({ state: 'completed', progress: 100, text: 'lần 2' }), ctx)).toBe(review);
-    const done = advanceRecord(review, ctx);
-    expect(done.status).toBe('done');
-    expect(done.history?.at(-1)?.text).toBe('Nghiệm thu đạt – hoàn thành');
+  test('Hoàn thành: modal tiến độ KHÔNG ghi gì (chuyển sang modal Gửi nghiệm thu – review.ts)', () => {
+    const r = rec({ hold: { kind: 'blocked', reason: 'x', at: 'y' } });
+    expect(validateProgressUpdate(r, upd({ state: 'completed', progress: 100, text: 'Xong' })).state).toBe('Báo hoàn thành qua "Tiếp tục gửi nghiệm thu".');
+    expect(applyProgressUpdate(r, upd({ state: 'completed', progress: 100, text: 'Xong' }), ctx)).toBe(r);
+    expect(canContinueToSubmit('in-progress', 'completed')).toBe(true);
+    expect(canContinueToSubmit('assigned', 'completed')).toBe(false);
+    expect(canContinueToSubmit('in-progress', 'working')).toBe(false);
+    expect(requiresText('completed')).toBe(false);
   });
 
   test('từ Đã phân công: cập nhật đầu = Bắt đầu thực hiện (một bước); chưa được báo Hoàn thành', () => {
@@ -106,7 +98,6 @@ describe('bắt buộc nội dung', () => {
   test.each([
     ['paused', 'Nhập lý do tạm dừng.'],
     ['blocked', 'Mô tả sự cố đang gặp.'],
-    ['completed', 'Mô tả nội dung đã hoàn thành trước khi báo hoàn thành.'],
   ] as const)('%s: trống / chỉ khoảng trắng → lỗi, bản ghi không đổi', (state, msg) => {
     const r = rec();
     for (const text of ['', '   \n ']) {
@@ -172,9 +163,7 @@ describe('lịch sử + ghi chú + tệp tạm', () => {
     expect(resumed.history?.at(-1)).toMatchObject({ kind: 'resume', text: 'Tiếp tục thực hiện · tiến độ 30%' });
     const blocked = applyProgressUpdate(resumed, upd({ state: 'blocked', text: 'Rò rỉ' }), ctx);
     expect(blocked.history?.at(-1)).toMatchObject({ kind: 'block', text: 'Gặp sự cố: Rò rỉ · tiến độ 30%' });
-    const done = applyProgressUpdate(blocked, upd({ state: 'completed', progress: 100, text: 'Xong' }), ctx);
-    expect(done.history?.at(-1)).toMatchObject({ kind: 'review', text: 'Báo hoàn thành – chuyển nghiệm thu · 30% → 100%' });
-    expect(done.history?.map((h) => h.id)).toEqual(['h1', 'h2', 'h3', 'h4']);
+    expect(blocked.history?.map((h) => h.id)).toEqual(['h1', 'h2', 'h3']);
   });
 
   test('checklist 33 % → mặc định 35 %: chỉ làm tròn không tính là thay đổi; lịch sử không ghi "33% → 35%"', () => {
@@ -205,33 +194,6 @@ describe('lịch sử + ghi chú + tệp tạm', () => {
     ]);
     expect(JSON.stringify(r1.attachments)).not.toContain('blob:');
     expect(r1.history?.at(-1)?.text).toBe('Cập nhật tiến độ · tiến độ 30% · đính kèm 1 tệp');
-  });
-});
-
-describe('nghiệm thu: làm lại / chuyển nghiệm thu hàng loạt', () => {
-  test('Yêu cầu làm lại: bắt buộc lý do → review lùi về in-progress + lịch sử', () => {
-    const review = rec({ status: 'review' });
-    expect(reworkRecord(review, '  ', ctx)).toBe(review);
-    const r = reworkRecord(review, 'Còn rò rỉ ở mặt bích', ctx);
-    expect(r.status).toBe('in-progress');
-    expect(r.history?.at(-1)).toMatchObject({ kind: 'rework', text: 'Yêu cầu làm lại – lý do: Còn rò rỉ ở mặt bích' });
-  });
-
-  test('Yêu cầu làm lại chỉ từ review', () => {
-    for (const s of ALL.filter((x) => x !== 'review')) {
-      const r = rec({ status: s });
-      expect(reworkRecord(r, 'lý do', ctx)).toBe(r);
-    }
-  });
-
-  test('submitForReview: chỉ in-progress → review (bỏ cờ); khác → giữ nguyên', () => {
-    const r = submitForReview(rec({ hold: { kind: 'paused', reason: 'x', at: 'y' } }), ctx);
-    expect(r.status).toBe('review');
-    expect(r.hold).toBeUndefined();
-    for (const s of ALL.filter((x) => x !== 'in-progress')) {
-      const x = rec({ status: s });
-      expect(submitForReview(x, ctx)).toBe(x);
-    }
   });
 });
 

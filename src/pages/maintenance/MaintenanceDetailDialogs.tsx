@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Badge, Button, FileIcon, FormField, Modal, Select, Textarea } from '@/components';
 import { DEPARTMENTS, PEOPLE, SHIFTS, type MaintenanceAttachment, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
 import type { AssignInput } from '@/features/maintenance/workflow';
@@ -123,84 +123,6 @@ export function CancelMaintenanceModal({
       }
     >
       <Textarea label="Lý do hủy (không bắt buộc)" value={reason} onChange={setReason} maxLength={300} showCount rows={3} />
-    </Modal>
-  );
-}
-
-/**
- * "Nghiệm thu đạt" (chờ nghiệm thu → hoàn thành) – hộp xác nhận. Đường DUY NHẤT sang "Hoàn thành".
- * Quyền: `maintenance:review` (kỹ sư / quản trị) – UX; TODO(backend) kiểm tra lại ở API.
- */
-export function AcceptReviewModal({ record, onClose, onConfirm }: { record: MaintenanceRecord; onClose: () => void; onConfirm: () => Promise<void> }) {
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={`Nghiệm thu đạt ${record.code}?`}
-      description="Yêu cầu chuyển sang “Hoàn thành”, ghi ngày hoàn thành và lịch sử. Không thể chỉnh tiến độ sau khi nghiệm thu."
-      onSubmit={(e) => {
-        e.preventDefault();
-        void onConfirm();
-      }}
-      footer={
-        <>
-          <Button onClick={onClose}>Để sau</Button>
-          <Button type="submit" variant="primary">
-            Xác nhận nghiệm thu đạt
-          </Button>
-        </>
-      }
-    >
-      <p className="text-base text-fg-secondary">{record.title}</p>
-    </Modal>
-  );
-}
-
-/** "Yêu cầu làm lại" – lý do BẮT BUỘC; yêu cầu lùi về "Đang thực hiện", lý do ghi vào lịch sử. */
-export function ReworkModal({ record, onClose, onConfirm }: { record: MaintenanceRecord; onClose: () => void; onConfirm: (reason: string) => Promise<void> }) {
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState('');
-  const wrapRef = useRef<HTMLDivElement>(null);
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      dismissOnBackdrop={false}
-      title={`Yêu cầu làm lại ${record.code}`}
-      description="Yêu cầu quay về “Đang thực hiện” để người phụ trách xử lý tiếp. Lý do được ghi vào lịch sử xử lý."
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!reason.trim()) {
-          setError('Nhập lý do yêu cầu làm lại.');
-          wrapRef.current?.querySelector('textarea')?.focus();
-          return;
-        }
-        void onConfirm(reason);
-      }}
-      footer={
-        <>
-          <Button onClick={onClose}>Hủy</Button>
-          <Button type="submit" variant="primary">
-            Gửi yêu cầu làm lại
-          </Button>
-        </>
-      }
-    >
-      <div ref={wrapRef}>
-        <Textarea
-          label="Lý do làm lại"
-          required
-          value={reason}
-          onChange={(v) => {
-            setReason(v);
-            if (error) setError('');
-          }}
-          error={error || undefined}
-          maxLength={500}
-          showCount
-          rows={3}
-        />
-      </div>
     </Modal>
   );
 }
