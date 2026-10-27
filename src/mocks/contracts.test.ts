@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { AlertSchema } from '@demo-lpg/shared/alerts';
 import { LiveDataSchema } from '@demo-lpg/shared/live';
 import { MaintenanceRequestSchema } from '@demo-lpg/shared/maintenance';
-import { alertRecords } from './alerts';
+import { ALERT_FE_ONLY_FIELDS, alertRecords } from './alerts';
+import { AREAS } from './areas';
 import { FE_ONLY_FIELDS, maintenanceRecords, type MaintenanceRecord } from './maintenance';
 
 /** Bỏ trường chỉ có ở FE (trang chi tiết – chờ đưa vào hợp đồng API, CLAUDE.md mục 7) + đổi về dạng hợp đồng. */
@@ -24,11 +25,18 @@ describe('mock khớp hợp đồng shared', () => {
   });
 
   test('mọi cảnh báo hợp lệ theo AlertSchema (đổi daysAgo + time → occurredAt)', () => {
-    for (const { daysAgo, time, ...rest } of alertRecords) {
+    for (const { daysAgo, time, ...full } of alertRecords) {
+      const rest: Record<string, unknown> & { id: string } = { ...full };
+      for (const k of ALERT_FE_ONLY_FIELDS) delete rest[k];
       const occurredAt = `2026-10-${String(22 - daysAgo).padStart(2, '0')}T${time}+07:00`;
       const res = AlertSchema.strict().safeParse({ ...rest, occurredAt });
       expect(res.success, `${rest.id}: ${res.error?.message}`).toBe(true);
     }
+  });
+
+  test('khu vực của cảnh báo và yêu cầu bảo trì nằm trong MỘT danh sách khu chung (AREAS)', () => {
+    const areas: readonly string[] = AREAS;
+    for (const r of [...alertRecords, ...maintenanceRecords]) expect(areas, r.id).toContain(r.area);
   });
 
   test('LiveData mẫu hợp lệ', () => {

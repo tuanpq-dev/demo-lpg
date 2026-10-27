@@ -6,6 +6,7 @@ import { applyProgressUpdate, type ProgressUpdateInput } from '@/features/mainte
 import { reviewRecord, submitForReview, type ReviewInput, type SubmitInput } from '@/features/maintenance/review';
 import { applyAssignment, computeWorkloads, initialAssignForm, planBulkAssign, type AssignForm } from '@/features/maintenance/assign';
 import { addNoteRecord, advanceRecord, cancelRecord } from '@/features/maintenance/workflow';
+import { linkedMaintenance } from '@/features/alerts/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
@@ -315,8 +316,22 @@ export type NewMaintenanceInput = {
   createdBy?: string;
 };
 
-/** POST /maintenance – tạo yêu cầu mới; có người phụ trách → "Đã phân công", không → "Chờ tiếp nhận". */
+/** Đã có yêu cầu (chưa hủy) tạo từ cảnh báo này → tạo lại bị từ chối (drawer hiện "Xem MT-…" thay nút tạo). */
+export class DuplicateFromAlertError extends Error {
+  constructor(readonly existing: MaintenanceRecord) {
+    super(`Cảnh báo ${existing.sourceAlertId} đã có yêu cầu bảo trì ${existing.code}.`);
+  }
+}
+
+/**
+ * POST /maintenance – tạo yêu cầu mới; có người phụ trách → "Đã phân công", không → "Chờ tiếp nhận".
+ * Một cảnh báo chỉ có MỘT yêu cầu đang hiệu lực (`linkedMaintenance`, bỏ yêu cầu đã hủy) – trùng → `DuplicateFromAlertError`.
+ */
 export async function createMaintenance(input: NewMaintenanceInput): Promise<MaintenanceRecord> {
+  if (input.sourceAlertId) {
+    const existing = linkedMaintenance(input.sourceAlertId, db);
+    if (existing) throw new DuplicateFromAlertError(existing);
+  }
   const now = appNow();
   const at = plantDateTimeKey(now);
   const maxNo = Math.max(0, ...db.map((r) => Number(r.code.replace(/\D/g, '')) || 0));

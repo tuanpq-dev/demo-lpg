@@ -20,7 +20,7 @@ export type MockLiveSourceOptions = {
  * Nguồn giả lập (thay bằng WebSocket/SCADA cùng interface LiveDataSource):
  * - kết nối khi có người nghe đầu tiên (subscribe hoặc onStatusChange), ngắt khi hết người nghe;
  * - mỗi `intervalMs`: số dao động quanh giá trị nền (mean-reverting), ts = now, quality theo chế độ giả lập;
- * - giả lập sự cố (test/playground/`?live=`): `simulateDisconnect` (mất kết nối → sau `retryAfterMs` chuyển
+ * - giả lập sự cố (test/playground; `?live=` chỉ dev – `devScenarios.ts`): `simulateDisconnect` (mất kết nối → sau `retryAfterMs` chuyển
  *   "connecting" thử lại liên tục tới khi tắt giả lập), `setQuality(tags, 'bad')`, `freeze(tags)` (ngừng cập nhật
  *   → quá 10 s thành mất tín hiệu), `restore()`.
  */
@@ -35,6 +35,8 @@ export class MockLiveSource implements LiveDataSource {
   private readonly quality = new Map<string, TagQuality>();
   private readonly frozen = new Set<string>();
   private readonly o: Required<MockLiveSourceOptions>;
+  /** Giá trị nền hiện tại (đổi được bằng `setBase` – kịch bản dev). */
+  private readonly base: Record<string, LiveValue>;
 
   constructor(options: MockLiveSourceOptions) {
     this.o = {
@@ -46,6 +48,7 @@ export class MockLiveSource implements LiveDataSource {
       now: () => Date.now(),
       ...options,
     };
+    this.base = { ...this.o.base };
     const ts = this.o.now();
     for (const [tag, value] of Object.entries(this.o.base)) this.values[tag] = { value, unit: this.o.unit(tag), ts, quality: 'good' };
   }
@@ -111,6 +114,16 @@ export class MockLiveSource implements LiveDataSource {
     }
   }
 
+  /** Đổi giá trị nền của tag (số dao động quanh giá trị mới từ bước kế tiếp) – kịch bản dev, vd nồng độ gas tăng dần. */
+  setBase(tag: string, value: LiveValue) {
+    this.base[tag] = value;
+  }
+
+  /** Giá trị nền hiện tại. */
+  baseOf(tag: string): LiveValue | undefined {
+    return this.base[tag];
+  }
+
   /** Bỏ mọi giả lập sự cố. */
   restore() {
     this.quality.clear();
@@ -169,10 +182,13 @@ export class MockLiveSource implements LiveDataSource {
       if (this.frozen.has(tag)) continue;
       let value = cur.value;
       const amp = this.o.jitter[tag];
-      const base = this.o.base[tag];
+      const base = this.base[tag];
       if (!fresh && amp && typeof base === 'number' && typeof value === 'number') {
         const v = value + (base - value) * 0.3 + (Math.random() * 2 - 1) * amp * 0.6;
         value = Math.round(Math.min(base + amp, Math.max(base - amp, v)) * 100) / 100;
+      } else if (!fresh && base !== undefined && !(amp && typeof base === 'number')) {
+        // Tag không dao động (trạng thái chuỗi 'alarm'/'normal', số cố định): theo giá trị nền (`setBase`) ở bước kế tiếp.
+        value = base;
       }
       next[tag] = { value, unit: cur.unit, ts, quality: this.quality.get(tag) ?? 'good' };
     }

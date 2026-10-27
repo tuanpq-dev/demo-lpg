@@ -1,10 +1,32 @@
-import { createCollectionStore } from '@/lib/createCollectionStore';
+import { alertStore, currentAlerts, fetchAlerts, mutateAlerts } from './alertStore';
 import type { AlertCardData, AlertHandling, SelectOption, Severity } from '@/components';
-import { ALERT_ASSIGNEES, alertRecords, type AlertRecord, type AlertStatus } from '@/mocks/alerts';
+import {
+  acknowledgeAlert,
+  addAlertNote,
+  fireUpdate,
+  gasUpdate,
+  requestSupport,
+  type FireUpdateInput,
+  type FireUpdateResult,
+  type GasUpdateInput,
+  type GasUpdateResult,
+  assignAlert,
+  canAcknowledge,
+  canAssignAlert,
+  canResolve,
+  planBulk,
+  recordMaintenanceCreated,
+  resolveAlert,
+  toggleGuideStep,
+  type ResolveResult,
+} from '@/features/alerts/workflow';
+import { appNow } from '@/lib/demoNow';
+import { withUnit } from '@/features/alerts/gauge';
+import type { AlertRecord, AlertStatus } from '@/mocks/alerts';
 import type { KpiMock } from '@/mocks/types';
 
 export type { AlertRecord, AlertStatus };
-export { ALERT_ASSIGNEES };
+
 
 // ============================================================================
 // Bộ lọc
@@ -114,8 +136,6 @@ export const uniqueOptions = (values: string[]): SelectOption[] =>
 // Hiển thị
 // ============================================================================
 
-const unitGlued = (unit: string) => /^[%°]/.test(unit);
-const withUnit = (v: string, unit: string) => (unitGlued(unit) ? `${v}${unit}` : `${v} ${unit}`);
 
 /** Thẻ ưu tiên: "11.8 bar" / "10.5 bar", "25% LEL" / "20% LEL" (70:2923). */
 export const cardValue = (a: AlertRecord) => ({ value: withUnit(a.value, a.unit), threshold: withUnit(a.threshold, a.unit) });
@@ -169,34 +189,115 @@ export function deriveAlertKpis(alerts: readonly AlertRecord[], range: AlertRang
 // Nguồn dữ liệu (mock hôm nay, API sau này) – store dùng chung giữa các trang
 // ============================================================================
 
-let db: AlertRecord[] = alertRecords.map((a) => ({ ...a }));
+export { fetchAlerts };
 
-/** GET /alerts – thay bằng fetch thật khi có API. */
-export async function fetchAlerts(): Promise<AlertRecord[]> {
-  return db.map((a) => ({ ...a }));
+const ctxOf = (by: string) => ({ by, at: appNow() });
+
+export type BulkResult = { done: number; skipped: number };
+
+/** Xác nhận: chỉ dòng Chưa xác nhận → Đang xử lý (người xác nhận nhận xử lý nếu chưa có người phụ trách). */
+export async function acknowledgeAlerts(ids: readonly string[], by = 'Admin'): Promise<BulkResult> {
+  const { eligible, skipped } = planBulk(currentAlerts(), ids, canAcknowledge);
+  const ctx = ctxOf(by);
+  mutateAlerts(eligible, (a) => acknowledgeAlert(a, ctx));
+  return { done: eligible.length, skipped };
 }
 
-const store = createCollectionStore(fetchAlerts);
-
-async function mutate(ids: readonly string[], patch: (a: AlertRecord) => AlertRecord) {
-  const set = new Set(ids);
-  db = db.map((a) => (set.has(a.id) ? patch(a) : a));
-  // Cập nhật ngay (optimistic); khi có API: gọi POST rồi refetch.
-  store.commit(db.map((a) => ({ ...a })));
+/** Phân công – KHÔNG tự xác nhận (drawer và hàng loạt cùng quy tắc). Đã hoàn thành → bỏ qua. */
+export async function assignAlerts(ids: readonly string[], assignee: string, by = 'Admin'): Promise<BulkResult> {
+  const { eligible, skipped } = planBulk(currentAlerts(), ids, canAssignAlert);
+  const ctx = ctxOf(by);
+  mutateAlerts(eligible, (a) => assignAlert(a, assignee, ctx));
+  return { done: eligible.length, skipped };
 }
 
-/** Xác nhận: Chưa xác nhận → Đang xử lý, người xử lý mặc định là người thao tác. */
-export const acknowledgeAlerts = (ids: readonly string[], by = 'Admin') =>
-  mutate(ids, (a) => (a.status === 'unacknowledged' ? { ...a, status: 'in-progress', assignee: a.assignee ?? by } : a));
+/**
+ * Hoàn thành hàng loạt: chỉ dòng Đang xử lý, MỘT ghi chú chung cho cả lô (bắt buộc). Dòng khác bỏ qua – không còn đường
+ * nào nhảy từ Chưa xác nhận sang Hoàn thành.
+ */
+export async function completeAlerts(ids: readonly string[], note: string, by = 'Admin'): Promise<BulkResult> {
+  if (!note.trim()) throw new Error('Cần ghi chú kết quả xử lý.');
+  const { eligible, skipped } = planBulk(currentAlerts(), ids, canResolve);
+  const ctx = ctxOf(by);
+  mutateAlerts(eligible, (a) => {
+    const r = resolveAlert(a, note, ctx);
+    return r.ok ? r.record : a;
+  });
+  return { done: eligible.length, skipped };
+}
 
-export const completeAlerts = (ids: readonly string[], by = 'Admin') =>
-  mutate(ids, (a) => (a.status === 'done' ? a : { ...a, status: 'done', assignee: a.assignee ?? by }));
+/** Đánh dấu đã xử lý một cảnh báo (drawer) – trả lý do khi bị chặn. */
+export async function resolveOneAlert(id: string, note: string, by = 'Admin'): Promise<ResolveResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, reason: 'status' };
+  const res = resolveAlert(a, note, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
+}
 
-/** Phân công: gán người xử lý; cảnh báo chưa xác nhận chuyển sang Đang xử lý. */
-export const assignAlerts = (ids: readonly string[], assignee: string) =>
-  mutate(ids, (a) => ({ ...a, assignee, status: a.status === 'unacknowledged' ? 'in-progress' : a.status }));
+/** "Cập nhật xử lý" cảnh báo gas – `check` = số live hiện tại + ngưỡng đóng (UI đọc live, hàm thuần kiểm lại). */
+export async function updateGasAlert(
+  id: string,
+  input: GasUpdateInput,
+  check: { live: number | undefined; limit: number; unit: string },
+  by = 'Admin',
+): Promise<GasUpdateResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, reason: 'status' };
+  const res = gasUpdate(a, input, check, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
+}
 
-/** Hook dữ liệu cảnh báo: `{ status, data, error, refetch, acknowledge, complete, assign }`. */
+/** "Cập nhật xử lý" báo cháy – `check` = trạng thái đầu báo đọc từ live lúc gửi (hàm thuần kiểm lại điều kiện đóng). */
+export async function updateFireAlert(
+  id: string,
+  input: FireUpdateInput,
+  check: Parameters<typeof fireUpdate>[2],
+  by = 'Admin',
+): Promise<FireUpdateResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, reason: 'status' };
+  const res = fireUpdate(a, input, check, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
+}
+
+/** Yêu cầu hỗ trợ: thêm người phối hợp + lịch sử. TODO(backend): gửi thông báo thật (đẩy/SMS) – UI ghi rõ "chưa gửi". */
+export async function requestAlertSupport(id: string, input: { people: readonly string[]; reason: string }, by = 'Admin') {
+  const ctx = ctxOf(by);
+  mutateAlerts([id], (a) => requestSupport(a, input, ctx));
+}
+
+export async function toggleAlertGuide(id: string, step: { id: string; text: string }, by = 'Admin') {
+  const ctx = ctxOf(by);
+  mutateAlerts([id], (a) => toggleGuideStep(a, step, ctx));
+}
+
+export async function addNoteToAlert(id: string, text: string, by = 'Admin') {
+  const ctx = ctxOf(by);
+  mutateAlerts([id], (a) => addAlertNote(a, text, ctx));
+}
+
+/** Ghi lịch sử sau khi tạo yêu cầu bảo trì từ cảnh báo (liên kết = `sourceAlertId` của yêu cầu). */
+export async function noteMaintenanceCreated(id: string, code: string, by = 'Admin') {
+  const ctx = ctxOf(by);
+  mutateAlerts([id], (a) => recordMaintenanceCreated(a, code, ctx));
+}
+
+/** Hook dữ liệu cảnh báo: `{ status, data, error, refetch, acknowledge, complete, assign, resolve, toggleGuide, addNote, noteMaintenance }`. */
 export function useAlerts() {
-  return { ...store.useCollection(), acknowledge: acknowledgeAlerts, complete: completeAlerts, assign: assignAlerts };
+  return {
+    ...alertStore.useCollection(),
+    acknowledge: acknowledgeAlerts,
+    complete: completeAlerts,
+    assign: assignAlerts,
+    resolve: resolveOneAlert,
+    toggleGuide: toggleAlertGuide,
+    addNote: addNoteToAlert,
+    noteMaintenance: noteMaintenanceCreated,
+    gasUpdate: updateGasAlert,
+    fireUpdate: updateFireAlert,
+    requestSupport: requestAlertSupport,
+  };
 }

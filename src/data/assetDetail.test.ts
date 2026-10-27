@@ -118,7 +118,7 @@ describe('fetchAssetDetail', () => {
 });
 
 const alert = (id: string, device: string, daysAgo: number, time: string, over: Partial<AlertRecord> = {}): AlertRecord => ({
-  id, code: id, device, daysAgo, time, severity: 'high', message: id, area: 'Bồn chứa', value: '1', threshold: '1', unit: 'bar', status: 'unacknowledged', assignee: null, ...over,
+  id, code: id, device, daysAgo, time, severity: 'high', message: id, area: 'Khu bồn LPG', value: '1', threshold: '1', unit: 'bar', status: 'unacknowledged', assignee: null, ...over,
 });
 
 describe('cảnh báo liên quan', () => {
@@ -146,7 +146,7 @@ describe('cảnh báo liên quan', () => {
 });
 
 const rec = (code: string, status: MaintenanceRecord['status'], dueAt: string, completedAt: string | null = null, device = 'V-101'): MaintenanceRecord => ({
-  id: code, code, title: code, device, area: 'Bồn chứa', type: 'periodic', priority: 'medium', status, assignee: null, createdAt: '2026-01-01', dueAt, completedAt, progress: 0,
+  id: code, code, title: code, device, area: 'Khu bồn LPG', type: 'periodic', priority: 'medium', status, assignee: null, createdAt: '2026-01-01', dueAt, completedAt, progress: 0,
 });
 
 describe('tóm tắt bảo trì', () => {
