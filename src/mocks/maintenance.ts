@@ -56,6 +56,10 @@ export type MaintenanceHistoryKind =
   | 'resume'
   | 'review'
   | 'rework'
+  | 'submit'
+  | 'review-pass'
+  | 'review-needs-info'
+  | 'review-fail'
   | 'done'
   | 'cancel';
 
@@ -71,6 +75,49 @@ export type MaintenanceHistoryEntry = {
   kind: MaintenanceHistoryKind;
   text: string;
   actor?: string;
+};
+
+/** Tình trạng thiết bị sau bảo trì (modal "Gửi yêu cầu nghiệm thu"). */
+export type DeviceCondition = 'normal' | 'monitor' | 'unresolved';
+export type SensorStatus = 'normal' | 'monitor' | 'fault';
+export type ValveStatus = 'stable' | 'leak' | 'stuck';
+export type ReviewResult = 'pass' | 'needs-info' | 'fail';
+
+/**
+ * Một số liệu chụp lúc gửi nghiệm thu: `value` null = mất tín hiệu lúc gửi; `warn` = ngưỡng cảnh báo lấy từ cấu hình tag
+ * của tài sản lúc gửi (không viết cứng).
+ */
+export type ReadingSnapshot = { tag?: string; value: number | null; warn?: number };
+
+/**
+ * Hồ sơ gửi nghiệm thu (kỹ thuật viên, in-progress → review). `readings` = ẢNH CHỤP số liệu trực tiếp lúc bấm Gửi – không
+ * đổi theo live sau đó; thiếu `pressure`/`temperature` = thiết bị không có số liệu trực tiếp. Chỉ FE (`FE_ONLY_FIELDS`).
+ */
+export type ReviewSubmission = {
+  summary: string;
+  cause: string;
+  remedy: string;
+  deviceCondition: DeviceCondition;
+  readings: { pressure?: ReadingSnapshot; temperature?: ReadingSnapshot; /** "yyyy-mm-ddTHH:mm" giờ nhà máy */ at: string };
+  sensorStatus: SensorStatus;
+  valveStatus: ValveStatus;
+  /** Người nghiệm thu được đề nghị (khác người thực hiện). */
+  reviewer: string;
+  /** Thời gian đề nghị nghiệm thu "yyyy-mm-ddTHH:mm" (không bắt buộc). */
+  proposedAt?: string;
+  submittedBy: string;
+  submittedAt: string;
+};
+
+/** Kết quả nghiệm thu gần nhất (người nghiệm thu, review → done | in-progress). Chỉ FE. */
+export type ReviewOutcome = {
+  result: ReviewResult;
+  reviewer: string;
+  comment?: string;
+  /** Đạt: số giờ theo dõi thêm (0 = không); `followUpUntil` = mốc hết theo dõi "yyyy-mm-ddTHH:mm". */
+  followUpHours?: number;
+  followUpUntil?: string;
+  at: string;
 };
 
 /**
@@ -103,10 +150,16 @@ export type MaintenanceRecord = Omit<MaintenanceRequest, 'status' | 'checklist' 
   /** Luồng ghi chú kỹ thuật (ghi chú của form tạo → ghi chú đầu tiên). */
   notes?: MaintenanceNote[];
   history?: MaintenanceHistoryEntry[];
+  /** Hồ sơ gửi nghiệm thu gần nhất. */
+  submission?: ReviewSubmission;
+  /** Kết quả nghiệm thu gần nhất. */
+  review?: ReviewOutcome;
+  /** Cờ "Không đạt nghiệm thu" (in-progress sau khi bị đánh giá Không đạt; bỏ khi gửi lại). */
+  reviewFailed?: boolean;
 };
 
 /** Trường chỉ có ở FE – bỏ đi khi so với hợp đồng API (`contracts.test.ts`). */
-export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'reportedProgress', 'hold', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history'] as const;
+export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'reportedProgress', 'hold', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history', 'submission', 'review', 'reviewFailed'] as const;
 
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },
@@ -156,6 +209,17 @@ export const CHECKLIST_TEMPLATES: { id: string; label: string; items: string[] }
     label: 'Bảo dưỡng định kỳ chung',
     items: ['Kiểm tra ngoại quan & rò rỉ', 'Bôi trơn / siết chặt', 'Kiểm tra thông số vận hành', 'Cập nhật sổ bảo trì'],
   },
+];
+
+/**
+ * Người nghiệm thu (tên + chức danh) – gồm hai tên trong ảnh thiết kế ("Trần Hoàng Nam" ở modal Gửi, "Trần Văn B" ở modal
+ * Nghiệm thu). Modal Gửi lọc bỏ người thực hiện. TODO(backend): lấy từ user có vai trò engineer/admin (`maintenance:review`).
+ */
+export const REVIEWERS: readonly { name: string; title: string }[] = [
+  { name: 'Trần Hoàng Nam', title: 'Quản lý vận hành' },
+  { name: 'Trần Văn B', title: 'Quản lý' },
+  { name: 'Hoàng Minh E', title: 'Trưởng ca vận hành' },
+  { name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí' },
 ];
 
 export const MAINTENANCE_ASSIGNEES = ['Nguyễn Văn A', 'Trần Bình', 'Lê Thị C', 'Phạm Văn D'] as const;
@@ -257,6 +321,48 @@ const DETAILS: Record<string, () => Partial<MaintenanceRecord>> = {
       { id: 'h2', at: at2('08:31'), kind: 'notify', text: 'Gửi thông báo đến bộ phận Bảo trì', actor: 'Hệ thống' },
       { id: 'h3', at: at2('08:35'), kind: 'priority', text: 'Cập nhật mức ưu tiên: Nghiêm trọng', actor: 'Hệ thống' },
     ],
+  }),
+  // ---- Nghiệm thu (ảnh "Gửi yêu cầu nghiệm thu" / "Nghiệm thu yêu cầu bảo trì", 27/10/2026) ----
+  // MT-00109 (V-101): checklist 7/7 với tên mục theo ảnh modal Gửi → đủ điều kiện gửi khi điền tóm tắt/nguyên nhân/biện pháp/người
+  // nghiệm thu; tiến độ báo cáo 80 % → gửi đặt 100 %.
+  'MT-00109': () => ({
+    reportedProgress: 80,
+    checklist: [
+      { id: 'c1', text: 'Kiểm tra trực quan', done: true, doneAt: at2('08:40', -1) },
+      { id: 'c2', text: 'Kiểm tra rò rỉ siêu âm', done: true, doneAt: at2('09:05', -1) },
+      { id: 'c3', text: 'Ghi nhận áp suất', done: true, doneAt: at2('09:20', -1) },
+      { id: 'c4', text: 'Tín hiệu cảm biến ZSO/ZSC', done: true, doneAt: at2('09:50', -1) },
+      { id: 'c5', text: 'Vệ sinh hệ thống làm mát', done: true, doneAt: at2('10:30', -1) },
+      { id: 'c6', text: 'Chụp ảnh nhật ký', done: true, doneAt: at2('10:40', -1) },
+      { id: 'c7', text: 'Đề xuất xử lý', done: true, doneAt: at2('11:00', -1) },
+    ],
+  }),
+  // MT-00117: checklist chưa xong → modal Gửi "Chưa đủ điều kiện".
+  'MT-00117': () => ({
+    reportedProgress: 70,
+    checklist: [
+      { id: 'c1', text: 'Đối chiếu mức tại hiện trường', done: true, doneAt: at2('09:00', -1) },
+      { id: 'c2', text: 'Kiểm tra tín hiệu LT-102', done: true, doneAt: at2('09:30', -1) },
+      { id: 'c3', text: 'Hiệu chỉnh điểm 0 cảm biến', done: false, active: true },
+      { id: 'c4', text: 'Ghi nhận kết quả', done: false },
+      { id: 'c5', text: 'Kiểm tra van cách ly', done: false, na: true },
+    ],
+  }),
+  // MT-00115: đã gửi nghiệm thu (có hồ sơ) – mở được modal Nghiệm thu. E-101B không có số liệu trực tiếp → không có thông số.
+  'MT-00115': () => ({
+    submission: {
+      summary: 'Đã vệ sinh bộ trao đổi nhiệt, thay gioăng nắp và chạy thử 30 phút ở tải định mức.',
+      cause: 'Cặn bám bộ trao đổi nhiệt làm giảm hiệu suất hóa hơi.',
+      remedy: 'Súc rửa hóa chất bộ trao đổi nhiệt, thay gioăng nắp, hiệu chỉnh van điều nhiệt.',
+      deviceCondition: 'normal',
+      readings: { at: at2('15:10', -1) },
+      sensorStatus: 'normal',
+      valveStatus: 'stable',
+      reviewer: 'Trần Hoàng Nam',
+      submittedBy: 'Lê Thị C',
+      submittedAt: at2('15:10', -1),
+    },
+    history: [{ id: 'h1', at: at2('15:10', -1), kind: 'submit', text: 'Gửi nghiệm thu – người nghiệm thu: Trần Hoàng Nam', actor: 'Lê Thị C' }],
   }),
 };
 

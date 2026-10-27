@@ -5,6 +5,7 @@
 import type { TimelineEvent, TimelineTone } from '@/components';
 import { daysFromToday, plantDayKey } from '@/lib/plantTime';
 import type { WorkState } from '@/features/maintenance/progress';
+import type { DeviceCondition, SensorStatus, ValveStatus } from '@/features/maintenance/review';
 import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord } from '@/mocks/maintenance';
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
@@ -47,6 +48,10 @@ const HISTORY_TONE: Record<MaintenanceHistoryKind, TimelineTone> = {
   resume: 'success',
   review: 'warning',
   rework: 'warning',
+  submit: 'warning',
+  'review-pass': 'success',
+  'review-needs-info': 'warning',
+  'review-fail': 'danger',
   done: 'success',
   cancel: 'danger',
 };
@@ -123,12 +128,74 @@ export function clearProgressDraft(id: string) {
   }
 }
 
+// ---- Nháp modal "Gửi yêu cầu nghiệm thu" (sessionStorage theo mã; không đổi trạng thái, không chụp số liệu) ----
+
+export type SubmitDraft = {
+  summary: string;
+  cause: string;
+  remedy: string;
+  deviceCondition: DeviceCondition;
+  sensorStatus: SensorStatus;
+  valveStatus: ValveStatus;
+  reviewer: string | null;
+  proposedAt: string;
+  /** ISO */
+  savedAt: string;
+};
+
+const submitDraftKey = (id: string) => `demo-lpg:mt-submit-draft:${id}`;
+const CONDITIONS: readonly DeviceCondition[] = ['normal', 'monitor', 'unresolved'];
+const SENSORS: readonly SensorStatus[] = ['normal', 'monitor', 'fault'];
+const VALVES: readonly ValveStatus[] = ['stable', 'leak', 'stuck'];
+
+export function saveSubmitDraft(id: string, draft: SubmitDraft): boolean {
+  try {
+    sessionStorage.setItem(submitDraftKey(id), JSON.stringify(draft));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Nháp đã lưu; hỏng / sai dạng → null. */
+export function loadSubmitDraft(id: string): SubmitDraft | null {
+  try {
+    const raw = sessionStorage.getItem(submitDraftKey(id));
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Partial<SubmitDraft>;
+    const str = (v: unknown) => (typeof v === 'string' ? v : null);
+    if (str(d.summary) === null || str(d.cause) === null || str(d.remedy) === null) return null;
+    if (!CONDITIONS.includes(d.deviceCondition as DeviceCondition) || !SENSORS.includes(d.sensorStatus as SensorStatus) || !VALVES.includes(d.valveStatus as ValveStatus)) return null;
+    return {
+      summary: d.summary!,
+      cause: d.cause!,
+      remedy: d.remedy!,
+      deviceCondition: d.deviceCondition as DeviceCondition,
+      sensorStatus: d.sensorStatus as SensorStatus,
+      valveStatus: d.valveStatus as ValveStatus,
+      reviewer: str(d.reviewer),
+      proposedAt: str(d.proposedAt) ?? '',
+      savedAt: str(d.savedAt) ?? '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearSubmitDraft(id: string) {
+  try {
+    sessionStorage.removeItem(submitDraftKey(id));
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---- Quay lại danh sách đúng bộ lọc cũ ----
 
 const LIST_SEARCH_KEY = 'demo-lpg:maintenance-list-search';
 
 /** Tham số chỉ dùng một lần (mở drawer cũ / modal tạo) – không lưu vào URL "quay lại". */
-const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from', 'progress'];
+const TRANSIENT_PARAMS = ['open', 'create', 'device', 'from', 'progress', 'submit', 'review'];
 
 /** Query danh sách bỏ tham số một lần: `?tab=overdue&open=MT-1` → `?tab=overdue`; không còn gì → "". */
 export function listSearchOnly(search: string): string {
@@ -175,6 +242,9 @@ export type RelatedDeviceView =
       level: Reading;
       /** Tag xấu nhất: danger > warning > offline > normal. */
       status: 'danger' | 'warning' | 'offline' | 'normal';
+      /** Tag + ngưỡng cảnh báo (warn) của áp suất / nhiệt độ – từ cấu hình tài sản (`mocks/assets.ts`), không viết cứng. */
+      tags: { pressure: string; temperature: string };
+      limits: { pressure?: number; temperature?: number };
     };
 
 const RANK = { normal: 0, offline: 1, warning: 2, danger: 3 } as const;
@@ -203,5 +273,7 @@ export function useRelatedDevice(device: string): RelatedDeviceView {
     level,
     levelPct: level.state === 'ok' ? levelPercentToVolumePercent(level.value!) : undefined,
     status: worstReading([pressure, temperature, level]),
+    tags: { pressure: asset.data.tags.pressure, temperature: asset.data.tags.temperature },
+    limits: { pressure: asset.data.alarms.pressure.warn, temperature: asset.data.alarms.temperature.warn },
   };
 }
