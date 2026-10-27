@@ -8,7 +8,6 @@ import {
   FilterBar,
   Icon,
   PageHeader,
-  Select,
   TableActionButton,
   Tabs,
   type DataTableColumn,
@@ -27,7 +26,6 @@ import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { bulkMessage, canResolve, linkedMaintenance, planBulk } from '@/features/alerts/workflow';
 import { DuplicateFromAlertError, setDeviceDirectory, useMaintenance } from '@/data/maintenance';
-import { ALERT_STAFF } from '@/data/alertDetail';
 import {
   ALERT_PARAMS,
   RANGE_OPTIONS,
@@ -45,6 +43,7 @@ import {
   type AlertTab,
 } from '@/data/alerts';
 import { CreateMaintenanceModal } from '../maintenance/CreateMaintenanceModal';
+import { AlertAssignModal } from './AlertAssignModal';
 import { AlertBulkCompleteModal } from './AlertBulkCompleteModal';
 import { AlertDetailDrawer } from './AlertDetailDrawer';
 
@@ -85,7 +84,7 @@ function exportCsv(rows: readonly AlertRecord[]) {
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
-  const { status, data, error, refetch, acknowledge, complete, assign, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, requestSupport } = useAlerts();
+  const { status, data, error, refetch, acknowledge, complete, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, requestSupport } = useAlerts();
   const maintenance = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
@@ -128,19 +127,16 @@ export default function AlertsPage() {
   const completePlan = planBulk(all, selected, canResolve);
   const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
 
-  // Hàng loạt dùng CHUNG quy tắc với drawer (features/alerts/workflow): xác nhận chỉ dòng Chưa xác nhận, phân công không
-  // tự xác nhận (bỏ qua dòng đã hoàn thành), hoàn thành chỉ dòng Đang xử lý + một ghi chú chung.
-  const runBulk = async (kind: 'ack' | 'assign', assignee?: string) => {
-    const ids = [...selected];
-    if (kind === 'ack') {
-      const r = await acknowledge(ids, actor);
-      setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
-    } else if (assignee) {
-      const r = await assign(ids, assignee, actor);
-      setNotice(`${bulkMessage('Đã phân công', r.done, r.skipped)} – người phụ trách: ${assignee}.`);
-    }
+  // Hàng loạt dùng CHUNG quy tắc với drawer (features/alerts/workflow + assign): xác nhận chỉ dòng Chưa xác nhận; phân công
+  // qua modal "Phân công xử lý cảnh báo" (không tự xác nhận, bỏ qua dòng Hoàn thành / đã đúng người, dòng của người khác =
+  // đổi người với một lý do chung); hoàn thành chỉ dòng Đang xử lý + một ghi chú chung.
+  const runAck = async () => {
+    const r = await acknowledge([...selected], actor);
+    setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
     setSelected([]);
   };
+  const assignableSelected = selectedRecords.filter((a) => a.status !== 'done').length;
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
   // ---- Modal "Tạo yêu cầu bảo trì" mở TRÊN drawer (drawer vẫn mở); đóng → focus về nút đã mở.
   const [createFor, setCreateFor] = useState<{ alert: AlertRecord; title?: string } | null>(null);
@@ -277,16 +273,12 @@ export default function AlertsPage() {
             className="flex flex-wrap items-center gap-3 border-b border-info/20 bg-info/10 px-4 py-2.5"
           >
             <span className="text-base font-semibold text-info">Đã chọn {selected.length} cảnh báo</span>
-            <Button variant="primary" disabled={unackSelected === 0} onClick={() => runBulk('ack')}>
+            <Button variant="primary" disabled={unackSelected === 0} onClick={() => void runAck()}>
               Xác nhận{unackSelected > 0 ? ` (${unackSelected})` : ''}
             </Button>
-            <Select
-              variant="button"
-              label="Phân công"
-              options={ALERT_STAFF.map((p) => ({ value: p.name, label: p.name }))}
-              value={null}
-              onChange={(name) => name && runBulk('assign', name)}
-            />
+            <Button disabled={assignableSelected === 0} onClick={() => setBulkAssignOpen(true)}>
+              Phân công…{assignableSelected > 0 ? ` (${assignableSelected})` : ''}
+            </Button>
             <Button disabled={completePlan.eligible.length === 0} onClick={() => setBulkCompleteOpen(true)}>
               Đánh dấu hoàn thành{completePlan.eligible.length > 0 ? ` (${completePlan.eligible.length})` : ''}
             </Button>
@@ -336,7 +328,7 @@ export default function AlertsPage() {
           void acknowledge([id], actor);
           announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
         }}
-        onAssign={(id, name) => void assign([id], name, actor)}
+        onAssign={(id, form) => assignOne(id, form, actor)}
         onResolve={(id, note) => resolve(id, note, actor)}
         onToggleGuide={(id, step) => void toggleGuide(id, step, actor)}
         onAddNote={(id, text) => void addNote(id, text, actor)}
@@ -369,6 +361,20 @@ export default function AlertsPage() {
               announce(e.message);
             }
             setCreateFor(null);
+          }}
+        />
+      )}
+
+      {bulkAssignOpen && (
+        <AlertAssignModal
+          alerts={selectedRecords}
+          allAlerts={all}
+          onClose={() => setBulkAssignOpen(false)}
+          onConfirm={async (form) => {
+            const r = await assign(selected, form, actor);
+            setBulkAssignOpen(false);
+            setSelected([]);
+            setNotice(`${r.message} – người phụ trách: ${form.assignee}.`);
           }}
         />
       )}

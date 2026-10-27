@@ -3,6 +3,7 @@ import { cn } from '@/lib/cn';
 import { useRovingFocus } from '@/lib/useRovingFocus';
 import { Avatar } from '../Avatar';
 import { Badge } from '../Badge';
+import { AVAILABILITY_LABEL, type Availability } from './availability';
 
 export type StaffPickerItem = {
   /** Khoá + giá trị chọn (hiện là tên nhân sự). */
@@ -22,6 +23,15 @@ export type StaffPickerItem = {
   workloadHint?: string;
   /** compact: một chip phụ bên phải (vd "2 cảnh báo đang xử lý"); thay cho hàng chip ca/Bận/số việc. */
   meta?: string;
+  /**
+   * Trạng thái có xét ca (modal phân công cảnh báo): Sẵn sàng (xanh) / Bận (vàng) / Ngoài ca (thẻ viền đứt, chữ phụ – VẪN chọn
+   * được). Không truyền (modal bảo trì) → chip Sẵn sàng/Bận theo `busy` như cũ.
+   */
+  availability?: Availability;
+  /** Chữ chip tải việc thay "x đang làm (y quá hạn)" – vd "3 cảnh báo đang xử lý (1 nghiêm trọng)". `overdue` > 0 vẫn tô danger. */
+  loadLabel?: string;
+  /** Chip gợi ý ("Cùng khu · Đúng chuyên môn") – người được đưa lên đầu danh sách. */
+  suggestion?: string;
 };
 
 export type StaffPickerCardProps = {
@@ -42,6 +52,24 @@ const BriefcaseIcon = () => (
     <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
   </svg>
 );
+
+/** Icon chip trạng thái (trang trí, theo ảnh phân công cảnh báo). */
+const CheckCircleIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8 12 3 3 5-6" />
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
+  </svg>
+);
+const AVAILABILITY_CHIP: Record<Availability, { tone: 'success' | 'warning' | 'neutral'; icon: ReactNode }> = {
+  available: { tone: 'success', icon: <CheckCircleIcon /> },
+  busy: { tone: 'warning', icon: <BriefcaseIcon /> },
+  'off-shift': { tone: 'neutral', icon: <MoonIcon /> },
+};
 
 /**
  * Thẻ nhân sự trong modal "Phân công người xử lý" (ảnh thiết kế, chưa có node): avatar chữ cái đầu 40px, tên 16px đậm,
@@ -85,6 +113,8 @@ export function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, 
       </button>
     );
   }
+  const offShift = item.availability === 'off-shift';
+  const avail = item.availability ? AVAILABILITY_CHIP[item.availability] : null;
   return (
     <button
       ref={buttonRef}
@@ -97,29 +127,55 @@ export function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, 
       onKeyDown={onKeyDown}
       className={cn(
         'flex w-full min-w-0 items-start gap-3 rounded-md border px-4 py-3 text-left transition-colors',
-        checked ? 'border-primary bg-primary/10' : 'border-line/30 bg-surface-sunken/30 hover:border-line',
+        checked
+          ? 'border-primary bg-primary/10'
+          : // Ngoài ca: "mờ" bằng viền đứt + nền trong + tên chữ phụ – KHÔNG dùng opacity (giữ tương phản AA).
+            offShift
+            ? 'border-dashed border-line/30 bg-transparent hover:border-line'
+            : 'border-line/30 bg-surface-sunken/30 hover:border-line',
       )}
     >
       <Avatar name={item.name} size="lg" />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-md font-semibold text-fg">{item.name}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className={cn('truncate text-md font-semibold', offShift && !checked ? 'text-fg-secondary' : 'text-fg')}>{item.name}</span>
+          {item.suggestion && (
+            <span className="shrink-0">
+              <Badge variant="tag" tone="primary">
+                {item.suggestion}
+              </Badge>
+            </span>
+          )}
+        </span>
         <span className="truncate text-sm text-fg-secondary">{item.subtitle}</span>
         <span id={descId} className="mt-1 flex flex-wrap items-center gap-1.5">
           <span className="sr-only">{item.subtitle}. </span>
-          <Badge variant="tag" tone={item.shiftMatch ? 'success' : 'neutral'}>
-            {item.shiftLabel}
-          </Badge>
-          <Badge variant="tag" tone={item.busy ? 'warning' : 'neutral'}>
-            {item.busy ? 'Bận' : 'Sẵn sàng'}
-          </Badge>
+          {avail ? (
+            <>
+              <Badge variant="tag" tone={avail.tone}>
+                {avail.icon}
+                <span className="ml-1">{AVAILABILITY_LABEL[item.availability!]}</span>
+              </Badge>
+              <Badge variant="tag" tone={item.shiftMatch ? 'success' : 'neutral'}>
+                {item.shiftLabel}
+              </Badge>
+            </>
+          ) : (
+            <>
+              <Badge variant="tag" tone={item.shiftMatch ? 'success' : 'neutral'}>
+                {item.shiftLabel}
+              </Badge>
+              <Badge variant="tag" tone={item.busy ? 'warning' : 'neutral'}>
+                {AVAILABILITY_LABEL[item.busy ? 'busy' : 'available']}
+              </Badge>
+            </>
+          )}
           {/* Lót nền đặc: chip trong mờ không bị trộn với nền primary/10 của thẻ đang chọn (giữ tương phản chữ đỏ ≥ 4.5:1). */}
           <span title={item.workloadHint} className="rounded-sm bg-surface">
             {/* Có việc quá hạn → cả chip tone danger (chữ danger-text trên nền đỏ nhạt – đủ tương phản; ảnh: chip viền đỏ). */}
             <Badge variant="tag" tone={item.overdue > 0 ? 'danger' : 'neutral'}>
               <BriefcaseIcon />
-              <span className="ml-1">
-                {item.active} đang làm{item.overdue > 0 ? ` (${item.overdue} quá hạn)` : ''}
-              </span>
+              <span className="ml-1">{item.loadLabel ?? `${item.active} đang làm${item.overdue > 0 ? ` (${item.overdue} quá hạn)` : ''}`}</span>
             </Badge>
           </span>
           {item.workloadHint && <span className="sr-only">. {item.workloadHint}</span>}

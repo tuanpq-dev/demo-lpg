@@ -8,6 +8,7 @@
  * `id` của bước là khoá lưu tiến độ tick theo cảnh báo – đổi chữ không làm mất tick, đổi id thì có.
  * TODO(backend): danh mục do kỹ sư quản lý (GET /alert-kinds).
  */
+import type { StaffSkill } from './skills';
 
 export const ALERT_KIND_IDS = [
   'tank-overpressure',
@@ -77,6 +78,13 @@ export type AlertKindConfig = {
    * và ngưỡng có thể âm, thang 0 → ngưỡng vô nghĩa): drawer chỉ hiện hai ô số.
    */
   gauge?: boolean;
+  /**
+   * false = giá trị của bản ghi không phải số đo có nghĩa (mất tín hiệu, chuyển trạng thái bơm…) → modal phân công ẩn ô
+   * "Lúc cảnh báo". Mặc định có.
+   */
+  numericValue?: false;
+  /** Chuyên môn phù hợp – modal phân công đưa người có chuyên môn này (hoặc cùng khu) lên đầu danh sách. */
+  skills?: readonly StaffSkill[];
   causes: readonly string[];
   steps: readonly { id: string; text: string }[];
 };
@@ -96,12 +104,13 @@ export const GAS_BANDS: readonly AlertBand[] = [
 /** Mặc định của panel một ngưỡng (hành vi drawer áp suất trước khi tách cấu hình). */
 const THRESHOLD = { panel: 'threshold', value: 'record', actions: ['assign', 'maintenance'], update: { kind: 'resolve-note' } } as const;
 
-type PlaybookPart = { label: string; gauge?: boolean; causes: readonly string[]; steps: readonly { id: string; text: string }[] };
+type PlaybookPart = { label: string; gauge?: boolean; numericValue?: false; skills?: readonly StaffSkill[]; causes: readonly string[]; steps: readonly { id: string; text: string }[] };
 
 const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, PlaybookPart>> = {
   // Ảnh drawer ALT-00128 (3 nguyên nhân + 3 bước giữ nguyên chữ; "van PR-101" → van an toàn của bồn).
   'tank-overpressure': {
     label: 'Áp suất bồn vượt ngưỡng',
+    skills: ['pressure', 'mechanical'],
     causes: ['Van an toàn kẹt', 'Nhiệt độ tăng cao', 'Hệ thống làm mát không kích hoạt'],
     steps: [
       { id: 'field-gauge', text: 'Kiểm tra đồng hồ áp suất cơ tại hiện trường' },
@@ -111,6 +120,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'temperature-low': {
     label: 'Nhiệt độ thấp',
+    skills: ['mechanical', 'instrument'],
     causes: ['Nguồn nhiệt cấp không đủ', 'Van điều nhiệt kẹt', 'Lưu lượng vượt công suất'],
     steps: [
       { id: 'heat-source', text: 'Kiểm tra nguồn nhiệt cấp cho {device}' },
@@ -120,6 +130,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'temperature-high': {
     label: 'Nhiệt độ cao',
+    skills: ['mechanical', 'instrument'],
     causes: ['Thông gió kém', 'Thiết bị lân cận quá tải', 'Cảm biến lệch chuẩn'],
     steps: [
       { id: 'ventilation', text: 'Kiểm tra thông gió / làm mát khu vực' },
@@ -128,6 +139,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'filter-dp-high': {
     label: 'Chênh áp lọc cao',
+    skills: ['mechanical'],
     causes: ['Lõi lọc bám bẩn', 'Lưu lượng tăng đột ngột'],
     steps: [
       { id: 'read-dp', text: 'Đọc đồng hồ chênh áp tại {device}' },
@@ -137,6 +149,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'flow-low': {
     label: 'Lưu lượng thấp',
+    skills: ['instrument'],
     causes: ['Van tuyến đóng một phần', 'Bơm giảm công suất', 'Đồng hồ lưu lượng sai số'],
     steps: [
       { id: 'valves', text: 'Kiểm tra trạng thái van trên tuyến' },
@@ -145,6 +158,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'level-low': {
     label: 'Mức bồn thấp',
+    skills: ['operations'],
     causes: ['Xuất hàng vượt kế hoạch', 'Nhập hàng chậm'],
     steps: [
       { id: 'plan', text: 'Đối chiếu kế hoạch nhập / xuất trong ca' },
@@ -153,6 +167,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'level-drop': {
     label: 'Mức bồn giảm nhanh',
+    skills: ['operations', 'instrument'],
     gauge: false,
     causes: ['Rò rỉ trên tuyến xuất', 'Van xả mở ngoài ý muốn', 'Cảm biến mức nhiễu'],
     steps: [
@@ -163,6 +178,8 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'sensor-signal-lost': {
     label: 'Mất tín hiệu cảm biến',
+    skills: ['instrument', 'electrical'],
+    numericValue: false,
     causes: ['Đứt cáp tín hiệu', 'Mất nguồn cảm biến', 'Lỗi mô-đun I/O'],
     steps: [
       { id: 'field-read', text: 'Đọc giá trị tại chỗ thay cho {device}' },
@@ -171,6 +188,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'vibration-high': {
     label: 'Rung động cao',
+    skills: ['mechanical'],
     causes: ['Mất cân bằng cánh bơm', 'Ổ bi mòn', 'Bu lông chân đế lỏng'],
     steps: [
       { id: 'measure', text: 'Đo rung bằng máy cầm tay tại {device}' },
@@ -179,6 +197,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'safety-valve-open': {
     label: 'Van an toàn kích hoạt',
+    skills: ['pressure', 'mechanical'],
     causes: ['Áp suất bồn vượt điểm đặt', 'Van an toàn rò sau khi đóng lại'],
     steps: [
       { id: 'pressure', text: 'Xác nhận áp suất bồn đã về dưới ngưỡng' },
@@ -187,6 +206,7 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'pressure-high': {
     label: 'Áp suất cao',
+    skills: ['pressure'],
     causes: ['Van điều áp lệch điểm đặt', 'Lưu lượng đầu vào tăng'],
     steps: [
       { id: 'regulator', text: 'Kiểm tra van điều áp trước {device}' },
@@ -195,11 +215,14 @@ const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, Playbo
   },
   'battery-low': {
     label: 'Pin cảm biến yếu',
+    skills: ['instrument'],
     causes: ['Pin hết tuổi thọ'],
     steps: [{ id: 'replace', text: 'Lên lịch thay pin {device}' }],
   },
   'pump-standby': {
     label: 'Bơm chuyển trạng thái ngoài lịch',
+    skills: ['electrical', 'operations'],
+    numericValue: false,
     causes: ['Bảo vệ quá tải tác động', 'Thao tác nhầm tại tủ điều khiển'],
     steps: [
       { id: 'panel', text: 'Kiểm tra tủ điều khiển {device}' },
@@ -225,6 +248,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
   // Ảnh drawer gas (scratch/figma-ref/alert-drawer-gas-*.png): 7 bước giữ nguyên chữ; ảnh không có "Nguyên nhân".
   'gas-leak': {
     label: 'Rò rỉ khí gas',
+    skills: ['gas', 'safety'],
     panel: 'gas',
     value: 'live',
     scale: { min: 0, max: 100 },
@@ -254,6 +278,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
   // Tiến trình + Ghi chú mở sẵn (như ảnh). Chân: Phân công + Xem quy trình khẩn cấp (không có Tạo yêu cầu bảo trì khi đang mở).
   fire: {
     label: 'Báo cháy',
+    skills: ['fire', 'safety'],
     panel: 'fire',
     value: 'live',
     causes: [],

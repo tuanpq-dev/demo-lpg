@@ -1,6 +1,8 @@
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { appNow } from '@/lib/demoNow';
 import { plantDayKey } from '@/lib/plantTime';
+import type { Area } from './areas';
+import type { StaffSkill } from './skills';
 /**
  * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
  * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này.
@@ -193,6 +195,10 @@ export type StaffMember = {
   specialty: string;
   defaultShift: ShiftId;
   role: StaffRole;
+  /** Khu thường phụ trách (gợi ý sắp xếp ở modal phân công cảnh báo). Mock tạm – TODO(backend). */
+  areas: readonly Area[];
+  /** Chuyên môn (khớp `ALERT_KINDS[kind].skills`). Mock tạm – TODO(backend). */
+  skills: readonly StaffSkill[];
 };
 
 /**
@@ -200,16 +206,16 @@ export type StaffMember = {
  * ghi "Trần Minh B", "Lê Hoàng C" – CLAUDE.md mục 8). TODO(backend): GET danh mục nhân sự (+ vai trò, ca, chuyên môn).
  */
 export const STAFF: readonly StaffMember[] = [
-  { id: 's01', name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Chuyên gia Van/Bồn', defaultShift: 'shift-2', role: 'engineer' },
-  { id: 's02', name: 'Trần Bình', title: 'Kỹ thuật viên cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Thiết bị áp lực', defaultShift: 'shift-1', role: 'technician' },
-  { id: 's03', name: 'Lê Thị C', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Cảm biến', defaultShift: 'shift-2', role: 'technician' },
-  { id: 's04', name: 'Phạm Văn D', title: 'Kỹ thuật viên điện', department: 'Bảo trì Điện', specialty: 'Động cơ / Tủ điện', defaultShift: 'shift-1', role: 'technician' },
-  { id: 's05', name: 'Trần Thị B', title: 'Chuyên viên an toàn', department: 'An toàn – HSE', specialty: 'Hệ thống PCCC', defaultShift: 'shift-1', role: 'technician' },
-  { id: 's06', name: 'Võ Thị F', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Lưu lượng / Hiệu chuẩn', defaultShift: 'shift-3', role: 'technician' },
-  { id: 's07', name: 'Trần Hoàng Nam', title: 'Quản lý vận hành', department: 'Vận hành', specialty: 'Quản lý vận hành', defaultShift: 'shift-1', role: 'manager' },
-  { id: 's08', name: 'Trần Văn B', title: 'Quản lý', department: 'Bảo trì Cơ khí', specialty: 'Quản lý bảo trì', defaultShift: 'shift-1', role: 'manager' },
+  { id: 's01', name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Chuyên gia Van/Bồn', defaultShift: 'shift-2', role: 'engineer', areas: ['Khu bồn LPG'], skills: ['pressure', 'mechanical'] },
+  { id: 's02', name: 'Trần Bình', title: 'Kỹ thuật viên cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Thiết bị áp lực', defaultShift: 'shift-1', role: 'technician', areas: ['Khu bồn LPG', 'Khu bơm'], skills: ['pressure', 'mechanical'] },
+  { id: 's03', name: 'Lê Thị C', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Cảm biến', defaultShift: 'shift-2', role: 'technician', areas: ['Khu nạp xuất', 'Trạm hóa hơi'], skills: ['instrument', 'gas'] },
+  { id: 's04', name: 'Phạm Văn D', title: 'Kỹ thuật viên điện', department: 'Bảo trì Điện', specialty: 'Động cơ / Tủ điện', defaultShift: 'shift-1', role: 'technician', areas: ['Khu bơm', 'Tuyến chính'], skills: ['electrical'] },
+  { id: 's05', name: 'Trần Thị B', title: 'Chuyên viên an toàn', department: 'An toàn – HSE', specialty: 'Hệ thống PCCC', defaultShift: 'shift-1', role: 'technician', areas: ['Trạm hóa hơi', 'Khu nạp xuất'], skills: ['fire', 'safety', 'gas'] },
+  { id: 's06', name: 'Võ Thị F', title: 'Kỹ thuật viên đo lường', department: 'Đo lường – Tự động hóa', specialty: 'Lưu lượng / Hiệu chuẩn', defaultShift: 'shift-3', role: 'technician', areas: ['Tuyến chính', 'Khu Lọc'], skills: ['instrument'] },
+  { id: 's07', name: 'Trần Hoàng Nam', title: 'Quản lý vận hành', department: 'Vận hành', specialty: 'Quản lý vận hành', defaultShift: 'shift-1', role: 'manager', areas: [], skills: ['operations'] },
+  { id: 's08', name: 'Trần Văn B', title: 'Quản lý', department: 'Bảo trì Cơ khí', specialty: 'Quản lý bảo trì', defaultShift: 'shift-1', role: 'manager', areas: [], skills: ['mechanical'] },
   // Trước đây có trong danh sách "Người phụ trách chính" (PEOPLE) – nay là trưởng ca (manager) nên không còn chọn để phân công.
-  { id: 's09', name: 'Hoàng Minh E', title: 'Trưởng ca vận hành', department: 'Vận hành', specialty: 'Vận hành khu bồn', defaultShift: 'shift-2', role: 'manager' },
+  { id: 's09', name: 'Hoàng Minh E', title: 'Trưởng ca vận hành', department: 'Vận hành', specialty: 'Vận hành khu bồn', defaultShift: 'shift-2', role: 'manager', areas: ['Khu bồn LPG'], skills: ['operations', 'safety'] },
 ];
 
 /** Nhận việc bảo trì (phân công, form tạo yêu cầu, người phối hợp): technician + engineer. */

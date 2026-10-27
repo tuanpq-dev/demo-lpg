@@ -23,6 +23,7 @@ import {
   type ResolveResult,
 } from '@/features/alerts/workflow';
 import { AlertAssignModal } from './AlertAssignModal';
+import { alertAssignChange, type AlertAssignForm } from '@/features/alerts/assign';
 import { Collapsible, Section, fmtAt } from './drawerParts';
 import { EmergencyProcedureModal } from './EmergencyProcedureModal';
 import { FireUpdateModal, type FireCheck } from './FireUpdateModal';
@@ -34,7 +35,8 @@ import { SupportRequestModal } from './SupportRequestModal';
 
 export type AlertDrawerHandlers = {
   onAcknowledge: (id: string) => void;
-  onAssign: (id: string, assignee: string) => void;
+  /** Phân công / đổi người / cập nhật phân công (modal "Phân công xử lý cảnh báo") – KHÔNG đổi trạng thái. */
+  onAssign: (id: string, form: AlertAssignForm) => Promise<unknown> | void;
   onResolve: (id: string, note: string) => Promise<ResolveResult> | ResolveResult;
   onToggleGuide: (id: string, step: { id: string; text: string }) => void;
   onAddNote: (id: string, text: string) => void;
@@ -392,7 +394,7 @@ function DrawerFooter({
           canAct &&
           canAssignAlert(a) && (
             <Button key="assign" variant="subtle" className="w-full" onClick={() => setModal('assign')}>
-              {a.assignee ? 'Đổi người phụ trách' : 'Phân công xử lý'}
+              {a.assignee ? 'Đổi người xử lý' : 'Phân công xử lý'}
             </Button>
           )
         );
@@ -475,13 +477,20 @@ function DrawerFooter({
       {secondary.length > 0 && <div className={cn('grid gap-3', secondary.length > 1 && 'grid-cols-2')}>{secondary}</div>}
       {modal === 'assign' && (
         <AlertAssignModal
-          alert={a}
+          alerts={[a]}
           allAlerts={allAlerts}
           onClose={() => setModal(null)}
-          onConfirm={(name) => {
-            onAssign(a.id, name);
+          onConfirm={async (form) => {
+            const change = alertAssignChange(a, form);
+            await onAssign(a.id, form);
             setModal(null);
-            announce(`Đã phân công ${a.code} cho ${name}.`);
+            announce(
+              change === 'reassign'
+                ? `Đã đổi người xử lý ${a.code} sang ${form.assignee}.`
+                : change === 'update'
+                  ? `Đã cập nhật phân công ${a.code}.`
+                  : `Đã phân công ${a.code} cho ${form.assignee}.`,
+            );
           }}
         />
       )}

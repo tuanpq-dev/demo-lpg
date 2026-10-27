@@ -226,7 +226,7 @@ sequenceDiagram
 | 6 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF` |
 | 7 | `src/app/useTableFilters.ts` | Bộ lọc ↔ URL (`replace`), phân trang, số đếm tab, bản ghi đang mở, chọn dòng |
 | 8 | `src/pages/alerts/AlertsPage.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, thao tác hàng loạt, `DataTable`, drawer, modal tạo yêu cầu (trên drawer), xuất CSV |
-| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCompleteModal`) | Drawer chi tiết theo ảnh (mục 4m) |
+| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCompleteModal`) | Drawer chi tiết theo ảnh (mục 4m); modal phân công cảnh báo (mục 4n) |
 
 Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` – giá trị mặc định không ghi lên URL.
 
@@ -646,7 +646,9 @@ Hàng loạt (danh sách): chọn người → bulkAssign → planBulkAssign: CH
 | Lỗi chặn / cảnh báo | `validateAssign`, `assignWarnings`, `inShift` (`assign.ts`) |
 | Ghi bản ghi, câu lịch sử | `applyAssignment`, `planBulkAssign` (`assign.ts`) |
 | Danh mục nhân sự, vai trò | `STAFF` (`mocks/maintenance.ts`) |
-| Giao diện | `AssignModal.tsx`; thẻ/danh sách `components/StaffPicker`; `Switch`; `Avatar` |
+| Giao diện | `AssignModal.tsx`; thẻ/danh sách `components/StaffPicker` (+ `AssignNotices` – khối cảnh báo/lý do chặn dùng chung); `Switch`; `Avatar` |
+| Ngưỡng Bận, `inShift`, nhãn Sẵn sàng/Bận | DÙNG CHUNG với phân công cảnh báo: `features/staff/availability.ts` (`assign.ts` export lại). Modal bảo trì KHÔNG hiện "Ngoài ca" theo giờ hiện tại (việc xếp cho ca sau) – chỉ Sẵn sàng/Bận + cảnh báo ca lệch giờ bắt đầu |
+| Nháp | `lib/sessionDraft.ts` (`createSessionDraft`) – khoá giữ `demo-lpg:mt-assign-draft:<id>` |
 
 **Mã mock để thử phân công** (dữ liệu trong bộ nhớ – F5 về như cũ; `VITE_AUTH=off npx vite` = phiên giả admin):
 
@@ -706,7 +708,7 @@ Cấu hình một loại (`AlertKindConfig` trong `src/mocks/alertKinds.ts`):
 - `EmergencyProcedureModal`: bước ứng phó + danh bạ từ `ALERT_KINDS.fire.emergency` (BẢN NHÁP – nhãn "Bản nháp, cần bộ phận An toàn duyệt"; Cứu hỏa 114 là link `tel:`, số nội bộ "Chờ khách cung cấp"). Mở trên drawer, Esc/Đóng trả focus.
 - Header mọi loại: khu có mã (`AREA_CODES` ở `mocks/areas.ts`) hiện "Trạm hóa hơi (FZ-02)".
 
-**Phân công cảnh báo gas**: chân drawer gas KHÔNG có nút Phân công (theo ảnh) – phân công qua thao tác hàng loạt ở bảng (tick dòng → "Phân công"). Người phụ trách vẫn hiện ở header.
+**Phân công cảnh báo gas**: chân drawer gas KHÔNG có nút Phân công (theo ảnh) – phân công qua thao tác hàng loạt ở bảng (tick dòng → "Phân công…", mục 4n). Người phụ trách vẫn hiện ở header.
 
 **Panel gas – quy tắc**: số lớn = nồng độ LIVE (mất tín hiệu → "Mất tín hiệu", không giữ số cũ; thang + banner khi đó dùng giá trị lúc cảnh báo cho thận trọng) · Mức tăng = live − `previousValue` (ảnh chụp lưu cùng cảnh báo) · T/G vượt ngưỡng = bây giờ − lúc phát sinh khi live còn ≥ ngưỡng bản ghi · định dạng MỘT hàm `formatMeasure` / `formatDelta` ("25% LEL", "+11% LEL") · banner `EmergencyBanner`: không đóng được, `role="alert"` chỉ khi mới hiện / đổi mức · "Cập nhật xử lý" (`GasUpdateModal`): Tiếp tục / Đã xử lý xong (khoá aria-disabled + lý do khi live ≥ cấp 1; mất tín hiệu → bắt buộc số đo lại < cấp 1) · "Yêu cầu hỗ trợ" (`SupportRequestModal`): trưởng ca/quản lý + An toàn – HSE từ STAFF, lý do bắt buộc → người phối hợp + lịch sử, KHÔNG gửi thông báo (TODO backend).
 
@@ -723,7 +725,7 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
   │    "Đã xử lý (…)", "Hoàn thành (…)"), bước đang chờ = tên trạng thái ("Chưa xác nhận" / "Đang xử lý") + "Nhật ký (n)" (<details>, EventTimeline history)
   ├─ Ghi chú xử lý: ghi chú đã lưu + Textarea + "Lưu ghi chú"
   └─ Chân: Chưa xác nhận → "Xác nhận cảnh báo" (Button danger = nền danger-solid) · Đang xử lý → "Đánh dấu đã xử lý" (cần ghi chú; ô có nội dung thì dùng luôn) · Hoàn thành → chỉ xem
-         + "Phân công xử lý"/"Đổi người phụ trách" (AlertAssignModal, StaffList compact, toàn STAFF) · "Tạo yêu cầu bảo trì" | "Xem MT-…" (link, nhận focus sau khi tạo)
+         + "Phân công xử lý"/"Đổi người xử lý" (AlertAssignModal – mục 4n, toàn STAFF; chỉ panel áp suất + cháy, gas không có) · "Tạo yêu cầu bảo trì" | "Xem MT-…" (link, nhận focus sau khi tạo)
 ```
 
 | Quy tắc | Ở đâu |
@@ -748,6 +750,58 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
 | ALT-00112 | Đã hoàn thành (3 ngày trước) · loại `level-drop` | **Không vẽ thang** (cấu hình `gauge: false`, −4.2 / −3.0 %/h) – chỉ hai ô số + câu giải thích; chỉ xem |
 
 Playground mục 15 (`#alert-drawer`): drawer theo các trạng thái mẫu (áp suất + GAS "Chưa xác nhận" (chỉ ở playground) / "Đang xử lý" + CHÁY Chưa xác nhận / Đang xử lý / Đã đóng – báo động giả), nút mô phỏng nồng độ GS-04 (tăng/giảm/mất tín hiệu), nút mô phỏng tín hiệu trạm hóa hơi (HD-02 phục hồi/báo động/mất tín hiệu, khói, nút nhấn, GS-05 tăng – dev), (không ghi store), ThresholdGauge (vượt / trong giới hạn / dưới ngưỡng), KpiCard lg, Button danger/lg, StaffList compact, WorkflowStepper dọc, Checklist plain.
+
+### 4n. Phân công xử lý cảnh báo (modal theo ảnh, 27/10/2026)
+
+Ảnh: `scratch/figma-ref/alert-assign-modal-design.png` (chỉ máy dev, gitignore – KHÔNG để `public/`; chưa có node). Lệch ảnh: `CLAUDE.md` mục 8. TÁI DÙNG lõi của modal phân công bảo trì (mục 4l): `StaffList`/`StaffPickerCard`, nhãn + ngưỡng Bận (`features/staff/availability.ts`), `AssignNotices`, nháp `lib/sessionDraft.ts`.
+
+```
+Mở: drawer áp suất + báo cháy – "Phân công xử lý" (chưa có người) / "Đổi người xử lý" (đã có) – ALERT_KINDS[kind].actions có `assign`
+      (drawer gas KHÔNG có nút – theo ảnh) · bảng /alerts – tick dòng → "Phân công… (n)" (n = dòng chưa Hoàn thành)
+  → AlertAssignModal (src/pages/alerts) – size xl, lưới 3fr/2fr
+      ├─ Thẻ đầu AlertAssignSummary: badge mức độ (▲ khi Nghiêm trọng) · "mã: tiêu đề" · badge trạng thái · Thiết bị · Khu vực (areaLabel)
+      │    · Thời gian phát hiện ("10:45 hôm nay" – alertShortTimeLabel) · "Lúc cảnh báo: 11.8 bar / 10.5 bar" (alertRecordedValue:
+      │    giá trị BẢN GHI / ngưỡng cấu hình tag; loại `numericValue: false` → ẩn ô). Hàng loạt: "Đã chọn N cảnh báo" + mã gọn (tối đa 12 + "+N")
+      ├─ Trái "Chọn nhân sự": StaffFilters (tìm theo tên/chức danh/chuyên môn · phòng ban · ca · "Chỉ người đang trong ca") + StaffList (radiogroup)
+      │    nguồn ALERT_STAFF (= toàn STAFF); thẻ: chức danh • chuyên môn, Sẵn sàng/Bận/Ngoài ca, ca (xanh = đang trong ca),
+      │    "x cảnh báo đang xử lý (y nghiêm trọng)" + tooltip ALERT_LOAD_HINT, chip gợi ý "Cùng khu · Đúng chuyên môn"
+      │    rankAlertStaff: cùng khu (STAFF.areas) hoặc đúng chuyên môn (STAFF.skills ∩ ALERT_KINDS[kind].skills) trước → Sẵn sàng → Bận → Ngoài ca → tên
+      ├─ Phải "Chi tiết phân công": [hàng loạt: "Sẽ đổi người (k): mã: A → B" + "Bỏ qua …"] · [Lý do đổi người *] · Người phối hợp (nhiều,
+      │    bỏ người chính) · Ghi chú chỉ đạo · Checkbox "Gửi thông báo khẩn cấp ngay" (tick sẵn khi ≥ 1 Nghiêm trọng; CHỈ giao diện –
+      │    "Chưa gửi được – chờ backend") · AssignNotices (cảnh báo aria-live polite + lý do chặn)
+      └─ Chân: Hủy (đã sửa / có nháp → hỏi "Bỏ các thay đổi?") · Nháp (CHỈ một cảnh báo; sessionStorage `demo-lpg:alert-assign-draft:<id>`)
+             · Xác nhận phân công / Xác nhận đổi người / Cập nhật phân công (aria-disabled + aria-describedby khi bị chặn)
+Ghi (features/alerts/assign.ts → data/alerts.ts):
+  một cảnh báo – assignOneAlert → applyAlertAssignment: người phụ trách, người phối hợp, ghi chú chỉ đạo → ghi chú "Chỉ đạo: …",
+    MỘT dòng lịch sử `assign` ("Phân công xử lý cho A · phối hợp: B · kèm ghi chú chỉ đạo" / "Đổi người xử lý: A → B – lý do: …" /
+    "Cập nhật phân công (A) · …"). TRẠNG THÁI GIỮ NGUYÊN (không tự xác nhận). `notify` không ghi gì (không giả vờ đã gửi).
+  hàng loạt – assignAlerts → planBulkAlertAssign: chưa có người → phân công · người khác → đổi người (MỘT lý do chung, bắt buộc) ·
+    Hoàn thành / đã đúng người / không còn → bỏ qua; người phối hợp GỘP với người cũ (bulkRowForm);
+    thông báo "Đã phân công 3 (đổi người 1) · bỏ qua 2 (1 đã hoàn thành, 1 đã giao đúng người)".
+```
+
+| Quy tắc | Ở đâu |
+|---|---|
+| Chặn: chưa chọn người · đổi người thiếu lý do · không có thay đổi · cảnh báo Hoàn thành · lô không còn dòng | `validateAlertAssign`, `validateBulkAlertAssign` (`features/alerts/assign.ts`) |
+| Cảnh báo KHÔNG chặn: Ngoài ca · Bận · đang phụ trách cảnh báo Nghiêm trọng khác (chỉ khi chọn người MỚI) | `alertAssignWarnings` (`features/alerts/assignStaff.ts`) |
+| Tải việc = người phụ trách chính, đã giao chưa xác nhận + đang xử lý; Bận từ `BUSY_THRESHOLD` (3) | `computeAlertLoads` |
+| Ngoài ca = giờ nhà máy `now` ngoài ca mặc định (`STAFF.defaultShift`; chưa có lịch ca thật); Ngoài ca THẮNG Bận | `isOnShift`, `staffAvailability` (`features/staff/availability.ts`) |
+| Khu / chuyên môn của nhân sự · chuyên môn theo loại cảnh báo | `STAFF[].areas/skills` (`mocks/maintenance.ts`), `STAFF_SKILLS` (`mocks/skills.ts`), `ALERT_KINDS[kind].skills` |
+| Ẩn "Lúc cảnh báo" | `ALERT_KINDS[kind].numericValue: false` (sensor-signal-lost, pump-standby) |
+
+`features/alerts/assign.ts` không import mock nhân sự (dùng được ở `data/alerts` – bundle chính); phần cần danh mục ca/nhân sự nằm ở `assignStaff.ts` (chỉ chunk trang Cảnh báo). Nhãn `Availability` ở `components/StaffPicker/availability.ts` (component không import mock).
+
+**Mã mock để thử** (`VITE_AUTH=off npx vite`; thêm `&now=2026-10-27T10:45` (dev) để Ca 1 đang làm như ảnh):
+
+| Mã | Thử gì |
+|---|---|
+| ALT-00128 | Như ảnh: chưa phân công, Nghiêm trọng → ô thông báo tick sẵn; Trần Bình đứng đầu (cùng khu + chuyên môn); chọn Nguyễn Văn A → cảnh báo Ngoài ca (vẫn chọn được) |
+| FIR-00018 | Báo cháy: Trần Thị B (PCCC, trạm hóa hơi) đứng đầu |
+| ALT-00125 | Đã giao Trần Văn B → "Đổi người xử lý": chọn sẵn, đổi người cần lý do; giữ người + ghi chú → "Cập nhật phân công" |
+| ALT-00122 | Mất tín hiệu → không có ô "Lúc cảnh báo" |
+| Bảng `?q=ALT-0012` | Tick ALT-00128 + ALT-00125 + ALT-00124 → "Phân công… (2)": ALT-00125 vào "Sẽ đổi người", ALT-00124 bỏ qua (Hoàn thành), không có Nháp |
+
+Playground mục 16 (`#alert-assign`): modal một / đổi người / không có số / hàng loạt (giờ cố định 10:45, dữ liệu mẫu, không ghi store) cạnh ảnh, thẻ đầu 3 biến thể, StaffPickerCard có xét ca, StaffFilters.
 
 ### 4g. Design system: tokens → primitives → nghiệp vụ
 
@@ -906,7 +960,9 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | SegmentedControl | `src/components/SegmentedControl/SegmentedControl.tsx` | `options`, `value`, `onChange`, `variant`, `size` | form Bảo trì, PlantMap | `#navigation` |
 | Avatar | `src/components/Avatar/Avatar.tsx` | `name`, `size` sm 24 / md 32 / lg 40; `initials()` dùng chung với NotesThread (cùng người → cùng chữ, "Nguyễn Văn A" → "NA") | Combobox (avatar), thẻ nhân sự | `#assign` |
 | Switch | `src/components/Switch/Switch.tsx` | `label`, `description`, `checked`, `onChange` – `role="switch"` + `aria-checked`, bật = primary | Modal phân công | `#assign` |
-| StaffPicker (StaffList / StaffPickerCard) | `src/components/StaffPicker/StaffPicker.tsx` | List: `label`/`labelledBy`, `items` ({ name, subtitle, shiftLabel, shiftMatch, busy, active, overdue, workloadHint, `meta` }), `value` (null = chưa chọn), `onChange`, `emptyState`, `compact` (thẻ gọn: avatar 32, tên, "chức danh • phòng ban", chip `meta`) – radiogroup dọc, ↑↓ chuyển + chọn, Space chọn | Modal phân công (bảo trì), phân công cảnh báo (compact) | `#assign`, `#alert-drawer` |
+| StaffPicker (StaffList / StaffPickerCard) | `src/components/StaffPicker/StaffPicker.tsx` | List: `label`/`labelledBy`, `items` ({ name, subtitle, shiftLabel, shiftMatch, busy, active, overdue, workloadHint, `meta`, `availability`, `loadLabel`, `suggestion` }), `value` (null = chưa chọn), `onChange`, `emptyState`, `compact` (thẻ gọn: avatar 32, tên, "chức danh • phòng ban", chip `meta`) – radiogroup dọc, ↑↓ chuyển + chọn, Space chọn. `availability`: Sẵn sàng (xanh) / Bận (vàng) / Ngoài ca (viền đứt + tên chữ phụ, KHÔNG opacity, vẫn chọn được); không truyền = chip Sẵn sàng/Bận theo `busy` (modal bảo trì). `loadLabel` thay chữ chip tải việc; `suggestion` = chip gợi ý | Modal phân công bảo trì + cảnh báo | `#assign`, `#alert-assign` |
+| StaffFilters | `src/components/StaffPicker/StaffFilters.tsx` | `search` (ô tìm), phòng ban / ca (Select), `onShiftOnly` (Switch "Chỉ người đang trong ca") – nút lọc = disclosure (`aria-expanded`, tên kèm số bộ lọc đang bật), vùng lọc mở ngay dưới | Modal phân công cảnh báo | `#alert-assign` |
+| AssignNotices | `src/components/StaffPicker/AssignNotices.tsx` | `warnings` ({ id, label, action? }) không chặn – vùng aria-live polite CHỈ chữ, khối nhìn thấy có nút; `issues` chặn → khối `id={blockId}` cho `aria-describedby` của nút xác nhận | Hai modal phân công | `#assign`, `#alert-assign` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
 | Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel` | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |

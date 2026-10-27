@@ -29,7 +29,8 @@ export function guideLockHint(a: Pick<AlertRecord, 'status'>): string | null {
   return null;
 }
 
-function withHistory(a: AlertRecord, kind: AlertHistoryKind, text: string, ctx: AlertActionCtx): readonly AlertHistoryEntry[] {
+/** Thêm một dòng lịch sử (dùng chung với `assign.ts`). */
+export function withHistory(a: AlertRecord, kind: AlertHistoryKind, text: string, ctx: AlertActionCtx): readonly AlertHistoryEntry[] {
   const list = a.history ?? [];
   return [...list, { id: `${a.id}-h${list.length + 1}`, at: ctx.at.toISOString(), kind, text, actor: ctx.by }];
 }
@@ -68,7 +69,8 @@ export function resolveAlert(a: AlertRecord, note: string, ctx: AlertActionCtx):
   };
 }
 
-const newNote = (a: AlertRecord, text: string, ctx: AlertActionCtx) => ({
+/** Tạo một ghi chú xử lý (dùng chung với `assign.ts`). */
+export const newNote = (a: AlertRecord, text: string, ctx: AlertActionCtx) => ({
   id: `${a.id}-n${(a.notes?.length ?? 0) + 1}`,
   author: ctx.by,
   at: ctx.at.toISOString(),

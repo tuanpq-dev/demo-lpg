@@ -10,7 +10,8 @@ import {
 } from '@/components';
 import { alertRecords, type AlertRecord } from '@/mocks/alerts';
 import { gaugeScale, gaugeValueText } from '@/features/alerts/gauge';
-import { acknowledgeAlert, addAlertNote, assignAlert, fireUpdate, gasUpdate, requestSupport, resolveAlert, toggleGuideStep } from '@/features/alerts/workflow';
+import { applyAlertAssignment } from '@/features/alerts/assign';
+import { acknowledgeAlert, addAlertNote, fireUpdate, gasUpdate, requestSupport, resolveAlert, toggleGuideStep } from '@/features/alerts/workflow';
 import { VAPORIZER_AREA_TAGS as FT } from '@/features/live/tags';
 import { liveSimulator } from '@/data/live';
 import { AlertDetailDrawer } from '../alerts/AlertDetailDrawer';
@@ -114,7 +115,7 @@ export function AlertDrawerSection() {
         canAct
         canCreateMaintenance={false}
         onAcknowledge={() => setRec((a) => a && acknowledgeAlert(a, ctx()))}
-        onAssign={(_, name) => setRec((a) => a && assignAlert(a, name, ctx()))}
+        onAssign={(_, form) => setRec((a) => a && applyAlertAssignment(a, form, ctx()))}
         onResolve={(_, note) => {
           const res = rec ? resolveAlert(rec, note, ctx()) : ({ ok: false, reason: 'status' } as const);
           if (res.ok) setRec(res.record);
