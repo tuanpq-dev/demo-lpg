@@ -19,6 +19,19 @@ describe('KpiCard variant="danger" – chữ đỏ', () => {
     expect(num.className).toContain('text-danger-strong');
     expect(isLargeText(num.className)).toBe(true);
   });
+  test('size sm valueSize lg (drawer cảnh báo): số 24px đậm danger-strong = chữ lớn; đơn vị danger-text', () => {
+    render(<KpiCard size="sm" valueSize="lg" tone="danger" label="Giá trị lúc cảnh báo" value="11.8" unit="bar" footnote="Hiện tại: 9.6 bar" />);
+    const num = screen.getByText('11.8');
+    expect(num.className).toContain('text-danger-strong');
+    expect(isLargeText(num.className)).toBe(true);
+    expect(screen.getByText('bar').className).toMatch(/\btext-danger-text\b/);
+    expect(screen.getByText('Hiện tại: 9.6 bar')).toBeInTheDocument();
+  });
+  test('size sm valueSize lg mất tín hiệu: không hiện số cũ', () => {
+    render(<KpiCard size="sm" valueSize="lg" label="Hiện tại" value="9.6" unit="bar" signalLost />);
+    expect(screen.queryByText('9.6')).toBeNull();
+    expect(screen.getByText('Mất tín hiệu')).toBeInTheDocument();
+  });
   test('compact (text-2xl 28px đậm) cũng là chữ lớn', () => {
     render(<KpiCard variant="compact" tone="danger" label="Quá hạn" value="04" />);
     expect(isLargeText(screen.getByText('04').className)).toBe(true);

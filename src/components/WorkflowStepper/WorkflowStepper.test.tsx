@@ -28,4 +28,21 @@ describe('WorkflowStepper', () => {
     expect(li[2]).toHaveTextContent('Đang thực hiện – đã xong, Gặp sự cố');
     expect(li[3]).toHaveAttribute('aria-current', 'step');
   });
+  test('dọc: giờ sau nhãn, aria-current đúng một bước, trạng thái đọc được', () => {
+    const v = [
+      { id: 'd', label: 'Phát hiện', time: '10:45:22' },
+      { id: 'n', label: 'Gửi thông báo', time: '10:45:25' },
+      { id: 'a', label: 'Chưa xác nhận' },
+      { id: 'p', label: 'Đang xử lý' },
+      { id: 'h', label: 'Hoàn thành' },
+    ];
+    render(<WorkflowStepper orientation="vertical" steps={v} completed={2} current={2} label="Tiến trình ALT-1" />);
+    const li = screen.getByRole('navigation', { name: 'Tiến trình ALT-1' }).querySelectorAll('li');
+    expect(li).toHaveLength(5);
+    expect(li[0]).toHaveTextContent('Phát hiện (10:45:22) – đã xong');
+    expect(li[2]).toHaveAttribute('aria-current', 'step');
+    expect(li[2]).toHaveTextContent('Chưa xác nhận – bước hiện tại');
+    expect(li[4]).toHaveTextContent('Hoàn thành – chưa tới');
+    expect(document.querySelectorAll('[aria-current]')).toHaveLength(1);
+  });
 });

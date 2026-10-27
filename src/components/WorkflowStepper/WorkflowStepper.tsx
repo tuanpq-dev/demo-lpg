@@ -6,6 +6,8 @@ export type WorkflowStep = {
   /** Nhãn phụ nhỏ dưới nhãn bước, vd "Tạm dừng" / "Gặp sự cố" ở bước "Đang thực hiện" (bước không đổi). */
   note?: string;
   noteTone?: 'warning' | 'danger';
+  /** Giờ của bước, hiện sau nhãn "Phát hiện (10:45:22)" – chỉ orientation="vertical". */
+  time?: string;
 };
 
 export type WorkflowStepperProps = {
@@ -16,8 +18,63 @@ export type WorkflowStepperProps = {
   current: number | null;
   /** Tên cho trình đọc màn hình, vd "Tiến trình xử lý MT-00128". */
   label: string;
+  /**
+   * horizontal (mặc định) = ảnh MT-00128 · vertical = "Tiến trình" ở drawer chi tiết cảnh báo: mỗi bước một hàng, vòng 18px
+   * nối bằng vạch dọc; xong = vòng line + chấm đặc, đang chờ = vòng primary + nhãn primary đậm, chưa tới = vòng rỗng + chữ mờ.
+   */
+  orientation?: 'horizontal' | 'vertical';
   className?: string;
 };
+
+const NOTE_CLASS = {
+  danger: 'border-danger/70 bg-danger/15 text-danger-text',
+  warning: 'border-warning/50 bg-warning/10 text-warning',
+} as const;
+
+function VerticalStepper({ steps, completed, current, label, className }: Omit<WorkflowStepperProps, 'orientation'>) {
+  return (
+    <nav aria-label={label} className={className}>
+      <ol className="flex flex-col">
+        {steps.map((s, i) => {
+          const done = i < completed;
+          const isCurrent = i === current;
+          return (
+            <li key={s.id} aria-current={isCurrent ? 'step' : undefined} className="relative flex items-start gap-3 pb-5 last:pb-0">
+              {i < steps.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-[8px] top-[21px] w-0.5 bg-line/40" />}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'relative z-[1] mt-[3px] grid size-[18px] shrink-0 place-items-center rounded-full border-2',
+                  isCurrent ? 'border-primary bg-surface shadow-[0_0_8px_rgb(var(--color-primary)/0.6)]' : done ? 'border-line bg-surface' : 'border-line/60 bg-surface',
+                )}
+              >
+                {done && <span className="size-2 rounded-full bg-line" />}
+              </span>
+              <span
+                className={cn(
+                  'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-md',
+                  isCurrent ? 'font-semibold text-primary' : done ? 'text-fg-secondary' : 'text-fg-secondary/70',
+                )}
+              >
+                <span>
+                  {s.label}
+                  {s.time && <span className="tabular-nums"> ({s.time})</span>}
+                  <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước hiện tại' : ' – chưa tới'}</span>
+                </span>
+                {s.note && (
+                  <span className={cn('rounded-sm border px-1.5 text-xs font-normal leading-[18px]', NOTE_CLASS[s.noteTone ?? 'warning'])}>
+                    <span className="sr-only">, </span>
+                    {s.note}
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
 
 /**
  * Thanh bước quy trình nằm ngang – ảnh chi tiết yêu cầu bảo trì MT-00128 (chưa xác nhận layer Figma; số đo ước lượng):
@@ -25,7 +82,8 @@ export type WorkflowStepperProps = {
  * đang chờ (ảnh: tới giữa "Tiếp nhận"); nhãn 14px dưới vạch. Bước xong = vòng primary đặc + ✓, nhãn primary;
  * bước chưa tới = vòng line có chấm giữa, nhãn chữ phụ. Ảnh không phân biệt bước đang chờ ngoài vạch → giữ như ảnh.
  */
-export function WorkflowStepper({ steps, completed, current, label, className }: WorkflowStepperProps) {
+export function WorkflowStepper({ steps, completed, current, label, orientation = 'horizontal', className }: WorkflowStepperProps) {
+  if (orientation === 'vertical') return <VerticalStepper steps={steps} completed={completed} current={current} label={label} className={className} />;
   const n = steps.length;
   // Vạch tô tới tâm bước đang chờ; không còn bước chờ → tới tâm bước cuối đã xong (xong hết = 100 %).
   const fill = completed >= n ? 1 : current !== null ? (current + 0.5) / n : Math.max(0, (completed - 0.5) / n);
@@ -67,7 +125,7 @@ export function WorkflowStepper({ steps, completed, current, label, className }:
                   <span
                     className={cn(
                       'rounded-sm border px-1.5 text-xs leading-[18px]',
-                      s.noteTone === 'danger' ? 'border-danger/70 bg-danger/15 text-danger-text' : 'border-warning/50 bg-warning/10 text-warning',
+                      NOTE_CLASS[s.noteTone ?? 'warning'],
                     )}
                   >
                     <span className="sr-only">, </span>
