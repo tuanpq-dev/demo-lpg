@@ -8,7 +8,7 @@ Quy ước chi tiết, quyết định kiến trúc và log sai khác Figma nằ
 ## 1. Dự án làm gì
 
 - Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**, **Chi tiết tài sản** (`/map/:assetId` – tab "Bản đồ nội khu", hiện có V-101).
-- Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `public/figma-ref/`.
+- Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `scratch/figma-ref/` – **chỉ ở máy dev** (gitignore). KHÔNG đặt ảnh thiết kế trong `public/` (bị deploy công khai); playground chỉ tham chiếu ảnh khi `import.meta.env.DEV`.
 - Dữ liệu hiện là **mock** (`src/mocks/`), đi qua lớp `src/data/` để sau thay bằng API mà không sửa UI.
 - Bản đồ nhà máy có 2 kiểu: ảnh 2.5D (mặc định) và cảnh 3D (three.js) dựng từ JSON `SceneConfig`.
 - Có **Scene Editor** (`/editor`) để dựng/sửa cảnh 3D, lưu tạm trong localStorage.
@@ -69,7 +69,7 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | `src/lib/` | `cn`, `createCollectionStore`, `useDialog`, `useRovingFocus`, `tokens`, `useNow`, `useElementSize`, `useFullscreen` | Viết hook/tiện ích dùng lại |
 | `src/assets/digital-twin/` | Icon + ảnh bản đồ, đăng ký trong `src/assets/digital-twin/index.ts` | Thêm icon từ Figma |
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
-| `public/figma-ref/` | Ảnh chụp Figma để so; ảnh người dùng gửi không có node: `mt-create-modal-design.png`, `asset-v101-design.png` | Đối chiếu thiết kế |
+| `scratch/figma-ref/` (gitignore, chỉ máy dev) | Ảnh chụp Figma để so; ảnh người dùng gửi không có node (`mt-*-design.png`, `asset-v101-design.png`). Trước 27/10/2026 nằm ở `public/figma-ref/` (đã xoá; vẫn còn trong lịch sử git) | Đối chiếu thiết kế (playground ở dev) |
 | `packages/shared/src/` | Hợp đồng dữ liệu FE/BE: `scene/` (SceneConfig, specs, migrate, parse), `live.ts`, `alerts.ts`, `maintenance.ts`, `roles.ts`, `auth.ts`. FE dùng mã nguồn (alias), backend (repo riêng) dùng bản build `dist/` | Đổi kiểu dữ liệu dùng chung, thêm quyền |
 | `src/api/` | Gọi backend: `client.ts` (fetch wrapper, lỗi có kiểu, refresh khi 401), `types.ts` (types + zod của hợp đồng API), `auth.ts` (phiên đăng nhập) | Thêm endpoint, đổi hợp đồng API |
 | `src/app/auth/`, `src/features/auth/`, `src/pages/login/` | `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`; logic thuần (phiên, quyền, thông báo lỗi); trang `/login`, `/register`, `/pending` | Đổi luồng/giao diện đăng nhập |
@@ -410,7 +410,7 @@ Vì sao không dùng TransformControls để di chuyển: gizmo kéo theo mặt 
 
 ### 4h. Chi tiết tài sản `/map/:assetId` (GĐ 5D)
 
-Theo ảnh người dùng gửi `public/figma-ref/asset-v101-design.png` (chưa có node Figma). Menu "Bản đồ nội khu" (`path: '/map'`) sáng cho mọi đường dẫn bắt đầu bằng `/map` (`navIdFromPath` so tiền tố).
+Theo ảnh người dùng gửi `scratch/figma-ref/asset-v101-design.png` (chưa có node Figma). Menu "Bản đồ nội khu" (`path: '/map'`) sáng cho mọi đường dẫn bắt đầu bằng `/map` (`navIdFromPath` so tiền tố).
 
 | URL | Kết quả |
 |---|---|
@@ -453,7 +453,7 @@ URL /map/V-101
 
 ### 4i. Chi tiết yêu cầu bảo trì `/maintenance/:id`
 
-Theo ảnh `public/figma-ref/mt-detail-design.png` (MT-00128, chưa có node Figma; số đo là **ước lượng**, gom ở `src/styles/tokens.css` khối "Layout chi tiết yêu cầu bảo trì" – sửa một chỗ).
+Theo ảnh `scratch/figma-ref/mt-detail-design.png` (MT-00128, chưa có node Figma; số đo là **ước lượng**, gom ở `src/styles/tokens.css` khối "Layout chi tiết yêu cầu bảo trì" – sửa một chỗ).
 
 | URL | Kết quả |
 |---|---|
@@ -481,7 +481,7 @@ URL /maintenance/:id
 | Header | `PageHeader` (breadcrumb "Bảo trì / Quản lý bảo trì / MT-…", nút "← Quay lại danh sách" – thêm ngoài Figma), `Badge` severity `chip` + icon · status md · tag md "Bảo trì khẩn cấp" (= ưu tiên Nghiêm trọng) – cùng cỡ 14px thường | "Quản lý bảo trì" và nút quay lại → URL danh sách cũ: `location.state.from` → `sessionStorage` (`rememberListSearch`, bỏ `open/create/device/from`) → `/maintenance` |
 | Dưới header | `WorkflowStepper` | Bước xong = ✓ + primary; `aria-current="step"` ở bước đang chờ; hủy → dừng ở bước đã tới, không còn bước chờ; tạm dừng / gặp sự cố → vẫn bước 3, nhãn phụ dưới "Đang thực hiện" (`note`) |
 | Trái (7fr) | `InfoGrid` · mô tả + mục tiêu · `Checklist` · `NotesThread` · `AttachmentCard` · `EventTimeline variant="history"` · kết quả | Checklist chỉ tick khi assigned/in-progress; pending khoá + gợi ý "Tiếp nhận yêu cầu trước…"; review/done/cancelled chỉ đọc; N/A luôn khoá. Xem tệp = modal giữ chỗ "Dữ liệu mẫu"; Tải xuống = Blob `<tên>-mau.txt` (revokeObjectURL) |
-| Phải (3fr; ≥ wide = `--mt-aside-width`) | `DeadlineCountdownCard` · `AssigneeCard` (+ modal phân công tối giản) · `AlertCard variant="compact"` · `KpiCard size="sm"` | Đồng hồ: số lớn `aria-hidden`, câu theo phút trong `role="timer"`, báo một lần khi chuyển quá hạn. Thiết bị: chấm theo tag xấu nhất |
+| Phải (3fr; ≥ wide = `--mt-aside-width`) | `DeadlineCountdownCard` · `AssigneeCard` (+ modal "Phân công người xử lý" – mục 4l) · `AlertCard variant="compact"` · `KpiCard size="sm"` | Đồng hồ: số lớn `aria-hidden`, câu theo phút trong `role="timer"`, báo một lần khi chuyển quá hạn. Thiết bị: chấm theo tag xấu nhất |
 | Đáy | `StickyActionBar` | "Hủy yêu cầu" (hộp xác nhận + lý do, ghi lịch sử) · theo trạng thái: Chờ tiếp nhận → "Tiếp nhận ngay"; Đã phân công / Đang thực hiện → **"Cập nhật tiến độ"** (modal – mục 4j), Đang thực hiện thêm nút phụ **"Gửi nghiệm thu"** (mục 4k); Chờ nghiệm thu → MỘT nút **"Nghiệm thu"** (chỉ `maintenance:review`). Ẩn khi done/cancelled hoặc không có quyền `maintenance:write`. Chèn đệm + `scroll-padding-bottom` → Tab không bị che |
 
 - Dưới `xl` (1280): xếp một cột theo thứ tự **Hạn chót → cột trái → Phân công/Cảnh báo/Thiết bị**. Làm bằng thứ tự DOM + đặt ô lưới ở ≥ xl (Hạn chót cột phải hàng 1, cột trái trải 2 hàng), KHÔNG dùng CSS `order` → thứ tự Tab luôn khớp thứ tự nhìn thấy (ô hạn chót không có phần tử nhận focus).
@@ -492,7 +492,7 @@ URL /maintenance/:id
 
 ### 4j. Cập nhật tiến độ + nghiệm thu (modal "Cập nhật tiến độ bảo trì")
 
-Theo ảnh `public/figma-ref/mt-progress-modal-design.png` (chưa có node; số đo ước lượng, lệch ghi `CLAUDE.md` mục 8).
+Theo ảnh `scratch/figma-ref/mt-progress-modal-design.png` (chưa có node; số đo ước lượng, lệch ghi `CLAUDE.md` mục 8).
 
 ```
 Danh sách: badge trạng thái (Đã phân công / Đang thực hiện) → ?progress=<id>      ┐
@@ -530,6 +530,7 @@ Chi tiết: thanh dính đáy "Cập nhật tiến độ" → state dialog='prog
 | Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` |
 | Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenanceDetail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
 | Gửi nghiệm thu / nghiệm thu | mục 4k |
+| Phân công / đổi người | mục 4l |
 
 ### 4k. Gửi nghiệm thu + nghiệm thu (2 modal theo ảnh)
 
@@ -588,6 +589,66 @@ Người nghiệm thu (review, quyền maintenance:review)
 | **MT-00114** | Chờ nghiệm thu · GS-03 · KHÔNG có hồ sơ (dữ liệu trước khi có modal Gửi) | Modal Nghiệm thu với hồ sơ cũ: thông báo "chuyển nghiệm thu trước khi có biểu mẫu…", vẫn kết luận được; badge "Chờ nghiệm thu" ở danh sách → `?review=MT-00114` |
 
 Playground mục 13 (`#review`): hai modal với dữ liệu mẫu theo ảnh (không ghi store); ảnh thiết kế chỉ hiện ở dev nếu có file trong `scratch/figma-ref/`.
+
+### 4l. Phân công người xử lý (modal theo ảnh)
+
+Ảnh: `scratch/figma-ref/mt-assign-modal-design.png` (trang 1565 px, chỉ ở máy dev; chưa có node). Lệch ảnh: `CLAUDE.md` mục 8.
+
+```
+Mở: chi tiết – nút ở AssigneeCard ("Phân công người xử lý" khi Chờ tiếp nhận · "Đổi người xử lý" khi Đã phân công/Đang thực hiện;
+      Chờ nghiệm thu/Hoàn thành/Đã hủy: không có nút) · `?assign=1`
+    danh sách – badge "Chờ tiếp nhận" là nút (tên "Phân công MT-… – trạng thái: Chờ tiếp nhận") → `?assign=<id>`
+    "Tiếp nhận ngay" giữ nguyên (người đăng nhập tự nhận, không mở modal)
+  → AssignModal (src/pages/maintenance)
+      ├─ Trái: SearchInput + lọc phòng ban / ca + StaffList (radiogroup, KHÔNG chọn sẵn) – nguồn ASSIGNABLE_STAFF
+      │    tải việc = computeWorkloads(danh sách yêu cầu, now): đang làm = Đã phân công + Đang thực hiện (người chính),
+      │    quá hạn = isPastDue, Bận khi đang làm ≥ BUSY_THRESHOLD (3); tooltip + đọc kèm WORKLOAD_HINT
+      ├─ Phải: người chính (Combobox, đồng bộ thẻ trái, nút "Bỏ chọn …"), người phối hợp (nhiều, bỏ người chính),
+      │    bắt đầu dự kiến, hạn chót *, ca (chọn người → ca mặc định nếu bản ghi chưa có ca và chưa sửa), ghi chú,
+      │    Switch "Gửi thông báo đẩy và SMS" (CHỈ giao diện – TODO backend), [đổi người: Lý do đổi *]
+      ├─ validateAssign → chặn: thiếu người chính / hạn, hạn < bắt đầu, đổi người thiếu lý do
+      │    → nút xác nhận aria-disabled + aria-describedby = khối lý do (dưới cột phải, trên footer)
+      ├─ assignWarnings → KHÔNG chặn: người Bận, có việc quá hạn, ca không khớp giờ bắt đầu, hạn đã qua
+      │    (vùng aria-live polite ẩn chỉ chứa chữ; khối nhìn thấy có nút). Modal GIỮ ca của bản ghi; lệch ca + ca mặc định của
+      │    người được chọn khác ca đang chọn → nút "Đổi sang Ca N" (`suggestShift`) đổi ngay
+      ├─ Lưu tạm → saveAssignDraft (sessionStorage `demo-lpg:mt-assign-draft:<id>`, try/catch; không đổi trạng thái)
+      └─ Xác nhận → useMaintenance().assign(id, form) → applyAssignment (features/maintenance/assign.ts)
+           phân công: assignRecord (pending → assigned) + phối hợp/bắt đầu/hạn (dueHasTime=true)/ca, phòng ban theo người chính,
+                      một dòng lịch sử `assign` ("Phân công: A · phối hợp: … · hạn …"), ghi chú → "Phân công: …"
+           đổi người: giữ trạng thái/tiến độ/cờ; lịch sử `reassign` "Đổi người xử lý: A → B – lý do: …";
+                      trang chi tiết xoá nháp tiến độ + nháp gửi nghiệm thu của người cũ (sessionStorage)
+Hàng loạt (danh sách): chọn người → bulkAssign → planBulkAssign: CHỈ dòng Chờ tiếp nhận qua validateAssign (hạn sẵn có),
+  không đổi người hàng loạt; dòng thiếu hạn bỏ qua; thông báo tách lý do (`bulkAssignMessage`):
+  "Đã phân công X · bỏ qua N (a không ở Chờ tiếp nhận, b thiếu hạn)" + cảnh báo gộp khi người đó sẽ Bận sau cả lô.
+```
+
+| Nhân sự (`src/mocks/maintenance.ts`) | Ý nghĩa |
+|---|---|
+| `STAFF` `{ id, name, title, department, specialty, defaultShift, role }` | MỘT nguồn. `role`: technician (nhận việc) · engineer (nhận việc + nghiệm thu) · manager (chỉ nghiệm thu) |
+| `ASSIGNABLE_STAFF` | technician + engineer – modal phân công, form tạo yêu cầu (`PEOPLE`), hàng loạt (`MAINTENANCE_ASSIGNEES`) |
+| `REVIEWER_STAFF` / `REVIEWERS` | manager + engineer – modal Gửi nghiệm thu / Nghiệm thu (danh sách giữ như cũ) |
+| `staffByName` | Tra TOÀN BỘ STAFF – bản ghi giao cho người không còn chọn được (vd Hoàng Minh E – trưởng ca) vẫn hiện đúng; `countUnassignableOwners` đếm số bản ghi như vậy (mock hiện tại: 0) |
+
+| Muốn sửa | Sửa ở |
+|---|---|
+| Ngưỡng Bận, cách tính đang làm/quá hạn | `BUSY_THRESHOLD`, `computeWorkloads` (`assign.ts`) |
+| Lỗi chặn / cảnh báo | `validateAssign`, `assignWarnings`, `inShift` (`assign.ts`) |
+| Ghi bản ghi, câu lịch sử | `applyAssignment`, `planBulkAssign` (`assign.ts`) |
+| Danh mục nhân sự, vai trò | `STAFF` (`mocks/maintenance.ts`) |
+| Giao diện | `AssignModal.tsx`; thẻ/danh sách `components/StaffPicker`; `Switch`; `Avatar` |
+
+**Mã mock để thử phân công** (dữ liệu trong bộ nhớ – F5 về như cũ; `VITE_AUTH=off npx vite` = phiên giả admin):
+
+| Mã | Trạng thái ban đầu | Dùng để thử |
+|---|---|---|
+| **MT-00128** | Chờ tiếp nhận · V-101 · ca 1 trên bản ghi | Modal như ảnh (từ badge danh sách `?assign=MT-00128` hoặc nút ở trang chi tiết); chọn Nguyễn Văn A (đang Bận – 3 việc, 1 quá hạn) → 2 cảnh báo; bắt đầu 14:00 + ca 1 → cảnh báo ca |
+| **MT-00122**, **MT-00121** | Chờ tiếp nhận, hạn chỉ có ngày | Phân công từ danh sách; hàng loạt (chọn cùng một dòng Đang thực hiện → "bỏ qua 1") |
+| **MT-00127** | Chờ tiếp nhận nhưng đã ghi sẵn tên Trần Bình | Nút vẫn là "Phân công người xử lý", modal không chọn sẵn ai |
+| **MT-00124**, **MT-00126** | Đã phân công | "Đổi người xử lý" – lý do bắt buộc; `/maintenance/MT-00124?assign=1` mở thẳng |
+| **MT-00119** | Đang thực hiện + cờ Gặp sự cố | Đổi người giữ tiến độ, cờ và trạng thái |
+| **MT-00114** | Chờ nghiệm thu | Không có nút phân công / đổi người |
+
+Playground mục 14 (`#assign`): modal (phân công / đổi người, dữ liệu mẫu theo ảnh, không ghi store), StaffList, Switch, Avatar.
 
 ### 4g. Design system: tokens → primitives → nghiệp vụ
 
@@ -744,6 +805,9 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | NavTabs, NavMenu | `src/components/NavTabs/NavTabs.tsx` | `items`, `value`, `onChange` · NavTabs: đủ chữ ≥ `wide`, chỉ icon 1280–1519 · NavMenu: nút xổ danh sách < `xl` | trong AppHeader | `#navigation` |
 | Tabs | `src/components/Tabs/Tabs.tsx` | `items` (count, countTone), `value`, `onChange`, `panelId` | Cảnh báo, Bảo trì, Editor | `#navigation` |
 | SegmentedControl | `src/components/SegmentedControl/SegmentedControl.tsx` | `options`, `value`, `onChange`, `variant`, `size` | form Bảo trì, PlantMap | `#navigation` |
+| Avatar | `src/components/Avatar/Avatar.tsx` | `name`, `size` sm 24 / md 32 / lg 40; `initials()` dùng chung với NotesThread (cùng người → cùng chữ, "Nguyễn Văn A" → "NA") | Combobox (avatar), thẻ nhân sự | `#assign` |
+| Switch | `src/components/Switch/Switch.tsx` | `label`, `description`, `checked`, `onChange` – `role="switch"` + `aria-checked`, bật = primary | Modal phân công | `#assign` |
+| StaffPicker (StaffList / StaffPickerCard) | `src/components/StaffPicker/StaffPicker.tsx` | List: `label`/`labelledBy`, `items` ({ name, subtitle, shiftLabel, shiftMatch, busy, active, overdue, workloadHint }), `value` (null = chưa chọn), `onChange`, `emptyState` – radiogroup dọc, ↑↓ chuyển + chọn, Space chọn | Modal phân công | `#assign` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
 | Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel` | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |
@@ -790,7 +854,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `label` (→ `<caption>`), `selectable`, `selectedIds`, `rowActions`, `pagination`, `minWidth` (cuộn ngang trong khung), `stickyFirst`, `stickyActions`, `onRowClick` (chuột – bỏ qua nút/link/ô chọn trong hàng) | Cảnh báo, Bảo trì | `#charts` |
 | Pagination | `src/components/Pagination/Pagination.tsx` | `page`, `pageCount`, `onPageChange` | trong DataTable | `#charts` (qua DataTable) |
 
-**GĐ5D – Chi tiết tài sản** (ảnh `public/figma-ref/asset-v101-design.png`, chưa có node Figma)
+**GĐ5D – Chi tiết tài sản** (ảnh `scratch/figma-ref/asset-v101-design.png`, chưa có node Figma)
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
@@ -799,7 +863,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | MaintenanceSummaryCard | `src/components/MaintenanceSummaryCard/MaintenanceSummaryCard.tsx` | `next` ({ date, note, overdue }), `last`, `records` ({ value, status, hint }) – ngày đã định dạng sẵn | Chi tiết tài sản | `#asset` |
 | AssetModelPanel (src/app) | `src/app/AssetModelPanel.tsx` | `sceneId`, `assetName`, `liveData`, `tag`, `description` (văn bản thay canvas), `fallbackImage` | Chi tiết tài sản | – |
 
-**Chi tiết yêu cầu bảo trì** (ảnh `public/figma-ref/mt-detail-design.png`, chưa có node Figma; số đo ước lượng ở `tokens.css`)
+**Chi tiết yêu cầu bảo trì** (ảnh `scratch/figma-ref/mt-detail-design.png`, chưa có node Figma; số đo ước lượng ở `tokens.css`)
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
@@ -809,10 +873,10 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | NotesThread | `src/components/NotesThread/NotesThread.tsx` | `notes` ({ author, time đã định dạng, text }), `onAdd` (không có = chỉ đọc), Ctrl+Enter gửi | Chi tiết bảo trì | `#maintenance-detail` |
 | AttachmentCard | `src/components/AttachmentCard/AttachmentCard.tsx` | `id`, `name`, `kind` (image/document/manual – thiếu thì đoán theo đuôi), `meta`, `notice` (nhãn nhỏ, vd "Chưa tải lên máy chủ"), `fluid` (giãn theo lưới), `onView`, `onDownload` | Chi tiết bảo trì, modal tiến độ | `#maintenance-detail`, `#progress-update` |
 | DeadlineCountdownCard | `src/components/DeadlineCountdownCard/DeadlineCountdownCard.tsx` | `countdown` ({ clock, overdue, speech } – null = đã đóng), `dueText`, `closedText` | Chi tiết bảo trì | `#maintenance-detail` |
-| AssigneeCard | `src/components/AssigneeCard/AssigneeCard.tsx` | `assignee` (null = chưa phân công), `department`, `shift`, `onAssign`, `assignDisabled` | Chi tiết bảo trì | `#maintenance-detail` |
+| AssigneeCard | `src/components/AssigneeCard/AssigneeCard.tsx` | `assignee` (null = chưa phân công), `department`, `shift`, `onAssign` (không truyền = không có nút), `assignLabel` (ghi đè nhãn nút), `assignDisabled` | Chi tiết bảo trì | `#maintenance-detail` |
 | StickyActionBar | `src/components/StickyActionBar/StickyActionBar.tsx` | `label` (tên vùng), `start`, `children` (nút); cao `--action-bar-height` | Chi tiết bảo trì | `#maintenance-detail` |
 
-**Cập nhật tiến độ bảo trì** (ảnh `public/figma-ref/mt-progress-modal-design.png`, chưa có node Figma)
+**Cập nhật tiến độ bảo trì** (ảnh `scratch/figma-ref/mt-progress-modal-design.png`, chưa có node Figma)
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
@@ -926,7 +990,7 @@ grep -oE '(packages/shared/)?src/[A-Za-z0-9_./-]+\.(tsx?|css|json)' GUIDE.md | s
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
 | Tệp đính kèm | Chỉ giữ tên/kích thước, không upload; tệp thêm ở modal cập nhật tiến độ = `isTemp` ("Chưa tải lên máy chủ", URL xem trước bị thu hồi khi đóng modal) | API lưu tệp |
 | Cập nhật tiến độ / nghiệm thu | `reportedProgress`, `hold`, `attachments[].isTemp`, `submission`, `review`, `reviewFailed`, loại lịch sử mới – chỉ FE (`FE_ONLY_FIELDS`); quyền: tiến độ/gửi = `maintenance:write`, nghiệm thu = `maintenance:review` (chỉ ẩn ở FE); người nghiệm thu = `REVIEWERS` mock | Hợp đồng + endpoint (`CLAUDE.md` mục 7), chỉ người được phân công cập nhật/gửi, danh sách người nghiệm thu = user engineer/admin, cảnh báo khi hết thời gian theo dõi |
-| Modal "Phân công người xử lý" | Hộp tối giản 3 Select | Đợt riêng theo ảnh `public/figma-ref/mt-assign-modal-design.png` + danh mục nhân sự |
+| Phân công / nhân sự | Modal theo ảnh (mục 4l); danh mục nhân sự = mock `STAFF` (vai trò, ca, chuyên môn); tải việc tính từ danh sách yêu cầu trong bộ nhớ; công tắc "Gửi thông báo đẩy và SMS" chỉ là giao diện | API danh mục nhân sự (user + vai trò + ca), `PATCH /maintenance/:id/assign`, gửi thông báo đẩy/SMS (kể cả khi đổi người) |
 | Chi tiết yêu cầu bảo trì | Trường mở rộng chỉ ở FE (`cancelled`, `dueHasTime`, `createdBy`, `objectives`, luồng `notes[]`, `history[]`, checklist `doneAt/na/active`, `attachments[].kind` – `FE_ONLY_FIELDS`); "Xem" tệp = modal giữ chỗ, "Tải xuống" = `.txt` mẫu; avatar = chữ cái đầu; quyền chi tiết theo vai trò chưa làm | Đưa vào hợp đồng API (`docs/API.md` backend), lưu tệp, ảnh đại diện, quyền theo vai trò |
 | `?now=` / `VITE_FIXED_NOW` (dời / ghim giờ app) | `src/lib/demoNow.ts` – `?now=` chỉ dev hoặc `VITE_DEMO=true`; `VITE_FIXED_NOW` đặt lúc build, mặc định tắt | Không đặt `VITE_DEMO` / `VITE_FIXED_NOW` trên bản công khai |
 | KPI Tổng quan | Tồn kho / Mức bồn / Áp suất / Tiêu thụ lấy từ tag trực tiếp (mock); Cảnh báo, Sức khỏe và số chuông thông báo (2) vẫn tĩnh | API (hoặc derive từ dữ liệu thật) |
