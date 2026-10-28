@@ -8,7 +8,7 @@ export type ChecklistProgress = { done: number; total: number; percent: number }
 
 /**
  * Tiến độ = số mục đã xong / số mục áp dụng (bỏ mục "Không áp dụng"), làm tròn %.
- * Ảnh ghi "2/7 · 28%" (tính cả mục N/A) → ở đây 2/6 · 33% (đã duyệt, CLAUDE.md mục 8).
+ * Ảnh ghi "2/7 · 28%" (tính cả mục N/A) → ở đây 2/6 · 33% (đã duyệt, docs/figma-diffs.md).
  */
 export function checklistProgress(items: readonly MaintenanceChecklistItem[] | undefined): ChecklistProgress {
   const applicable = (items ?? []).filter((c) => !c.na);

@@ -51,7 +51,7 @@ export type AssignModalProps = {
 };
 
 /**
- * Modal "Phân công người xử lý" – ảnh thiết kế (chưa có node; lệch ghi CLAUDE.md mục 8). Hai chế độ theo trạng thái:
+ * Modal "Phân công người xử lý" – ảnh thiết kế (chưa có node; lệch ghi docs/figma-diffs.md). Hai chế độ theo trạng thái:
  * phân công (Chờ tiếp nhận) · đổi người (Đã phân công / Đang thực hiện – lý do bắt buộc). Quy tắc: `features/maintenance/assign.ts`.
  * Trái: tìm + lọc phòng ban/ca + danh sách nhân sự (radiogroup, KHÔNG chọn sẵn). Phải: chi tiết phân công.
  * Chặn: nút xác nhận aria-disabled + danh sách lý do; cảnh báo không chặn đọc qua aria-live. Nháp: sessionStorage. Chỉ mount khi mở.

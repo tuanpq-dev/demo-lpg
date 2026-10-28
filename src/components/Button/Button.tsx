@@ -8,7 +8,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /**
    * - primary: nền primary, chữ tối (70:4041 "Tạo yêu cầu bảo trì")
    * - danger:  nền đặc `danger-solid` + chữ trắng đậm (drawer cảnh báo "Xác nhận cảnh báo"; ảnh nền #D34957 – đổi sang
-   *            danger-solid cho chữ trắng đủ tương phản, CLAUDE.md mục 8). KHÔNG dùng nền danger nhạt + chữ trắng.
+   *            danger-solid cho chữ trắng đủ tương phản, docs/figma-diffs.md). KHÔNG dùng nền danger nhạt + chữ trắng.
    * - info:    nền `info` #87CFFF chữ tối đậm – "Cập nhật xử lý" ở drawer cảnh báo gas (ảnh: xanh nhạt; token có sẵn trùng màu)
    * - ghost:   nền surface, viền accent/30 (70:4038 "Hôm nay", 70:5211 "Xuất báo cáo")
    * - icon:    nút vuông chỉ có icon (70:4045 làm mới). `pressed` → nền accent/40 (70:2890)

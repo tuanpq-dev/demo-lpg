@@ -31,7 +31,7 @@ export function nearbySensor(tag: string): string | undefined {
 
 /**
  * Đầu báo nhiệt – CẤU HÌNH TAG (không viết cứng trong UI). `alarmAt` = nhiệt độ báo động của đầu báo: 57 °C là mức đầu báo
- * nhiệt cố định phổ biến – GIẢ ĐỊNH, chờ khách xác nhận loại đầu báo (CLAUDE.md mục 7).
+ * nhiệt cố định phổ biến – GIẢ ĐỊNH, chờ khách xác nhận loại đầu báo (scratch/designer-questions.md).
  */
 export type HeatDetector = {
   id: string;

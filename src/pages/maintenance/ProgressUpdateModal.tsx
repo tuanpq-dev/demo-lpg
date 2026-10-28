@@ -70,7 +70,7 @@ export type ProgressUpdateModalProps = {
 };
 
 /**
- * Modal "Cập nhật tiến độ bảo trì" – ảnh thiết kế (chưa có node Figma; số đo ước lượng, lệch ghi CLAUDE.md mục 8):
+ * Modal "Cập nhật tiến độ bảo trì" – ảnh thiết kế (chưa có node Figma; số đo ước lượng, lệch ghi docs/figma-diffs.md):
  * 5 ô thông tin · Trạng thái công việc (radiogroup) · Tiến độ hoàn thành (thanh trượt, bước 5) + dòng Checklist ·
  * Ảnh và tài liệu (tệp có sẵn + tệp tạm + "Tải tệp lên") · Nội dung đã thực hiện · Hủy / Lưu nháp / Cập nhật tiến độ.
  * Quy tắc trạng thái + lịch sử: `features/maintenance/progress.ts`. Nháp: sessionStorage theo mã (không đổi trạng thái).

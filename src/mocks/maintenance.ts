@@ -9,7 +9,7 @@ import type { StaffSkill } from './skills';
  */
 
 // Kiểu gốc = hợp đồng API dùng chung FE/BE (packages/shared/src/maintenance.ts). FE MỞ RỘNG thêm cho trang chi tiết
-// (/maintenance/:id) – KHÔNG sửa packages/shared; đưa vào hợp đồng API khi làm backend (CLAUDE.md mục 7).
+// (/maintenance/:id) – KHÔNG sửa packages/shared; đưa vào hợp đồng API khi làm backend (docs/decisions.md).
 import type {
   MaintenanceRequest,
   MaintenanceSource,
@@ -203,7 +203,7 @@ export type StaffMember = {
 
 /**
  * MỘT nguồn nhân sự cho phân công, form tạo yêu cầu và nghiệm thu. Tên giữ như dữ liệu yêu cầu mẫu (ảnh Figma phân công
- * ghi "Trần Minh B", "Lê Hoàng C" – CLAUDE.md mục 8). TODO(backend): GET danh mục nhân sự (+ vai trò, ca, chuyên môn).
+ * ghi "Trần Minh B", "Lê Hoàng C" – docs/figma-diffs.md). TODO(backend): GET danh mục nhân sự (+ vai trò, ca, chuyên môn).
  */
 export const STAFF: readonly StaffMember[] = [
   { id: 's01', name: 'Nguyễn Văn A', title: 'Kỹ sư cơ khí', department: 'Bảo trì Cơ khí', specialty: 'Chuyên gia Van/Bồn', defaultShift: 'shift-2', role: 'engineer', areas: ['Khu bồn LPG'], skills: ['pressure', 'mechanical'] },
@@ -279,7 +279,7 @@ type Seed = Omit<MaintenanceRecord, 'id' | 'createdAt' | 'dueAt' | 'completedAt'
 const seeds: Seed[] = [
   // ---- Figma: 3 thẻ ưu tiên (70:4581–70:4621) + bảng (70:5363–70:5441); MT-00128/127 lấy nội dung theo thẻ ----
   // MT-00128 theo ảnh trang chi tiết (26/10/2026): chưa phân công, hạn 16:00 hôm nay, "Khu bồn LPG", tiêu đề V-101, từ ALT-00128.
-  // Figma danh sách ghi "PSV-101", "Quá hạn 2 ngày", người phụ trách Nguyễn Văn A – lệch, ghi CLAUDE.md mục 8.
+  // Figma danh sách ghi "PSV-101", "Quá hạn 2 ngày", người phụ trách Nguyễn Văn A – lệch, ghi docs/figma-diffs.md.
   { code: 'MT-00128', title: 'Kiểm tra van an toàn V-101', device: 'V-101', area: 'Khu bồn LPG', type: 'inspection', priority: 'critical', status: 'pending', assignee: null, created: 0, due: 0, dueTime: '16:00', progress: 0, sourceAlertId: 'ALT-00128', source: 'alert', department: 'Bảo trì Cơ khí', shift: 'shift-1' },
   { code: 'MT-00127', title: 'Kiểm tra cảm biến gas GS-01', device: 'GS-01', area: 'Khu nạp xuất', type: 'inspection', priority: 'high', status: 'pending', assignee: 'Trần Bình', created: -2, due: 0, progress: 0 },
   { code: 'MT-00126', title: 'Bảo dưỡng máy hóa hơi E-101A', device: 'E-101A', area: 'Trạm hóa hơi', type: 'periodic', priority: 'high', status: 'assigned', assignee: 'Lê Thị C', created: -6, due: 1, dueTime: '16:00', progress: 0 },

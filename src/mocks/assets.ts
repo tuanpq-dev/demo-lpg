@@ -67,7 +67,7 @@ export const assetMocks: Record<string, AssetMock> = {
     sceneId: 'v-101',
     mapSceneId: 'khu-bon-lpg',
     // Suy từ ảnh: 10,4 m³ = 76,2 % → dung tích ≈ 13,6 m³ (D 1,9 m × L 4,8 m = 13,61 m³). Cảnh Tổng quan vẽ V-101
-    // to hơn (mặc định 4,4 × 11 m) – xem CLAUDE.md mục 8.
+    // to hơn (mặc định 4,4 × 11 m) – xem docs/figma-diffs.md.
     tank: { length: 4.8, diameter: 1.9 },
     designPressure: 12.0,
     alarms: {
@@ -92,12 +92,12 @@ export const assetMocks: Record<string, AssetMock> = {
 
 /**
  * Sự kiện theo tài sản. 5 dòng đầu theo ảnh (V-101, hôm nay); phần sau bổ sung để thử bộ lọc theo loại.
- * Ảnh xếp "Đăng nhập hệ thống" vào loại Cảnh báo – giữ nguyên, chờ designer (CLAUDE.md mục 7).
+ * Ảnh xếp "Đăng nhập hệ thống" vào loại Cảnh báo – giữ nguyên, chờ designer (scratch/designer-questions.md).
  */
 export const assetEvents: AssetEvent[] = [
   { id: 'EV-0141', asset: 'V-101', daysAgo: 0, time: '11:24:05', title: 'Cập nhật mức bồn', type: 'sensor', status: 'success' },
   { id: 'EV-0140', asset: 'V-101', daysAgo: 0, time: '11:15:22', title: 'Kiểm tra thủ công', type: 'operation', status: 'done' },
-  // Ảnh ghi "Tự chuẩn chẩn đoán" → chuẩn hoá "Tự chẩn đoán" (CLAUDE.md mục 8).
+  // Ảnh ghi "Tự chuẩn chẩn đoán" → chuẩn hoá "Tự chẩn đoán" (docs/figma-diffs.md).
   { id: 'EV-0139', asset: 'V-101', daysAgo: 0, time: '10:55:10', title: 'Tự chẩn đoán', type: 'system', status: 'normal' },
   { id: 'EV-0138', asset: 'V-101', daysAgo: 0, time: '10:42:00', title: 'Cảnh báo dPdT', type: 'alert', status: 'acknowledged' },
   { id: 'EV-0137', asset: 'V-101', daysAgo: 0, time: '09:30:15', title: 'Đăng nhập hệ thống', type: 'alert', status: 'acknowledged' },

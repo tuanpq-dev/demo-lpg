@@ -83,7 +83,7 @@ const radiusClass: Record<(typeof radii)[number], string> = {
   full: 'rounded-full',
 };
 
-/** Mục đích 4 token đỏ – cùng nội dung với GUIDE.md mục 4g. */
+/** Mục đích 4 token đỏ – cùng nội dung với docs/guide/design-system.md (4g). */
 const RED_TOKENS = [
   {
     name: 'danger',
