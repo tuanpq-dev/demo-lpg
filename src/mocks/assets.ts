@@ -92,7 +92,7 @@ export const assetMocks: Record<string, AssetMock> = {
 
 /**
  * Sự kiện theo tài sản. 5 dòng đầu theo ảnh (V-101, hôm nay); phần sau bổ sung để thử bộ lọc theo loại.
- * Ảnh xếp "Đăng nhập hệ thống" vào loại Cảnh báo – giữ nguyên, chờ designer (scratch/designer-questions.md).
+ * Ảnh xếp "Đăng nhập hệ thống" vào loại Cảnh báo – giữ nguyên, chờ designer (docs/questions.md).
  */
 export const assetEvents: AssetEvent[] = [
   { id: 'EV-0141', asset: 'V-101', daysAgo: 0, time: '11:24:05', title: 'Cập nhật mức bồn', type: 'sensor', status: 'success' },

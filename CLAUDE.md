@@ -1,6 +1,6 @@
 # demo-lpg – Digital Twin 2026 (Plant Control)
 
-> **Không ghi log dài vào CLAUDE.md** (file này nạp vào MỌI phiên – giữ < 150 dòng). Log sai khác Figma ghi `docs/figma-diffs.md`, quyết định / nhật ký giai đoạn ghi `docs/decisions.md`, câu hỏi designer/khách ghi `scratch/designer-questions.md`, luồng code + bảng component + mã mock thử ghi `docs/guide/<luồng>.md`.
+> **Không ghi log dài vào CLAUDE.md** (file này nạp vào MỌI phiên – giữ < 150 dòng). Log sai khác Figma ghi `docs/figma-diffs.md`, quyết định / nhật ký giai đoạn ghi `docs/decisions.md`, câu hỏi designer/khách ghi `docs/questions.md`, luồng code + bảng component + mã mock thử ghi `docs/guide/<luồng>.md`.
 > **Không đọc toàn bộ GUIDE.md; chỉ mở file `docs/guide/<luồng>.md` liên quan** (GUIDE.md chỉ là mục lục). Khi đổi luồng nào thì cập nhật file của luồng đó.
 
 ## 1. Dự án và stack
@@ -27,8 +27,8 @@
 | `src/mocks/` | Dữ liệu mẫu từ Figma; `alertKinds.ts` = cấu hình theo LOẠI cảnh báo; `scenes/*.json` cảnh 3D |
 | `src/api/` | `client.ts` (fetch wrapper, refresh 401 một luồng), `types.ts` (hợp đồng API + zod, FE tự định nghĩa), `auth.ts` |
 | `src/lib/` · `src/styles/` | Tiện ích (`cn`, `useDialog`, `plantTime`, `demoNow`, `sessionDraft`, `announce`…) · `tokens.css`, `global.css` |
-| `scratch/` | gitignore, CHỈ máy dev: `figma-ref/` (ảnh thiết kế), ảnh chụp kiểm tra, `designer-questions.md` |
-| `docs/` | `figma-diffs.md`, `decisions.md` |
+| `scratch/` | gitignore, CHỈ máy dev: `figma-ref/` (ảnh thiết kế), ảnh chụp kiểm tra |
+| `docs/` | `figma-diffs.md`, `decisions.md`, `questions.md`, `guide/` |
 - Route: data router `createBrowserRouter`; chuyển hướng cố định bằng `loader: () => redirect(…)` (không `<Navigate>`); mọi route trừ `/login` `/register` `/pending` nằm trong `RequireAuth`. Danh sách route + query đầy đủ: docs/guide/app-structure.md (Phụ lục A).
 - Khi thêm/đổi luồng, component, asset 3D, scene → cập nhật `docs/guide/<luồng>.md` tương ứng (component → `design-system.md`); backend/xác thực → `docs/guide/backend-auth.md`.
 
@@ -66,7 +66,7 @@
 - Nối API thật cho `fetch*` trong `src/data/*` (hợp đồng cần bổ sung: `docs/decisions.md`); `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.
 - Bản đồ 3D toàn nhà máy cho `/map` (nếu cần), trang `/reports`; ống 3D: kéo điểm theo Y, tự đi ống tránh thiết bị, nhánh chữ T có cấu trúc.
 - `plant-map.png` 7.5 MB → WebP/AVIF; thay TempIcons + ảnh dự phòng khi có asset (danh sách: `docs/decisions.md` mục TODO).
-- Chờ designer/khách: `scratch/designer-questions.md`.
+- Chờ designer/khách: `docs/questions.md`.
 
 ## 8. Tài liệu khác (không tự nạp – mở khi cần)
 | File | Khi nào đọc |
@@ -75,4 +75,4 @@
 | `docs/guide/<luồng>.md` | `app-structure` (route, mẹo tìm code, giả lập/TODO) · `design-system` (quy ước đầy đủ, bảng component) · `overview-map-3d` (Tổng quan, 3D, Editor, chi tiết tài sản) · `live-data` · `alerts` · `maintenance` (kèm mã mock để thử) · `backend-auth` · `testing` – mở đúng file khi làm luồng đó |
 | `docs/figma-diffs.md` | Trước khi so ảnh / sửa giao diện một màn: mọi sai khác Figma đã chuẩn hoá (nhóm theo màn) + nguồn ảnh tham chiếu |
 | `docs/decisions.md` | Nhật ký từng giai đoạn (số test, bundle, script kiểm), kiến trúc 3D + Scene Editor, TODO kỹ thuật, màu đã duyệt, hợp đồng API cần bổ sung |
-| `scratch/designer-questions.md` | Câu hỏi chờ designer/khách + phương án tạm (chỉ máy dev, gitignore) |
+| `docs/questions.md` | Câu hỏi chờ designer/khách + phương án đang dùng tạm (nhóm theo màn) |

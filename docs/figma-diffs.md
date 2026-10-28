@@ -1,6 +1,6 @@
 # Sai khác Figma đã chuẩn hóa
 
-Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE.md mục 8 ngày 28/10/2026, nhóm theo màn). Ghi mục mới vào đúng nhóm, mới nhất lên đầu nhóm. Câu hỏi còn chờ designer/khách: `scratch/designer-questions.md`.
+Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE.md mục 8 ngày 28/10/2026, nhóm theo màn). Ghi mục mới vào đúng nhóm, mới nhất lên đầu nhóm. Câu hỏi còn chờ designer/khách: `docs/questions.md`.
 
 ## Nguồn tham chiếu Figma (nguyên văn CLAUDE.md mục 2)
 
