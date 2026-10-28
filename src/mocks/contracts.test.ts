@@ -6,7 +6,7 @@ import { ALERT_FE_ONLY_FIELDS, alertRecords } from './alerts';
 import { AREAS } from './areas';
 import { FE_ONLY_FIELDS, maintenanceRecords, type MaintenanceRecord } from './maintenance';
 
-/** Bỏ trường chỉ có ở FE (trang chi tiết – chờ đưa vào hợp đồng API, CLAUDE.md mục 7) + đổi về dạng hợp đồng. */
+/** Bỏ trường chỉ có ở FE (trang chi tiết – chờ đưa vào hợp đồng API, docs/decisions.md) + đổi về dạng hợp đồng. */
 function toContract(r: MaintenanceRecord) {
   const out: Record<string, unknown> = { ...r };
   for (const k of FE_ONLY_FIELDS) delete out[k];

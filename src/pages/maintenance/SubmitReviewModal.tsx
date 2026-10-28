@@ -84,7 +84,7 @@ function SelectTile<V extends string>({ label, value, options, onChange }: { lab
 }
 
 /**
- * Modal "Gửi yêu cầu nghiệm thu" – ảnh thiết kế (chưa có node Figma; số đo ước lượng, lệch ghi CLAUDE.md mục 8). Kỹ thuật viên,
+ * Modal "Gửi yêu cầu nghiệm thu" – ảnh thiết kế (chưa có node Figma; số đo ước lượng, lệch ghi docs/figma-diffs.md). Kỹ thuật viên,
  * in-progress → review. Điều kiện + ghi bản ghi: `features/maintenance/review.ts`. Nháp: sessionStorage theo mã (không đổi trạng thái).
  * Áp suất / nhiệt độ: hiện số trực tiếp, CHỤP lại lúc bấm Gửi (không đổi theo live sau đó). Chỉ mount khi mở.
  */

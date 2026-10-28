@@ -43,7 +43,7 @@ export const GAS_TAGS = ['GS-01', 'GS-02', 'GS-03', 'GS-04'] as const;
  * Trạm hóa hơi (FZ-02) – báo cháy (FIR-00018, ảnh `scratch/figma-ref/alert-drawer-fire-*.png`). Mã giả định như mọi tag ở đây.
  * Nhiệt độ ĐẦU BÁO (`heatTemp`) là tag riêng, KHÁC nhiệt độ máy hóa hơi (`VAPORIZER_TAGS.temperature`).
  * Tag trạng thái là chuỗi: `.ALARM` 'alarm' | 'normal' · `.STATE` đầu báo 'online' | 'fault' · nút nhấn 'idle' | 'activated' ·
- * máy 'running' | 'standby' | 'fault' | 'stopped'. Cảm biến gas của khu = GS-05 (GS-02 thuộc Khu nạp xuất – CLAUDE.md mục 8).
+ * máy 'running' | 'standby' | 'fault' | 'stopped'. Cảm biến gas của khu = GS-05 (GS-02 thuộc Khu nạp xuất – docs/figma-diffs.md).
  */
 export const VAPORIZER_AREA_TAGS = {
   heatTemp: 'HD-02',
@@ -55,6 +55,15 @@ export const VAPORIZER_AREA_TAGS = {
   runA: 'E-101A.STATE',
   runB: 'E-101B.STATE',
 } as const;
+
+/**
+ * Bộ điều áp sau bồn (modal "Cập nhật xử lý cảnh báo áp suất", ảnh 28/10/2026 – dòng "Áp suất sau PR-101").
+ * `PT-103` là tag GIẢ ĐỊNH (chưa có trong danh sách tag của khách – scratch/designer-questions.md). Không dùng PT-102 vì PT-102 đã là
+ * áp suất đẩy bơm P-101A trong cảnh 3D và là cảm biến của ALT-00122 / MT-00116. Chưa có ngưỡng cấu hình → số không tô màu.
+ */
+export const REGULATOR_TAGS: Readonly<Record<string, { outletPressure: string }>> = {
+  'PR-101': { outletPressure: 'PT-103' },
+};
 
 /** Bảng tag theo mã thiết bị (trang chi tiết tài sản). */
 export const ASSET_TAGS = {

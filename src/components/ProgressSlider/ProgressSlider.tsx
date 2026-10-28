@@ -23,7 +23,7 @@ const snap = (v: number, min: number, max: number, step: number) => Math.min(max
 /**
  * Thanh trượt tiến độ – modal "Cập nhật tiến độ bảo trì" (ảnh thiết kế, số đo ước lượng): nhãn 18px trái + số lớn 32px
  * primary phải, rãnh 8px bo tròn (surface-muted) + phần đã đạt primary. Ảnh KHÔNG có nút kéo → thêm nút tròn 16px
- * (phần thêm ngoài Figma, CLAUDE.md mục 8) để thấy được là kéo được và có chỗ hiện viền focus.
+ * (phần thêm ngoài Figma, docs/figma-diffs.md) để thấy được là kéo được và có chỗ hiện viền focus.
  *
  * `role="slider"` + `aria-valuenow/min/max/valuetext`. Bàn phím: ←/↓ −bước · →/↑ +bước · PageDown/PageUp ±2 bước ·
  * Home/End. Chuột/cảm ứng: bấm hoặc kéo trên rãnh (pointer capture).

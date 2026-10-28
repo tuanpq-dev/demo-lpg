@@ -34,7 +34,7 @@ export const systemHealth: { value: number; caption: string; stats: HealthStat[]
 };
 
 export const priorityAlarms: AlertItemData[] = [
-  // Figma 53:470 ghi PT-101; PT-101 nay là áp suất bồn V-101 → áp suất đầu vào hóa hơi là PT-201 (CLAUDE.md mục 8).
+  // Figma 53:470 ghi PT-101; PT-101 nay là áp suất bồn V-101 → áp suất đầu vào hóa hơi là PT-201 (docs/figma-diffs.md).
   { id: 'a1', code: VAPORIZER_TAGS.inletPressure, message: 'Áp suất đầu vào hóa hơi cao.', time: '10 phút trước', severity: 'critical' },
   { id: 'a2', code: 'TT-302', message: 'Nhiệt độ tiệm cận giới hạn trên.', time: '24 phút trước', severity: 'high' },
   { id: 'a3', code: V101_TAGS.level, message: 'Mức bồn V-101 giảm nhanh bất thường.', time: '1 giờ trước', severity: 'high' },

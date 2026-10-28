@@ -10,6 +10,7 @@ import { plantTimeOfDay } from '@/lib/plantTime';
 import { canCloseGas, type CloseCheck } from './bands';
 import { canCloseFire, type DetectorAlarm, type DetectorDevice, type FireCloseCheck } from './fire';
 import { formatMeasure } from './gauge';
+import { inspectionEntry, toggledInspection, writeInspection } from './inspection';
 
 export type AlertActionCtx = { by: string; at: Date };
 
@@ -35,12 +36,13 @@ export function withHistory(a: AlertRecord, kind: AlertHistoryKind, text: string
   return [...list, { id: `${a.id}-h${list.length + 1}`, at: ctx.at.toISOString(), kind, text, actor: ctx.by }];
 }
 
-/** Xác nhận: Chưa xác nhận → Đang xử lý. Chưa có người phụ trách → người xác nhận nhận xử lý. */
+/** Xác nhận: Chưa xác nhận → Đang xử lý (giai đoạn Đang kiểm tra). Chưa có người phụ trách → người xác nhận nhận xử lý. */
 export function acknowledgeAlert(a: AlertRecord, ctx: AlertActionCtx): AlertRecord {
   if (!canAcknowledge(a)) return a;
   return {
     ...a,
     status: 'in-progress',
+    phase: 'inspecting',
     assignee: a.assignee ?? ctx.by,
     acknowledgedAt: ctx.at.toISOString(),
     history: withHistory(a, 'acknowledge', a.assignee ? 'Xác nhận cảnh báo' : `Xác nhận cảnh báo – ${ctx.by} nhận xử lý`, ctx),
@@ -84,14 +86,17 @@ export function addAlertNote(a: AlertRecord, text: string, ctx: AlertActionCtx):
   return { ...a, notes: [...(a.notes ?? []), newNote(a, t, ctx)], history: withHistory(a, 'note', `Ghi chú: ${t}`, ctx) };
 }
 
-/** Tick / bỏ tick một bước hướng dẫn (chỉ Đang xử lý). `stepText` để ghi lịch sử dễ đọc. */
+/**
+ * Tick / bỏ tick một bước hướng dẫn ở drawer (chỉ Đang xử lý): Chưa kiểm tra ↔ Đạt. Hạng mục "Có vấn đề" / "Không áp
+ * dụng" (đặt trong modal cập nhật xử lý) không đổi ở đây. Đọc/ghi qua `inspection.ts` (dạng cũ `{at, by}` = Đạt).
+ */
 export function toggleGuideStep(a: AlertRecord, step: { id: string; text: string }, ctx: AlertActionCtx): AlertRecord {
   if (!canEditGuide(a)) return a;
-  const guide = { ...(a.guide ?? {}) };
-  const wasDone = step.id in guide;
-  if (wasDone) delete guide[step.id];
-  else guide[step.id] = { at: ctx.at.toISOString(), by: ctx.by };
-  return { ...a, guide, history: withHistory(a, 'guide', `${wasDone ? 'Bỏ đánh dấu' : 'Đã làm'}: ${step.text}`, ctx) };
+  const cur = inspectionEntry(a.guide, step.id);
+  const next = toggledInspection(cur);
+  if (!next) return a;
+  const guide = writeInspection(a.guide, step.id, next, ctx);
+  return { ...a, guide, history: withHistory(a, 'guide', `${next.status === 'pending' ? 'Bỏ đánh dấu' : 'Đã làm'}: ${step.text}`, ctx) };
 }
 
 /**

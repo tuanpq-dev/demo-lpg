@@ -17,16 +17,35 @@ export type AlertDirection = 'above' | 'below';
 
 export type AlertNote = { id: string; author: string; /** ISO */ at: string; text: string };
 
-export type AlertHistoryKind = 'acknowledge' | 'assign' | 'guide' | 'note' | 'resolve' | 'maintenance' | 'support' | 'update';
+export type AlertHistoryKind = 'acknowledge' | 'assign' | 'guide' | 'note' | 'resolve' | 'maintenance' | 'support' | 'update' | 'hold';
 export type AlertHistoryEntry = { id: string; /** ISO */ at: string; kind: AlertHistoryKind; text: string; actor?: string };
 
-/** Tick bước hướng dẫn xử lý: id bước (playbook) → lúc + người tick. */
-export type AlertGuideProgress = Readonly<Record<string, { at: string; by: string }>>;
+/** Trạng thái một hạng mục kiểm tra (= bước hướng dẫn của drawer – MỘT danh sách theo loại). */
+export type InspectionStatus = 'pending' | 'pass' | 'issue' | 'na';
+/**
+ * Một hạng mục đã ghi: DẠNG CŨ `{ at, by }` (tick ở drawer trước 28/10/2026) = Đạt; dạng mới có `status` (+ ghi chú).
+ * Chỉ đọc qua `inspectionEntry` / `inspectionItems` (features/alerts/inspection.ts) – không tự kiểm tra dạng ở nơi khác.
+ */
+export type AlertGuideEntry = { at: string; by: string; status?: InspectionStatus; note?: string };
+/** Hạng mục kiểm tra / bước hướng dẫn: id bước (cấu hình loại) → bản ghi. Thiếu id = Chưa kiểm tra. */
+export type AlertGuideProgress = Readonly<Record<string, AlertGuideEntry>>;
+
+/** Giai đoạn khi Đang xử lý (modal cập nhật xử lý áp suất): đang kiểm tra / đang xử lý. Sau xác nhận = inspecting. */
+export type AlertPhase = 'inspecting' | 'resolving';
+/** Tạm dừng (lý do) / cần hỗ trợ (lý do + người phối hợp) – chỉ khi Đang xử lý. */
+export type AlertHold = { kind: 'paused' | 'needs-support'; reason: string; at: string };
+export type AlertAttachment = { name: string; size: number; kind: 'image' | 'document' | 'manual'; /** Chưa upload (chỉ tên/kích thước/loại – không lưu object URL). */ isTemp?: boolean };
+/** Nguồn xác minh số liệu sau xử lý. */
+export type VerificationSource = 'sensor' | 'gauge' | 'both';
+/** Thông số trước/sau xử lý đã lưu (modal áp suất). `before` = số lúc cảnh báo, `after` = số sau xử lý (live hoặc đo tay). */
+export type AlertReadings = { source: VerificationSource; at: string; rows: readonly { id: string; before?: number; after?: number; manual?: boolean }[] };
+/** Theo dõi sau xử lý: đến `until`, mục tiêu `< target unit`, người chịu trách nhiệm. TODO(backend): tự tạo lại cảnh báo khi vượt mục tiêu. */
+export type AlertFollowUp = { minutes: number; until: string; target: number; unit: string; owner: string };
 
 /**
  * Cảnh báo trong mock = hợp đồng API `Alert` (packages/shared/src/alerts.ts) nhưng thời điểm ghi TƯƠNG ĐỐI
  * (`daysAgo` + `time`) thay cho `occurredAt` để demo luôn "hôm nay".
- * Các trường sau `time` CHỈ CÓ Ở FE (drawer chi tiết cảnh báo, 27/10/2026) – chờ đưa vào hợp đồng API (CLAUDE.md mục 7);
+ * Các trường sau `time` CHỈ CÓ Ở FE (drawer chi tiết cảnh báo, 27/10/2026) – chờ đưa vào hợp đồng API (docs/decisions.md);
  * liệt kê ở `ALERT_FE_ONLY_FIELDS` để test hợp đồng bỏ qua.
  */
 export type AlertRecord = Omit<Alert, 'occurredAt'> & {
@@ -59,6 +78,20 @@ export type AlertRecord = Omit<Alert, 'occurredAt'> & {
    * `closedBy` = căn cứ đóng: đầu báo đã phục hồi (live) hoặc kiểm tra tại chỗ khi mất tín hiệu.
    */
   resolution?: { kind: 'handled' | 'false-alarm'; closedBy: 'live' | 'field' };
+  // ---- Modal "Cập nhật xử lý cảnh báo áp suất" (28/10/2026) ----
+  phase?: AlertPhase;
+  hold?: AlertHold;
+  /** Số đo các dòng thông số LÚC cảnh báo (ảnh chụp lưu cùng cảnh báo; dòng chính = `value`) – cột "Trước". */
+  readingsAtAlert?: Readonly<Record<string, number>>;
+  readings?: AlertReadings;
+  /** Id mục "Kết quả xác minh" đã chọn (cấu hình loại). */
+  verification?: readonly string[];
+  /** Vấn đề phát sinh (một lựa chọn; `other` có mô tả). */
+  issue?: { kind: string; note?: string };
+  cause?: string;
+  actionTaken?: string;
+  attachments?: readonly AlertAttachment[];
+  followUp?: AlertFollowUp;
 };
 
 export const ALERT_FE_ONLY_FIELDS = [
@@ -75,6 +108,16 @@ export const ALERT_FE_ONLY_FIELDS = [
   'collaborators',
   'closingReading',
   'resolution',
+  'phase',
+  'hold',
+  'readingsAtAlert',
+  'readings',
+  'verification',
+  'issue',
+  'cause',
+  'actionTaken',
+  'attachments',
+  'followUp',
 ] as const;
 
 /** Hệ thống gửi thông báo sau khi phát hiện (mock: +3 s, như ảnh 10:45:22 → 10:45:25). */
@@ -86,7 +129,7 @@ function addSeconds(time: string, s: number) {
   return `${p(Math.floor(t / 3600))}:${p(Math.floor(t / 60) % 60)}:${p(t % 60)}`;
 }
 
-type Extra = Pick<AlertRecord, 'kind' | 'direction' | 'tag' | 'previousValue'> & {
+type Extra = Pick<AlertRecord, 'kind' | 'direction' | 'tag' | 'previousValue' | 'readingsAtAlert' | 'attachments'> & {
   /** Phát sinh TƯƠNG ĐỐI "N phút trước" (thay daysAgo + time của bảng) – ALT-00127: 6 phút như ảnh "T/G vượt ngưỡng". */
   minutesAgo?: number;
 };
@@ -94,7 +137,17 @@ type Extra = Pick<AlertRecord, 'kind' | 'direction' | 'tag' | 'previousValue'> &
 const EXTRA: Record<string, Extra> = {
   // Báo cháy (ảnh FIR-00018): phát sinh "3 phút trước" để luôn là hôm nay; phát hiện = giờ cảnh báo, gửi thông báo +3 s.
   'FIR-00018': { kind: 'fire', tag: VAPORIZER_AREA_TAGS.heatTemp, minutesAgo: 3 },
-  'ALT-00128': { kind: 'tank-overpressure', tag: V101_TAGS.pressure },
+  // Ảnh modal cập nhật xử lý áp suất: nhiệt độ lúc cảnh báo 31.6 °C (áp suất sau PR-101 không có → "–"); 3 tệp mẫu như ảnh.
+  'ALT-00128': {
+    kind: 'tank-overpressure',
+    tag: V101_TAGS.pressure,
+    readingsAtAlert: { temperature: 31.6 },
+    attachments: [
+      { name: 'hien-truong-psv101.jpg', size: 1_240_000, kind: 'image' },
+      { name: 'bao-cao-kiem-dinh.pdf', size: 860_000, kind: 'document' },
+      { name: 'manual-psv101.pdf', size: 4_200_000, kind: 'manual' },
+    ],
+  },
   'ALT-00127': { kind: 'gas-leak', tag: GAS_TAGS[3], previousValue: '14', minutesAgo: 6 },
   'ALT-00126': { kind: 'temperature-low', direction: 'below' },
   'ALT-00125': { kind: 'filter-dp-high' },

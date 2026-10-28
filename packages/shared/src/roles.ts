@@ -17,7 +17,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 /**
  * Quyền nghiệp vụ → vai trò TỐI THIỂU. Quy tắc:
  * - viewer chỉ đọc · operator xác nhận cảnh báo + tạo/sửa yêu cầu bảo trì · engineer sửa scene · admin quản lý user.
- * - Phân cấp: engineer có quyền của operator, admin có mọi quyền (⚠ chờ duyệt – xem CLAUDE.md mục 9).
+ * - Phân cấp: engineer có quyền của operator, admin có mọi quyền (⚠ chờ duyệt – xem docs/guide/backend-auth.md (Phụ lục D)).
  */
 export const PERMISSIONS = {
   'dashboard:read': 'viewer',

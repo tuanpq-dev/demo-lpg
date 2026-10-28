@@ -37,7 +37,7 @@ export type ReviewModalProps = {
 };
 
 /**
- * Modal "Nghiệm thu yêu cầu bảo trì" – ảnh thiết kế (chưa có node Figma; lệch ghi CLAUDE.md mục 8). Người nghiệm thu, review →
+ * Modal "Nghiệm thu yêu cầu bảo trì" – ảnh thiết kế (chưa có node Figma; lệch ghi docs/figma-diffs.md). Người nghiệm thu, review →
  * done (Đạt) hoặc in-progress (Cần bổ sung / Không đạt). Quy tắc: `features/maintenance/review.ts` (`validateReview`, `reviewRecord`).
  * Thông số: số đã CHỤP lúc gửi + ngưỡng (cấu hình tag), kèm số trực tiếp hiện tại nhỏ bên dưới. Chỉ mount khi mở.
  */

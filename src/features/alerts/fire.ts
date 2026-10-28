@@ -58,7 +58,7 @@ export function fireSignalView(kind: FireSignalKind, label: string, r: TagReadin
 export type CrossConfirm = { active: false } | { active: true; callPoint: boolean; reasons: string[]; stage: string };
 
 /**
- * Xác nhận chéo (ngoài Figma, CLAUDE.md mục 8): ngoài đầu báo nhiệt còn ít nhất MỘT tín hiệu liên quan bất thường (khói,
+ * Xác nhận chéo (ngoài Figma, docs/figma-diffs.md): ngoài đầu báo nhiệt còn ít nhất MỘT tín hiệu liên quan bất thường (khói,
  * gas ≥ cấp 1, nút nhấn đã kích hoạt) → banner "Nhiều tín hiệu cùng báo". `stage` = tập nguồn → banner chỉ đọc lại khi nguồn đổi.
  */
 export function crossConfirm(signals: readonly (FireSignalView & { kind: FireSignalKind })[]): CrossConfirm {

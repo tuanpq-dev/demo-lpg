@@ -10,13 +10,43 @@ export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' |
   label: string;
   /** Hiện `label` bên phải ô (bọc <label>, bấm chữ cũng chọn) – dùng trong form/bảng thuộc tính. */
   showLabel?: boolean;
+  /**
+   * card = ô có viền cả dòng, nhãn 14px; được chọn → viền + nền nhạt primary ("Kết quả xác minh" – modal cập nhật xử lý
+   * áp suất). Khoá dùng `aria-disabled` (vẫn focus, đọc lý do qua aria-describedby) – onChange không được gọi.
+   */
+  variant?: 'default' | 'card';
 };
 
 /**
  * Ô chọn 16px – nền surface-sunken, viền line, bo 2px (Figma 70:3036).
  * Trạng thái checked/indeterminate: Figma chưa có → nền info, dấu màu fg-inverse.
  */
-export function Checkbox({ showLabel, ...props }: CheckboxProps) {
+export function Checkbox({ showLabel, variant = 'default', ...props }: CheckboxProps) {
+  if (variant === 'card') {
+    const { label, className, checked, onChange, ...rest } = props;
+    const locked = rest['aria-disabled'] === true || rest['aria-disabled'] === 'true';
+    return (
+      <label
+        className={cn(
+          'flex min-h-10 items-center gap-3 rounded-md border px-4 py-2 text-base transition-colors',
+          checked ? 'border-primary bg-primary/10 text-fg' : 'border-line/30 bg-surface-sunken/30 text-fg',
+          locked ? 'cursor-not-allowed' : 'cursor-pointer hover:border-line',
+          className,
+        )}
+      >
+        <CheckboxBox
+          {...rest}
+          label={label}
+          aria-label={undefined}
+          checked={checked}
+          // Khoá: trả ô về giá trị cũ, không gọi onChange (aria-disabled không chặn click như `disabled`).
+          onChange={(v) => (locked ? undefined : onChange(v))}
+          className={locked ? 'opacity-60' : undefined}
+        />
+        <span className={cn(locked && 'text-fg-secondary')}>{label}</span>
+      </label>
+    );
+  }
   if (!showLabel) return <CheckboxBox {...props} />;
   const { label, className, disabled } = props;
   return (

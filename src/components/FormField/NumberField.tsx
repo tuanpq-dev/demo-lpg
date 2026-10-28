@@ -27,6 +27,10 @@ export type NumberFieldProps = {
   error?: string;
   required?: boolean;
   disabled?: boolean;
+  /** Màu số trong ô theo ngưỡng (ô "Sau" – thông số trước/sau xử lý). */
+  tone?: 'default' | 'warning' | 'danger';
+  /** Căn số trong ô. */
+  align?: 'start' | 'center';
   className?: string;
 };
 
@@ -58,9 +62,14 @@ export function NumberField({
   required,
   disabled,
   className,
+  tone = 'default',
+  align = 'start',
 }: NumberFieldProps) {
   const [text, setText] = useState(() => fmt(value, precision));
   const editing = useRef(false);
+  // Đã gõ từ lần chốt trước? Rời ô / Enter mà chưa gõ → không chốt (chỉ đồng bộ chữ): tránh ghi đè bằng chữ cũ khi giá trị
+  // ngoài đổi trong lúc focus (số live ở ô "Sau" – modal cập nhật xử lý áp suất) hoặc làm tròn theo `precision`.
+  const typed = useRef(false);
   // Giá trị ngoài đổi (undo, kéo gizmo…) khi không gõ → cập nhật ô.
   useEffect(() => {
     if (!editing.current) setText(fmt(value, precision));
@@ -72,8 +81,10 @@ export function NumberField({
     if (max !== undefined) x = Math.min(max, x);
     return x;
   };
-  const commit = (raw: string) => {
+  const commit = (raw: string, force = false) => {
     editing.current = false;
+    if (!force && !typed.current) return setText(fmt(value, precision));
+    typed.current = false;
     const t = raw.trim().replace(',', '.');
     if (t === '') {
       if (onClear) onClear();
@@ -92,6 +103,7 @@ export function NumberField({
       commit(e.currentTarget.value);
     } else if (e.key === 'Escape') {
       editing.current = false;
+      typed.current = false;
       setText(fmt(value, precision));
       e.currentTarget.blur();
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -99,7 +111,7 @@ export function NumberField({
       const base = Number(text.replace(',', '.'));
       const cur = Number.isFinite(base) ? base : (value ?? 0);
       const d = (e.key === 'ArrowUp' ? 1 : -1) * step * (e.shiftKey ? 10 : 1);
-      commit(String(+(cur + d).toFixed(6)));
+      commit(String(+(cur + d).toFixed(6)), true);
       editing.current = true;
     }
   };
@@ -125,13 +137,15 @@ export function NumberField({
         onFocus={() => (editing.current = true)}
         onChange={(e) => {
           editing.current = true;
+          typed.current = true;
           setText(e.target.value);
         }}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={onKeyDown}
         className={cn(
-          inputClass(invalid),
+          inputClass(invalid, tone === 'warning' ? 'text-warning' : tone === 'danger' ? 'text-danger-text' : 'text-fg'),
           'tabular-nums',
+          align === 'center' && 'text-center font-semibold',
           size === 'sm' ? 'h-7 px-2 text-sm' : 'h-[35px]',
           prefix && (size === 'sm' ? 'pl-6' : 'pl-7'),
           unit && 'pr-9',

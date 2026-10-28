@@ -110,10 +110,20 @@ describe('chi tiết cảnh báo – ngưỡng, ngày, playbook', () => {
     // 23:30 UTC = 06:30 hôm sau ở nhà máy
     expect(alertDateTimeLabel({ daysAgo: 0, time: '06:00:00' }, new Date('2026-10-11T23:30:00Z'))).toBe('06:00:00 - 12/10/2026');
   });
-  test('playbook theo loại, thay {device}/{safetyValve}; thiếu loại → generic', () => {
-    const pb = alertPlaybook({ kind: 'tank-overpressure', device: 'V-101' });
+  test('playbook theo loại, thay {device}/{safetyValve}/{regulator}/{tag}; thiếu loại → generic', () => {
+    // 28/10/2026: hướng dẫn áp suất bồn GỘP với "Kết quả kiểm tra thiết bị" của modal cập nhật xử lý (6 hạng mục theo ảnh modal).
+    const pb = alertPlaybook({ kind: 'tank-overpressure', device: 'V-101', tag: 'PT-101' });
     expect(pb.causes).toEqual(['Van an toàn kẹt', 'Nhiệt độ tăng cao', 'Hệ thống làm mát không kích hoạt']);
-    expect(pb.steps.map((x) => x.text)).toContain('Xác minh trạng thái van PSV-101');
+    expect(pb.steps.map((x) => x.text)).toEqual([
+      'Đối chiếu PT-101 với đồng hồ cơ',
+      'Kiểm tra bộ điều áp PR-101',
+      'Kiểm tra van an toàn PSV-101',
+      'Kiểm tra nhiệt độ bồn',
+      'Kiểm tra hệ thống làm mát',
+      'Theo dõi xu hướng áp suất sau xử lý',
+    ]);
+    // id cũ giữ nguyên → tick cũ không mất
+    expect(pb.steps.map((x) => x.id)).toEqual(expect.arrayContaining(['field-gauge', 'verify-valve', 'cooling-ready']));
     expect(alertPlaybook({ device: 'X-1' }).steps[0]!.text).toBe('Kiểm tra X-1 tại hiện trường');
   });
 });

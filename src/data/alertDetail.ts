@@ -7,7 +7,9 @@ import { formatGaugeNumber, gaugeScale, isBreached, withUnit, type GaugeScale } 
 import { tagSignal } from '@/features/live/signal';
 import { formatDayVi, parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
 import type { AlertDirection, AlertRecord } from '@/mocks/alerts';
-import { ALERT_KINDS, GAS_BANDS, fillPlaybookText, type AlertKindConfig } from '@/mocks/alertKinds';
+import { ALERT_KINDS, GAS_BANDS, REGULATORS, fillPlaybookText, type AlertKindConfig, type PressureUpdateConfig } from '@/mocks/alertKinds';
+import { ASSET_TAGS, REGULATOR_TAGS } from '@/features/live/tags';
+import { parsePressureDraft, type PressureDraft } from '@/features/alerts/pressure';
 import { AREA_EQUIPMENT, AREA_FIRE_SIGNALS, HEAT_DETECTORS, nearbySensor, sensorsInArea, type HeatDetector } from '@/mocks/sensors';
 import {
   crossConfirm,
@@ -98,7 +100,7 @@ export const alertKind = (a: Pick<AlertRecord, 'kind'>): AlertKindConfig => ALER
 /** Nguyên nhân + hướng dẫn theo loại, chữ đã thay `{device}` / `{safetyValve}` / `{nearbySensor}`. */
 export function alertPlaybook(a: Pick<AlertRecord, 'kind' | 'device' | 'tag'>) {
   const pb = alertKind(a);
-  const vars = { nearbySensor: nearbySensor(a.tag ?? a.device) };
+  const vars = { nearbySensor: nearbySensor(a.tag ?? a.device), tag: a.tag };
   return {
     label: pb.label,
     gauge: pb.gauge !== false,
@@ -124,6 +126,21 @@ export function useAlertLive(tag: string | undefined): AlertLiveReading {
   const tv = live[tag];
   if (tagSignal(tv, Date.now()) === 'lost' || typeof tv?.value !== 'number') return { state: 'lost' };
   return { state: 'ok', value: tv.value };
+}
+
+/** Số trực tiếp của nhiều tag cùng lúc (cùng quy tắc `useAlertLive`) – dòng thông số modal cập nhật xử lý áp suất. */
+export function useTagReadings(tags: readonly (string | undefined)[]): Record<string, AlertLiveReading> {
+  const list = tags.filter((t): t is string => !!t);
+  const live = useLiveData(list, { enabled: list.length > 0 });
+  const out: Record<string, AlertLiveReading> = {};
+  for (const tag of list) {
+    if (!live) out[tag] = { state: 'pending' };
+    else {
+      const tv = live[tag];
+      out[tag] = tagSignal(tv, Date.now()) === 'lost' || typeof tv?.value !== 'number' ? { state: 'lost' } : { state: 'ok', value: tv.value };
+    }
+  }
+  return out;
 }
 
 export type AlertGauge = { kind: 'scale'; scale: GaugeScale } | { kind: 'off' } | { kind: 'invalid' };
@@ -272,3 +289,55 @@ export function alertRecordedValue(a: AlertRecord): { value: string; threshold: 
     breached: isBreached(m.value, m.threshold, m.direction),
   };
 }
+
+// ---- Modal "Cập nhật xử lý cảnh báo áp suất" (docs/guide/alerts.md (4o)) ----
+
+/** Cấu hình cập nhật áp suất của loại cảnh báo; loại khác → null (drawer giữ modal/nút hiện có). */
+export function pressureUpdateConfig(a: Pick<AlertRecord, 'kind'>): PressureUpdateConfig | null {
+  const u = alertKind(a).update;
+  return u.kind === 'pressure-update' ? u : null;
+}
+
+/** Ngưỡng của tag trong cấu hình tài sản (null = không có cấu hình). */
+export const tagThresholds = (tag: string | undefined) => configFor(tag) ?? null;
+
+export type PressureReadingRow = {
+  id: string;
+  label: string;
+  unit: string;
+  tag?: string;
+  /** Số lúc cảnh báo (dòng chính = giá trị bản ghi; khác = `readingsAtAlert`); thiếu → "–". */
+  before?: number;
+  warn?: number;
+  danger?: number;
+  /** Dòng quyết định điều kiện "Đã xử lý". */
+  primary: boolean;
+};
+
+/**
+ * Dòng "Thông số trước và sau xử lý" theo cấu hình loại: tra tag + ngưỡng theo thiết bị. Áp suất = tag của cảnh báo, ngưỡng
+ * như "Ngưỡng cho phép" (`alertMetric`); sau bộ điều áp = `REGULATOR_TAGS` (PT-103 GIẢ ĐỊNH, chưa có ngưỡng); nhiệt độ =
+ * tag nhiệt độ của tài sản + ngưỡng cấu hình.
+ */
+export function pressureReadingRows(a: AlertRecord, cfg: PressureUpdateConfig): PressureReadingRow[] {
+  const assetTags = ASSET_TAGS[a.device as keyof typeof ASSET_TAGS] as { pressure?: string; temperature?: string } | undefined;
+  const vars = { tag: a.tag };
+  return cfg.readings.map((r) => {
+    const label = fillPlaybookText(r.label, a.device, vars);
+    if (r.field === 'pressure') {
+      const m = alertMetric(a);
+      return { id: r.id, label, unit: a.unit, tag: a.tag ?? assetTags?.pressure, before: Number.isFinite(m.value) ? m.value : undefined, warn: m.threshold, danger: m.danger, primary: true };
+    }
+    const tag = r.field === 'regulatorOut' ? REGULATOR_TAGS[REGULATORS[a.device] ?? '']?.outletPressure : assetTags?.temperature;
+    const th = tagThresholds(tag);
+    return { id: r.id, label, unit: r.field === 'temperature' ? '°C' : 'bar', tag, before: a.readingsAtAlert?.[r.id], warn: th?.warn, danger: th?.danger, primary: false };
+  });
+}
+
+/** Mục "Kết quả xác minh" đã điền chữ. */
+export function verificationItems(a: Pick<AlertRecord, 'device' | 'tag'>, cfg: PressureUpdateConfig) {
+  return cfg.verification.map((v) => ({ ...v, text: fillPlaybookText(v.text, a.device, { tag: a.tag }) }));
+}
+
+/** Nháp modal cập nhật xử lý áp suất – sessionStorage theo mã (try/catch trong `createSessionDraft`). */
+export const pressureDraft = createSessionDraft<PressureDraft>('demo-lpg:alert-pressure-update-draft:', parsePressureDraft);

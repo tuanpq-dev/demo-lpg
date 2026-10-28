@@ -53,7 +53,7 @@ describe('thông số V-101 một nguồn', () => {
     expect(asset.alarms.pressure.danger!).toBeLessThanOrEqual(asset.designPressure);
     expect(asset.alarms.pressure.warn!).toBeLessThan(asset.alarms.pressure.danger!);
   });
-  it('cảnh Tổng quan: V-101 vẽ theo kích thước mặc định (lệch đã ghi CLAUDE.md mục 8)', () => {
+  it('cảnh Tổng quan: V-101 vẽ theo kích thước mặc định (lệch đã ghi docs/figma-diffs.md)', () => {
     // Đổi kích thước V-101 ở Tổng quan sẽ dời cổng ống + bố cục ảnh Figma → giữ, test để nhớ chỗ lệch.
     expect(tankIn(mapScene).params).toBeUndefined();
   });

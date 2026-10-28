@@ -1,6 +1,6 @@
 /*
  * Luật màu chữ đỏ (eslint.config.js `DANGER_TEXT_RULES`): chạy ESLint thật trên mã mẫu để chắc luật bắt đúng và không bắt nhầm.
- * Mục đích 4 token đỏ: GUIDE.md mục 4g · CLAUDE.md mục 3.
+ * Mục đích 4 token đỏ: docs/guide/design-system.md (4g) · CLAUDE.md "Quy ước bắt buộc".
  */
 import { ESLint } from 'eslint';
 import { describe, expect, test } from 'vitest';
