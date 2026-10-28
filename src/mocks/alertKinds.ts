@@ -141,7 +141,7 @@ const PRESSURE_UPDATE: PressureUpdateConfig = {
 };
 
 /** Bands mặc định của khí gas theo ảnh (27/10/2026): 0–10 bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD – CHỜ chốt với
- * khách (dữ liệu cũ ghi ngưỡng 20 % LEL; scratch/designer-questions.md). */
+ * khách (dữ liệu cũ ghi ngưỡng 20 % LEL; docs/questions.md). */
 export const GAS_BANDS: readonly AlertBand[] = [
   { level: 'normal', from: 0, to: 10, label: 'Bình thường', tone: 'success' },
   { level: 'level-1', from: 10, to: 20, label: 'Cảnh báo cấp 1', tone: 'warning-dim' },
@@ -357,7 +357,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
     defaultOwner: 'Trực ca',
     falseAlarmMaintenance: { title: 'Kiểm tra đầu báo {device}' },
     crossConfirmTitle: 'Nhiều tín hiệu cùng báo, nguy cơ cháy cao',
-    // BẢN NHÁP do dev soạn – chưa có quy trình chính thức của nhà máy (scratch/designer-questions.md). Số nội bộ: chờ khách cung cấp.
+    // BẢN NHÁP do dev soạn – chưa có quy trình chính thức của nhà máy (docs/questions.md). Số nội bộ: chờ khách cung cấp.
     emergency: {
       title: 'Quy trình ứng phó cháy',
       draft: 'Bản nháp, cần bộ phận An toàn duyệt',

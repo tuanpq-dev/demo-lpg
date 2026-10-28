@@ -71,7 +71,7 @@ flowchart LR
 | Mock: `src/mocks/<màn>.ts`; cảnh: `src/mocks/scenes/<id>.json` | `src/mocks/scenes/tram-chiet-nap.json` |
 | Playground: `src/pages/playground/<Nhóm>Section.tsx` | `src/pages/playground/BusinessSection.tsx` |
 
-Log sai khác Figma đã chuẩn hoá: `docs/figma-diffs.md`. Việc chờ designer/khách: `scratch/designer-questions.md`.
+Log sai khác Figma đã chuẩn hoá: `docs/figma-diffs.md`. Việc chờ designer/khách: `docs/questions.md`.
 
 ---
 
@@ -98,8 +98,8 @@ Log sai khác Figma đã chuẩn hoá: `docs/figma-diffs.md`. Việc chờ desig
 | Bơm/lọc nâng 0.3 m trong cảnh mẫu | `elevation: 0.3` (dữ liệu cũ để khớp cổng ống) – bảng Kiểm tra báo "lơ lửng" | Thêm bệ (asset/tham số) hoặc hạ xuống sàn + dời điểm ống |
 | "Góp ý từ AI" trong form Bảo trì | `suggestForRequest` sinh theo luật | Dịch vụ AI thật |
 | Tệp đính kèm | Chỉ giữ tên/kích thước, không upload; tệp thêm ở modal cập nhật tiến độ = `isTemp` ("Chưa tải lên máy chủ", URL xem trước bị thu hồi khi đóng modal) | API lưu tệp |
-| Cập nhật tiến độ / nghiệm thu | `reportedProgress`, `hold`, `attachments[].isTemp`, `submission`, `review`, `reviewFailed`, loại lịch sử mới – chỉ FE (`FE_ONLY_FIELDS`); quyền: tiến độ/gửi = `maintenance:write`, nghiệm thu = `maintenance:review` (chỉ ẩn ở FE); người nghiệm thu = `REVIEWERS` mock | Hợp đồng + endpoint (`scratch/designer-questions.md`), chỉ người được phân công cập nhật/gửi, danh sách người nghiệm thu = user engineer/admin, cảnh báo khi hết thời gian theo dõi |
-| Drawer chi tiết cảnh báo | Gas: tag GS-01…GS-04 + bands 0/10/20/40 là giả định (chờ khách); "Yêu cầu hỗ trợ" chưa gửi thông báo; kịch bản `?live=…` (cả gas-rise/gas-clear) chỉ dev – `devScenarios.ts` nạp động, không có trong `dist/`. Trường chỉ FE (`ALERT_FE_ONLY_FIELDS`: loại, chiều, tag, `previousValue`, `collaborators`, `closingReading`, giờ gửi thông báo, giờ xác nhận/xử lý, tick hướng dẫn, ghi chú, lịch sử); cấu hình loại = mock `ALERT_KINDS` (`src/mocks/alertKinds.ts`); giờ "Gửi thông báo" mock = phát hiện + 3 s; chỉ ALT-00128 (PT-101) và ALT-00113 (PT-201) có tag | Hợp đồng + endpoint cảnh báo (`scratch/designer-questions.md`), danh mục playbook, tag thật cho mọi cảnh báo |
+| Cập nhật tiến độ / nghiệm thu | `reportedProgress`, `hold`, `attachments[].isTemp`, `submission`, `review`, `reviewFailed`, loại lịch sử mới – chỉ FE (`FE_ONLY_FIELDS`); quyền: tiến độ/gửi = `maintenance:write`, nghiệm thu = `maintenance:review` (chỉ ẩn ở FE); người nghiệm thu = `REVIEWERS` mock | Hợp đồng + endpoint (`docs/questions.md`), chỉ người được phân công cập nhật/gửi, danh sách người nghiệm thu = user engineer/admin, cảnh báo khi hết thời gian theo dõi |
+| Drawer chi tiết cảnh báo | Gas: tag GS-01…GS-04 + bands 0/10/20/40 là giả định (chờ khách); "Yêu cầu hỗ trợ" chưa gửi thông báo; kịch bản `?live=…` (cả gas-rise/gas-clear) chỉ dev – `devScenarios.ts` nạp động, không có trong `dist/`. Trường chỉ FE (`ALERT_FE_ONLY_FIELDS`: loại, chiều, tag, `previousValue`, `collaborators`, `closingReading`, giờ gửi thông báo, giờ xác nhận/xử lý, tick hướng dẫn, ghi chú, lịch sử); cấu hình loại = mock `ALERT_KINDS` (`src/mocks/alertKinds.ts`); giờ "Gửi thông báo" mock = phát hiện + 3 s; chỉ ALT-00128 (PT-101) và ALT-00113 (PT-201) có tag | Hợp đồng + endpoint cảnh báo (`docs/questions.md`), danh mục playbook, tag thật cho mọi cảnh báo |
 | Phân công / nhân sự | Modal theo ảnh (mục 4l); danh mục nhân sự = mock `STAFF` (vai trò, ca, chuyên môn); tải việc tính từ danh sách yêu cầu trong bộ nhớ; công tắc "Gửi thông báo đẩy và SMS" chỉ là giao diện | API danh mục nhân sự (user + vai trò + ca), `PATCH /maintenance/:id/assign`, gửi thông báo đẩy/SMS (kể cả khi đổi người) |
 | Chi tiết yêu cầu bảo trì | Trường mở rộng chỉ ở FE (`cancelled`, `dueHasTime`, `createdBy`, `objectives`, luồng `notes[]`, `history[]`, checklist `doneAt/na/active`, `attachments[].kind` – `FE_ONLY_FIELDS`); "Xem" tệp = modal giữ chỗ, "Tải xuống" = `.txt` mẫu; avatar = chữ cái đầu; quyền chi tiết theo vai trò chưa làm | Đưa vào hợp đồng API (`docs/API.md` backend), lưu tệp, ảnh đại diện, quyền theo vai trò |
 | `?now=` / `VITE_FIXED_NOW` (dời / ghim giờ app) | `src/lib/demoNow.ts` – `?now=` chỉ dev hoặc `VITE_DEMO=true`; `VITE_FIXED_NOW` đặt lúc build, mặc định tắt | Không đặt `VITE_DEMO` / `VITE_FIXED_NOW` trên bản công khai |
@@ -107,7 +107,7 @@ Log sai khác Figma đã chuẩn hoá: `docs/figma-diffs.md`. Việc chờ desig
 | Màu chưa đạt tương phản AA | Đã sửa: chữ đỏ (`danger-text`), chữ menu (`fg-secondary/70`). Còn: chữ `danger-strong` nhỏ ở Tổng quan, Segmented "Nghiêm trọng", số đếm header (xem `docs/decisions.md`) | Duyệt màu với designer |
 | Thiết kế | Modal phân công / hủy / xem tệp (chi tiết bảo trì), chân drawer cảnh báo sau khi xác nhận + hộp phân công cảnh báo, thao tác hàng loạt, form, checkbox checked, trang `/reports`, bản đồ toàn nhà máy cho `/map`, trang 404, Editor chưa có trong Figma; trang chi tiết tài sản chỉ có ảnh (không node) | Designer |
 | Icon tạm | `src/components/Icon/TempIcons.tsx`, `src/components/Icon/EditorIcons.tsx`, `src/pages/editor/AssetGlyph.tsx` | Asset từ Figma |
-| Cần khách xác nhận | Danh sách ở `scratch/designer-questions.md` ("Cần xác nhận") | Khách/PO |
+| Cần khách xác nhận | Danh sách ở `docs/questions.md` ("Cần xác nhận") | Khách/PO |
 
 ---
 
