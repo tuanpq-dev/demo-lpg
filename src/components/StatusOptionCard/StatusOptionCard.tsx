@@ -151,8 +151,12 @@ export type StatusOptionGroupProps<T extends string> = {
   value: T;
   onChange: (id: T) => void;
   layout?: StatusOptionLayout;
-  /** Số cột ở ≥ md (mặc định 4; 3 = modal nghiệm thu; 2 = luôn 2 cột – modal "Cập nhật xử lý" gas). Dưới md: 4 → 2 cột, 3 → 1 cột. */
-  columns?: 2 | 3 | 4;
+  /**
+   * Số cột ở ≥ md (mặc định 4; 3 = modal nghiệm thu; 2 = luôn 2 cột – modal "Cập nhật xử lý" gas; 5 = trạng thái xử lý áp
+   * suất, 2 → 3 → 5 cột theo bề rộng; auto = ô co theo chữ, xuống dòng khi hết chỗ – "Theo dõi sau xử lý").
+   * Dưới md: 4 → 2 cột, 3 → 1 cột.
+   */
+  columns?: 2 | 3 | 4 | 5 | 'auto';
   /** aria-describedby cho cả nhóm (cảnh báo/ghi chú dưới nhóm). */
   describedBy?: string;
   /** sm = ô nhỏ + khoảng cách 12px (3 cột trong modal md); md = mặc định (3 cột modal nghiệm thu cách 24/48px). */
@@ -173,8 +177,16 @@ export function StatusOptionGroup<T extends string>({ label, labelledBy, options
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
       className={cn(
-        'grid gap-3',
-        columns === 3 ? cn('grid-cols-1 sm:grid-cols-3', size === 'md' && 'sm:gap-6 lg:gap-12') : columns === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4',
+        columns === 'auto' ? 'flex flex-wrap gap-3' : 'grid gap-3',
+        columns === 'auto'
+          ? ''
+          : columns === 5
+            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+            : columns === 3
+              ? cn('grid-cols-1 sm:grid-cols-3', size === 'md' && 'sm:gap-6 lg:gap-12')
+              : columns === 2
+                ? 'grid-cols-2'
+                : 'grid-cols-2 md:grid-cols-4',
         className,
       )}
     >

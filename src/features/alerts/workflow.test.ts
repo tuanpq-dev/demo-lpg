@@ -40,7 +40,7 @@ const step = { id: 'field-gauge', text: 'Kiểm tra đồng hồ áp suất cơ'
 describe('quy trình chỉ đi tiến', () => {
   test('xác nhận: Chưa xác nhận → Đang xử lý, người xác nhận nhận xử lý + lịch sử', () => {
     const r = acknowledgeAlert(alert(), ctx);
-    expect(r).toMatchObject({ status: 'in-progress', assignee: 'Nguyễn Văn A', acknowledgedAt: ctx.at.toISOString() });
+    expect(r).toMatchObject({ status: 'in-progress', phase: 'inspecting', assignee: 'Nguyễn Văn A', acknowledgedAt: ctx.at.toISOString() });
     expect(r.history).toHaveLength(1);
     expect(r.history![0]).toMatchObject({ kind: 'acknowledge', actor: 'Nguyễn Văn A' });
   });
@@ -97,11 +97,20 @@ describe('hướng dẫn xử lý (checklist)', () => {
   test('tick rồi bỏ tick: lưu theo id bước + 2 dòng lịch sử', () => {
     const a = alert({ status: 'in-progress' });
     const on = toggleGuideStep(a, step, ctx);
-    expect(on.guide).toEqual({ 'field-gauge': { at: ctx.at.toISOString(), by: 'Nguyễn Văn A' } });
+    // Dạng mới có `status` (28/10/2026 – hạng mục kiểm tra dùng chung drawer/modal); dạng cũ {at, by} vẫn đọc là Đạt (inspection.test).
+    expect(on.guide).toEqual({ 'field-gauge': { status: 'pass', at: ctx.at.toISOString(), by: 'Nguyễn Văn A' } });
     const off = toggleGuideStep(on, step, ctx);
     expect(off.guide).toEqual({});
     expect(off.history!.map((h) => h.text)).toEqual(['Đã làm: Kiểm tra đồng hồ áp suất cơ', 'Bỏ đánh dấu: Kiểm tra đồng hồ áp suất cơ']);
     expect(a.guide).toBeUndefined(); // không sửa bản ghi cũ
+  });
+  test('dạng cũ {at, by} = Đạt → bỏ tick được; hạng mục "Có vấn đề"/"Không áp dụng" không đổi ở drawer', () => {
+    const legacy = alert({ status: 'in-progress', guide: { 'field-gauge': { at: ctx.at.toISOString(), by: 'X' } } });
+    expect(toggleGuideStep(legacy, step, ctx).guide).toEqual({});
+    const issue = alert({ status: 'in-progress', guide: { 'field-gauge': { at: ctx.at.toISOString(), by: 'X', status: 'issue', note: 'Kẹt' } } });
+    expect(toggleGuideStep(issue, step, ctx)).toBe(issue);
+    const na = alert({ status: 'in-progress', guide: { 'field-gauge': { at: ctx.at.toISOString(), by: 'X', status: 'na' } } });
+    expect(toggleGuideStep(na, step, ctx)).toBe(na);
   });
 });
 

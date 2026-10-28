@@ -15,6 +15,10 @@ export type ChecklistItemView = {
   active?: boolean;
   /** Giờ hoàn thành đã định dạng, vd "10:15". */
   time?: string;
+  /** (plain) Chip trạng thái bên phải ("Có vấn đề" / "Không áp dụng" – hạng mục kiểm tra cảnh báo). */
+  flag?: { label: string; tone: 'warning' | 'danger' | 'muted' };
+  /** (plain) Khoá riêng mục này (aria-disabled) + gợi ý đọc kèm (vd "Đổi trong Cập nhật xử lý"). */
+  lockedHint?: string;
 };
 
 export type ChecklistProgressView = { done: number; total: number; percent: number };
@@ -86,7 +90,8 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
           {items.map((it) => {
             const id = `${uid}-${it.id}`;
             const metaId = `${id}-meta`;
-            const off = locked || !!it.na;
+            const flagId = `${id}-flag`;
+            const off = locked || !!it.na || !!it.lockedHint;
             return (
               <li key={it.id} className={cn('flex min-h-10 items-center gap-3 rounded-md px-2.5', !off && 'hover:bg-surface-muted/40')}>
                 {/* Khoá = aria-disabled (KHÔNG `disabled`): vẫn Tab tới được, trình đọc đọc dòng gợi ý (aria-describedby);
@@ -102,7 +107,7 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                     if (off) e.currentTarget.checked = it.done;
                     else onToggle?.(it.id);
                   }}
-                  aria-describedby={[it.done && it.time ? metaId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined}
+                  aria-describedby={[it.done && it.time ? metaId : null, it.flag ? flagId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined}
                 />
                 <span
                   aria-hidden="true"
@@ -120,6 +125,14 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                 <label htmlFor={id} className={cn('min-w-0 flex-1 text-md', it.done ? 'text-primary' : 'text-fg', !off && 'cursor-pointer')}>
                   {it.text}
                 </label>
+                {it.flag && (
+                  <Badge variant="tag" tone={it.flag.tone}>
+                    <span id={flagId}>
+                      {it.flag.label}
+                      {it.lockedHint && <span className="sr-only"> – {it.lockedHint}</span>}
+                    </span>
+                  </Badge>
+                )}
                 {it.done && it.time && (
                   <span id={metaId} className="shrink-0 text-sm tabular-nums text-fg-secondary">
                     <span className="sr-only">Đã làm lúc </span>

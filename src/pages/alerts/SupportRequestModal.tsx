@@ -9,6 +9,19 @@ import { STAFF } from '@/mocks/maintenance';
  */
 export const SUPPORT_STAFF = STAFF.filter((p) => p.role === 'manager' || p.department === 'An toàn – HSE');
 
+/** Thẻ người hỗ trợ (dùng chung modal "Yêu cầu hỗ trợ" và ô "Cần hỗ trợ" của modal cập nhật xử lý áp suất). */
+export const supportStaffItems = (collaborators: readonly string[] | undefined): StaffPickerItem[] =>
+  SUPPORT_STAFF.map((p) => ({
+    id: p.name,
+    name: p.name,
+    subtitle: `${p.title} • ${p.department}`,
+    shiftLabel: '',
+    busy: false,
+    active: 0,
+    overdue: 0,
+    meta: collaborators?.includes(p.name) ? 'Đang phối hợp' : undefined,
+  }));
+
 /**
  * "Yêu cầu hỗ trợ" (chưa có thiết kế; dựng theo token, modal TRÊN drawer): chọn MỘT người (StaffList compact) + lý do bắt buộc.
  * Người được chọn thành người phối hợp + một dòng lịch sử. Thông báo thật chưa gửi được (TODO backend) – ghi rõ, không giả vờ
@@ -18,20 +31,7 @@ export function SupportRequestModal({ alert: a, onClose, onConfirm }: { alert: A
   const [person, setPerson] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string>();
-  const items = useMemo<StaffPickerItem[]>(
-    () =>
-      SUPPORT_STAFF.map((p) => ({
-        id: p.name,
-        name: p.name,
-        subtitle: `${p.title} • ${p.department}`,
-        shiftLabel: '',
-        busy: false,
-        active: 0,
-        overdue: 0,
-        meta: a.collaborators?.includes(p.name) ? 'Đang phối hợp' : undefined,
-      })),
-    [a.collaborators],
-  );
+  const items = useMemo(() => supportStaffItems(a.collaborators), [a.collaborators]);
   return (
     <Modal
       open

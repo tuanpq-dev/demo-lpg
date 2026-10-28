@@ -2,7 +2,7 @@
  * Cấu hình theo LOẠI cảnh báo – MỘT chỗ quyết định drawer chi tiết cảnh báo hiển thị gì:
  * panel thông số (`threshold` một ngưỡng · `gas` nhiều mức), số lớn lấy từ bản ghi hay live, thang + bands mức,
  * banner khẩn cấp, nguyên nhân, hướng dẫn xử lý, nút phụ ở chân drawer, kiểu "cập nhật/đóng", mục thu gọn.
- * Không viết cứng trong UI: drawer đọc `ALERT_KINDS[alert.kind]` (thiếu → `generic`). Thêm loại mới: GUIDE mục 4m.
+ * Không viết cứng trong UI: drawer đọc `ALERT_KINDS[alert.kind]` (thiếu → `generic`). Thêm loại mới: docs/guide/alerts.md (4m).
  * Chữ có thể chứa `{device}` (mã thiết bị), `{safetyValve}` (van an toàn của bồn, `SAFETY_VALVES`) và `{nearbySensor}`
  * (cảm biến kề trong cùng khu – `nearbySensor` ở mocks/sensors.ts).
  * `id` của bước là khoá lưu tiến độ tick theo cảnh báo – đổi chữ không làm mất tick, đổi id thì có.
@@ -36,6 +36,25 @@ export type BandTone = 'success' | 'warning-dim' | 'warning' | 'danger';
 /** Một đoạn mức: [from, to) – `to` thiếu = tới hết thang. */
 export type AlertBand = { level: AlertLevel; from: number; to?: number; label: string; tone: BandTone };
 
+/** Trường số liệu của một dòng "Thông số trước và sau xử lý" – lớp dữ liệu tra tag + ngưỡng theo thiết bị (`pressureReadingRows`). */
+export type PressureReadingField = 'pressure' | 'regulatorOut' | 'temperature';
+
+/**
+ * "Cập nhật xử lý" cảnh báo áp suất (modal theo ảnh 28/10/2026 – docs/guide/alerts.md (4o)). Chữ được thay `{device}`, `{tag}`, `{regulator}`,
+ * `{safetyValve}` như hướng dẫn.
+ */
+export type PressureUpdateConfig = {
+  kind: 'pressure-update';
+  /** Dòng thông số; dòng `pressure` là dòng quyết định điều kiện "Đã xử lý". */
+  readings: readonly { id: string; label: string; field: PressureReadingField }[];
+  /** "Kết quả xác minh" (chọn nhiều). role normal = "Hệ thống đã trở về bình thường" (chỉ tick khi đủ điều kiện đóng) · over = mâu thuẫn với normal. */
+  verification: readonly { id: string; text: string; role?: 'normal' | 'over' }[];
+  /** "Vấn đề phát sinh" (chọn một). `none` = mặc định. */
+  issues: readonly { id: string; label: string; needsNote?: boolean; suggestSupport?: boolean }[];
+  /** Theo dõi sau xử lý: số phút (0 = không), mặc định, mục tiêu (< target, đơn vị của cảnh báo). */
+  followUp: { options: readonly number[]; defaultMinutes: number; target: number };
+};
+
 export type AlertKindConfig = {
   label: string;
   /**
@@ -57,9 +76,10 @@ export type AlertKindConfig = {
    * Nút chính khi Đang xử lý: resolve-note = "Đánh dấu đã xử lý" (cần ghi chú) · gas-update = "Cập nhật xử lý" (modal: tiếp
    * tục / đã xử lý xong – chỉ đóng khi live < mức `closeBelow`; mất tín hiệu → bắt buộc số đo lại < mức đó) · fire-update =
    * "Cập nhật xử lý" báo cháy (Tiếp tục / Đã xử lý sự cố / Báo động giả; ghi chú bắt buộc cả 3; chỉ đóng khi đầu báo đã phục
-   * hồi; mất tín hiệu → xác nhận kiểm tra tại chỗ; kết quả đóng lưu `resolution` – thống kê báo động giả).
+   * hồi; mất tín hiệu → xác nhận kiểm tra tại chỗ; kết quả đóng lưu `resolution` – thống kê báo động giả) · pressure-update =
+   * "Cập nhật xử lý" áp suất (modal lớn: trạng thái 5 ô, hạng mục kiểm tra, thông số trước/sau, xác minh, theo dõi – docs/guide/alerts.md (4o)).
    */
-  update: { kind: 'resolve-note' } | { kind: 'gas-update'; closeBelow: AlertLevel } | { kind: 'fire-update' };
+  update: { kind: 'resolve-note' } | { kind: 'gas-update'; closeBelow: AlertLevel } | { kind: 'fire-update' } | PressureUpdateConfig;
   /** Người phụ trách MẶC ĐỊNH (nhóm) khi chưa phân công cá nhân – chỉ hiển thị ("Trực ca"), KHÔNG ghi vào `assignee`. */
   defaultOwner?: string;
   /** Sau khi đóng là "Báo động giả": nút "Tạo yêu cầu bảo trì" với tên điền sẵn (`{device}`) – kiểm tra đầu báo. */
@@ -89,11 +109,39 @@ export type AlertKindConfig = {
   steps: readonly { id: string; text: string }[];
 };
 
-/** Van an toàn theo bồn (ảnh ghi "van PR-101" – dữ liệu dùng PSV-101, CLAUDE.md mục 8). */
+/** Van an toàn theo bồn (ảnh ghi "van PR-101" – dữ liệu dùng PSV-101, docs/figma-diffs.md). */
 export const SAFETY_VALVES: Readonly<Record<string, string>> = { 'V-101': 'PSV-101', 'V-102': 'PSV-102' };
+/** Bộ điều áp sau bồn (ảnh modal cập nhật xử lý áp suất: "PR-101"). PR-102 giả định. */
+export const REGULATORS: Readonly<Record<string, string>> = { 'V-101': 'PR-101', 'V-102': 'PR-102' };
+
+/** Cấu hình "Cập nhật xử lý" áp suất bồn (ảnh `scratch/figma-ref/alert-pressure-update-modal-design.png`). */
+const PRESSURE_UPDATE: PressureUpdateConfig = {
+  kind: 'pressure-update',
+  readings: [
+    { id: 'pressure', label: 'Áp suất {device}', field: 'pressure' },
+    { id: 'regulator-out', label: 'Áp suất sau {regulator}', field: 'regulatorOut' },
+    { id: 'temperature', label: 'Nhiệt độ bồn', field: 'temperature' },
+  ],
+  verification: [
+    { id: 'over-confirmed', text: 'Xác nhận áp suất thực tế vượt ngưỡng', role: 'over' },
+    { id: 'sensor-drift', text: 'Cảm biến {tag} có sai lệch' },
+    { id: 'regulator-fault', text: 'Bộ điều áp {regulator} có bất thường' },
+    { id: 'valve-check', text: 'Van {safetyValve} cần kiểm tra' },
+    { id: 'back-to-normal', text: 'Hệ thống đã trở về bình thường', role: 'normal' },
+  ],
+  // Ảnh có 2 ô "Không có vấn đề phát sinh" trùng nhau → giữ một (docs/figma-diffs.md).
+  issues: [
+    { id: 'none', label: 'Không có vấn đề phát sinh' },
+    { id: 'need-staff', label: 'Cần thêm nhân sự hỗ trợ', suggestSupport: true },
+    { id: 'no-access', label: 'Không thể tiếp cận thiết bị' },
+    { id: 'missing-data', label: 'Thiếu dữ liệu xác minh' },
+    { id: 'other', label: 'Khác', needsNote: true },
+  ],
+  followUp: { options: [0, 15, 30, 60, 120], defaultMinutes: 30, target: 10 },
+};
 
 /** Bands mặc định của khí gas theo ảnh (27/10/2026): 0–10 bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD – CHỜ chốt với
- * khách (dữ liệu cũ ghi ngưỡng 20 % LEL; CLAUDE.md mục 7). */
+ * khách (dữ liệu cũ ghi ngưỡng 20 % LEL; scratch/designer-questions.md). */
 export const GAS_BANDS: readonly AlertBand[] = [
   { level: 'normal', from: 0, to: 10, label: 'Bình thường', tone: 'success' },
   { level: 'level-1', from: 10, to: 20, label: 'Cảnh báo cấp 1', tone: 'warning-dim' },
@@ -104,19 +152,34 @@ export const GAS_BANDS: readonly AlertBand[] = [
 /** Mặc định của panel một ngưỡng (hành vi drawer áp suất trước khi tách cấu hình). */
 const THRESHOLD = { panel: 'threshold', value: 'record', actions: ['assign', 'maintenance'], update: { kind: 'resolve-note' } } as const;
 
-type PlaybookPart = { label: string; gauge?: boolean; numericValue?: false; skills?: readonly StaffSkill[]; causes: readonly string[]; steps: readonly { id: string; text: string }[] };
+type PlaybookPart = {
+  label: string;
+  gauge?: boolean;
+  numericValue?: false;
+  skills?: readonly StaffSkill[];
+  causes: readonly string[];
+  steps: readonly { id: string; text: string }[];
+  /** Ghi đè nút cập nhật (mặc định resolve-note). Chỉ `tank-overpressure` dùng `pressure-update`; `pressure-high` (PT-201) CÓ CHỦ ĐÍCH giữ "Đánh dấu đã xử lý". */
+  update?: AlertKindConfig['update'];
+};
 
 const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, PlaybookPart>> = {
   // Ảnh drawer ALT-00128 (3 nguyên nhân + 3 bước giữ nguyên chữ; "van PR-101" → van an toàn của bồn).
+  // Hướng dẫn xử lý (drawer) = Kết quả kiểm tra thiết bị (modal) – MỘT danh sách (28/10/2026): 6 hạng mục theo ảnh modal;
+  // giữ id cũ field-gauge / verify-valve / cooling-ready để tick cũ không mất. Ảnh "Kiểm tra bộ điều áp PR-" bị cắt → PR-101.
   'tank-overpressure': {
     label: 'Áp suất bồn vượt ngưỡng',
     skills: ['pressure', 'mechanical'],
     causes: ['Van an toàn kẹt', 'Nhiệt độ tăng cao', 'Hệ thống làm mát không kích hoạt'],
     steps: [
-      { id: 'field-gauge', text: 'Kiểm tra đồng hồ áp suất cơ tại hiện trường' },
-      { id: 'verify-valve', text: 'Xác minh trạng thái van {safetyValve}' },
-      { id: 'cooling-ready', text: 'Sẵn sàng kích hoạt hệ thống làm mát / xả áp thủ công' },
+      { id: 'field-gauge', text: 'Đối chiếu {tag} với đồng hồ cơ' },
+      { id: 'regulator', text: 'Kiểm tra bộ điều áp {regulator}' },
+      { id: 'verify-valve', text: 'Kiểm tra van an toàn {safetyValve}' },
+      { id: 'tank-temp', text: 'Kiểm tra nhiệt độ bồn' },
+      { id: 'cooling-ready', text: 'Kiểm tra hệ thống làm mát' },
+      { id: 'pressure-trend', text: 'Theo dõi xu hướng áp suất sau xử lý' },
     ],
+    update: PRESSURE_UPDATE,
   },
   'temperature-low': {
     label: 'Nhiệt độ thấp',
@@ -294,7 +357,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
     defaultOwner: 'Trực ca',
     falseAlarmMaintenance: { title: 'Kiểm tra đầu báo {device}' },
     crossConfirmTitle: 'Nhiều tín hiệu cùng báo, nguy cơ cháy cao',
-    // BẢN NHÁP do dev soạn – chưa có quy trình chính thức của nhà máy (CLAUDE.md mục 7). Số nội bộ: chờ khách cung cấp.
+    // BẢN NHÁP do dev soạn – chưa có quy trình chính thức của nhà máy (scratch/designer-questions.md). Số nội bộ: chờ khách cung cấp.
     emergency: {
       title: 'Quy trình ứng phó cháy',
       draft: 'Bản nháp, cần bộ phận An toàn duyệt',
@@ -317,10 +380,12 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
   },
 };
 
-/** Thay `{device}` / `{safetyValve}` / `{nearbySensor}` trong chữ cấu hình. */
-export function fillPlaybookText(text: string, device: string, vars: { nearbySensor?: string } = {}): string {
+/** Thay `{device}` / `{safetyValve}` / `{regulator}` / `{tag}` / `{nearbySensor}` trong chữ cấu hình. */
+export function fillPlaybookText(text: string, device: string, vars: { nearbySensor?: string; tag?: string } = {}): string {
   return text
     .replace(/\{device\}/g, device)
     .replace(/\{safetyValve\}/g, SAFETY_VALVES[device] ?? 'an toàn của thiết bị')
+    .replace(/\{regulator\}/g, REGULATORS[device] ?? 'của thiết bị')
+    .replace(/\{tag\}/g, vars.tag ?? 'cảm biến áp suất')
     .replace(/\{nearbySensor\}/g, vars.nearbySensor ?? 'cảm biến kề');
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangleIcon, Badge, Button, Checklist, Drawer, EventTimeline, Icon, Textarea, WorkflowStepper, buttonClass, type TimelineEvent } from '@/components';
 import { assetPath } from '@/app/assetRoutes';
@@ -6,6 +6,8 @@ import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { resolveAssetId } from '@/data/assetDetail';
 import { alertDateTimeLabel, alertKind, alertPlaybook } from '@/data/alertDetail';
+import { INSPECTION_STATUS_LABEL, inspectedCount, inspectionItems } from '@/features/alerts/inspection';
+import { ALERT_HOLD_LABEL, followUpLabel, type PressureCheck, type PressureUpdateInput, type PressureUpdateResult } from '@/features/alerts/pressure';
 import { fillPlaybookText } from '@/mocks/alertKinds';
 import { areaLabel } from '@/mocks/areas';
 import type { AlertRecord } from '@/data/alerts';
@@ -33,6 +35,9 @@ import { GasPanel } from './panels/GasPanel';
 import { ThresholdPanel } from './panels/ThresholdPanel';
 import { SupportRequestModal } from './SupportRequestModal';
 
+// Modal lớn chỉ của cảnh báo áp suất → chunk lazy riêng (không vào bundle chính / chunk trang Cảnh báo).
+const PressureUpdateModal = lazy(() => import('./PressureUpdateModal'));
+
 export type AlertDrawerHandlers = {
   onAcknowledge: (id: string) => void;
   /** Phân công / đổi người / cập nhật phân công (modal "Phân công xử lý cảnh báo") – KHÔNG đổi trạng thái. */
@@ -48,6 +53,8 @@ export type AlertDrawerHandlers = {
   onRequestSupport: (id: string, input: { people: readonly string[]; reason: string }) => void;
   /** "Cập nhật xử lý" báo cháy (loại `update.kind = 'fire-update'`). */
   onFireUpdate: (id: string, input: FireUpdateInput, check: FireCheck) => Promise<FireUpdateResult> | FireUpdateResult;
+  /** "Cập nhật xử lý" cảnh báo áp suất (loại `update.kind = 'pressure-update'`) – modal lớn, lazy. */
+  onPressureUpdate: (id: string, input: PressureUpdateInput, check: PressureCheck) => Promise<PressureUpdateResult> | PressureUpdateResult;
 };
 
 export type AlertDetailDrawerProps = AlertDrawerHandlers & {
@@ -63,6 +70,8 @@ export type AlertDetailDrawerProps = AlertDrawerHandlers & {
   canAct: boolean;
   /** Quyền `maintenance:write`. */
   canCreateMaintenance: boolean;
+  /** Người đang thao tác (tự điền "Người kiểm tra" ở modal cập nhật xử lý áp suất). */
+  actor?: string;
 };
 
 /**
@@ -168,8 +177,13 @@ function DrawerHeader({ alert: a, titleId, now }: { alert: AlertRecord; titleId:
           )}
         </p>
       </div>
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <Badge variant="status" value={a.status} size="md" />
+        {a.status === 'in-progress' && a.hold && (
+          <Badge variant="tag" tone="warning" size="md">
+            {ALERT_HOLD_LABEL[a.hold.kind]}
+          </Badge>
+        )}
       </div>
     </div>
   );
@@ -179,7 +193,10 @@ function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: {
   const cfg = alertKind(a);
   const playbook = alertPlaybook(a);
   const steps = alertSteps(a);
-  const guideDone = playbook.steps.filter((s) => a.guide?.[s.id]).length;
+  // Hạng mục kiểm tra = bước hướng dẫn (MỘT nguồn `guide`, đọc qua inspection.ts). Drawer gọn: tick = Đạt; "Có vấn đề" /
+  // "Không áp dụng" hiện chip + khoá (đổi trong modal "Cập nhật xử lý").
+  const items = inspectionItems(playbook.steps, a.guide);
+  const guideDone = inspectedCount(items);
   const collapsed = new Set(cfg.collapsed ?? []);
   const progress = (
     <>
@@ -193,9 +210,16 @@ function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: {
       <Section title="Hướng dẫn xử lý">
         <Checklist
           variant="plain"
-          items={playbook.steps.map((s) => {
-            const done = a.guide?.[s.id];
-            return { id: s.id, text: s.text, done: !!done, time: done ? fmtAt(done.at).slice(0, 5) : undefined };
+          items={items.map((it) => {
+            const flagged = it.status === 'issue' || it.status === 'na';
+            return {
+              id: it.id,
+              text: it.text,
+              done: it.status === 'pass',
+              time: it.status === 'pass' && it.at ? fmtAt(it.at).slice(0, 5) : undefined,
+              flag: flagged ? { label: INSPECTION_STATUS_LABEL[it.status], tone: it.status === 'issue' ? ('warning' as const) : ('muted' as const) } : undefined,
+              lockedHint: flagged ? 'Đổi trạng thái trong "Cập nhật xử lý"' : undefined,
+            };
           })}
           progress={{ done: guideDone, total: playbook.steps.length, percent: playbook.steps.length ? Math.round((guideDone / playbook.steps.length) * 100) : 0 }}
           onToggle={
@@ -365,6 +389,9 @@ function DrawerFooter({
   onGasUpdate,
   onRequestSupport,
   onFireUpdate,
+  onPressureUpdate,
+  actor = 'Admin',
+  now,
   note,
 }: { alert: AlertRecord; linkRef: RefObject<HTMLAnchorElement>; note: NoteDraft } & Omit<AlertDetailDrawerProps, 'alert' | 'onClose'>) {
   const cfg = alertKind(a);
@@ -454,7 +481,7 @@ function DrawerFooter({
         Xác nhận cảnh báo
       </Button>
     ) : canAct && canResolve(a) ? (
-      cfg.update.kind === 'gas-update' || cfg.update.kind === 'fire-update' ? (
+      cfg.update.kind === 'gas-update' || cfg.update.kind === 'fire-update' || cfg.update.kind === 'pressure-update' ? (
         // Nền `info` (#87CFFF) – token có sẵn trùng màu nút trong ảnh gas.
         <Button variant="info" size="lg" className="w-full" onClick={() => setModal('update')}>
           Cập nhật xử lý
@@ -468,6 +495,7 @@ function DrawerFooter({
       <p className="text-center text-base text-success">
         {a.resolution?.kind === 'false-alarm' ? 'Đã đóng – báo động giả' : 'Cảnh báo đã xử lý xong'}
         {a.resolvedAt ? ` lúc ${fmtAt(a.resolvedAt).slice(0, 5)}` : ''}.
+        {followUpLabel(a, now) && <span className="block text-sm text-info">{followUpLabel(a, now)}.</span>}
       </p>
     ) : null;
 
@@ -521,6 +549,23 @@ function DrawerFooter({
             return res;
           }}
         />
+      )}
+      {modal === 'update' && cfg.update.kind === 'pressure-update' && (
+        <Suspense fallback={null}>
+          <PressureUpdateModal
+            alert={a}
+            actor={actor}
+            onClose={() => setModal(null)}
+            onSubmit={async (input, check) => {
+              const res = await onPressureUpdate(a.id, input, check);
+              if (res.ok) {
+                setModal(null);
+                announce(input.state === 'resolved' ? `Đã đánh dấu ${a.code} đã xử lý.` : 'Đã lưu cập nhật xử lý.');
+              }
+              return res;
+            }}
+          />
+        </Suspense>
       )}
       {modal === 'update' && cfg.update.kind === 'gas-update' && (
         <GasUpdateModal

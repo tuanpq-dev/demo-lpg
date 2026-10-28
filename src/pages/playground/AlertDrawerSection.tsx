@@ -11,6 +11,7 @@ import {
 import { alertRecords, type AlertRecord } from '@/mocks/alerts';
 import { gaugeScale, gaugeValueText } from '@/features/alerts/gauge';
 import { applyAlertAssignment } from '@/features/alerts/assign';
+import { pressureUpdate } from '@/features/alerts/pressure';
 import { acknowledgeAlert, addAlertNote, fireUpdate, gasUpdate, requestSupport, resolveAlert, toggleGuideStep } from '@/features/alerts/workflow';
 import { VAPORIZER_AREA_TAGS as FT } from '@/features/live/tags';
 import { liveSimulator } from '@/data/live';
@@ -44,8 +45,35 @@ const SAMPLES: Record<string, { label: string; alert: AlertRecord; maintenance?:
       notes: [{ id: 'n1', author: 'Nguyễn Văn A', at: at('11:02'), text: 'Đồng hồ cơ tại hiện trường 11,6 bar, đang kiểm tra van PSV-101.' }],
       history: [
         { id: 'h1', at: at('10:52'), kind: 'acknowledge', text: 'Xác nhận cảnh báo – Nguyễn Văn A nhận xử lý', actor: 'Nguyễn Văn A' },
-        { id: 'h2', at: at('10:58'), kind: 'guide', text: 'Đã làm: Kiểm tra đồng hồ áp suất cơ tại hiện trường', actor: 'Nguyễn Văn A' },
+        { id: 'h2', at: at('10:58'), kind: 'guide', text: 'Đã làm: Đối chiếu PT-101 với đồng hồ cơ', actor: 'Nguyễn Văn A' },
       ],
+    },
+  },
+  progressHold: {
+    label: 'Đang xử lý – Tạm dừng, hạng mục "Có vấn đề" / "Không áp dụng"',
+    alert: {
+      ...base,
+      status: 'in-progress',
+      phase: 'resolving',
+      assignee: 'Nguyễn Văn A',
+      acknowledgedAt: at('10:52'),
+      hold: { kind: 'paused', reason: 'Chờ vật tư thay bộ điều áp', at: at('11:20') },
+      guide: {
+        'field-gauge': { status: 'pass', at: at('10:58'), by: 'Nguyễn Văn A' },
+        regulator: { status: 'issue', at: at('11:05'), by: 'Nguyễn Văn A', note: 'Kẹt cơ cấu' },
+        'tank-temp': { status: 'na', at: at('11:06'), by: 'Nguyễn Văn A' },
+      },
+    },
+  },
+  doneFollow: {
+    label: 'Hoàn thành – đang theo dõi sau xử lý',
+    alert: {
+      ...base,
+      status: 'done',
+      assignee: 'Nguyễn Văn A',
+      acknowledgedAt: at('10:52'),
+      resolvedAt: at('11:40'),
+      followUp: { minutes: 30, until: new Date(Date.now() + 30 * 60_000).toISOString(), target: 10, unit: 'bar', owner: 'Nguyễn Văn A' },
     },
   },
   done: {
@@ -135,6 +163,12 @@ export function AlertDrawerSection() {
           if (res.ok) setRec(res.record);
           return res;
         }}
+        onPressureUpdate={(_, input, check) => {
+          const res = rec ? pressureUpdate(rec, input, check, ctx()) : ({ ok: false, errors: { state: 'Không có cảnh báo.' } } as const);
+          if (res.ok) setRec(res.record);
+          return res;
+        }}
+        actor="Playground"
       />
 
       {/* Kịch bản tăng/giảm dần chỉ có ở dev (production không đóng gói devScenarios). */}

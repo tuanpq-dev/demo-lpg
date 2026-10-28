@@ -28,6 +28,7 @@ import {
   validateBulkAlertAssign,
   type AlertAssignForm,
 } from '@/features/alerts/assign';
+import { pressureUpdate, type PressureCheck, type PressureUpdateInput, type PressureUpdateResult } from '@/features/alerts/pressure';
 import { appNow } from '@/lib/demoNow';
 import { withUnit } from '@/features/alerts/gauge';
 import type { AlertRecord, AlertStatus } from '@/mocks/alerts';
@@ -293,6 +294,15 @@ export async function updateFireAlert(
   return res;
 }
 
+/** "Cập nhật xử lý" cảnh báo áp suất – `check` = điều kiện đóng tính từ live lúc lưu (hàm thuần kiểm lại toàn bộ form). */
+export async function updatePressureAlert(id: string, input: PressureUpdateInput, check: PressureCheck, by = 'Admin'): Promise<PressureUpdateResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, errors: { state: 'Không tìm thấy cảnh báo.' } };
+  const res = pressureUpdate(a, input, check, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
+}
+
 /** Yêu cầu hỗ trợ: thêm người phối hợp + lịch sử. TODO(backend): gửi thông báo thật (đẩy/SMS) – UI ghi rõ "chưa gửi". */
 export async function requestAlertSupport(id: string, input: { people: readonly string[]; reason: string }, by = 'Admin') {
   const ctx = ctxOf(by);
@@ -329,6 +339,7 @@ export function useAlerts() {
     noteMaintenance: noteMaintenanceCreated,
     gasUpdate: updateGasAlert,
     fireUpdate: updateFireAlert,
+    pressureUpdate: updatePressureAlert,
     requestSupport: requestAlertSupport,
   };
 }

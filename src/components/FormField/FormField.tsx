@@ -61,9 +61,11 @@ export function FormField({ label, required, hint, error, children, labelVariant
 }
 
 /** Class chung cho ô nhập (TextField/Textarea/DatePicker) – cùng kiểu SearchInput 70:3018. */
-export const inputClass = (invalid: boolean) =>
+/** `text` = màu chữ trong ô (mặc định `text-fg`; NumberField `tone` truyền `text-warning`/`text-danger-text`). */
+export const inputClass = (invalid: boolean, text = 'text-fg') =>
   cn(
-    'w-full rounded-lg border bg-surface-sunken px-3 text-base text-fg placeholder:text-fg-secondary/60',
+    'w-full rounded-lg border bg-surface-sunken px-3 text-base placeholder:text-fg-secondary/60',
+    text,
     'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
     invalid ? 'border-danger focus-visible:border-danger' : 'border-line hover:border-accent/40 focus-visible:border-accent/60',
   );

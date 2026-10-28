@@ -29,6 +29,8 @@ export const liveBase: Record<string, LiveValue> = {
   [V101_TAGS.waterLevel]: 5.2,
   [V101_TAGS.pressure]: 9.2,
   [V101_TAGS.temperature]: 28.5,
+  // Áp suất sau bộ điều áp PR-101 (tag giả định PT-103 – ảnh modal cập nhật xử lý áp suất: 4.2 bar).
+  'PT-103': 4.2,
   [VAPORIZER_TAGS.temperature]: 45.6,
   [VAPORIZER_TAGS.inletPressure]: 4.1,
   'PT-202': 3.8,
@@ -95,6 +97,7 @@ export const liveJitter: Record<string, number> = {
   [V101_TAGS.waterLevel]: 0.05,
   [V101_TAGS.pressure]: 0.1,
   [V101_TAGS.temperature]: 0.4,
+  'PT-103': 0.05,
   [VAPORIZER_TAGS.temperature]: 1.2,
   [VAPORIZER_TAGS.inletPressure]: 0.15,
   'PT-202': 0.12,

@@ -46,6 +46,7 @@ import { CreateMaintenanceModal } from '../maintenance/CreateMaintenanceModal';
 import { AlertAssignModal } from './AlertAssignModal';
 import { AlertBulkCompleteModal } from './AlertBulkCompleteModal';
 import { AlertDetailDrawer } from './AlertDetailDrawer';
+import { ALERT_HOLD_LABEL, followUpLabel } from '@/features/alerts/pressure';
 
 const getAlertId = (a: AlertRecord) => a.id;
 const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
@@ -84,7 +85,7 @@ function exportCsv(rows: readonly AlertRecord[]) {
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
-  const { status, data, error, refetch, acknowledge, complete, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, requestSupport } = useAlerts();
+  const { status, data, error, refetch, acknowledge, complete, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, pressureUpdate, requestSupport } = useAlerts();
   const maintenance = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
@@ -167,7 +168,26 @@ export default function AlertsPage() {
     { id: 'device', header: 'Thiết bị', width: 72, className: 'text-info' },
     { id: 'area', header: 'Khu vực', width: 100 },
     { id: 'reading', header: 'Giá trị/Ngưỡng', width: 116, cell: (a) => <span className={readingTone[a.severity]}>{tableValue(a)}</span> },
-    { id: 'status', header: 'Trạng thái', width: 120, cell: (a) => <Badge variant="status" value={a.status} /> },
+    {
+      id: 'status',
+      header: 'Trạng thái',
+      width: 120,
+      // Cờ Tạm dừng / Cần hỗ trợ + "Đang theo dõi đến HH:MM, mục tiêu …" (cảnh báo áp suất đã đóng có theo dõi – docs/guide/alerts.md (4o)).
+      cell: (a) => {
+        const follow = followUpLabel(a, now);
+        return (
+          <span className="flex flex-col items-start gap-1">
+            <Badge variant="status" value={a.status} />
+            {a.status === 'in-progress' && a.hold && (
+              <Badge variant="tag" tone="warning">
+                {ALERT_HOLD_LABEL[a.hold.kind]}
+              </Badge>
+            )}
+            {follow && <span className="text-xs text-info">{follow}</span>}
+          </span>
+        );
+      },
+    },
     { id: 'assignee', header: 'Người xử lý', width: 110, className: 'text-fg opacity-75', cell: (a) => a.assignee ?? '–' },
   ];
 
@@ -335,6 +355,8 @@ export default function AlertsPage() {
         onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
         onGasUpdate={(id, input, check) => gasUpdate(id, input, check, actor)}
         onFireUpdate={(id, input, check) => fireUpdate(id, input, check, actor)}
+        onPressureUpdate={(id, input, check) => pressureUpdate(id, input, check, actor)}
+        actor={actor}
         onRequestSupport={(id, input) => void requestSupport(id, input, actor)}
       />
 

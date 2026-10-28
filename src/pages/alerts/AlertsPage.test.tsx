@@ -68,7 +68,8 @@ describe('drawer chi tiết cảnh báo', () => {
     expect(meter).toHaveAttribute('aria-valuetext', '11.8 bar, vượt ngưỡng 10.5 bar');
     // Playbook theo loại
     expect(within(d).getByText('Van an toàn kẹt')).toBeInTheDocument();
-    const locked = within(d).getByRole('checkbox', { name: 'Xác minh trạng thái van PSV-101' });
+    // Hướng dẫn = hạng mục kiểm tra dùng chung modal cập nhật xử lý (28/10/2026): chữ theo ảnh modal ("Kiểm tra van an toàn PSV-101").
+    const locked = within(d).getByRole('checkbox', { name: 'Kiểm tra van an toàn PSV-101' });
     expect(locked).toHaveAttribute('aria-disabled', 'true');
     expect(locked).toHaveAccessibleDescription('Xác nhận cảnh báo để bắt đầu xử lý.');
     // Tiến trình
