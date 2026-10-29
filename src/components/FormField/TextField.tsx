@@ -95,13 +95,33 @@ export type DatePickerProps = Omit<Common, 'value' | 'onChange'> & {
   disabled?: boolean;
   /** Kiểu nhãn (FormField `labelVariant`) – "section" = nhãn 18px như tiêu đề mục (modal nghiệm thu). */
   labelVariant?: 'field' | 'section';
+  /** Ẩn nhãn (chỉ còn aria-label) – ô lọc ngày trong thanh lọc bảng (màn Báo cáo). */
+  hideLabel?: boolean;
 };
 
 /**
  * Chọn ngày – dùng <input type="date"> gốc (bàn phím, trình đọc màn hình, lịch của hệ điều hành),
  * style theo token; `color-scheme: dark` để lịch bật lên theo nền tối.
  */
-export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date', labelVariant }: DatePickerProps) {
+export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date', labelVariant, hideLabel }: DatePickerProps) {
+  if (hideLabel) {
+    // Bọc div: `className` (độ rộng) đặt ở khung, ô nhập luôn w-full (cn không gộp class trùng loại).
+    return (
+      <div className={className}>
+        <input
+          type={type}
+          aria-label={label}
+          value={value}
+          min={min}
+          max={max}
+          disabled={disabled}
+          required={required}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(inputClass(false), 'h-[35px] [color-scheme:dark]')}
+        />
+      </div>
+    );
+  }
   return (
     <FormField label={label} required={required} hint={hint} error={error} className={className} labelVariant={labelVariant}>
       {({ id, describedBy, invalid }) => (

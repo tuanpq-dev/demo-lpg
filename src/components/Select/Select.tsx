@@ -20,6 +20,8 @@ export type SelectProps<V extends string = string> = {
    * "Khu vực ( Tất cả khu vực )" như Figma 65:1602.
    */
   allLabel?: string;
+  /** filter: chưa chọn → trigger chỉ hiện nhãn (ẩn "( Tất cả )") dù có `allLabel` – thanh lọc màn Báo cáo. */
+  hideAllInTrigger?: boolean;
   disabled?: boolean;
   /** Căn menu theo cạnh trái/phải của trigger. */
   align?: 'start' | 'end';
@@ -60,6 +62,7 @@ export function Select<V extends string = string>({
   value,
   onChange,
   allLabel,
+  hideAllInTrigger,
   disabled,
   align = 'start',
   side = 'bottom',
@@ -93,7 +96,7 @@ export function Select<V extends string = string>({
         : label
       : selected && selected.value !== null
       ? `${label} ( ${selected.label} )`
-      : allLabel
+      : allLabel && !hideAllInTrigger
         ? `${label} ( ${allLabel} )`
         : label;
 

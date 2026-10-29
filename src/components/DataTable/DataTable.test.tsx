@@ -44,3 +44,26 @@ describe('DataTable – chọn tất cả', () => {
     expect(screen.getByRole('columnheader', { name: 'Tên' })).toBeInTheDocument();
   });
 });
+
+describe('DataTable – số dòng mỗi trang', () => {
+  test('ô chọn có nhãn, đổi giá trị → onPageSizeChange(số)', async () => {
+    const user = userEvent.setup();
+    const sizes: number[] = [];
+    render(
+      <DataTable
+        label="Thiết bị"
+        columns={[{ id: 'name', header: 'Tên' }]}
+        rows={rows}
+        getRowId={(r) => r.id}
+        pagination={{ page: 1, pageSize: 10, total: 3, onPageChange: () => {}, pageSizeOptions: [10, 20], onPageSizeChange: (n) => sizes.push(n) }}
+      />,
+    );
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Số dòng mỗi trang' }), '20');
+    expect(sizes).toEqual([20]);
+  });
+
+  test('không truyền pageSizeOptions → không có ô chọn', () => {
+    render(<DataTable label="Thiết bị" columns={[{ id: 'name', header: 'Tên' }]} rows={rows} getRowId={(r) => r.id} pagination={{ page: 1, pageSize: 10, total: 3, onPageChange: () => {} }} />);
+    expect(screen.queryByRole('combobox', { name: 'Số dòng mỗi trang' })).not.toBeInTheDocument();
+  });
+});

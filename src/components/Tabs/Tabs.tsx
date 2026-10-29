@@ -10,6 +10,8 @@ export type TabItem = {
   count?: number;
   /** neutral (mặc định), info ("Đang thực hiện"), danger ("Quá hạn"). */
   countTone?: CountTone;
+  /** Số tối đa trước khi thành "99+" (mặc định 99; màn Báo cáo hiện đủ "176"). */
+  countMax?: number;
   disabled?: boolean;
 };
 
@@ -59,7 +61,7 @@ export function Tabs({ items, value, onChange, label, panelId, className }: Tabs
             )}
           >
             {item.label}
-            {item.count !== undefined && <Badge variant="count" value={item.count} tone={item.countTone} />}
+            {item.count !== undefined && <Badge variant="count" value={item.count} tone={item.countTone} max={item.countMax} />}
           </button>
         );
       })}

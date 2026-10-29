@@ -64,10 +64,10 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
 | Button | `src/components/Button/Button.tsx` | `variant` (primary/**danger** – nền `danger-solid`/**info** – nền `info`, "Cập nhật xử lý" gas/ghost/outline/subtle/plain/icon/toolbar/overlay/link), `size` (sm/md/**lg** 44px), `icon`, `pressed`; `buttonClass(variant, size)` cho `<Link>` trông như nút | mọi trang | `#primitives`, `#maintenance-detail`, `#alert-drawer` |
-| Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count · tag – `tone` neutral/primary/muted/success/warning/danger, `size`), `value` | Cảnh báo, Bảo trì | `#primitives`, `#maintenance-detail`, `#progress-update`, `#review` |
+| Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count – `tone` neutral/info/**warning**/danger · tag – `tone` neutral/primary/muted/success/warning/danger, `size`), `value` | Cảnh báo, Bảo trì, Báo cáo | `#primitives`, `#maintenance-detail`, `#progress-update`, `#review` |
 | StatusDot | `src/components/StatusDot/StatusDot.tsx` | `status`, `shape`, `pulse`, `label` | `src/app/HeaderActions.tsx` | `#primitives` |
 | StatusPill | `src/components/StatusPill/StatusPill.tsx` | `tone` (+ `neutral`), `size` (md 36px / sm badge), `pulse`, `children` | Tổng quan, Chi tiết tài sản | `#layout`, `#asset` |
-| Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerEnd` (phần tử tuỳ ý bên phải header), `headerVariant` (bar/plain/divided), `tone`, `padding`, `bodyClassName`; header tự xuống dòng khi hẹp | mọi trang | `#primitives` |
+| Card | `src/components/Card/Card.tsx` | `title`, `icon`, `action`, `headerEnd` (phần tử tuỳ ý bên phải header), `headerVariant` (bar/plain/divided), `tone` (+ `primary`/`warning`/`success-vivid` – viền KPI Báo cáo), `padding`, `bodyClassName`; header tự xuống dòng khi hẹp | mọi trang | `#primitives` |
 | Divider | `src/components/Divider/Divider.tsx` | `orientation`, `tone` | trong AppHeader, DetailDrawer | `#primitives` |
 | ProgressBar | `src/components/ProgressBar/ProgressBar.tsx` | `value`, `max`, `tone` (+ `primary`), `size`, `label` (bắt buộc – tên truy cập) | Bảo trì, trong KpiCard/CategoryBarList | `#primitives` |
 | Icon (+ TempIcons, EditorIcons) | `src/components/Icon/Icon.tsx` | `name` (IconName), `box`, `label` | mọi trang | `#primitives`, `#editor` |
@@ -77,7 +77,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
 | NavTabs, NavMenu | `src/components/NavTabs/NavTabs.tsx` | `items`, `value`, `onChange` · NavTabs: đủ chữ ≥ `wide`, chỉ icon 1280–1519 · NavMenu: nút xổ danh sách < `xl` | trong AppHeader | `#navigation` |
-| Tabs | `src/components/Tabs/Tabs.tsx` | `items` (count, countTone), `value`, `onChange`, `panelId` | Cảnh báo, Bảo trì, Editor | `#navigation` |
+| Tabs | `src/components/Tabs/Tabs.tsx` | `items` (count, countTone, `countMax` – mặc định 99), `value`, `onChange`, `panelId` | Cảnh báo, Bảo trì, Editor, Báo cáo | `#navigation` |
 | SegmentedControl | `src/components/SegmentedControl/SegmentedControl.tsx` | `options`, `value`, `onChange`, `variant`, `size` | form Bảo trì, PlantMap | `#navigation` |
 | Avatar | `src/components/Avatar/Avatar.tsx` | `name`, `size` sm 24 / md 32 / lg 40; `initials()` dùng chung với NotesThread (cùng người → cùng chữ, "Nguyễn Văn A" → "NA") | Combobox (avatar), thẻ nhân sự | `#assign` |
 | Switch | `src/components/Switch/Switch.tsx` | `label`, `description`, `checked`, `onChange` – `role="switch"` + `aria-checked`, bật = primary | Modal phân công | `#assign` |
@@ -85,9 +85,9 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | StaffFilters | `src/components/StaffPicker/StaffFilters.tsx` | `search` (ô tìm), phòng ban / ca (Select), `onShiftOnly` (Switch "Chỉ người đang trong ca") – nút lọc = disclosure (`aria-expanded`, tên kèm số bộ lọc đang bật), vùng lọc mở ngay dưới | Modal phân công cảnh báo | `#alert-assign` |
 | AssignNotices | `src/components/StaffPicker/AssignNotices.tsx` | `warnings` ({ id, label, action? }) không chặn – vùng aria-live polite CHỈ chữ, khối nhìn thấy có nút; `issues` chặn → khối `id={blockId}` cho `aria-describedby` của nút xác nhận | Hai modal phân công | `#assign`, `#alert-assign` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
-| Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel` | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
+| Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel`, `hideAllInTrigger` (ô lọc chưa chọn chỉ hiện nhãn) | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |
-| FormField + TextField, Textarea, DatePicker | `src/components/FormField/FormField.tsx`, `src/components/FormField/TextField.tsx` | `label`, `value`, `onChange`, `required`, `hint`, `error`, `labelVariant` (field/section – nhãn 18px như tiêu đề mục; DatePicker cũng có) | form Bảo trì, Editor | `#forms` |
+| FormField + TextField, Textarea, DatePicker | `src/components/FormField/FormField.tsx`, `src/components/FormField/TextField.tsx` | `label`, `value`, `onChange`, `required`, `hint`, `error`, `labelVariant` (field/section – nhãn 18px như tiêu đề mục; DatePicker cũng có), DatePicker `hideLabel` (ô lọc ngày – chỉ aria-label) | form Bảo trì, Editor | `#forms` |
 | NumberField, Vec3Field | `src/components/FormField/NumberField.tsx` | `value`, `onChange` (chốt khi Enter/blur – chỉ khi đã gõ; ↑/↓ chốt ngay), `min`, `max`, `integer`, `unit`, `onClear`, `tone` (default/warning/danger – màu số theo ngưỡng), `align` (start/center) | Editor, modal cập nhật xử lý áp suất | `#editor`, `#alert-update` |
 | Checkbox | `src/components/Checkbox/Checkbox.tsx` | `checked`, `onChange`, `indeterminate`, `label`, `showLabel`, `variant="card"` (ô viền cả dòng, chọn = viền + nền primary nhạt; khoá bằng `aria-disabled` – vẫn focus, không đổi; `aria-readonly` = giá trị do hệ thống quyết định, không đổi được – điều kiện hệ thống ở modal đóng cảnh báo) | trong DataTable, form Bảo trì, Editor, "Kết quả xác minh" | `#editor`, `#alert-update` |
 | ChecklistEditor | `src/components/ChecklistEditor/ChecklistEditor.tsx` | `items`, `onChange`, `templates` | form Bảo trì | `#forms` |
@@ -106,7 +106,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ; `emphasis` = ô thông tin modal tiến độ; `align="center"` + `footnote` = thông số modal nghiệm thu; `valueSize="lg"` = số 24px đậm + đơn vị 16px, nền nhạt – "Thông số cảnh báo"), `tone` thêm `primary` | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì | `#business`, `#asset`, `#maintenance-detail` |
+| KpiCard | `src/components/KpiCard/KpiCard.tsx` | `label`, `value`, `unit`, `sub`, `variant`, `tone`, `progress`, `action`, `signalLost`, `dense` (thẻ ~102px, dòng phụ 11px), `hint` + `hintIcon` (định nghĩa: tooltip + đọc kèm nhãn), `size="sm"` (ô số liệu nhỏ; `emphasis` = ô thông tin modal tiến độ; `align="center"` + `footnote` = thông số modal nghiệm thu; `valueSize="lg"` = số 24px đậm + đơn vị 16px, nền nhạt – "Thông số cảnh báo"), `tone` thêm `primary`, `outlined` (compact: viền theo MỌI tone – KPI Báo cáo) | qua `src/app/kpi.tsx`; Chi tiết tài sản, Chi tiết bảo trì, Báo cáo | `#business`, `#asset`, `#maintenance-detail` |
 | SystemHealthCard | `src/components/SystemHealthCard/SystemHealthCard.tsx` | `value`, `caption`, `stats` | Tổng quan | `#business` |
 | AlertItem | `src/components/AlertItem/AlertItem.tsx` | dữ liệu `AlertItemData` + `highlighted`, `onClick`, `layout` (stacked / inline = icon + nội dung + giờ một dòng), `tone` (danger/warning/success) | Tổng quan, Chi tiết tài sản | `#business`, `#asset` |
 | AlertCard | `src/components/AlertCard/AlertCard.tsx` | dữ liệu `AlertCardData` + `onClick(id)`; `variant="compact"` + `valueLabel` + `footer` (link) | Cảnh báo, Chi tiết bảo trì | `#business`, `#maintenance-detail` |
@@ -128,8 +128,8 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | AreaTrendChart, LineTrendChart | `src/components/TrendChart/TrendChart.tsx` | `data` (TrendPoint[]), `domain`, `unit`, `format` | Tổng quan | `#charts` |
 | CategoryBarList | `src/components/CategoryBarList/CategoryBarList.tsx` | `items`, `max`, `unit` | Tổng quan | `#charts` |
 | DonutGauge | `src/components/DonutGauge/DonutGauge.tsx` | `segments`, `total`, `totalLabel`, `center` ({ value, caption, tone } thay chữ giữa), `ringWidth`, `label` (aria) | Tổng quan, Chi tiết tài sản | `#charts`, `#asset` |
-| FilterBar | `src/components/FilterBar/FilterBar.tsx` | `search`, `filters`, `values`, `onValuesChange`, `onAdvancedFilter` | Cảnh báo, Bảo trì | `#navigation` |
-| DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `label` (→ `<caption>`), `selectable`, `selectedIds`, `rowActions`, `pagination`, `minWidth` (cuộn ngang trong khung), `stickyFirst`, `stickyActions`, `onRowClick` (chuột – bỏ qua nút/link/ô chọn trong hàng) | Cảnh báo, Bảo trì | `#charts` |
+| FilterBar | `src/components/FilterBar/FilterBar.tsx` | `search`, `filters`, `values`, `onValuesChange`, `onAdvancedFilter`, `layout` (split / inline – xếp từ trái, ô tìm 255px), `leading` (ô sau tìm kiếm), `onClear` + `clearDisabled` (link "Xóa bộ lọc") | Cảnh báo, Bảo trì, Báo cáo | `#navigation` |
+| DataTable (+ TableActionButton) | `src/components/DataTable/DataTable.tsx` | `columns`, `rows`, `getRowId`, `label` (→ `<caption>`), `selectable`, `selectedIds`, `rowActions`, `pagination`, `minWidth` (cuộn ngang trong khung), `stickyFirst`, `stickyActions`, `onRowClick` (chuột – bỏ qua nút/link/ô chọn trong hàng), `pagination.pageSizeOptions` + `onPageSizeChange` ("Số dòng mỗi trang") | Cảnh báo, Bảo trì, Báo cáo | `#charts` |
 | Pagination | `src/components/Pagination/Pagination.tsx` | `page`, `pageCount`, `onPageChange` | trong DataTable | `#charts` (qua DataTable) |
 
 **GĐ5D – Chi tiết tài sản** (ảnh `scratch/figma-ref/asset-v101-design.png`, chưa có node Figma)
@@ -163,6 +163,15 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | UploadTile | `src/components/UploadTile/UploadTile.tsx` | `onFiles(File[])`, `accept`, `multiple`, `hint` (đọc kèm), `label` | Modal tiến độ, modal cập nhật xử lý áp suất | `#progress-update`, `#alert-update` |
 | InspectionTable | `src/components/InspectionTable/InspectionTable.tsx` | `caption` (sr-only `<caption>` + tên vùng cuộn), `rows` ({ id, text, status, by, time, note, error }), `statusOptions`, `onStatusChange`, `onNoteChange`, `readOnly` – `th scope`, ô chọn tên "Trạng thái: <hạng mục> <giá trị>", ghi chú inline tên "Ghi chú: <hạng mục>", cuộn ngang dưới 760 px | Modal cập nhật xử lý (khung chung) | `#alert-update` |
 | BeforeAfterReadings | `src/components/BeforeAfterReadings/BeforeAfterReadings.tsx` | `label`, `rows` ({ id, label, limit, unit, before, after, beforeTone/afterTone danger/warning/normal, editable, afterPlaceholder, afterText (giá trị chữ của tag trạng thái, vd đầu báo khói) }), `onAfterChange`, `footer` – màu kèm chữ ẩn "(vượt ngưỡng…)" | Modal cập nhật xử lý (khung chung) | `#alert-update` |
+
+**Báo cáo định kỳ** (ảnh `scratch/figma-ref/reports-*.png`, chưa có node Figma) – luồng: docs/guide/reports.md
+
+| Tên | File | Props chính | Dùng ở | Playground |
+|---|---|---|---|---|
+| MetricListCard | `src/components/MetricListCard/MetricListCard.tsx` | `title`, `count` ({ value, tone, label ẩn }), `progress` ({ label, value, max, valueText } – thanh + %), `rows` ({ id, label, value, tone default/success/warning/danger }) – `<dl>`, `action` (link cuối, căn phải) | Báo cáo ("Chờ xác nhận", "Tiến độ tháng") | `#reports` |
+| ScheduleList | `src/components/ScheduleList/ScheduleList.tsx` | `items` ({ id, date, weekday, day, title, meta, dateLabel đọc thay ô ngày }), `onItemClick`, `emptyState` | Báo cáo ("Lịch báo cáo sắp tới") | `#reports` |
+| ActionItemList | `src/components/ActionItemList/ActionItemList.tsx` | `items` ({ id, tone danger/warning, subject đậm, message }), `actionLabel` ("Xử lý ngay" + mã ẩn), `onAction`, `emptyState` | Báo cáo ("Cần xử lý hôm nay") | `#reports` |
+| Khối trang báo cáo (src/pages/reports/shared) | `ReportKpiRow`, `ReportSummaryCards`, `ReportTableSection`, `useReportTable`, `ReportBadges` | Ghép cho mọi màn báo cáo định kỳ – xem docs/guide/reports.md (5O-1) | Báo cáo | `#reports` (badge) |
 
 ---
 
@@ -231,7 +240,8 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | FormField (+TextField, Textarea, DatePicker, NumberField, Vec3Field) | Nhãn/lỗi/gợi ý chung (`labelVariant="section"` = nhãn 18px như tiêu đề mục) · ô nhập · date/datetime-local · ô số (chốt khi Enter/blur/↑↓, kẹp min/max, integer, unit, `onClear` = về mặc định, `hideLabel`/`size sm`/`prefix`) · 3 ô X/Y/Z (`only` = chỉ hiện một số trục, vd `[0, 2]`) |
 | Checkbox, ChecklistEditor, FileDropzone | Checkbox (indeterminate; `showLabel` = nhãn chữ bên cạnh) · checklist kéo thả/Alt+↑↓/mẫu · kéo thả tệp |
 | TreeView | Cây chọn nhiều (ARIA tree): Ctrl/⌘ đảo, Shift dải, phím ↑↓←→ Home End Space Enter, F2/double-click đổi tên (trả lỗi → giữ ô), `renderActions` bên phải dòng; không controlled thì nhớ nhánh đóng |
-| FilterBar, DataTable, Pagination | Thanh lọc · bảng (chọn dòng, header sticky, thao tác, rỗng, `<caption>` từ `label`, `minWidth` cuộn ngang trong khung, `stickyFirst`/`stickyActions`) · phân trang |
+| MetricListCard, ScheduleList, ActionItemList | Thẻ nhãn–số (+ thanh tiến độ, chip đếm, link) · lịch có ô ngày · hộp việc cần xử lý (danger/warning) – màn Báo cáo |
+| FilterBar, DataTable, Pagination | Thanh lọc (`layout` split/inline, "Xóa bộ lọc") · bảng (`pageSizeOptions`, (chọn dòng, header sticky, thao tác, rỗng, `<caption>` từ `label`, `minWidth` cuộn ngang trong khung, `stickyFirst`/`stickyActions`) · phân trang |
 | AppHeader, PageHeader, AppLayout | Header 60px (NavTabs ≥ `xl`, NavMenu < `xl`; `userMenu` + `onUserMenuSelect` → menu tài khoản, vd Đăng xuất; `user.detail` chỉ hiện trong menu) · breadcrumb/tiêu đề/actions · layout full/sidebar 326px/`workspace` (cao đúng 1 màn hình, nội dung tự cuộn – /editor); nội dung tối đa `max-w-content` |
 | KpiCard, SystemHealthCard | KPI (default/danger/with-progress/compact, `signalLost` → "—" + "Mất tín hiệu", `dense` thẻ ~102px, `hint`/`hintIcon` định nghĩa ⓘ) · độ tin cậy hệ thống |
 | AlertItem, AlertCard, PriorityTaskCard | Dòng cảnh báo sidebar (`layout="inline"` + `tone` = icon/nội dung/giờ một dòng – "Cảnh báo liên quan") · thẻ cảnh báo ưu tiên (`variant="compact"` + `valueLabel` + `footer` – chi tiết bảo trì) · thẻ việc bảo trì ưu tiên |

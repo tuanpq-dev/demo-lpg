@@ -79,7 +79,8 @@ export type BadgeProps = CommonProps &
       }
   );
 
-export type CountTone = 'neutral' | 'info' | 'danger';
+/** warning = "Chờ xác nhận" (thẻ báo cáo – ảnh màn Báo cáo). */
+export type CountTone = 'neutral' | 'info' | 'warning' | 'danger';
 /**
  * neutral = nền chip + chữ phụ · primary = viền + chữ primary (đang làm) · muted = mờ (không áp dụng) ·
  * success = "Đủ điều kiện gửi nghiệm thu" · warning = "Tạm dừng", "Chưa tải lên máy chủ" · danger = "Gặp sự cố" (chữ `danger-text`, nền đỏ nhạt – nổi bật).
@@ -104,12 +105,14 @@ const countClass: Record<'sm' | 'md', Record<CountTone, string>> = {
   sm: {
     neutral: 'bg-surface-chip text-fg-secondary',
     info: 'bg-info/20 text-info',
+    warning: 'bg-warning/15 text-warning',
     // Nền nhạt danger/10 → chữ danger-text 5.1:1 (nền /20 cũ chỉ 4.4:1).
     danger: 'bg-danger/10 text-danger-text',
   },
   md: {
     neutral: 'bg-surface-chip text-fg-secondary',
     info: 'bg-info/15 text-info',
+    warning: 'bg-warning/15 text-warning',
     danger: 'bg-danger-strong/15 text-danger-text',
   },
 };
@@ -117,6 +120,7 @@ const countClass: Record<'sm' | 'md', Record<CountTone, string>> = {
 const countBorder: Record<CountTone, string> = {
   neutral: 'border-line',
   info: 'border-info/60',
+  warning: 'border-warning/60',
   danger: 'border-danger/60',
 };
 

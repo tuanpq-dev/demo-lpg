@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { Card } from '../Card';
+import { Card, type CardTone } from '../Card';
 import { InfoIcon, SignalLostIcon } from '../Icon';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
 
@@ -50,7 +50,10 @@ export type KpiCardProps = {
    * tuỳ chọn). Không đổi kích thước số.
    */
   dense?: boolean;
-  /** Viền theo tone (KPI "Quá hạn" 70:5058) – chỉ áp dụng cho compact. */
+  /**
+   * Viền theo tone – chỉ áp dụng cho compact: danger (KPI "Quá hạn" 70:5058), primary/info, warning, success
+   * (5 KPI màn Báo cáo – ảnh thiết kế); neutral → viền line-card.
+   */
   outlined?: boolean;
   /** compact: viền line-card (Bảo trì) thay vì line/30 (Cảnh báo). */
   strongBorder?: boolean;
@@ -86,6 +89,16 @@ const valueTone: Record<KpiTone, string> = {
   danger: 'text-danger-text',
   info: 'text-info',
   primary: 'text-primary',
+};
+
+/** Viền thẻ compact `outlined` theo tone. */
+const outlineTone: Record<KpiTone, CardTone> = {
+  neutral: 'strong',
+  success: 'success-vivid',
+  warning: 'warning',
+  danger: 'danger',
+  info: 'primary',
+  primary: 'primary',
 };
 
 const subToneClass: Record<KpiSubTone, string> = {
@@ -189,8 +202,8 @@ export function KpiCard({
     ? 'danger'
     : variant === 'with-progress'
       ? 'success'
-      : compact && outlined && tone === 'danger'
-        ? 'danger'
+      : compact && outlined
+        ? outlineTone[tone]
         : compact && strongBorder
           ? 'strong'
           : 'default';

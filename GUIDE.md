@@ -28,6 +28,7 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 | `/overview?map=3d&focus=V-101` | Mở 3D và bay tới object (thêm chế độ xem "<nhãn object>") – nút "Xem trên bản đồ" của trang chi tiết |
 | `/map` · `/map/V-101` | Tab "Bản đồ nội khu": `/map` mở thẳng chi tiết "Bồn LPG V-101" (như ảnh 5D). `/map/v-101` → `/map/V-101`; mã lạ → "Không tìm thấy tài sản"; `/operations/V-101` (link cũ) → `/map/V-101`; `?hide=alert,sensor` ẩn loại sự kiện; `?create=1` mở modal tạo yêu cầu bảo trì |
 | `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
+| `/reports?now=2026-06-24T18:30` | Báo cáo vận hành định kỳ, dữ liệu gần đúng ảnh thiết kế (`?now=` chỉ dev) – docs/guide/reports.md |
 | `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
 - Deploy (Netlify): `netlify.toml` (build `npm run build`, publish `dist`, Node 20, chuyển `/*` → `/index.html` status 200) – không thêm file `_redirects` vào `public/` để tránh 2 nguồn cấu hình.
@@ -60,10 +61,10 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 |---|---|---|
 | `src/main.tsx` | Danh sách route, lazy-load trang | Thêm trang / đổi đường dẫn |
 | `src/app/` | `Page.tsx` (layout + header có router), `navigation.ts` (menu), `useTableFilters.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `AssetModelPanel.tsx` (mô hình 3D tài sản + ảnh dự phòng), `editorAccess.ts`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
-| `src/pages/` | Trang ghép component: `src/pages/overview/`, `src/pages/alerts/`, `src/pages/maintenance/`, `src/pages/asset/` (`AssetDetailPage`), `src/pages/editor/`, `src/pages/playground/`, `src/pages/SimplePage.tsx` | Sửa bố cục/hành vi một màn |
+| `src/pages/` | Trang ghép component: `src/pages/overview/`, `src/pages/alerts/`, `src/pages/maintenance/`, `src/pages/asset/` (`AssetDetailPage`), `src/pages/reports/` (`ReportsPage` + khối dùng chung `shared/`), `src/pages/editor/`, `src/pages/playground/`, `src/pages/SimplePage.tsx` | Sửa bố cục/hành vi một màn |
 | `src/components/` | 40+ component thuần, mỗi cái một thư mục `<Tên>/` | Sửa giao diện dùng chung |
-| `src/data/` | `src/data/overview.ts`, `src/data/alerts.ts`, `src/data/maintenance.ts`, `src/data/assetDetail.ts`, `src/data/scene.ts`, `src/data/sceneRepository.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
-| `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
+| `src/data/` | `src/data/overview.ts`, `src/data/alerts.ts`, `src/data/maintenance.ts`, `src/data/assetDetail.ts`, `src/data/reports.ts`, `src/data/scene.ts`, `src/data/sceneRepository.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
+| `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/reports.ts` (báo cáo sinh theo ngày hiện tại), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
 | `src/features/scene/` | Viewer 3D + asset + validate zod | Mọi thứ về bản đồ 3D |
 | `src/features/scene-editor/` | Store undo/redo, thao tác thuần, kiểm tra, nháp | Logic của `/editor` |
 | `src/lib/` | `cn`, `createCollectionStore`, `useDialog`, `useRovingFocus`, `tokens`, `useNow`, `useElementSize`, `useFullscreen` | Viết hook/tiện ích dùng lại |
@@ -86,6 +87,7 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Số liệu trực tiếp | `TagValue`/`LiveData`, mất tín hiệu, nguồn mock → WebSocket, thêm tag (4b – live) | [docs/guide/live-data.md](docs/guide/live-data.md) |
 | Cảnh báo | Danh sách /alerts (4c), drawer theo loại áp suất/gas/cháy (4m), phân công (4n), cập nhật xử lý khung chung áp suất/gas/cháy (4o), xác nhận đóng + tab Chờ đóng (4p); **bảng mã mock để thử** | [docs/guide/alerts.md](docs/guide/alerts.md) |
 | Bảo trì | Model + quá hạn + modal tạo (4d), chi tiết yêu cầu (4i), tiến độ (4j), nghiệm thu (4k), phân công (4l); **mã mock để thử** | [docs/guide/maintenance.md](docs/guide/maintenance.md) |
+| Báo cáo định kỳ | `/reports`: tách lớp dùng chung ngày/tháng/quý/năm (5O-1), quy tắc trạng thái (5O-2), **URL thử với `?now=`** (5O-3), chưa làm (5O-4) | [docs/guide/reports.md](docs/guide/reports.md) |
 | Đăng nhập + backend | Biến môi trường, chạy cùng backend, hợp đồng API, luồng đăng nhập, gọi endpoint mới (9a–9f, Phụ lục D) | [docs/guide/backend-auth.md](docs/guide/backend-auth.md) |
 | Test + chất lượng | Lệnh, nơi đặt test, thêm test, axe/accessibility (7b) | [docs/guide/testing.md](docs/guide/testing.md) |
 
