@@ -29,8 +29,20 @@ export type FilterBarProps = {
   advancedActive?: boolean;
   /** aria-label của nút icon (mặc định "Bộ lọc nâng cao"); ví dụ "Xoá bộ lọc" khi dùng làm nút reset. */
   advancedLabel?: string;
+  /** Ô chèn ngay sau ô tìm kiếm (vd ô chọn ngày – màn Báo cáo). */
+  leading?: ReactNode;
   /** Nội dung chèn thêm bên phải, sau các Select. */
   extra?: ReactNode;
+  /** Link chữ "Xóa bộ lọc" cuối hàng (màn Báo cáo). Bỏ trống → ẩn. Tắt (`clearDisabled`) khi không có bộ lọc nào. */
+  onClear?: () => void;
+  clearLabel?: string;
+  clearDisabled?: boolean;
+  /**
+   * - split (mặc định): tìm kiếm bên trái, bộ lọc dồn phải (Cảnh báo 70:3015, Bảo trì 70:5320)
+   * - inline: mọi ô xếp liền từ trái, ô tìm kiếm hẹp (~255px), ô lọc chưa chọn chỉ hiện nhãn – thanh lọc màn Báo cáo
+   *   (ảnh thiết kế)
+   */
+  layout?: 'split' | 'inline';
   className?: string;
 };
 
@@ -47,15 +59,22 @@ export function FilterBar({
   onValuesChange,
   onAdvancedFilter,
   advancedActive,
-  advancedLabel = "Bộ lọc nâng cao",
+  advancedLabel = 'Bộ lọc nâng cao',
+  leading,
   extra,
+  onClear,
+  clearLabel = 'Xóa bộ lọc',
+  clearDisabled,
+  layout = 'split',
   className,
 }: FilterBarProps) {
+  const inline = layout === 'inline';
   return (
     <div
       role="search"
       className={cn(
-        'flex flex-wrap items-start justify-between gap-3 border-b border-line/20 bg-surface-muted/10 px-4 pb-[13px] pt-3',
+        'flex flex-wrap border-b border-line/20 bg-surface-muted/10 px-4 pb-[13px] pt-3',
+        inline ? 'items-center gap-2' : 'items-start justify-between gap-3',
         className,
       )}
     >
@@ -63,18 +82,20 @@ export function FilterBar({
         value={search}
         onChange={onSearchChange}
         placeholder={searchPlaceholder}
-        className="w-full max-w-[567px]"
+        className={inline ? 'w-full sm:w-[255px]' : 'w-full max-w-[567px]'}
       />
-      <div className="flex flex-wrap items-center gap-2">
+      {leading}
+      <div className={cn('flex flex-wrap items-center gap-2', inline && 'contents')}>
         {filters.map((f) => (
           <Select
             key={f.id}
             label={f.label}
             options={f.options}
             allLabel={f.allLabel}
+            hideAllInTrigger={inline}
             value={values[f.id] ?? null}
             onChange={(v) => onValuesChange({ ...values, [f.id]: v })}
-            align="end"
+            align={inline ? 'start' : 'end'}
           />
         ))}
         {extra}
@@ -87,6 +108,11 @@ export function FilterBar({
             onClick={onAdvancedFilter}
             icon={<Icon name="filter" box={16} />}
           />
+        )}
+        {onClear && (
+          <Button variant="link" size="lg" onClick={onClear} disabled={clearDisabled} className="px-1">
+            {clearLabel}
+          </Button>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Checkbox } from '../Checkbox';
 import { Icon } from '../Icon';
@@ -26,6 +26,9 @@ export type DataTablePagination = {
   onPageChange: (page: number) => void;
   /** Câu tóm tắt; mặc định "Hiển thị {from}-{to} của {total} mục". */
   summary?: (from: number, to: number, total: number) => ReactNode;
+  /** Ô chọn số dòng mỗi trang ("Rows per page" – màn Báo cáo). Cần cả `onPageSizeChange`. */
+  pageSizeOptions?: readonly number[];
+  onPageSizeChange?: (size: number) => void;
 };
 
 export type DataTableProps<T> = {
@@ -226,14 +229,43 @@ export function DataTable<T>({
               ? pagination.summary(from, to, pagination.total)
               : `Hiển thị ${from}-${to} của ${pagination.total} mục`}
           </span>
-          <Pagination
-            page={pagination.page}
-            pageCount={Math.ceil(pagination.total / pagination.pageSize)}
-            onPageChange={pagination.onPageChange}
-          />
+          <div className="flex flex-wrap items-center gap-4">
+            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
+              <PageSizeSelect value={pagination.pageSize} options={pagination.pageSizeOptions} onChange={pagination.onPageSizeChange} />
+            )}
+            <Pagination
+              page={pagination.page}
+              pageCount={Math.ceil(pagination.total / pagination.pageSize)}
+              onPageChange={pagination.onPageChange}
+            />
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+/** "Số dòng mỗi trang" – <select> gốc (bàn phím + trình đọc màn hình sẵn có), style theo token. */
+function PageSizeSelect({ value, options, onChange }: { value: number; options: readonly number[]; onChange: (size: number) => void }) {
+  const id = useId();
+  return (
+    <span className="flex items-center gap-2">
+      <label htmlFor={id} className="text-sm text-fg-secondary">
+        Số dòng mỗi trang
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-8 rounded-md border border-line bg-surface-sunken px-2 text-sm text-fg [color-scheme:dark] hover:border-accent/40 focus-visible:border-accent/60 focus-visible:outline-none"
+      >
+        {options.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 

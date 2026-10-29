@@ -194,6 +194,20 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 11.7 | [D] Ảnh modal đóng: "Trôi cảm biến", 9.8 bar – khác ảnh modal cập nhật (10.8 bar, không có "Trôi cảm biến") | Hiện đúng dữ liệu đã nhập ở modal cập nhật (docs/figma-diffs.md). |
 | 11.8 | [K] Đóng hàng loạt có cần cho cảnh báo Nghiêm trọng không? | Có, nhưng bỏ qua dòng mà người đóng là người xử lý; chỉ dòng đủ 3 điều kiện hệ thống; một ghi chú kết luận chung. |
 
+## 12. Báo cáo vận hành định kỳ (`/reports`, ảnh 29/10/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 12.1 | [D] Mô tả trang trong ảnh chép từ Bảo trì ("Theo dõi, phân công và quản lý tiến độ bảo trì thiết bị…") | "Theo dõi tiến độ, chữ ký và dữ liệu thiếu của báo cáo vận hành ngày, tháng, quý và năm trong hệ thống LPG". |
+| 12.2 | [D] Số trong ảnh không khớp nhau (Tất cả 186 vs 185; ngày 176 vs 175 ngày từ 1/1; đã ký 168) | Mọi số tính từ danh sách; 4 nhóm Đang thực hiện / Chờ xác nhận / Đã ký / Thiếu dữ liệu tách rời, tổng = KPI Tổng. |
+| 12.3 | [D] Màn chi tiết báo cáo (nút 👁, bấm mã), menu ⋮ có những thao tác gì? | 👁 và ⋮ hiện nhưng khoá (`aria-disabled`, "chờ thiết kế"); mã là chữ màu info. |
+| 12.4 | [D] Icon phễu cạnh "Xóa bộ lọc" làm gì? | Chưa đặt (không có chức năng). |
+| 12.5 | [K] Quy trình ký: Người kiểm tra → Người duyệt → Ban TAP? "Bị trả lại" quay về ai? "Chờ xác nhận" có tính báo cáo bị trả lại / chưa gửi ký không? | Đúng thứ tự trên; bị trả lại / chưa gửi → chờ Người kiểm tra; cả hai tính vào Chờ xác nhận. |
+| 12.6 | [K] Báo cáo tháng/quý/năm "đủ mốc" nghĩa là gì? Có tính báo cáo ngày đã ký hay chỉ cần đủ dữ liệu? | Tháng: mỗi ngày đủ dữ liệu là một mốc; quý: mỗi tháng đã ký; năm: mỗi quý đã ký. |
+| 12.7 | [K] Hạn nộp: tuần (thứ Sáu 17:00), tháng (ngày cuối 12:00), quý (ngày cuối 17:00), năm (31/12 17:00)? Có báo cáo tuần thật không (ảnh có "Báo cáo tuần 4" trong lịch nhưng không có tab tuần)? | Như vế đầu; báo cáo tuần chỉ có trong lịch, chưa có bản ghi/tab. |
+| 12.8 | [K] Mã báo cáo tháng/quý/năm, ca vận hành (chỉ "Ca 1"?), danh sách người kiểm tra/duyệt | `BCVH-T-062026`, `BCVH-Q-22026`, `BCVH-NAM-2026`; mọi báo cáo ngày "Ca 1"; người: mock 3 kiểm tra + 2 duyệt. |
+| 12.9 | [D][K] "Thiếu mốc" trong "Cần xử lý hôm nay": mốc đã quá giờ chưa nhập, hay mọi mốc còn lại trong ngày? "Xử lý ngay" dẫn tới đâu? | Chỉ mốc đã tới giờ mà chưa có dữ liệu. "Xử lý ngay" lọc bảng theo mã báo cáo; "Xem tất cả" lọc Chờ xác nhận. |
+
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 
 Gồm cả phần chưa có ở các mục trên (modal "Phân công xử lý cảnh báo", modal "Cập nhật xử lý cảnh báo áp suất").

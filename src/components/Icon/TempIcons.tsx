@@ -336,3 +336,14 @@ export const UploadTrayIcon = ({ size = 22, ...p }: P) => (
     <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
   </svg>
 );
+
+// ---- Màn Báo cáo (ảnh thiết kế, chưa có node Figma) ----
+
+/** Ba chấm dọc – menu thao tác cuối hàng bảng báo cáo. */
+export const MoreVerticalIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="5.5" r="1.3" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+);

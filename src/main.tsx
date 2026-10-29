@@ -8,7 +8,6 @@ import LoginPage from './pages/login/LoginPage';
 import PendingPage from './pages/login/PendingPage';
 import RegisterPage from './pages/login/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
-import SimplePage from './pages/SimplePage';
 import { DEFAULT_ASSET_ID, assetPath } from './app/assetRoutes';
 
 // Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
@@ -19,6 +18,7 @@ const MaintenanceDetailPage = lazy(() => import('./pages/maintenance/Maintenance
 const PlaygroundPage = lazy(() => import('./pages/playground/PlaygroundPage'));
 const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 const AssetDetailPage = lazy(() => import('./pages/asset/AssetDetailPage'));
+const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
 
 function Root() {
   return (
@@ -65,7 +65,7 @@ const router = createBrowserRouter([
           { path: '/maintenance', element: <MaintenancePage /> },
           // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
           { path: '/maintenance/:id', element: <MaintenanceDetailPage /> },
-          { path: '/reports', element: <SimplePage section="Báo cáo" title="Báo cáo" /> },
+          { path: '/reports', element: <ReportsPage /> },
           { path: '/editor', element: <EditorRoute /> },
           { path: '/playground', element: <PlaygroundPage /> },
           { path: '*', element: <NotFoundPage /> },

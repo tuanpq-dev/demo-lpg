@@ -8,6 +8,7 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - **MCP đã HẾT QUOTA (seat View, 6 lần/tháng) → KHÔNG gọi Figma MCP.** Nguồn thay thế:
   - **Lâu dài (chỉ máy dev):** ảnh chụp trong `scratch/figma-ref/` (`53-11-overview.png`, `70-2809-alerts.png`, `70-3964-maintenance.png`, các crop node), ảnh thiết kế modal `mt-create-modal-design.png` và trang chi tiết tài sản `asset-v101-design.png` (919×790, ~0,59× khung 1565 – cỡ chữ/khoảng cách là ước lượng; không có node), chi tiết yêu cầu bảo trì `mt-detail-design.png` (1565×2665, thu từ ảnh 2× người dùng gửi; không có node – số đo ước lượng gom trong `tokens.css` khối "Layout chi tiết yêu cầu bảo trì"), modal cập nhật tiến độ `mt-progress-modal-design.png` (1242×952 có bóng, modal ~1160 px; không có node), modal phân công `mt-assign-modal-design.png` (1565×1175 = cả trang, thu ×1/2 từ ảnh 2× – đã làm, mục 5H). Hai modal nghiệm thu (`mt-submit-review-modal-design.png`, `mt-review-modal-design.png`, 1156 px, thu ×1/3 từ ảnh 3×) nằm ở **`scratch/figma-ref/`** (gitignore, chỉ máy dev) – ảnh thiết kế mới KHÔNG đặt trong `public/` (bị deploy công khai); playground chỉ tham chiếu khi `import.meta.env.DEV`.
   - **Cache design context** (có thể mất khi đổi phiên): `C:/Users/ptuan/AppData/Local/Temp/claude/f--TEMPO-demo-lpg/0d061ac4-b5cd-4d25-bf82-aad81de290f4/scratchpad/figma/{53-11,70-2809,70-3964}.part0.txt`. Mỗi file bị cắt ở 100KB: 53:11 cắt sau 53:498, 70:3964 cắt ở 70:5402.
+  - Màn Báo cáo (29/10/2026, ảnh người dùng gửi, không có node): `reports-design.png` (cả trang 1565×1239), crop ×3 `reports-header.png`, `reports-kpi.png`, `reports-summary-cards.png`, `reports-table.png`.
   - Ảnh hoặc SVG người dùng gửi trong chat.
   - Khi thiếu thông số: đọc pixel từ ảnh chụp rồi map về token gần nhất, kích thước lấy từ metadata.
 
@@ -153,6 +154,19 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - "Tự chuẩn chẩn đoán" → "Tự chẩn đoán". Cảnh báo liên quan lấy từ danh sách cảnh báo (ALT-00128/116/112) thay vì 3 dòng mẫu trong ảnh.
   - Hình cắt vẽ phẳng theo token (ảnh là render 3D bóng bẩy), giữ đúng tỉ lệ dài/đường kính nên dẹt hơn ảnh. Màu: LPG `info`, pha hơi `neutral`, nước `warning`; loại sự kiện: Cảm biến `info`, Vận hành `warning`, Hệ thống `fg-secondary`, Cảnh báo `danger`.
   - Figma 53:470 (Cảnh báo ưu tiên Tổng quan) ghi "PT-101 – Áp suất đầu vào hóa hơi cao" → đổi thành PT-201 vì PT-101 nay là áp suất bồn V-101 (đã duyệt); mock cảnh báo ALT-00113 cũng chuyển PT-201.
+
+## Báo cáo (/reports)
+
+- **Báo cáo vận hành định kỳ (ảnh 29/10/2026, 5O):**
+  - **Số liệu ảnh tự mâu thuẫn → tính từ danh sách:** tab "Tất cả" 186 ≠ 176 + 6 + 2 + 1 = 185; 1/1 → 24/6 chỉ có 175 ngày (ảnh 176); KPI 186 = 4 + 6 + 168 + 8 coi 4 nhóm là tách rời → app giữ tách rời, với `?now=2026-06-24T18:30` ra 184 / ngày 175 / đã ký 166; Đang thực hiện 4, Chờ xác nhận 6 (2/2/2), Thiếu dữ liệu 8, Tiến độ tháng 06 19/24 khớp ảnh. "Đang thực hiện 4" (KPI, mọi kỳ) vs "1" (thẻ tháng, chỉ báo cáo ngày tháng 06) – không mâu thuẫn.
+  - Dòng 24/06: ảnh "5/6 mốc, thiếu 18:00, cập nhật 14:05" – mốc 16:00 đã có lúc 14:05 là vô lý → mock lấy mốc theo giờ hiện tại (18:30 → cập nhật 16:05). Người duyệt 18–23/06 xoay vòng 2 người (ảnh không theo quy luật). Ảnh hiện 7 dòng nhưng ghi "1-10" → hiện đủ 10.
+  - Mô tả trang chép từ Bảo trì ("…tiến độ bảo trì thiết bị…") → viết lại cho báo cáo (docs/questions.md 12.1).
+  - "Lịch báo cáo sắp tới": ảnh chỉ dòng quý ghi "17:00 - 30/06/2026" → mọi dòng chỉ "Hạn chót: HH:mm" (ngày đã ở ô ngày; trình đọc màn hình nghe "Thứ 3, 30/06/2026").
+  - "Rows per page" → "Số dòng mỗi trang" (`<select>` gốc 10/20/50); "Hiển thị 1-10 của 175" giữ dạng ảnh. Ô ngày `mm/dd/yyyy` là ô ngày gốc của trình duyệt (định dạng theo máy người xem, như ảnh).
+  - Thanh lọc: ảnh có ô có/không mũi tên → mọi ô lọc là Select có mũi tên, chưa chọn chỉ hiện nhãn (`hideAllInTrigger`); có "Tất cả" trong danh sách để bỏ từng lọc. Bỏ icon phễu (chưa biết chức năng – 12.4). "Xóa bộ lọc" mờ khi không có lọc.
+  - Thẻ: tiêu đề `text-md` 16 (ảnh ~18) theo Card chung; KPI dùng `compact dense` (số 28 đậm, dòng phụ 11 ~ ảnh 12). Viền KPI: primary/80, warning/80, success/70; viền đỏ giữ `danger-strong/50` như KPI "Quá hạn" Bảo trì (ảnh hơi sáng hơn).
+  - Badge bảng dùng `Badge tag sm` (10 px đậm, cao 18) – ảnh ~11 px, cao ~20. Mã báo cáo một dòng (ảnh xuống dòng sau "BCVH-N-" do cột hẹp); mã tô `info` như ảnh nhưng là chữ, không phải link (chưa có màn chi tiết).
+  - Dòng ⓘ dưới tab đổi theo tab (ảnh chỉ có câu của tab ngày; câu các tab khác là app tự viết). Số đếm tab đang chọn tô `info` như ảnh.
 
 ## Bản đồ 3D
 

@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '../Button';
 
-export type CardTone = 'default' | 'strong' | 'danger' | 'success' | 'accent';
+export type CardTone = 'default' | 'strong' | 'danger' | 'success' | 'success-vivid' | 'primary' | 'warning' | 'accent';
 
 export type CardAction = {
   label: string;
@@ -25,7 +25,10 @@ export type CardProps = Omit<HTMLAttributes<HTMLElement>, 'title'> & {
    * - divided: như plain + đường kẻ dưới tiêu đề (ảnh chi tiết yêu cầu bảo trì MT-00128)
    */
   headerVariant?: 'bar' | 'plain' | 'divided';
-  /** Màu viền: strong (line-card – KPI Bảo trì 70:4508), danger (KPI "Cảnh báo" 53:213), success (53:201), accent. */
+  /**
+   * Màu viền: strong (line-card – KPI Bảo trì 70:4508), danger (KPI "Cảnh báo" 53:213), success (53:201), accent.
+   * primary / warning / success-vivid: viền đậm theo tone – KPI có viền màn Báo cáo (ảnh thiết kế).
+   */
   tone?: CardTone;
   /** xl = 12px (Tổng quan), lg = 8px (Cảnh báo/Bảo trì). */
   radius?: 'lg' | 'xl';
@@ -41,6 +44,9 @@ const toneClass: Record<CardTone, string> = {
   strong: 'border-line-card',
   danger: 'border-danger-strong/50',
   success: 'border-success-strong/30',
+  'success-vivid': 'border-success/70',
+  primary: 'border-primary/80',
+  warning: 'border-warning/80',
   accent: 'border-accent/30',
 };
 

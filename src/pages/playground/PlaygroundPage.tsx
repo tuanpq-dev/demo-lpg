@@ -13,6 +13,7 @@ import { NavigationSection } from './NavigationSection';
 import { AlertUpdateSection } from './AlertUpdateSection';
 import { PrimitivesSection } from './PrimitivesSection';
 import { ProgressUpdateSection } from './ProgressUpdateSection';
+import { ReportsSection } from './ReportsSection';
 import { ReviewSection } from './ReviewSection';
 import { SceneSection } from './SceneSection';
 import { TokensSection } from './TokensSection';
@@ -33,6 +34,10 @@ export default function PlaygroundPage() {
         <h1 className="text-3xl font-bold">Component Playground</h1>
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
+
+      <Section id="reports" title="18. Báo cáo định kỳ (ảnh thiết kế): KpiCard viền màu, MetricListCard, ScheduleList, ActionItemList, badge trạng thái, FilterBar inline">
+        <ReportsSection />
+      </Section>
 
       <Section id="alert-update" title="17. Cập nhật xử lý (áp suất theo ảnh, gas, cháy) + xác nhận đóng cảnh báo: modal, InspectionTable, BeforeAfterReadings, Checkbox card">
         <AlertUpdateSection />
