@@ -10,7 +10,7 @@ import AlertsPage from './AlertsPage';
 
 /*
  * Drawer cảnh báo KHÍ GAS (loại `gas-leak`, ảnh ALT-00127): số live + "Lúc cảnh báo", mức theo bands, banner ESD (role="alert"
- * không đọc lặp), cảm biến theo khu, khoá "Đã xử lý xong", mất tín hiệu, yêu cầu hỗ trợ. Nguồn live mock dùng chung (GS-04 = 25).
+ * không đọc lặp), cảm biến theo khu, khoá "Đã xử lý" (modal chung), mất tín hiệu, yêu cầu hỗ trợ. Nguồn live mock dùng chung (GS-04 = 25).
  * File riêng → store cảnh báo riêng (không ảnh hưởng AlertsPage.test). Test đổi dữ liệu đặt sau.
  */
 
@@ -36,6 +36,7 @@ function renderAt(url: string) {
 }
 const drawer = () => screen.findByRole('dialog', { name: 'Cảnh báo rò rỉ Gas nhẹ' });
 const LONG = { timeout: 6000 };
+const GAS_MODAL = 'Cập nhật xử lý cảnh báo rò rỉ khí';
 
 afterEach(() => {
   liveSimulator.setBase('GS-04', 25);
@@ -97,25 +98,34 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     expect(within(d).getAllByText('ESD').length).toBeGreaterThan(0);
   });
 
-  test('"Cập nhật xử lý": "Đã xử lý xong" khoá khi còn trên ngưỡng (aria-disabled + lý do); tiếp tục cần ghi chú', async () => {
+  // Đổi có chủ đích (28/10/2026): modal gọn của gas bỏ – dùng khung chung "Cập nhật xử lý cảnh báo rò rỉ khí" (bám modal áp suất).
+  test('"Cập nhật xử lý" (khung chung): thông số GS-04 + cảm biến cùng khu, 4 mục xác minh, mục tiêu 10% LEL; "Đã xử lý" khoá khi còn trên ngưỡng', async () => {
     const user = userEvent.setup();
     renderAt('/alerts?alert=ALT-00127');
     const d = await drawer();
     await within(d).findByText(/Online/);
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    const m = await screen.findByRole('dialog', { name: 'Cập nhật xử lý' });
-    const close = within(m).getByRole('radio', { name: 'Đã xử lý xong' });
+    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, LONG);
+    const done = within(m).getByRole('radio', { name: /^Đã xử lý/ });
     // Vừa mở (chưa có số liệu) cũng khoá; số về → lý do nêu nồng độ hiện tại.
-    expect(close).toHaveAttribute('aria-disabled', 'true');
-    await waitFor(() => expect(close).toHaveAccessibleDescription(/^Nồng độ hiện tại \d+(\.\d)?% LEL vẫn trên ngưỡng \(10% LEL\)/));
-    expect(close).toHaveAttribute('title', expect.stringMatching(/^Nồng độ hiện tại .* vẫn trên ngưỡng \(10% LEL\)\.$/));
-    await user.click(close);
-    expect(within(m).getByRole('radio', { name: 'Tiếp tục xử lý' })).toBeChecked();
+    expect(done).toHaveAttribute('aria-disabled', 'true');
+    await waitFor(() => expect(done).toHaveAccessibleDescription(/Nồng độ hiện tại \d+(\.\d)?% LEL vẫn trên ngưỡng \(10% LEL\)/), LONG);
+    const readings = within(m).getByRole('group', { name: 'Thông số trước và sau xử lý' });
+    expect(readings).toHaveTextContent('Nồng độ GS-04');
+    expect(readings).toHaveTextContent('Nồng độ GS-01');
+    expect(readings).toHaveTextContent('Giới hạn: 10% LEL');
+    const ver = within(m).getByRole('group', { name: 'Kết quả xác minh (Chọn nhiều)' });
+    expect(within(ver).getAllByRole('checkbox').map((c) => c.closest('label')?.textContent)).toEqual([
+      'Đã xác định nguồn rò rỉ',
+      'Đã cách ly nguồn rò rỉ',
+      'Khu vực đã thông gió',
+      'Cảm biến cùng khu bình thường',
+    ]);
+    expect(within(m).getByRole('textbox', { name: /Giá trị mục tiêu/ })).toHaveValue('10');
+    await user.click(done);
+    expect(within(m).getByRole('radio', { name: 'Đang kiểm tra' })).toHaveAttribute('aria-checked', 'true');
     await user.click(within(m).getByRole('button', { name: 'Lưu cập nhật' }));
-    expect(within(m).getByText('Nhập ghi chú cập nhật xử lý.')).toBeInTheDocument();
-    await user.type(within(m).getByRole('textbox', { name: /Ghi chú/ }), 'Đã khoanh vùng họng nạp');
-    await user.click(within(m).getByRole('button', { name: 'Lưu cập nhật' }));
-    expect(screen.queryByRole('dialog', { name: 'Cập nhật xử lý' })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: GAS_MODAL })).toBeNull());
     expect(within(d).getByRole('heading', { name: 'Ghi chú xử lý (1)' })).toBeInTheDocument();
     expect(d).toHaveTextContent('Đang xử lý');
   });
@@ -139,7 +149,8 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     expect(d).toHaveTextContent('Yêu cầu hỗ trợ: Trần Thị B – Cần khoanh vùng');
   });
 
-  test('mất tín hiệu: "Mất tín hiệu" (không số cũ), đóng chỉ khi nhập số đo lại < ngưỡng → Hoàn thành + nồng độ lúc đóng', async () => {
+  // Đổi có chủ đích (28/10/2026): đóng qua khung chung → Đã xử lý (chờ xác nhận đóng), không còn Hoàn thành ngay.
+  test('mất tín hiệu: "Mất tín hiệu" (không số cũ), "Đã xử lý" chỉ khi nhập số đo lại < ngưỡng → chờ đóng + nồng độ sau xử lý', async () => {
     const user = userEvent.setup();
     renderAt('/alerts?alert=ALT-00127');
     const d = await drawer();
@@ -156,27 +167,25 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     expect(row).not.toHaveTextContent('% LEL');
 
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    const m = await screen.findByRole('dialog', { name: 'Cập nhật xử lý' });
-    // Mất tín hiệu → chọn được (bắt buộc số đo lại), sau nhịp "đang đọc" lúc vừa mở.
-    await waitFor(() => expect(within(m).getByRole('radio', { name: 'Đã xử lý xong' })).not.toHaveAttribute('aria-disabled'));
-    expect(within(m).getByRole('radio', { name: 'Đã xử lý xong' })).toHaveAttribute('title', 'Chỉ khi nồng độ dưới 10% LEL');
-    await user.click(within(m).getByRole('radio', { name: 'Đã xử lý xong' }));
-    await user.type(within(m).getByRole('textbox', { name: /Ghi chú/ }), 'Đo tay tại họng nạp');
-    const submit = within(m).getByRole('button', { name: 'Xác nhận đã xử lý xong' });
-    expect(submit).toHaveAttribute('aria-disabled', 'true');
-    expect(submit).toHaveAccessibleDescription(/nhập nồng độ đo lại tại chỗ/);
-    const measured = within(m).getByRole('textbox', { name: /Nồng độ đo lại/ });
-    await user.type(measured, '12');
-    await user.tab();
-    expect(submit).toHaveAccessibleDescription('Nồng độ đo lại 12% LEL vẫn trên ngưỡng (10% LEL).');
-    await user.clear(measured);
-    await user.type(measured, '4');
-    await user.tab();
-    expect(submit).not.toHaveAttribute('aria-disabled');
-    await user.click(submit);
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Cập nhật xử lý' })).toBeNull());
-    expect(d).toHaveTextContent('Đã xử lý xong – nồng độ lúc đóng 4% LEL (đo lại tại chỗ): Đo tay tại họng nạp');
-    expect(within(d).getByText(/Cảnh báo đã xử lý xong/)).toBeInTheDocument();
+    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, LONG);
+    const done = () => within(m).getByRole('radio', { name: /^Đã xử lý/ });
+    // Mất tín hiệu → bắt buộc số đo lại (nguồn mặc định "Cả hai" có máy đo cầm tay).
+    await waitFor(() => expect(done()).toHaveAccessibleDescription(/nhập nồng độ đo lại tại chỗ \(phải dưới 10% LEL\)/), LONG);
+    const after = within(m).getByRole('textbox', { name: 'Nồng độ GS-04 sau xử lý' });
+    await user.type(after, '12{Enter}');
+    await waitFor(() => expect(done()).toHaveAccessibleDescription(/Nồng độ đo lại 12% LEL vẫn trên ngưỡng \(10% LEL\)/));
+    await user.clear(after);
+    await user.type(after, '4{Enter}');
+    await waitFor(() => expect(done()).not.toHaveAttribute('aria-disabled'));
+    await user.click(done());
+    await user.type(within(m).getByRole('textbox', { name: /Nguyên nhân xử lý/ }), 'Khớp nối họng nạp lỏng');
+    await user.type(within(m).getByRole('textbox', { name: /Nội dung đã xử lý/ }), 'Đo tay tại họng nạp, siết lại khớp nối');
+    await user.click(within(m).getByRole('button', { name: 'Lưu cập nhật' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: GAS_MODAL })).toBeNull());
+    expect(d).toHaveTextContent('Đã xử lý – nồng độ sau xử lý 4% LEL (Cả hai)');
+    expect(d).toHaveTextContent(/Đã xử lý lúc \d{2}:\d{2}, chờ xác nhận đóng\./);
+    expect(d).toHaveTextContent(/Đang theo dõi đến \d{2}:\d{2}, mục tiêu < 10% LEL/);
     expect(within(d).queryByRole('button', { name: 'Cập nhật xử lý' })).toBeNull();
+    expect(within(d).getByRole('button', { name: 'Xác nhận đóng cảnh báo' })).toBeInTheDocument();
   });
 });

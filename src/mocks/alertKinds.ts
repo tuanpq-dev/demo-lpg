@@ -36,24 +36,55 @@ export type BandTone = 'success' | 'warning-dim' | 'warning' | 'danger';
 /** Một đoạn mức: [from, to) – `to` thiếu = tới hết thang. */
 export type AlertBand = { level: AlertLevel; from: number; to?: number; label: string; tone: BandTone };
 
-/** Trường số liệu của một dòng "Thông số trước và sau xử lý" – lớp dữ liệu tra tag + ngưỡng theo thiết bị (`pressureReadingRows`). */
-export type PressureReadingField = 'pressure' | 'regulatorOut' | 'temperature';
+/**
+ * Nguồn số của một dòng "Thông số trước và sau xử lý" – lớp dữ liệu tra tag + ngưỡng theo thiết bị (`updateReadingRows`):
+ * primary = tag của cảnh báo (dòng quyết định điều kiện "Đã xử lý") · regulatorOut = áp suất sau bộ điều áp · temperature =
+ * nhiệt độ bồn · areaSensors = các cảm biến gas CÙNG KHU (mỗi cảm biến một dòng, trừ tag chính) · smoke / gas = tín hiệu liên
+ * quan của khu báo cháy (`AREA_FIRE_SIGNALS`).
+ */
+export type UpdateReadingField = 'primary' | 'regulatorOut' | 'temperature' | 'areaSensors' | 'smoke' | 'gas';
+
+/** Trạng thái chọn trong modal cập nhật (ô). `false-alarm` chỉ báo cháy. */
+export type UpdateStateId = 'inspecting' | 'resolving' | 'paused' | 'needs-support' | 'resolved' | 'false-alarm';
 
 /**
- * "Cập nhật xử lý" cảnh báo áp suất (modal theo ảnh 28/10/2026 – docs/guide/alerts.md (4o)). Chữ được thay `{device}`, `{tag}`, `{regulator}`,
- * `{safetyValve}` như hướng dẫn.
+ * "Cập nhật xử lý" theo LOẠI – khung chung `AlertUpdateModal` (dựng theo ảnh modal áp suất 28/10/2026; gas/cháy chưa có
+ * thiết kế riêng – docs/figma-diffs.md). Chữ được thay `{device}`, `{tag}`, `{regulator}`, `{safetyValve}`, `{smoke}`, `{gas}`.
  */
-export type PressureUpdateConfig = {
-  kind: 'pressure-update';
-  /** Dòng thông số; dòng `pressure` là dòng quyết định điều kiện "Đã xử lý". */
-  readings: readonly { id: string; label: string; field: PressureReadingField }[];
-  /** "Kết quả xác minh" (chọn nhiều). role normal = "Hệ thống đã trở về bình thường" (chỉ tick khi đủ điều kiện đóng) · over = mâu thuẫn với normal. */
-  verification: readonly { id: string; text: string; role?: 'normal' | 'over' }[];
+export type AlertUpdateConfig = {
+  kind: 'alert-update';
+  /** Tiêu đề modal. */
+  title: string;
+  /** Đại lượng chính trong lịch sử ("áp suất", "nồng độ", "nhiệt độ"). */
+  quantity: string;
+  /** Các ô trạng thái (thứ tự hiển thị) + nhãn riêng (thiếu → nhãn mặc định). */
+  states: readonly UpdateStateId[];
+  stateLabels?: Partial<Record<UpdateStateId, string>>;
+  /**
+   * Điều kiện chọn "Đã xử lý" (giữ nguyên như modal cũ của từng loại): pressure = live < ngưỡng VÀ sau xử lý < ngưỡng (mất tín
+   * hiệu → đồng hồ cơ) · gas = live < đầu mức `closeBelow` (mất tín hiệu → số đo lại < mức đó) · fire = đầu báo đã phục hồi
+   * (mất tín hiệu → mục xác minh `role: 'field'`).
+   */
+  close: { rule: 'pressure' } | { rule: 'gas'; closeBelow: AlertLevel } | { rule: 'fire' };
+  /** Dòng thông số; dòng `primary` là dòng quyết định điều kiện. */
+  readings: readonly { id: string; label: string; field: UpdateReadingField }[];
+  /** Nguồn xác minh (nhãn) – thiếu = chỉ số cảm biến, không nhập tay (báo cháy). */
+  sources?: Readonly<Record<'sensor' | 'gauge' | 'both', string>>;
+  /**
+   * "Kết quả xác minh" (chọn nhiều). role normal = chỉ tick khi đủ điều kiện "Đã xử lý" (`required` → bắt buộc khi Đã xử lý) ·
+   * over = mâu thuẫn với normal · field = đã kiểm tra tại chỗ (căn cứ đóng khi đầu báo mất tín hiệu) · real-fire = mâu thuẫn
+   * với "Báo động giả".
+   */
+  verification: readonly { id: string; text: string; role?: 'normal' | 'over' | 'field' | 'real-fire'; required?: boolean }[];
+  /** Câu điều kiện của mục role normal: "Chỉ chọn "…" khi {normalHint}." */
+  normalHint?: string;
   /** "Vấn đề phát sinh" (chọn một). `none` = mặc định. */
   issues: readonly { id: string; label: string; needsNote?: boolean; suggestSupport?: boolean }[];
-  /** Theo dõi sau xử lý: số phút (0 = không), mặc định, mục tiêu (< target, đơn vị của cảnh báo). */
-  followUp: { options: readonly number[]; defaultMinutes: number; target: number };
+  /** Theo dõi sau xử lý: số phút (0 = không), mặc định, mục tiêu (< target, đơn vị cảnh báo; thiếu = không có mục tiêu số). */
+  followUp: FollowUpConfig;
 };
+
+export type FollowUpConfig = { options: readonly number[]; defaultMinutes: number; target?: number };
 
 export type AlertKindConfig = {
   label: string;
@@ -73,13 +104,11 @@ export type AlertKindConfig = {
   /** Nút phụ ở chân drawer (thứ tự hiển thị). `procedure` = "Xem quy trình khẩn cấp" (cần `emergency`). */
   actions: readonly ('assign' | 'support' | 'maintenance' | 'procedure')[];
   /**
-   * Nút chính khi Đang xử lý: resolve-note = "Đánh dấu đã xử lý" (cần ghi chú) · gas-update = "Cập nhật xử lý" (modal: tiếp
-   * tục / đã xử lý xong – chỉ đóng khi live < mức `closeBelow`; mất tín hiệu → bắt buộc số đo lại < mức đó) · fire-update =
-   * "Cập nhật xử lý" báo cháy (Tiếp tục / Đã xử lý sự cố / Báo động giả; ghi chú bắt buộc cả 3; chỉ đóng khi đầu báo đã phục
-   * hồi; mất tín hiệu → xác nhận kiểm tra tại chỗ; kết quả đóng lưu `resolution` – thống kê báo động giả) · pressure-update =
-   * "Cập nhật xử lý" áp suất (modal lớn: trạng thái 5 ô, hạng mục kiểm tra, thông số trước/sau, xác minh, theo dõi – docs/guide/alerts.md (4o)).
+   * Nút chính khi Đang xử lý: resolve-note = "Đánh dấu đã xử lý" (cần ghi chú) · alert-update = "Cập nhật xử lý" (modal chung
+   * `AlertUpdateModal`: trạng thái, hạng mục kiểm tra, thông số trước/sau, xác minh, theo dõi – docs/guide/alerts.md (4o)).
+   * Cả hai chỉ đưa cảnh báo tới Đã xử lý (resolved); Hoàn thành qua modal "Xác nhận đóng cảnh báo".
    */
-  update: { kind: 'resolve-note' } | { kind: 'gas-update'; closeBelow: AlertLevel } | { kind: 'fire-update' } | PressureUpdateConfig;
+  update: { kind: 'resolve-note' } | AlertUpdateConfig;
   /** Người phụ trách MẶC ĐỊNH (nhóm) khi chưa phân công cá nhân – chỉ hiển thị ("Trực ca"), KHÔNG ghi vào `assignee`. */
   defaultOwner?: string;
   /** Sau khi đóng là "Báo động giả": nút "Tạo yêu cầu bảo trì" với tên điền sẵn (`{device}`) – kiểm tra đầu báo. */
@@ -114,30 +143,89 @@ export const SAFETY_VALVES: Readonly<Record<string, string>> = { 'V-101': 'PSV-1
 /** Bộ điều áp sau bồn (ảnh modal cập nhật xử lý áp suất: "PR-101"). PR-102 giả định. */
 export const REGULATORS: Readonly<Record<string, string>> = { 'V-101': 'PR-101', 'V-102': 'PR-102' };
 
+const ISSUES: AlertUpdateConfig['issues'] = [
+  { id: 'none', label: 'Không có vấn đề phát sinh' },
+  { id: 'need-staff', label: 'Cần thêm nhân sự hỗ trợ', suggestSupport: true },
+  { id: 'no-access', label: 'Không thể tiếp cận thiết bị' },
+  { id: 'missing-data', label: 'Thiếu dữ liệu xác minh' },
+  { id: 'other', label: 'Khác', needsNote: true },
+];
+const FOLLOW_OPTIONS = [0, 15, 30, 60, 120] as const;
+const BASE_STATES: readonly UpdateStateId[] = ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved'];
+
+/** Theo dõi khi loại không có cấu hình cập nhật (resolve-note): mặc định không theo dõi. */
+export const DEFAULT_FOLLOW_UP: FollowUpConfig = { options: FOLLOW_OPTIONS, defaultMinutes: 0 };
+
 /** Cấu hình "Cập nhật xử lý" áp suất bồn (ảnh `scratch/figma-ref/alert-pressure-update-modal-design.png`). */
-const PRESSURE_UPDATE: PressureUpdateConfig = {
-  kind: 'pressure-update',
+const PRESSURE_UPDATE: AlertUpdateConfig = {
+  kind: 'alert-update',
+  title: 'Cập nhật xử lý cảnh báo áp suất',
+  quantity: 'áp suất',
+  states: BASE_STATES,
+  close: { rule: 'pressure' },
   readings: [
-    { id: 'pressure', label: 'Áp suất {device}', field: 'pressure' },
+    { id: 'pressure', label: 'Áp suất {device}', field: 'primary' },
     { id: 'regulator-out', label: 'Áp suất sau {regulator}', field: 'regulatorOut' },
     { id: 'temperature', label: 'Nhiệt độ bồn', field: 'temperature' },
   ],
+  sources: { sensor: 'Cảm biến (SCADA)', gauge: 'Đồng hồ cơ', both: 'Cả hai' },
   verification: [
     { id: 'over-confirmed', text: 'Xác nhận áp suất thực tế vượt ngưỡng', role: 'over' },
     { id: 'sensor-drift', text: 'Cảm biến {tag} có sai lệch' },
     { id: 'regulator-fault', text: 'Bộ điều áp {regulator} có bất thường' },
     { id: 'valve-check', text: 'Van {safetyValve} cần kiểm tra' },
-    { id: 'back-to-normal', text: 'Hệ thống đã trở về bình thường', role: 'normal' },
+    { id: 'back-to-normal', text: 'Hệ thống đã trở về bình thường', role: 'normal', required: true },
   ],
+  normalHint: 'áp suất hiện tại và sau xử lý đều dưới ngưỡng cảnh báo',
   // Ảnh có 2 ô "Không có vấn đề phát sinh" trùng nhau → giữ một (docs/figma-diffs.md).
-  issues: [
-    { id: 'none', label: 'Không có vấn đề phát sinh' },
-    { id: 'need-staff', label: 'Cần thêm nhân sự hỗ trợ', suggestSupport: true },
-    { id: 'no-access', label: 'Không thể tiếp cận thiết bị' },
-    { id: 'missing-data', label: 'Thiếu dữ liệu xác minh' },
-    { id: 'other', label: 'Khác', needsNote: true },
+  issues: ISSUES,
+  followUp: { options: FOLLOW_OPTIONS, defaultMinutes: 30, target: 10 },
+};
+
+/** Gas (chưa có thiết kế – dựng theo khung áp suất): nồng độ tag chính + cảm biến cùng khu; mục tiêu theo dõi < 10 % LEL. */
+const GAS_UPDATE: AlertUpdateConfig = {
+  kind: 'alert-update',
+  title: 'Cập nhật xử lý cảnh báo rò rỉ khí',
+  quantity: 'nồng độ',
+  states: BASE_STATES,
+  close: { rule: 'gas', closeBelow: 'level-1' },
+  readings: [
+    { id: 'concentration', label: 'Nồng độ {device}', field: 'primary' },
+    { id: 'area', label: 'Nồng độ {sensor}', field: 'areaSensors' },
   ],
-  followUp: { options: [0, 15, 30, 60, 120], defaultMinutes: 30, target: 10 },
+  sources: { sensor: 'Cảm biến (SCADA)', gauge: 'Máy đo cầm tay', both: 'Cả hai' },
+  verification: [
+    { id: 'leak-found', text: 'Đã xác định nguồn rò rỉ' },
+    { id: 'leak-isolated', text: 'Đã cách ly nguồn rò rỉ' },
+    { id: 'ventilated', text: 'Khu vực đã thông gió' },
+    { id: 'area-normal', text: 'Cảm biến cùng khu bình thường' },
+  ],
+  issues: ISSUES,
+  followUp: { options: FOLLOW_OPTIONS, defaultMinutes: 30, target: 10 },
+};
+
+/** Báo cháy: "Đã xử lý" tách thành "Đã xử lý sự cố" / "Báo động giả" (cả hai → Đã xử lý + `resolution`); theo dõi không có mục tiêu số. */
+const FIRE_UPDATE: AlertUpdateConfig = {
+  kind: 'alert-update',
+  title: 'Cập nhật xử lý cảnh báo báo cháy',
+  quantity: 'nhiệt độ',
+  states: ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved', 'false-alarm'],
+  stateLabels: { resolved: 'Đã xử lý sự cố', 'false-alarm': 'Báo động giả' },
+  close: { rule: 'fire' },
+  readings: [
+    { id: 'heat', label: 'Nhiệt độ {device}', field: 'primary' },
+    { id: 'smoke', label: 'Đầu báo khói {smoke}', field: 'smoke' },
+    { id: 'gas', label: 'Khí gas {gas}', field: 'gas' },
+  ],
+  verification: [
+    { id: 'field-verified', text: 'Đã xác minh qua camera/tại chỗ', role: 'field' },
+    { id: 'real-fire', text: 'Có cháy thật', role: 'real-fire' },
+    { id: 'detector-restored', text: 'Đầu báo đã phục hồi', role: 'normal' },
+    { id: 'fire-team-notified', text: 'Đã thông báo PCCC' },
+  ],
+  normalHint: 'đầu báo đã phục hồi (hoặc mất tín hiệu và đã kiểm tra tại chỗ)',
+  issues: ISSUES,
+  followUp: { options: FOLLOW_OPTIONS, defaultMinutes: 30 },
 };
 
 /** Bands mặc định của khí gas theo ảnh (27/10/2026): 0–10 bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD – CHỜ chốt với
@@ -159,7 +247,7 @@ type PlaybookPart = {
   skills?: readonly StaffSkill[];
   causes: readonly string[];
   steps: readonly { id: string; text: string }[];
-  /** Ghi đè nút cập nhật (mặc định resolve-note). Chỉ `tank-overpressure` dùng `pressure-update`; `pressure-high` (PT-201) CÓ CHỦ ĐÍCH giữ "Đánh dấu đã xử lý". */
+  /** Ghi đè nút cập nhật (mặc định resolve-note = "Đánh dấu đã xử lý" → Đã xử lý, đóng qua modal "Xác nhận đóng cảnh báo"). */
   update?: AlertKindConfig['update'];
 };
 
@@ -334,7 +422,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
       { id: 'maintenance-if-leak', text: 'Tạo yêu cầu bảo trì nếu phát hiện điểm rò rỉ thiết bị' },
     ],
     actions: ['support', 'maintenance'],
-    update: { kind: 'gas-update', closeBelow: 'level-1' },
+    update: GAS_UPDATE,
     collapsed: ['progress', 'notes', 'log'],
   },
   // Ảnh drawer báo cháy FIR-00018 (scratch/figma-ref/alert-drawer-fire-*.png): 5 bước giữ nguyên chữ; ảnh không có "Nguyên nhân";
@@ -353,7 +441,7 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
       { id: 'isolate-gas', text: 'Chuẩn bị cô lập hệ thống gas nếu cần thiết' },
     ],
     actions: ['assign', 'procedure'],
-    update: { kind: 'fire-update' },
+    update: FIRE_UPDATE,
     defaultOwner: 'Trực ca',
     falseAlarmMaintenance: { title: 'Kiểm tra đầu báo {device}' },
     crossConfirmTitle: 'Nhiều tín hiệu cùng báo, nguy cơ cháy cao',
@@ -380,9 +468,12 @@ export const ALERT_KINDS: Readonly<Record<AlertKind, AlertKindConfig>> = {
   },
 };
 
-/** Thay `{device}` / `{safetyValve}` / `{regulator}` / `{tag}` / `{nearbySensor}` trong chữ cấu hình. */
-export function fillPlaybookText(text: string, device: string, vars: { nearbySensor?: string; tag?: string } = {}): string {
+/** Thay `{device}` / `{safetyValve}` / `{regulator}` / `{tag}` / `{nearbySensor}` / `{sensor}` / `{smoke}` / `{gas}` trong chữ cấu hình. */
+export function fillPlaybookText(text: string, device: string, vars: { nearbySensor?: string; tag?: string; sensor?: string; smoke?: string; gas?: string } = {}): string {
   return text
+    .replace(/\{sensor\}/g, vars.sensor ?? 'cảm biến')
+    .replace(/\{smoke\}/g, vars.smoke ?? '')
+    .replace(/\{gas\}/g, vars.gas ?? '')
     .replace(/\{device\}/g, device)
     .replace(/\{safetyValve\}/g, SAFETY_VALVES[device] ?? 'an toàn của thiết bị')
     .replace(/\{regulator\}/g, REGULATORS[device] ?? 'của thiết bị')

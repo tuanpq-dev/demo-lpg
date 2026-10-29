@@ -32,11 +32,11 @@ sequenceDiagram
 | 2 | `src/mocks/alertKinds.ts` · `src/mocks/sensors.ts` · `src/mocks/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
 | 3 | `src/data/alertStore.ts` | Store danh sách (nhẹ; `LiveAnnouncer` ở bundle chính chỉ dùng `useAlertList`) |
 | 4 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
-| 5 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, thao tác (`acknowledgeAlerts`/`assignAlerts`/`completeAlerts` trả `{ done, skipped }`, `resolveOneAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` |
+| 5 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (đóng hàng loạt – 4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` |
 | 6 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF` |
 | 7 | `src/app/useTableFilters.ts` | Bộ lọc ↔ URL (`replace`), phân trang, số đếm tab, bản ghi đang mở, chọn dòng |
 | 8 | `src/pages/alerts/AlertsPage.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, thao tác hàng loạt, `DataTable`, drawer, modal tạo yêu cầu (trên drawer), xuất CSV |
-| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCompleteModal`) | Drawer chi tiết theo ảnh (mục 4m); modal phân công cảnh báo (mục 4n) |
+| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
 
 Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` – giá trị mặc định không ghi lên URL.
 
@@ -51,7 +51,7 @@ Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` –
 
 **Người nhận xử lý cảnh báo = TOÀN BỘ `STAFF`** (`ALERT_STAFF`, kể cả trưởng ca/quản lý vận hành) – khác bảo trì (chỉ technician + engineer, `ASSIGNABLE_STAFF`) là **có chủ đích**: cảnh báo thuộc vận hành, trưởng ca thường nhận đầu tiên. Thay `ALERT_ASSIGNEES` cũ.
 
-**Hàng loạt** (thanh "Đã chọn N cảnh báo"): Xác nhận (chỉ Chưa xác nhận) · Phân công (không tự xác nhận, bỏ qua Đã hoàn thành) · **Đánh dấu hoàn thành** (chỉ Đang xử lý, MỘT ghi chú chung bắt buộc – `AlertBulkCompleteModal`). Thông báo "Đã hoàn thành X · bỏ qua N". Không còn đường nào nhảy từ Chưa xác nhận sang Hoàn thành.
+**Hàng loạt** (thanh "Đã chọn N cảnh báo"): Xác nhận (chỉ Chưa xác nhận) · Phân công (không tự xác nhận, bỏ qua Đã hoàn thành) · **Đóng cảnh báo** (chỉ Đã xử lý đủ 3 điều kiện hệ thống, MỘT ghi chú kết luận chung – `AlertBulkCloseModal`, 4p; thay "Đánh dấu hoàn thành" cũ). Thông báo "Đã đóng X · bỏ qua N (lý do)". Không còn đường nào nhảy cóc sang Hoàn thành.
 
 ### 4m. Drawer chi tiết cảnh báo (ảnh, 27/10/2026) – khung chung + panel theo loại
 
@@ -76,7 +76,7 @@ Cấu hình một loại (`AlertKindConfig` trong `src/mocks/alertKinds.ts`):
 | `banner` | hiện khi mức ≥ `fromLevel`; ≥ `esdLevel` đổi câu | từ cấp 2; ≥ 40 "Đã vượt ngưỡng ESD…" |
 | `causes`, `steps` | nguyên nhân (trống → ẩn mục) / hướng dẫn (`{device}`, `{safetyValve}`, `{nearbySensor}`) | không nguyên nhân · 7 bước như ảnh |
 | `actions` | nút phụ ở chân: `assign` · `support` · `maintenance` · `procedure` ("Xem quy trình khẩn cấp", cần `emergency`) | `support`, `maintenance` (**không** `assign`) |
-| `update` | nút chính khi Đang xử lý: `resolve-note` ("Đánh dấu đã xử lý") / `gas-update` ("Cập nhật xử lý", `closeBelow`) / `fire-update` (báo cháy) / `pressure-update` (modal lớn áp suất – mục 4o: dòng thông số, mục xác minh, vấn đề phát sinh, theo dõi) | `gas-update`, đóng khi < cấp 1 |
+| `update` | nút chính khi Đang xử lý: `resolve-note` ("Đánh dấu đã xử lý" → Đã xử lý) / `alert-update` (modal chung `AlertUpdateModal` – mục 4o: ô trạng thái, điều kiện `close.rule`, dòng thông số, nguồn xác minh, mục xác minh, vấn đề phát sinh, theo dõi) | `alert-update` (`GAS_UPDATE`, đóng khi < cấp 1) |
 | `defaultOwner` | nhóm phụ trách hiển thị khi chưa phân công cá nhân (KHÔNG ghi `assignee`) | – (fire: "Trực ca") |
 | `falseAlarmMaintenance` | đóng "Báo động giả" → nút "Tạo yêu cầu bảo trì" tên điền sẵn (`{device}`) | – (fire: "Kiểm tra đầu báo {device}") |
 | `crossConfirmTitle`, `emergency` | tiêu đề banner xác nhận chéo · quy trình + danh bạ khẩn cấp (`draft` = nhãn chưa duyệt; liên hệ thiếu `phone` → "Chờ khách cung cấp") | – (fire) |
@@ -94,13 +94,13 @@ Cấu hình một loại (`AlertKindConfig` trong `src/mocks/alertKinds.ts`):
 - Cấu hình tag ở `mocks/sensors.ts`: `HEAT_DETECTORS` (đầu báo: tag nhiệt độ/báo động/trạng thái, **`alarmAt` 57 °C** – giả định, chờ khách), `AREA_FIRE_SIGNALS` (tín hiệu liên quan theo khu), `AREA_EQUIPMENT` (máy trong khu). Tag giả định: `VAPORIZER_AREA_TAGS` (`features/live/tags.ts`): `HD-02` °C · `HD-02.ALARM` alarm/normal · `HD-02.STATE` online/fault · `SD-02.ALARM` · `MCP-02.STATE` idle/activated · `GS-05` (gas trạm hóa hơi) · `E-101A/B.STATE`. Nhiệt độ máy E-101A = `TT-201` (KHÁC nhiệt độ đầu báo).
 - Trạng thái đầu báo tách 2 dòng: báo động (Đang báo động / Đã phục hồi / Không rõ) + thiết bị (Trực tuyến / Mất kết nối / Lỗi). Mất tín hiệu: không giữ số/trạng thái cũ.
 - Xác nhận chéo (`crossConfirm`, `features/alerts/fire.ts`): khói báo động, gas ≥ cấp 1 (`GAS_BANDS`) hoặc nút nhấn kích hoạt → `EmergencyBanner` "Nhiều tín hiệu cùng báo, nguy cơ cháy cao"; nút nhấn → câu "Nút nhấn khẩn cấp đã được kích hoạt" đứng đầu; `role="alert"` chỉ khi mới hiện / tập nguồn đổi.
-- Chân: Chưa xác nhận → "Xác nhận cảnh báo" + "Phân công xử lý" + "Xem quy trình khẩn cấp" (đúng ảnh, KHÔNG có Tạo yêu cầu bảo trì) · Đang xử lý → "Cập nhật xử lý" (`FireUpdateModal`): Tiếp tục xử lý / Đã xử lý sự cố / Báo động giả, ghi chú BẮT BUỘC cả 3; 2 ô đóng khoá (aria-disabled + lý do) khi đầu báo còn báo động; mất tín hiệu → tick "Đã kiểm tra tại chỗ" bắt buộc (`canCloseFire`) · Hoàn thành → lưu `resolution { kind: handled | false-alarm, closedBy: live | field }` (thống kê); báo động giả → "Tạo yêu cầu bảo trì" điền sẵn "Kiểm tra đầu báo HD-02" (không trùng → "Xem MT-…").
+- Chân: Chưa xác nhận → "Xác nhận cảnh báo" + "Phân công xử lý" + "Xem quy trình khẩn cấp" (đúng ảnh, KHÔNG có Tạo yêu cầu bảo trì) · Đang xử lý → "Cập nhật xử lý" (khung chung `AlertUpdateModal`, 4o – thay `FireUpdateModal` từ 28/10/2026): 6 ô gồm Đã xử lý sự cố / Báo động giả; 2 ô này khoá (aria-disabled + lý do) khi đầu báo còn báo động; mất tín hiệu → mục xác minh "Đã xác minh qua camera/tại chỗ" bắt buộc (`canCloseFire`) · Đã xử lý (chờ đóng, 4p) → lưu `resolution { kind: handled | false-alarm, closedBy: live | field }` (thống kê); báo động giả → "Tạo yêu cầu bảo trì" điền sẵn "Kiểm tra đầu báo HD-02" (không trùng → "Xem MT-…").
 - `EmergencyProcedureModal`: bước ứng phó + danh bạ từ `ALERT_KINDS.fire.emergency` (BẢN NHÁP – nhãn "Bản nháp, cần bộ phận An toàn duyệt"; Cứu hỏa 114 là link `tel:`, số nội bộ "Chờ khách cung cấp"). Mở trên drawer, Esc/Đóng trả focus.
 - Header mọi loại: khu có mã (`AREA_CODES` ở `mocks/areas.ts`) hiện "Trạm hóa hơi (FZ-02)".
 
 **Phân công cảnh báo gas**: chân drawer gas KHÔNG có nút Phân công (theo ảnh) – phân công qua thao tác hàng loạt ở bảng (tick dòng → "Phân công…", mục 4n). Người phụ trách vẫn hiện ở header.
 
-**Panel gas – quy tắc**: số lớn = nồng độ LIVE (mất tín hiệu → "Mất tín hiệu", không giữ số cũ; thang + banner khi đó dùng giá trị lúc cảnh báo cho thận trọng) · Mức tăng = live − `previousValue` (ảnh chụp lưu cùng cảnh báo) · T/G vượt ngưỡng = bây giờ − lúc phát sinh khi live còn ≥ ngưỡng bản ghi · định dạng MỘT hàm `formatMeasure` / `formatDelta` ("25% LEL", "+11% LEL") · banner `EmergencyBanner`: không đóng được, `role="alert"` chỉ khi mới hiện / đổi mức · "Cập nhật xử lý" (`GasUpdateModal`): Tiếp tục / Đã xử lý xong (khoá aria-disabled + lý do khi live ≥ cấp 1; mất tín hiệu → bắt buộc số đo lại < cấp 1) · "Yêu cầu hỗ trợ" (`SupportRequestModal`): trưởng ca/quản lý + An toàn – HSE từ STAFF, lý do bắt buộc → người phối hợp + lịch sử, KHÔNG gửi thông báo (TODO backend).
+**Panel gas – quy tắc**: số lớn = nồng độ LIVE (mất tín hiệu → "Mất tín hiệu", không giữ số cũ; thang + banner khi đó dùng giá trị lúc cảnh báo cho thận trọng) · Mức tăng = live − `previousValue` (ảnh chụp lưu cùng cảnh báo) · T/G vượt ngưỡng = bây giờ − lúc phát sinh khi live còn ≥ ngưỡng bản ghi · định dạng MỘT hàm `formatMeasure` / `formatDelta` ("25% LEL", "+11% LEL") · banner `EmergencyBanner`: không đóng được, `role="alert"` chỉ khi mới hiện / đổi mức · "Cập nhật xử lý" (khung chung `AlertUpdateModal`, 4o – thay `GasUpdateModal` từ 28/10/2026): "Đã xử lý" khoá aria-disabled + lý do khi live ≥ cấp 1; mất tín hiệu → bắt buộc số đo lại (máy đo cầm tay) < cấp 1 · "Yêu cầu hỗ trợ" (`SupportRequestModal`): trưởng ca/quản lý + An toàn – HSE từ STAFF, lý do bắt buộc → người phối hợp + lịch sử, KHÔNG gửi thông báo (TODO backend).
 
 ```
 AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel threshold (áp suất):
@@ -193,12 +193,22 @@ Ghi (features/alerts/assign.ts → data/alerts.ts):
 
 Playground mục 16 (`#alert-assign`): modal một / đổi người / không có số / hàng loạt (giờ cố định 10:45, dữ liệu mẫu, không ghi store) cạnh ảnh, thẻ đầu 3 biến thể, StaffPickerCard có xét ca, StaffFilters.
 
-### 4o. Cập nhật xử lý cảnh báo áp suất (modal theo ảnh, 28/10/2026)
+### 4o. Cập nhật xử lý – khung chung áp suất / gas / cháy (modal theo ảnh áp suất, 28/10/2026)
 
-Ảnh: `scratch/figma-ref/alert-pressure-update-modal-{design,header,body,footer}.png` (chỉ máy dev, gitignore – KHÔNG để `public/`; chưa có node). Lệch ảnh: `docs/figma-diffs.md`. **Chỉ loại `tank-overpressure`** (`ALERT_KINDS[kind].update.kind = 'pressure-update'`); gas và cháy giữ modal gọn (`GasUpdateModal`, `FireUpdateModal`). **`pressure-high` (PT-201, áp suất đầu vào hóa hơi) CÓ CHỦ ĐÍCH giữ "Đánh dấu đã xử lý"**: dòng thông số / bộ điều áp / van an toàn của modal là của BỒN; loại khác muốn dùng thì thêm `update: { kind: 'pressure-update', … }` vào mục của loại đó trong `PLAYBOOKS`.
+Ảnh: `scratch/figma-ref/alert-pressure-update-modal-{design,header,body,footer}.png` (chỉ máy dev, gitignore – KHÔNG để `public/`; chưa có node). Lệch ảnh: `docs/figma-diffs.md`. **Khung chung `AlertUpdateModal`** cho mọi loại có `ALERT_KINDS[kind].update.kind = 'alert-update'` (cấu hình `AlertUpdateConfig` trong `src/mocks/alertKinds.ts`): `tank-overpressure` (`PRESSURE_UPDATE`, bám ảnh), `gas-leak` (`GAS_UPDATE`), `fire` (`FIRE_UPDATE`) – gas/cháy chưa có thiết kế riêng, dựng theo khung áp suất. Modal gọn cũ `GasUpdateModal` / `FireUpdateModal` đã bỏ. Loại còn lại (kể cả `pressure-high` PT-201) dùng "Đánh dấu đã xử lý" (`resolve-note`) – ngoại lệ cũ của PT-201 không còn: mọi loại đều đi Đã xử lý → đóng qua modal đóng (4p). Loại khác muốn dùng khung: thêm `update: <AlertUpdateConfig>` vào mục của loại trong `PLAYBOOKS`.
+
+| Phần theo loại | Áp suất | Gas | Cháy |
+|---|---|---|---|
+| Tiêu đề | Cập nhật xử lý cảnh báo áp suất | … rò rỉ khí | … báo cháy |
+| Ô trạng thái | 5 ô | 5 ô | 6 ô: "Đã xử lý" tách **Đã xử lý sự cố** / **Báo động giả** (cả hai → resolved + `resolution`) |
+| Điều kiện "Đã xử lý" (giữ nguyên như modal cũ) | `canClosePressure` | `canCloseGas` (live < đầu mức cấp 1; mất tín hiệu → số đo lại) | `canCloseFire` (đầu báo phục hồi; mất tín hiệu → mục xác minh "Đã xác minh qua camera/tại chỗ") |
+| Thông số | PT-101 · sau PR-101 · nhiệt độ bồn | nồng độ GS-04 + cảm biến cùng khu (màu theo bands) | nhiệt độ HD-02 · khói SD-02 (chữ trạng thái) · gas GS-05 |
+| Nguồn xác minh | Cảm biến / Đồng hồ cơ / Cả hai | Cảm biến / Máy đo cầm tay / Cả hai | không có (chỉ số cảm biến) |
+| Xác minh | 5 mục (role normal bắt buộc, over mâu thuẫn) | 4 mục, không ràng buộc | 4 mục: field = căn cứ khi mất tín hiệu · real-fire mâu thuẫn "Báo động giả" · normal "Đầu báo đã phục hồi" (chỉ tick khi đủ điều kiện) |
+| Mục tiêu theo dõi | < 10 bar | < 10 % LEL | không có mục tiêu số |
 
 ```
-Drawer áp suất (Đang xử lý) → "Cập nhật xử lý" (Button info) → PressureUpdateModal (pages/alerts, React.lazy → chunk riêng, size xl,
+Drawer (Đang xử lý) → "Cập nhật xử lý" (Button info) → AlertUpdateModal (pages/alerts, React.lazy → chunk riêng, size xl,
 header + footer cố định, thân cuộn; < lg xếp 1 cột)
   ├─ Thẻ đầu: InfoGrid (mã, nội dung, thiết bị = tên tài sản, khu vực, mức độ, người xử lý, trạng thái, thời gian, giá trị lúc cảnh báo, ngưỡng)
   ├─ Trạng thái xử lý: StatusOptionGroup inline 5 ô (columns={5}) – xem bảng map bên dưới; "Đã xử lý" khoá (aria-disabled + lý do hiện trên màn hình)
@@ -220,7 +230,7 @@ header + footer cố định, thân cuộn; < lg xếp 1 cột)
   │    lúc lưu) · Người chịu trách nhiệm (STAFF, mặc định người xử lý)
   ├─ AssignNotices: cảnh báo KHÔNG chặn (aria-live) + lý do chặn (nút "Lưu cập nhật" aria-disabled + aria-describedby)
   └─ Chân: Hủy (đã sửa so với bản đã lưu gần nhất → hỏi "Bỏ thay đổi"; nháp đã lưu giữ lại) · Lưu nháp (sessionStorage
-         `demo-lpg:alert-pressure-update-draft:<id>`, try/catch; tệp tạm không vào nháp) · Lưu cập nhật (một ghi chú + một dòng lịch sử, nháp xoá)
+         `demo-lpg:alert-update-draft:<id>`, try/catch; tệp tạm không vào nháp) · Lưu cập nhật (một ghi chú + một dòng lịch sử, nháp xoá)
 ```
 
 | Trạng thái (ô) | Bản ghi | Điều kiện |
@@ -229,19 +239,67 @@ header + footer cố định, thân cuộn; < lg xếp 1 cột)
 | Đang xử lý | `in-progress` + `phase: 'resolving'` | – |
 | Tạm dừng | `in-progress` + `hold: { kind: 'paused', reason, at }` | lý do bắt buộc |
 | Cần hỗ trợ | `in-progress` + `hold: { kind: 'needs-support', … }` + người phối hợp | người hỗ trợ + lý do bắt buộc (thông báo thật: TODO backend) |
-| Đã xử lý | `done` + `resolvedAt` + `closingReading` + `followUp?` | áp suất LIVE < ngưỡng cảnh báo **và** giá trị "sau xử lý" < ngưỡng; mất tín hiệu (hoặc không có tag) → nguồn phải có Đồng hồ cơ + số đo tay < ngưỡng; đang đọc số đầu tiên → khoá; chọn "Hệ thống đã trở về bình thường"; nguyên nhân + nội dung |
+| Đã xử lý (cháy: Đã xử lý sự cố / Báo động giả) | `resolved` (chờ đóng – 4p) + `resolvedAt` + `resolvedBy` + `closingReading` (áp suất/gas) hoặc `resolution` (cháy) + `followUp?` | theo loại (bảng trên); áp suất: LIVE < ngưỡng cảnh báo **và** giá trị "sau xử lý" < ngưỡng; mất tín hiệu (hoặc không có tag) → nguồn phải có Đồng hồ cơ + số đo tay < ngưỡng; đang đọc số đầu tiên → khoá; chọn "Hệ thống đã trở về bình thường"; nguyên nhân + nội dung |
 
 Quay lại Đang kiểm tra/Đang xử lý từ Tạm dừng/Cần hỗ trợ → bỏ cờ, lịch sử "Tiếp tục xử lý (…)". Cờ hiện cạnh badge trạng thái ở header drawer và cột Trạng thái của bảng.
 
 | Quy tắc | Ở đâu |
 |---|---|
 | Đọc hạng mục từ `guide` – MỘT hàm cho dạng cũ `{at, by}` (= Đạt) và dạng mới `{status, at, by, note?}`; drawer tick = Chưa kiểm tra ↔ Đạt, "Có vấn đề"/"Không áp dụng" hiện chip + khoá ở drawer | `src/features/alerts/inspection.ts` (`inspectionEntry`, `inspectionItems`, `toggledInspection`, `writeInspection`) |
-| Map trạng thái, điều kiện "Đã xử lý" (`canClosePressure`), màu theo ngưỡng, xác minh mâu thuẫn (`verificationErrors`: "trở về bình thường" khi chưa đủ điều kiện · cùng "Xác nhận áp suất thực tế vượt ngưỡng" · "Đã xử lý" mà chưa chọn), theo dõi (`followUpWindow`, `followUpLabel`), kiểm tra form, cảnh báo không chặn (`pressureWarnings`: nêu TÊN hạng mục "Có vấn đề" + hạng mục chưa kiểm tra khi chọn "Đã xử lý"), ghi bản ghi (`pressureUpdate`), nháp (`parsePressureDraft`) | `src/features/alerts/pressure.ts` (+ test) |
-| Dòng thông số (tag + ngưỡng theo thiết bị), mục xác minh đã điền chữ, nháp | `pressureReadingRows`, `verificationItems`, `pressureDraft`, `useTagReadings` (`src/data/alertDetail.ts`) |
-| Cấu hình loại (dòng, xác minh, vấn đề, theo dõi) | `PRESSURE_UPDATE` trong `src/mocks/alertKinds.ts`; `REGULATORS` (V-101 → PR-101); chữ thay `{device}` `{tag}` `{regulator}` `{safetyValve}` |
-| "Đang theo dõi đến HH:MM, mục tiêu < 10 bar" (drawer sau "Cảnh báo đã xử lý xong" + cột Trạng thái bảng) – hết giờ thì ẩn. Tự tạo lại cảnh báo khi vượt mục tiêu: **TODO backend** | `followUpLabel` |
+| Map trạng thái (`updateStateOf`, `updateStateFields`), điều kiện theo loại (`updateCloseCheck`), màu theo ngưỡng, xác minh mâu thuẫn (`verificationErrors`), theo dõi (`followUpWindow`, `followUpLabel`, `followUpDue`), kiểm tra form (`validateAlertUpdate`), cảnh báo không chặn (`updateWarnings`), ghi bản ghi (`alertUpdate`), nháp (`parseUpdateDraft`) | `src/features/alerts/update.ts` (+ `update.test.ts`) |
+| Điều kiện áp suất | `canClosePressure` – `src/features/alerts/pressure.ts` (+ `pressure.test.ts`) |
+| Dòng thông số (tag + ngưỡng theo thiết bị), ngưỡng đóng, mục xác minh đã điền chữ, nháp, trạng thái đầu báo | `updateReadingRows`, `closeLimit`, `verificationItems`, `updateDraft`, `useTagReadings`, `useDetectorStatus` (`src/data/alertDetail.ts`) |
+| Cấu hình loại | `PRESSURE_UPDATE` / `GAS_UPDATE` / `FIRE_UPDATE` trong `src/mocks/alertKinds.ts`; `REGULATORS` (V-101 → PR-101); chữ thay `{device}` `{tag}` `{regulator}` `{safetyValve}` `{sensor}` `{smoke}` `{gas}` |
+| "Đang theo dõi đến HH:MM[, mục tiêu < 10 bar]" (drawer + cột Trạng thái bảng, khi Đã xử lý / Hoàn thành) – hết giờ thì ẩn; Đã xử lý hết giờ → chip "Đến giờ kiểm tra lại". Tự tạo lại cảnh báo khi vượt mục tiêu: **TODO backend** | `followUpLabel`, `followUpDue` |
 
-**Mã mock để thử** (`VITE_AUTH=off npx vite`): `/alerts?alert=ALT-00128` → "Xác nhận cảnh báo" → "Cập nhật xử lý". PT-101 mock 9.2 bar (< 10.5) → "Đã xử lý" chọn được. **Dev:** `&live=bad:PT-101` (mất tín hiệu → nhập số đo tay). Playground mục 17 (`#pressure-update`): modal theo ảnh (Đang xử lý, 2 hạng mục đã kiểm tra, giờ cố định 14:06, không ghi store) + nút PT-101 về 9.2 / tăng 11.2 / mất tín hiệu, InspectionTable, BeforeAfterReadings, Checkbox card. Mục 15 thêm mẫu drawer "Tạm dừng + Có vấn đề/Không áp dụng" và "Hoàn thành – đang theo dõi".
+**Mã mock để thử** (`VITE_AUTH=off npx vite`):
+
+| Mã / URL | Thử gì |
+|---|---|
+| `/alerts?alert=ALT-00128` → "Xác nhận cảnh báo" → "Cập nhật xử lý" | Áp suất: PT-101 mock 9.2 bar (< 10.5) → "Đã xử lý" chọn được → chờ đóng. Dev: `&live=bad:PT-101` (mất tín hiệu → nhập số đo tay) |
+| `/alerts?alert=ALT-00127` → "Cập nhật xử lý" | Gas: GS-04 = 25 % LEL → "Đã xử lý" khoá; dev `&live=bad:GS-04` → nhập số đo lại < 10 |
+| `/alerts?alert=FIR-00018` → xác nhận → "Cập nhật xử lý" | Cháy: 6 ô, khoá khi HD-02 còn báo động; dev `&live=bad:HD-02.ALARM` → tick "Đã xác minh qua camera/tại chỗ" → Báo động giả |
+| `/alerts?tab=resolved&alert=ALT-00120` | Chờ đóng, mức Cao, Khu bơm không còn cảnh báo mở → đóng được (4p) |
+| `/alerts?range=7d&tab=resolved&alert=ALT-00116` | Chờ đóng, Nghiêm trọng, hết giờ theo dõi (chip), còn ALT-00128/00123/00122 mở cùng khu → khoá, thử "Tiếp tục theo dõi" |
+
+Playground mục 17 (`#alert-update`): modal áp suất theo ảnh (giờ cố định 14:06, không ghi store), modal gas / cháy, modal đóng theo ảnh + mẫu "Nghiêm trọng – người đóng = người xử lý", nút PT-101 về 9.2 / tăng 11.2 / mất tín hiệu, InspectionTable, BeforeAfterReadings, Checkbox card. Mục 15 thêm mẫu drawer "Đã xử lý – đang theo dõi", "Đã xử lý – hết giờ theo dõi", "Hoàn thành – đang theo dõi", "CHÁY – báo động giả (chờ đóng)".
+
+### 4p. Xác nhận đóng cảnh báo + tab "Chờ đóng" (modal theo ảnh, 28/10/2026)
+
+Ảnh: `scratch/figma-ref/alert-close-modal-{header,body,footer}.png` (chỉ máy dev). Lệch ảnh: `docs/figma-diffs.md`. Quyết định: `docs/decisions.md`.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Chưa_xác_nhận
+  Chưa_xác_nhận --> Đang_xử_lý: Xác nhận cảnh báo
+  Đang_xử_lý --> Đang_xử_lý: Cập nhật xử lý (kiểm tra / xử lý / tạm dừng / cần hỗ trợ)
+  Đang_xử_lý --> Đã_xử_lý: Cập nhật xử lý chọn "Đã xử lý" (đủ điều kiện loại) / Đánh dấu đã xử lý
+  Đã_xử_lý --> Đã_xử_lý: Tiếp tục theo dõi (followUp, hết giờ → chip "Đến giờ kiểm tra lại")
+  Đã_xử_lý --> Hoàn_thành: Xác nhận đóng (3 điều kiện hệ thống + ghi chú + người đóng hợp lệ)
+  Hoàn_thành --> [*]
+```
+
+Chỉ đi tiến (`workflow.ts` + `close.ts`), không lùi bước, không nhảy cóc (kể cả hàng loạt). `status` FE = hợp đồng + `resolved` (CHỈ FE – `AlertStatus` ở `src/mocks/alerts.ts`; contracts.test bỏ qua dòng resolved). Tiến trình drawer: bước "Đã xử lý" xong khi resolved (giờ `resolvedAt`), "Hoàn thành" xong khi đóng (giờ `closedAt`).
+
+```
+Drawer (Đã xử lý) → "Xác nhận đóng cảnh báo" → AlertCloseModal (React.lazy, size xl)
+  ├─ Thẻ đầu: icon + "mã: tiêu đề", badge "Đã xử lý" (xanh), Thiết bị · Khu vực · Người xử lý (resolvedBy) · Thời gian (giờ CB → resolvedAt)
+  ├─ Kết quả kỹ thuật (chỉ đọc – closeSummary): Nguyên nhân · Hành động (actionTaken, thiếu → ghi chú cuối) · {Đại lượng} trước/sau + "Ngưỡng cho phép < X"
+  │    (ngưỡng đóng `closeLimit`); cháy báo động giả → "Kết luận: Báo động giả"
+  ├─ Xác nhận điều kiện: 3 mục HỆ THỐNG (*) – đạt: tick sẵn, aria-readonly · sai: aria-disabled + lý do (aria-describedby) + link cảnh báo liên quan
+  │    + 2 mục tick tay không bắt buộc (lưu `closeChecks`)
+  ├─ Ghi chú kết luận (bắt buộc khi đóng, không bắt buộc khi theo dõi) · Thời gian theo dõi (Select, điền sẵn followUp.minutes, "(Mặc định)" theo cấu hình)
+  └─ Chân: Hủy · Tiếp tục theo dõi (khoá khi "Không theo dõi") · Xác nhận đóng cảnh báo (aria-disabled đến khi đủ – lý do đọc được)
+```
+
+| Quy tắc | Ở đâu |
+|---|---|
+| 3 điều kiện: ổn định (tín hiệu chính đọc được, đầu báo trực tuyến + đã phục hồi, tín hiệu phụ không bất thường – mất tín hiệu phụ không chặn) · trong ngưỡng (live tag chính < ngưỡng đóng theo chiều) · không còn cảnh báo **Chưa xác nhận / Đang xử lý** cùng thiết bị HOẶC cùng khu. Không có tag → 2 điều kiện đầu đạt kèm ghi chú | `closeConditions`, `relatedOpenAlerts` (`src/features/alerts/close.ts`); đầu vào từ live: `closeConditionInput`, `useCloseConditions` (`src/data/alertDetail.ts`) |
+| Người đóng: Nghiêm trọng → khác người xử lý (`resolvedBy`, thiếu → người phụ trách); mức khác tự đóng được. Chưa đăng nhập = 'Admin'. **TODO backend: kiểm tra vai trò** | `closerCheck` |
+| Đóng: done + `closedAt`/`closedBy`/`closingNote` + ghi chú "Kết luận: …" + lịch sử `close` | `closeAlert`, `closeBlock` |
+| Theo dõi: MỘT giá trị `followUp` – giữ nguyên nếu không đổi và chưa hết giờ, đổi → tính lại từ lúc lưu; Tiếp tục theo dõi giữ resolved, lịch sử `monitor` | `followUpFor`, `continueMonitoring` |
+| Đóng hàng loạt (bảng): chỉ dòng resolved đủ 3 điều kiện, một ghi chú chung, bỏ qua Nghiêm trọng nếu người đóng là người xử lý → "Đã đóng X · bỏ qua N (lý do)". Thao tác cũ "Đánh dấu hoàn thành" đã bỏ | `planBulkClose`, `bulkCloseMessage`, `closeAlerts` (data), `AlertBulkCloseModal` |
+| Tab "Chờ đóng" (ngoài Figma) giữa "Đang xử lý" và "Đã hoàn thành"; 5 KPI giữ như Figma (resolved không vào ô nào); thẻ ưu tiên bỏ resolved; badge "Đã xử lý" xanh (`resolved`), "Hoàn thành" trung tính (`closed`) | `ALERT_PARAMS`, `countByStatus`, `alertBadgeStatus` (`src/data/alerts.ts`), `Badge` |
 
 ## 5. Cách làm các việc hay gặp (phần của luồng này)
 

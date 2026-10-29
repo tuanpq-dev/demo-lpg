@@ -74,9 +74,26 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - Thông số: "Sau" của áp suất = số trực tiếp (ảnh 10.8 – vẫn trên ngưỡng 10.5, theo luật mới không đóng được); 11.8 bar ảnh tô đỏ → **vàng** (warning) vì < mức nguy hiểm 12 của cấu hình (đỏ chỉ khi ≥ nguy hiểm); số kèm đơn vị trong ô ("11.8 bar", ảnh chỉ số cho áp suất); một chữ số lẻ.
   - **Giờ kiểm tra lại tự tính** = lúc lưu + thời gian theo dõi (ảnh "14 : 36" là ô nhập); chỉ sửa được khi "Tùy chỉnh"; khối theo dõi khoá khi chưa chọn "Đã xử lý". Mục tiêu "< 10. 0 bar" → "< 10 bar" (ô số tiền tố "<").
   - **Điều kiện khoá "Đã xử lý"** (ngoài ảnh): live < ngưỡng cảnh báo VÀ sau xử lý < ngưỡng; mất tín hiệu → đồng hồ cơ + số đo tay. "Hệ thống đã trở về bình thường" khoá cùng điều kiện.
-  - **Modal chỉ áp dụng loại áp suất bồn** (`tank-overpressure`); gas/cháy giữ modal gọn; `pressure-high` giữ "Đánh dấu đã xử lý".
+  - ~~Modal chỉ áp dụng loại áp suất bồn; gas/cháy giữ modal gọn~~ → từ 5N (28/10/2026) là khung chung `AlertUpdateModal` cho áp suất / gas / cháy (xem mục dưới); `pressure-high` dùng "Đánh dấu đã xử lý" (→ Đã xử lý, chờ đóng).
   - Ô trạng thái/vấn đề/theo dõi dùng `StatusOptionGroup` inline có chấm radio (ảnh chữ giữa, không chấm); ô được chọn viền + nền primary nhạt như ảnh. Thẻ đầu 4 cột (`InfoGrid`, ảnh 5 cột); badge trạng thái thay chữ xanh "Đang xử lý". Thẻ tệp: ảnh viền trắng → `AttachmentCard fluid` dùng chung.
   - **Phần thêm ngoài ảnh:** lý do khoá dưới 5 ô trạng thái, ô lý do + danh sách người hỗ trợ (Tạm dừng / Cần hỗ trợ), dòng giải thích Trước/Sau, gợi ý dưới mục xác minh, khối mâu thuẫn, gợi ý "Chuyển sang Cần hỗ trợ", ô mô tả "Khác", dòng "Tự tạo lại cảnh báo… chờ backend", khối cảnh báo (vàng) + lý do chặn (đỏ), xác nhận "Bỏ thay đổi" ở chân, dòng "Bản nháp đã được khôi phục.", cờ Tạm dừng/Cần hỗ trợ và "Đang theo dõi đến …" ở drawer + bảng.
+
+### Cảnh báo / Modal cập nhật – gas và cháy dựng theo khung áp suất (28/10/2026, 5N)
+
+- Chưa có thiết kế riêng cho modal cập nhật gas / cháy → dựng theo **khung Figma áp suất** (cùng thứ tự khối, cùng component); tiêu đề theo loại ("Cập nhật xử lý cảnh báo rò rỉ khí" / "… báo cháy"). Modal gọn cũ (`GasUpdateModal`, `FireUpdateModal`, không có thiết kế) bỏ. Câu hỏi thiết kế riêng: `docs/questions.md`.
+- Gas: thông số = GS-04 + từng cảm biến gas cùng khu (một dòng/cảm biến, màu theo bands); nguồn xác minh đổi chữ "Đồng hồ cơ" → "Máy đo cầm tay"; 4 mục xác minh mới (không ràng buộc).
+- Cháy: 6 ô trạng thái (ô "Đã xử lý" tách "Đã xử lý sự cố" / "Báo động giả", lưới 3 cột thay 5); không có "Nguồn xác minh" (chỉ số cảm biến, ô Sau không nhập tay); dòng khói SD-02 hiện CHỮ trạng thái ("Bình thường" / "Báo động") thay số; "Giá trị mục tiêu" hiện "Không có mục tiêu số".
+
+### Cảnh báo / Modal xác nhận đóng + tab "Chờ đóng" (ảnh `scratch/figma-ref/alert-close-modal-{header,body,footer}.png`, 28/10/2026)
+
+- **Nguyên nhân "Trôi cảm biến" (ảnh modal đóng) không khớp mục xác minh của modal cập nhật**: modal cập nhật không có mục/nguyên nhân chọn sẵn "Trôi cảm biến" (gần nhất là xác minh "Cảm biến PT-101 có sai lệch"; nguyên nhân là ô nhập tự do). Modal đóng hiện nguyên văn ô "Nguyên nhân xử lý" đã nhập – playground mục 17 điền "Trôi cảm biến" để khớp ảnh.
+- **Áp suất sau xử lý: ảnh modal đóng 9.8 bar vs ảnh modal cập nhật 10.8 bar** (cùng ALT-00128). 10.8 ≥ ngưỡng 10.5 → theo luật không chọn được "Đã xử lý", nên modal đóng chỉ có thể hiện số < ngưỡng; dữ liệu dùng số đã lưu ở lần cập nhật ("Sau" của dòng chính, thiếu → `closingReading`). Playground dùng 9.8 như ảnh đóng.
+- **Thời gian theo dõi ở HAI nơi** (khối "Theo dõi sau xử lý" của modal cập nhật + select "Thời gian theo dõi sau xử lý" của modal đóng): chỉ lưu MỘT giá trị (`followUp`) – modal đóng điền sẵn số phút đã chọn, sửa được (đổi → tính lại từ lúc lưu). Ảnh "2 Giờ (Mặc định)" vs cấu hình áp suất mặc định 30 phút → nhãn "(Mặc định)" gắn theo cấu hình loại (ALT-00128 hiện "30 phút (Mặc định)"; mẫu ảnh có 2 giờ đã chọn nên hiện "2 Giờ"). Nhãn "Giờ" viết hoa theo ảnh.
+- 3 mục có `*` là điều kiện HỆ THỐNG (tự tick, không bấm được); ảnh cho tick tay. Mục sai: không tick được + lý do (vàng) + link cảnh báo liên quan dưới mục. Thêm dòng chú thích "Mục có * do hệ thống kiểm tra…".
+- Icon tam giác ở thẻ đầu: ảnh viền đỏ → icon `danger` đặc có sẵn (cùng drawer). Ô tick: màu `info` (token Checkbox chung) thay xanh ngọc ảnh. Nhãn mục "Nguyên nhân:" / "Hành động:" và thẻ con theo token (bo `lg`/`md`, viền `line-card`); thẻ đầu không có viền trái màu.
+- Nút "Xác nhận đóng cảnh báo": ảnh nền xanh ngọc mờ (trông như đang khoá) → Button `primary` + `aria-disabled` (mờ 50 %) đến khi đủ 3 điều kiện + ghi chú + người đóng hợp lệ; lý do khoá hiện dưới thân ("Chưa đóng được – còn thiếu: …"). "Hủy" đưa về cùng cụm nút bên phải như ảnh.
+- **Phần thêm ngoài ảnh:** gợi ý dưới ô ghi chú và select theo dõi, cảnh báo "người đóng phải khác người xử lý" (mức Nghiêm trọng), dòng lý do khoá, vùng thông báo. Thời gian thẻ đầu "10:45 → 11:30" = giờ cảnh báo → giờ Đã xử lý (`resolvedAt`).
+- **Tab "Chờ đóng" (ngoài Figma 70:3005)** giữa "Đang xử lý" và "Đã hoàn thành" cho trạng thái Đã xử lý; 5 KPI giữ như Figma (Đã xử lý không vào ô KPI nào). Badge "Đã xử lý" xanh (như ảnh đóng), "Hoàn thành" trung tính (bảng Figma ghi "Đã hoàn thành" xanh cho dòng đã xong). Thao tác hàng loạt "Đánh dấu hoàn thành" → "Đóng cảnh báo". Chip "Đến giờ kiểm tra lại" (vàng) dưới badge khi hết giờ theo dõi.
 
 ## Bảo trì (/maintenance)
 

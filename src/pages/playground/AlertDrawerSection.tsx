@@ -11,8 +11,10 @@ import {
 import { alertRecords, type AlertRecord } from '@/mocks/alerts';
 import { gaugeScale, gaugeValueText } from '@/features/alerts/gauge';
 import { applyAlertAssignment } from '@/features/alerts/assign';
-import { pressureUpdate } from '@/features/alerts/pressure';
-import { acknowledgeAlert, addAlertNote, fireUpdate, gasUpdate, requestSupport, resolveAlert, toggleGuideStep } from '@/features/alerts/workflow';
+import { alertUpdate } from '@/features/alerts/update';
+import { closeAlert, continueMonitoring } from '@/features/alerts/close';
+import { followUpConfig } from '@/data/alertDetail';
+import { acknowledgeAlert, addAlertNote, requestSupport, resolveAlert, toggleGuideStep } from '@/features/alerts/workflow';
 import { VAPORIZER_AREA_TAGS as FT } from '@/features/live/tags';
 import { liveSimulator } from '@/data/live';
 import { AlertDetailDrawer } from '../alerts/AlertDetailDrawer';
@@ -65,6 +67,33 @@ const SAMPLES: Record<string, { label: string; alert: AlertRecord; maintenance?:
       },
     },
   },
+  resolvedFollow: {
+    label: 'Đã xử lý (chờ đóng) – đang theo dõi, người xử lý khác người đóng',
+    alert: {
+      ...base,
+      status: 'resolved',
+      assignee: 'Nguyễn Văn A',
+      resolvedBy: 'Nguyễn Văn A',
+      acknowledgedAt: at('10:52'),
+      resolvedAt: at('11:30'),
+      cause: 'Trôi cảm biến',
+      actionTaken: 'Đã vệ sinh cảm biến và xác minh thủ công.',
+      readings: { source: 'both', at: at('11:30'), rows: [{ id: 'pressure', before: 11.8, after: 9.8 }] },
+      followUp: { minutes: 120, until: new Date(Date.now() + 120 * 60_000).toISOString(), target: 10, unit: 'bar', owner: 'Nguyễn Văn A' },
+    },
+  },
+  resolvedDue: {
+    label: 'Đã xử lý – hết giờ theo dõi ("Đến giờ kiểm tra lại")',
+    alert: {
+      ...base,
+      status: 'resolved',
+      assignee: 'Nguyễn Văn A',
+      resolvedBy: 'Nguyễn Văn A',
+      acknowledgedAt: at('10:52'),
+      resolvedAt: at('11:30'),
+      followUp: { minutes: 30, until: new Date(Date.now() - 5 * 60_000).toISOString(), target: 10, unit: 'bar', owner: 'Nguyễn Văn A' },
+    },
+  },
   doneFollow: {
     label: 'Hoàn thành – đang theo dõi sau xử lý',
     alert: {
@@ -73,6 +102,8 @@ const SAMPLES: Record<string, { label: string; alert: AlertRecord; maintenance?:
       assignee: 'Nguyễn Văn A',
       acknowledgedAt: at('10:52'),
       resolvedAt: at('11:40'),
+      closedAt: at('11:45'),
+      closedBy: 'Trần Văn B',
       followUp: { minutes: 30, until: new Date(Date.now() + 30 * 60_000).toISOString(), target: 10, unit: 'bar', owner: 'Nguyễn Văn A' },
     },
   },
@@ -90,8 +121,8 @@ const SAMPLES: Record<string, { label: string; alert: AlertRecord; maintenance?:
     alert: { ...fire, status: 'in-progress', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33'), history: [{ id: 'h1', at: at('14:33'), kind: 'acknowledge', text: 'Xác nhận cảnh báo – Hoàng Minh E nhận xử lý', actor: 'Hoàng Minh E' }] },
   },
   fireFalse: {
-    label: 'CHÁY – Đã đóng: báo động giả',
-    alert: { ...fire, status: 'done', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33'), resolvedAt: at('14:50'), resolution: { kind: 'false-alarm', closedBy: 'live' } },
+    label: 'CHÁY – Đã xử lý: báo động giả (chờ đóng, vẫn tạo được yêu cầu bảo trì)',
+    alert: { ...fire, status: 'resolved', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33'), resolvedAt: at('14:50'), resolution: { kind: 'false-alarm', closedBy: 'live' } },
   },
   rate: { label: 'Tốc độ thay đổi – không thang đo (ALT-00112)', alert: alertRecords.find((a) => a.id === 'ALT-00112')! },
 };
@@ -152,19 +183,19 @@ export function AlertDrawerSection() {
         onToggleGuide={(_, step) => setRec((a) => a && toggleGuideStep(a, step, ctx()))}
         onAddNote={(_, text) => setRec((a) => a && addAlertNote(a, text, ctx()))}
         onCreateMaintenance={() => undefined}
-        onGasUpdate={(_, input, check) => {
-          const res = rec ? gasUpdate(rec, input, check, ctx()) : ({ ok: false, reason: 'status' } as const);
-          if (res.ok) setRec(res.record);
-          return res;
-        }}
         onRequestSupport={(_, input) => setRec((a) => a && requestSupport(a, input, ctx()))}
-        onFireUpdate={(_, input, check) => {
-          const res = rec ? fireUpdate(rec, input, check, ctx()) : ({ ok: false, reason: 'status' } as const);
+        onUpdate={(_, input, check) => {
+          const res = rec ? alertUpdate(rec, input, check, ctx()) : ({ ok: false, errors: { state: 'Không có cảnh báo.' } } as const);
           if (res.ok) setRec(res.record);
           return res;
         }}
-        onPressureUpdate={(_, input, check) => {
-          const res = rec ? pressureUpdate(rec, input, check, ctx()) : ({ ok: false, errors: { state: 'Không có cảnh báo.' } } as const);
+        onCloseAlert={(_, input, conditions) => {
+          const res = rec ? closeAlert(rec, input, conditions, followUpConfig(rec), ctx()) : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
+          if (res.ok) setRec(res.record);
+          return res;
+        }}
+        onMonitor={(_, input) => {
+          const res = rec ? continueMonitoring(rec, input, followUpConfig(rec), ctx()) : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
           if (res.ok) setRec(res.record);
           return res;
         }}

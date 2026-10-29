@@ -24,11 +24,14 @@ import { useTableFilters } from '@/app/useTableFilters';
 import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
-import { bulkMessage, canResolve, linkedMaintenance, planBulk } from '@/features/alerts/workflow';
+import { bulkMessage, linkedMaintenance } from '@/features/alerts/workflow';
+import { bulkCloseMessage, planBulkClose } from '@/features/alerts/close';
+import { followUpConfig, useCloseConditions } from '@/data/alertDetail';
 import { DuplicateFromAlertError, setDeviceDirectory, useMaintenance } from '@/data/maintenance';
 import {
   ALERT_PARAMS,
   RANGE_OPTIONS,
+  alertBadgeStatus,
   SEVERITY_OPTIONS,
   SHIFT_OPTIONS,
   byNewest,
@@ -44,9 +47,9 @@ import {
 } from '@/data/alerts';
 import { CreateMaintenanceModal } from '../maintenance/CreateMaintenanceModal';
 import { AlertAssignModal } from './AlertAssignModal';
-import { AlertBulkCompleteModal } from './AlertBulkCompleteModal';
+import { AlertBulkCloseModal } from './AlertBulkCloseModal';
 import { AlertDetailDrawer } from './AlertDetailDrawer';
-import { ALERT_HOLD_LABEL, followUpLabel } from '@/features/alerts/pressure';
+import { ALERT_HOLD_LABEL, FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel } from '@/features/alerts/update';
 
 const getAlertId = (a: AlertRecord) => a.id;
 const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
@@ -66,7 +69,7 @@ const dayLabel = (d: number) => (d === 0 ? 'Hôm nay' : d === 1 ? 'Hôm qua' : `
 function exportCsv(rows: readonly AlertRecord[]) {
   const head = ['Ngày', 'Thời gian', 'Mức độ', 'Mã CB', 'Nội dung', 'Thiết bị', 'Khu vực', 'Giá trị/Ngưỡng', 'Trạng thái', 'Người xử lý'];
   const sev = Object.fromEntries(SEVERITY_OPTIONS.map((o) => [o.value, o.label]));
-  const st = { unacknowledged: 'Chưa xác nhận', 'in-progress': 'Đang xử lý', done: 'Đã hoàn thành' };
+  const st = { unacknowledged: 'Chưa xác nhận', 'in-progress': 'Đang xử lý', resolved: 'Đã xử lý (chờ đóng)', done: 'Hoàn thành' };
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const lines = rows.map((a) =>
     [dayLabel(a.daysAgo), a.time, sev[a.severity], a.code, a.message, a.device, a.area, tableValue(a), st[a.status], a.assignee ?? '']
@@ -85,7 +88,7 @@ function exportCsv(rows: readonly AlertRecord[]) {
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
-  const { status, data, error, refetch, acknowledge, complete, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, gasUpdate, fireUpdate, pressureUpdate, requestSupport } = useAlerts();
+  const { status, data, error, refetch, acknowledge, closeMany, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, update, close, monitor, requestSupport } = useAlerts();
   const maintenance = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
@@ -125,12 +128,16 @@ export default function AlertsPage() {
 
   const selectedRecords = all.filter((a) => selected.includes(a.id));
   const unackSelected = selectedRecords.filter((a) => a.status === 'unacknowledged').length;
-  const completePlan = planBulk(all, selected, canResolve);
-  const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
+  // Đóng hàng loạt: chỉ dòng Đã xử lý đủ 3 điều kiện hệ thống (đọc live cho các dòng Đã xử lý đang chọn).
+  const resolvedSelected = selectedRecords.filter((a) => a.status === 'resolved');
+  const closeConds = useCloseConditions(resolvedSelected, all);
+  const closePlan = planBulkClose(all, selected, (a) => closeConds[a.id] ?? [], actor);
+  const [bulkCloseOpen, setBulkCloseOpen] = useState(false);
 
   // Hàng loạt dùng CHUNG quy tắc với drawer (features/alerts/workflow + assign): xác nhận chỉ dòng Chưa xác nhận; phân công
   // qua modal "Phân công xử lý cảnh báo" (không tự xác nhận, bỏ qua dòng Hoàn thành / đã đúng người, dòng của người khác =
-  // đổi người với một lý do chung); hoàn thành chỉ dòng Đang xử lý + một ghi chú chung.
+  // đổi người với một lý do chung); đóng chỉ dòng Đã xử lý đủ 3 điều kiện hệ thống + một ghi chú kết luận chung (bỏ qua dòng
+  // Nghiêm trọng nếu người đóng là người xử lý). Không còn thao tác hàng loạt nhảy thẳng sang Hoàn thành.
   const runAck = async () => {
     const r = await acknowledge([...selected], actor);
     setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
@@ -150,6 +157,8 @@ export default function AlertsPage() {
     { id: 'all', label: 'Tất cả', count: tabCounts.all },
     { id: 'unacknowledged', label: 'Chưa xác nhận', count: tabCounts.unacknowledged, countTone: 'danger' },
     { id: 'in-progress', label: 'Đang xử lý', count: tabCounts['in-progress'], countTone: 'info' },
+    // Ngoài Figma (28/10/2026): cảnh báo Đã xử lý chờ xác nhận đóng – docs/figma-diffs.md.
+    { id: 'resolved', label: 'Chờ đóng', count: tabCounts.resolved },
     { id: 'done', label: 'Đã hoàn thành', count: tabCounts.done },
   ];
 
@@ -172,18 +181,23 @@ export default function AlertsPage() {
       id: 'status',
       header: 'Trạng thái',
       width: 120,
-      // Cờ Tạm dừng / Cần hỗ trợ + "Đang theo dõi đến HH:MM, mục tiêu …" (cảnh báo áp suất đã đóng có theo dõi – docs/guide/alerts.md (4o)).
+      // Cờ Tạm dừng / Cần hỗ trợ + "Đang theo dõi đến HH:MM, mục tiêu …" + chip "Đến giờ kiểm tra lại" (docs/guide/alerts.md (4o), (4p)).
       cell: (a) => {
         const follow = followUpLabel(a, now);
         return (
           <span className="flex flex-col items-start gap-1">
-            <Badge variant="status" value={a.status} />
+            <Badge variant="status" value={alertBadgeStatus(a.status)} />
             {a.status === 'in-progress' && a.hold && (
               <Badge variant="tag" tone="warning">
                 {ALERT_HOLD_LABEL[a.hold.kind]}
               </Badge>
             )}
             {follow && <span className="text-xs text-info">{follow}</span>}
+            {followUpDue(a, now) && (
+              <Badge variant="tag" tone="warning">
+                {FOLLOW_UP_DUE_LABEL}
+              </Badge>
+            )}
           </span>
         );
       },
@@ -299,8 +313,8 @@ export default function AlertsPage() {
             <Button disabled={assignableSelected === 0} onClick={() => setBulkAssignOpen(true)}>
               Phân công…{assignableSelected > 0 ? ` (${assignableSelected})` : ''}
             </Button>
-            <Button disabled={completePlan.eligible.length === 0} onClick={() => setBulkCompleteOpen(true)}>
-              Đánh dấu hoàn thành{completePlan.eligible.length > 0 ? ` (${completePlan.eligible.length})` : ''}
+            <Button disabled={closePlan.eligible.length === 0} onClick={() => setBulkCloseOpen(true)}>
+              Đóng cảnh báo{closePlan.eligible.length > 0 ? ` (${closePlan.eligible.length})` : ''}
             </Button>
             <Button variant="link" size="md" onClick={() => setSelected([])} className="ml-auto">
               Bỏ chọn
@@ -353,9 +367,9 @@ export default function AlertsPage() {
         onToggleGuide={(id, step) => void toggleGuide(id, step, actor)}
         onAddNote={(id, text) => void addNote(id, text, actor)}
         onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
-        onGasUpdate={(id, input, check) => gasUpdate(id, input, check, actor)}
-        onFireUpdate={(id, input, check) => fireUpdate(id, input, check, actor)}
-        onPressureUpdate={(id, input, check) => pressureUpdate(id, input, check, actor)}
+        onUpdate={(id, input, check) => update(id, input, check, actor)}
+        onCloseAlert={(id, input, conditions) => close(id, input, conditions, followUpConfig(all.find((x) => x.id === id) ?? {}), actor)}
+        onMonitor={(id, input) => monitor(id, input, followUpConfig(all.find((x) => x.id === id) ?? {}), actor)}
         actor={actor}
         onRequestSupport={(id, input) => void requestSupport(id, input, actor)}
       />
@@ -401,16 +415,16 @@ export default function AlertsPage() {
         />
       )}
 
-      {bulkCompleteOpen && (
-        <AlertBulkCompleteModal
-          eligible={completePlan.eligible.length}
-          skipped={completePlan.skipped}
-          onClose={() => setBulkCompleteOpen(false)}
+      {bulkCloseOpen && (
+        <AlertBulkCloseModal
+          eligible={closePlan.eligible.length}
+          skippedText={closePlan.skipped.length ? bulkCloseMessage(closePlan.eligible.length, closePlan.skipped).split(' · ')[1]! : null}
+          onClose={() => setBulkCloseOpen(false)}
           onConfirm={async (note) => {
-            const r = await complete(selected, note, actor);
-            setBulkCompleteOpen(false);
+            const r = await closeMany(selected, note, closeConds, followUpConfig, actor);
+            setBulkCloseOpen(false);
             setSelected([]);
-            setNotice(bulkMessage('Đã hoàn thành', r.done, r.skipped));
+            setNotice(r.message);
           }}
         />
       )}

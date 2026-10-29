@@ -2,22 +2,26 @@
  * Mock data màn Cảnh báo – 5 dòng đầu nguyên văn Figma 70:3032, 15 dòng bổ sung để thử lọc/phân trang.
  * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts.ts).
  */
-import type { Alert, AlertStatus } from '@demo-lpg/shared/alerts';
+import type { Alert, AlertStatus as ApiAlertStatus } from '@demo-lpg/shared/alerts';
 import { V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import { GAS_TAGS } from '@/features/live/tags';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
 import type { AlertKind } from './alertKinds';
 
-/** Trạng thái xử lý của cảnh báo (dùng chung với Badge status) – định nghĩa ở packages/shared. */
-export type { AlertStatus };
+/**
+ * Trạng thái xử lý của cảnh báo ở FE = hợp đồng (`unacknowledged` · `in-progress` · `done`) + `resolved` CHỈ FE (28/10/2026):
+ * Đã xử lý, chờ người có thẩm quyền xác nhận đóng (tab "Chờ đóng"). `done` = Hoàn thành (đã đóng).
+ * TODO(backend): thêm `resolved` vào `ALERT_STATUSES` (packages/shared – repo backend) – docs/decisions.md.
+ */
+export type AlertStatus = ApiAlertStatus | 'resolved';
 
 /** Chiều vượt ngưỡng: above = cao hơn ngưỡng là xấu (mặc định) · below = thấp hơn ngưỡng là xấu (nhiệt độ thấp, lưu lượng thấp…). */
 export type AlertDirection = 'above' | 'below';
 
 export type AlertNote = { id: string; author: string; /** ISO */ at: string; text: string };
 
-export type AlertHistoryKind = 'acknowledge' | 'assign' | 'guide' | 'note' | 'resolve' | 'maintenance' | 'support' | 'update' | 'hold';
+export type AlertHistoryKind = 'acknowledge' | 'assign' | 'guide' | 'note' | 'resolve' | 'maintenance' | 'support' | 'update' | 'hold' | 'close' | 'monitor';
 export type AlertHistoryEntry = { id: string; /** ISO */ at: string; kind: AlertHistoryKind; text: string; actor?: string };
 
 /** Trạng thái một hạng mục kiểm tra (= bước hướng dẫn của drawer – MỘT danh sách theo loại). */
@@ -40,7 +44,7 @@ export type VerificationSource = 'sensor' | 'gauge' | 'both';
 /** Thông số trước/sau xử lý đã lưu (modal áp suất). `before` = số lúc cảnh báo, `after` = số sau xử lý (live hoặc đo tay). */
 export type AlertReadings = { source: VerificationSource; at: string; rows: readonly { id: string; before?: number; after?: number; manual?: boolean }[] };
 /** Theo dõi sau xử lý: đến `until`, mục tiêu `< target unit`, người chịu trách nhiệm. TODO(backend): tự tạo lại cảnh báo khi vượt mục tiêu. */
-export type AlertFollowUp = { minutes: number; until: string; target: number; unit: string; owner: string };
+export type AlertFollowUp = { minutes: number; until: string; /** Thiếu = theo dõi không có giá trị mục tiêu số (báo cháy). */ target?: number; unit: string; owner: string };
 
 /**
  * Cảnh báo trong mock = hợp đồng API `Alert` (packages/shared/src/alerts.ts) nhưng thời điểm ghi TƯƠNG ĐỐI
@@ -48,7 +52,8 @@ export type AlertFollowUp = { minutes: number; until: string; target: number; un
  * Các trường sau `time` CHỈ CÓ Ở FE (drawer chi tiết cảnh báo, 27/10/2026) – chờ đưa vào hợp đồng API (docs/decisions.md);
  * liệt kê ở `ALERT_FE_ONLY_FIELDS` để test hợp đồng bỏ qua.
  */
-export type AlertRecord = Omit<Alert, 'occurredAt'> & {
+export type AlertRecord = Omit<Alert, 'occurredAt' | 'status'> & {
+  status: AlertStatus;
   /** Số ngày trước hôm nay (0 = hôm nay). Thời điểm thật = hôm nay − daysAgo, lúc `time`. */
   daysAgo: number;
   /** "HH:mm:ss" */
@@ -92,6 +97,15 @@ export type AlertRecord = Omit<Alert, 'occurredAt'> & {
   actionTaken?: string;
   attachments?: readonly AlertAttachment[];
   followUp?: AlertFollowUp;
+  // ---- Đóng cảnh báo (modal "Xác nhận đóng cảnh báo", 28/10/2026) ----
+  /** Người đánh dấu Đã xử lý (status resolved) – mức Nghiêm trọng thì người đóng phải khác người này. Thiếu → người phụ trách. */
+  resolvedBy?: string;
+  /** ISO – lúc xác nhận đóng (Hoàn thành) + người đóng + ghi chú kết luận. */
+  closedAt?: string;
+  closedBy?: string;
+  closingNote?: string;
+  /** Mục xác nhận tick tay khi đóng (id `CLOSE_MANUAL_ITEMS`). */
+  closeChecks?: readonly string[];
 };
 
 export const ALERT_FE_ONLY_FIELDS = [
@@ -118,6 +132,11 @@ export const ALERT_FE_ONLY_FIELDS = [
   'actionTaken',
   'attachments',
   'followUp',
+  'resolvedBy',
+  'closedAt',
+  'closedBy',
+  'closingNote',
+  'closeChecks',
 ] as const;
 
 /** Hệ thống gửi thông báo sau khi phát hiện (mock: +3 s, như ảnh 10:45:22 → 10:45:25). */
@@ -129,9 +148,12 @@ function addSeconds(time: string, s: number) {
   return `${p(Math.floor(t / 3600))}:${p(Math.floor(t / 60) % 60)}:${p(t % 60)}`;
 }
 
-type Extra = Pick<AlertRecord, 'kind' | 'direction' | 'tag' | 'previousValue' | 'readingsAtAlert' | 'attachments'> & {
+type Extra = Partial<Pick<AlertRecord, 'kind' | 'direction' | 'tag' | 'previousValue' | 'readingsAtAlert' | 'attachments' | 'status' | 'resolvedBy' | 'cause' | 'actionTaken'>> & {
   /** Phát sinh TƯƠNG ĐỐI "N phút trước" (thay daysAgo + time của bảng) – ALT-00127: 6 phút như ảnh "T/G vượt ngưỡng". */
   minutesAgo?: number;
+  /** Đã xử lý N phút trước (mock Chờ đóng) → `resolvedAt`; `followUpMin` = theo dõi N phút tính từ lúc đó (có thể đã hết giờ). */
+  resolvedAgoMin?: number;
+  followUpMin?: number;
 };
 /** Loại / chiều / tag theo mã – tách khỏi bảng cho bảng giữ nguyên văn Figma. */
 const EXTRA: Record<string, Extra> = {
@@ -155,11 +177,13 @@ const EXTRA: Record<string, Extra> = {
   'ALT-00123': { kind: 'level-low', direction: 'below' },
   'ALT-00122': { kind: 'sensor-signal-lost', direction: 'below' },
   'ALT-00121': { kind: 'temperature-high' },
-  'ALT-00120': { kind: 'vibration-high' },
+  // Chờ đóng (tab "Chờ đóng", thử đóng / đóng hàng loạt): bảng Figma ghi Đã hoàn thành → mock đổi sang Đã xử lý (docs/guide/alerts.md).
+  'ALT-00120': { kind: 'vibration-high', status: 'resolved', resolvedBy: 'Nguyễn Văn A', cause: 'Bu lông chân đế lỏng', actionTaken: 'Siết lại bu lông chân đế, đo rung còn 3.2 mm/s.', resolvedAgoMin: 30 },
   'ALT-00119': { kind: 'filter-dp-high' },
   'ALT-00118': { kind: 'gas-leak', tag: GAS_TAGS[2], previousValue: '12' },
   'ALT-00117': { kind: 'flow-low', direction: 'below' },
-  'ALT-00116': { kind: 'safety-valve-open' },
+  // Chờ đóng, Nghiêm trọng, người xử lý Phạm Văn D – còn cảnh báo đang mở cùng khu (Khu bồn LPG) → chưa đóng được.
+  'ALT-00116': { kind: 'safety-valve-open', status: 'resolved', resolvedBy: 'Phạm Văn D', cause: 'Áp suất bồn vượt điểm đặt', actionTaken: 'Giảm tải nạp, van đã đóng kín lại.', resolvedAgoMin: 90, followUpMin: 60 },
   'ALT-00115': { kind: 'temperature-low', direction: 'below' },
   'ALT-00114': { kind: 'battery-low', direction: 'below' },
   'ALT-00113': { kind: 'pressure-high', tag: VAPORIZER_TAGS.inletPressure },
@@ -211,8 +235,13 @@ function minutesAgoToRelative(minutes: number, now: Date): Pick<AlertRecord, 'da
 
 const loadedAt = appNow();
 export const alertRecords: AlertRecord[] = rows.map((a) => {
-  const { minutesAgo, ...extra } = EXTRA[a.id] ?? {};
+  const { minutesAgo, resolvedAgoMin, followUpMin, ...extra } = EXTRA[a.id] ?? {};
   const when = minutesAgo !== undefined ? minutesAgoToRelative(minutesAgo, loadedAt) : {};
-  const rec = { ...a, ...extra, ...when };
+  const rec: AlertRecord = { ...a, ...extra, ...when };
+  if (resolvedAgoMin !== undefined) {
+    const at = loadedAt.getTime() - resolvedAgoMin * 60_000;
+    rec.resolvedAt = new Date(at).toISOString();
+    if (followUpMin) rec.followUp = { minutes: followUpMin, until: new Date(at + followUpMin * 60_000).toISOString(), unit: rec.unit, owner: rec.resolvedBy ?? rec.assignee ?? '' };
+  }
   return { ...rec, notifiedTime: addSeconds(rec.time, NOTIFY_DELAY_S) };
 });

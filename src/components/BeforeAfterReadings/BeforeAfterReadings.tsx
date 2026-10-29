@@ -18,6 +18,8 @@ export type ReadingRowView = {
   editable: boolean;
   /** Chữ thay số khi không có giá trị "Sau" (vd "Mất tín hiệu"). */
   afterPlaceholder?: string;
+  /** Giá trị "Sau" dạng chữ (tag trạng thái, vd đầu báo khói "Bình thường" / "Báo động") – tô theo `afterTone`. */
+  afterText?: string;
 };
 
 export type BeforeAfterReadingsProps = {
@@ -83,7 +85,9 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
           ) : (
             <div className="flex h-[35px] items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
               <span className="sr-only">{r.label} sau xử lý: </span>
-              {r.after !== undefined ? (
+              {r.afterText !== undefined ? (
+                <span className={toneClass[r.afterTone ?? 'normal']}>{r.afterText}</span>
+              ) : r.after !== undefined ? (
                 <span className={toneClass[r.afterTone ?? 'normal']}>
                   {fmt(r.after, r.unit)}
                   <span className="sr-only">{toneWord[r.afterTone ?? 'normal']}</span>

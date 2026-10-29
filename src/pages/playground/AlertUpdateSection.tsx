@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { BeforeAfterReadings, Button, Checkbox, InspectionTable } from '@/components';
 import { liveSimulator } from '@/data/live';
 import { INSPECTION_STATUSES, INSPECTION_STATUS_LABEL, type InspectionStatus } from '@/features/alerts/inspection';
-import { pressureUpdate } from '@/features/alerts/pressure';
+import { alertUpdate } from '@/features/alerts/update';
+import { closeAlert, continueMonitoring } from '@/features/alerts/close';
+import { followUpConfig } from '@/data/alertDetail';
 import { V101_TAGS } from '@/features/live/tags';
 import { alertRecords, type AlertRecord } from '@/mocks/alerts';
-import PressureUpdateModal from '../alerts/PressureUpdateModal';
+import AlertUpdateModal from '../alerts/AlertUpdateModal';
+import AlertCloseModal from '../alerts/AlertCloseModal';
 import { Demo } from './Demo';
 
 /** Ảnh thiết kế chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
 const REF = import.meta.env.DEV ? '/scratch/figma-ref/alert-pressure-update-modal-design.png' : undefined;
+const REF_CLOSE = import.meta.env.DEV ? '/scratch/figma-ref/alert-close-modal-body.png' : undefined;
 const base = alertRecords.find((a) => a.id === 'ALT-00128')!;
 const at = (hhmm: string) => new Date(`2026-10-28T${hhmm}:00+07:00`).toISOString();
 /** Như ảnh: Đang xử lý, 2 hạng mục đã kiểm tra (Đạt / Có vấn đề), bộ điều áp bất thường. */
@@ -26,15 +30,30 @@ const SAMPLE: AlertRecord = {
   verification: ['regulator-fault'],
 };
 const FIXED_NOW = new Date(at('14:06'));
+const gas = alertRecords.find((a) => a.id === 'ALT-00127')!;
+const fire = alertRecords.find((a) => a.id === 'FIR-00018')!;
+const FIRE_SAMPLE: AlertRecord = { ...fire, status: 'in-progress', phase: 'inspecting', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33') };
+/** Như ảnh modal đóng: Đã xử lý 10:45 → 11:30, Trôi cảm biến, 11.8 → 9.8 bar, người xử lý Nguyễn Văn A (người đóng = Playground). */
+const CLOSE_SAMPLE: AlertRecord = {
+  ...base,
+  status: 'resolved',
+  assignee: 'Nguyễn Văn A',
+  resolvedBy: 'Nguyễn Văn A',
+  resolvedAt: at('11:30'),
+  cause: 'Trôi cảm biến',
+  actionTaken: 'Đã vệ sinh cảm biến và xác minh thủ công.',
+  readings: { source: 'both', at: at('11:30'), rows: [{ id: 'pressure', before: 11.8, after: 9.8 }] },
+  followUp: { minutes: 120, until: new Date(Date.now() + 120 * 60_000).toISOString(), target: 10, unit: 'bar', owner: 'Nguyễn Văn A' },
+};
 
 const STATUS_OPTIONS = INSPECTION_STATUSES.map((s) => ({ value: s, label: INSPECTION_STATUS_LABEL[s] }));
 
 /**
- * Mục 17 – modal "Cập nhật xử lý cảnh báo áp suất" (ảnh 28/10/2026): modal đầy đủ cạnh ảnh (dữ liệu mẫu, giờ cố định 14:06,
- * KHÔNG ghi store) + component mới InspectionTable, BeforeAfterReadings, Checkbox card. Nút mô phỏng PT-101 (dev).
+ * Mục 17 – modal "Cập nhật xử lý" (khung chung: áp suất theo ảnh, gas, cháy) + modal "Xác nhận đóng cảnh báo" (ảnh
+ * 28/10/2026): dữ liệu mẫu, KHÔNG ghi store + component InspectionTable, BeforeAfterReadings, Checkbox card. Nút mô phỏng (dev).
  */
-export function PressureUpdateSection() {
-  const [open, setOpen] = useState(false);
+export function AlertUpdateSection() {
+  const [open, setOpen] = useState<'update' | 'close' | null>(null);
   const [rec, setRec] = useState<AlertRecord>(SAMPLE);
   const [log, setLog] = useState('');
   const [rows, setRows] = useState<Record<string, { status: InspectionStatus; note: string }>>({
@@ -50,10 +69,26 @@ export function PressureUpdateSection() {
           <Button
             onClick={() => {
               setRec(SAMPLE);
-              setOpen(true);
+              setOpen('update');
             }}
           >
             Mở modal (Đang xử lý, theo ảnh)
+          </Button>
+          <Button
+            onClick={() => {
+              setRec(gas);
+              setOpen('update');
+            }}
+          >
+            Modal gas (ALT-00127)
+          </Button>
+          <Button
+            onClick={() => {
+              setRec(FIRE_SAMPLE);
+              setOpen('update');
+            }}
+          >
+            Modal cháy (FIR-00018)
           </Button>
           <Button onClick={() => liveSimulator.rampTo(V101_TAGS.pressure, 9.2)}>PT-101 về 9.2 bar (dưới ngưỡng)</Button>
           <Button onClick={() => liveSimulator.rampTo(V101_TAGS.pressure, 11.2)}>PT-101 tăng tới 11.2 bar</Button>
@@ -65,18 +100,62 @@ export function PressureUpdateSection() {
           </p>
         )}
       </Demo>
-      {open && (
-        <PressureUpdateModal
+      <Demo title="Modal xác nhận đóng cảnh báo (dữ liệu mẫu theo ảnh, không ghi store)" refImg={REF_CLOSE}>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            onClick={() => {
+              setRec(CLOSE_SAMPLE);
+              setOpen('close');
+            }}
+          >
+            Mở modal đóng (Đã xử lý, theo ảnh)
+          </Button>
+          <Button
+            onClick={() => {
+              setRec({ ...CLOSE_SAMPLE, resolvedBy: 'Playground' });
+              setOpen('close');
+            }}
+          >
+            Nghiêm trọng – người đóng = người xử lý
+          </Button>
+        </div>
+      </Demo>
+      {open === 'update' && (
+        <AlertUpdateModal
           alert={rec}
           actor="Playground"
-          fixedNow={FIXED_NOW}
-          onClose={() => setOpen(false)}
+          fixedNow={rec.id === SAMPLE.id ? FIXED_NOW : undefined}
+          onClose={() => setOpen(null)}
           onSubmit={(input, check) => {
-            const res = pressureUpdate(rec, input, check, { by: 'Playground', at: FIXED_NOW });
+            const res = alertUpdate(rec, input, check, { by: 'Playground', at: new Date() });
             if (res.ok) {
               setRec(res.record);
-              setOpen(false);
+              setOpen(null);
               setLog(`Đã lưu (không ghi store): ${res.record.history?.at(-1)?.text ?? ''}`);
+            }
+            return res;
+          }}
+        />
+      )}
+      {open === 'close' && (
+        <AlertCloseModal
+          alert={rec}
+          allAlerts={[rec]}
+          actor="Playground"
+          onClose={() => setOpen(null)}
+          onConfirmClose={(input, conditions) => {
+            const res = closeAlert(rec, input, conditions, followUpConfig(rec), { by: 'Playground', at: new Date() });
+            if (res.ok) {
+              setOpen(null);
+              setLog(`Đã đóng (không ghi store): ${res.record.history?.at(-1)?.text ?? ''}`);
+            }
+            return res;
+          }}
+          onMonitor={(input) => {
+            const res = continueMonitoring(rec, input, followUpConfig(rec), { by: 'Playground', at: new Date() });
+            if (res.ok) {
+              setOpen(null);
+              setLog(`Tiếp tục theo dõi (không ghi store): ${res.record.history?.at(-1)?.text ?? ''}`);
             }
             return res;
           }}

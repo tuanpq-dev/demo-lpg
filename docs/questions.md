@@ -178,8 +178,21 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 10.8 | [D] Drawer áp suất nay hiện 6 hạng mục (một nguồn với modal) thay vì 3 bước như ảnh drawer – đồng ý? | 6 hạng mục, chữ theo ảnh modal. |
 | 10.9 | [K] Hết giờ theo dõi: tự tạo lại cảnh báo khi vượt mục tiêu? Nhắc người chịu trách nhiệm? | Chỉ hiển thị "Đang theo dõi đến HH:MM" – TODO backend. |
 | 10.10 | [K] "Cần hỗ trợ" có cần chọn nhiều người? | Một người (như "Yêu cầu hỗ trợ" của gas). |
-| 10.11 | [K] Có cần modal này cho `pressure-high` (PT-201, áp suất đầu vào hóa hơi)? | Không – giữ "Đánh dấu đã xử lý". |
+| 10.11 | [K] Có cần modal này cho `pressure-high` (PT-201, áp suất đầu vào hóa hơi)? | Không – dùng "Đánh dấu đã xử lý"; từ 5N đi Đã xử lý → đóng qua modal đóng như mọi loại (bỏ ngoại lệ). |
 | 10.12 | [K] **Hỏi khách:** ALT-00128 mức "Nghiêm trọng" nhưng giá trị 11.8 bar < mức nguy hiểm 12 bar của V-101 (cấu hình tag: cảnh báo 10.5 / nguy hiểm 12). Mức độ cảnh báo tính từ ngưỡng nào – hay ngưỡng nguy hiểm thật của V-101 thấp hơn 12? | Giữ mức "Nghiêm trọng" của bản ghi (như Figma); màu số theo ngưỡng cấu hình → 11.8 tô vàng (warning), chỉ ≥ 12 mới đỏ. |
+
+## 11. Cảnh báo – quy trình đóng: modal "Xác nhận đóng cảnh báo" + khung cập nhật chung (ảnh 28/10/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 11.1 | [K] **Ai được đóng cảnh báo?** Có cần vai trò riêng (trưởng ca / kỹ sư an toàn)? | Ai có quyền `alert:acknowledge`. Mức Nghiêm trọng: người đóng phải KHÁC người xử lý (`resolvedBy`); mức khác người xử lý tự đóng được. Chưa đăng nhập: người hiện tại = "Admin". Kiểm tra vai trò: TODO backend. |
+| 11.2 | [D][K] **Ý nghĩa "Tiếp tục theo dõi"**: chỉ gia hạn theo dõi (vẫn chờ đóng), hay mở lại xử lý? Hết giờ thì sao? | Giữ Đã xử lý (chờ đóng) + MỘT giá trị theo dõi (`followUp`, tính lại từ lúc lưu nếu đổi thời gian); ghi chú không bắt buộc; hết giờ → chip "Đến giờ kiểm tra lại" ở drawer + bảng. Không tự mở lại. |
+| 11.3 | [D] **Tab cho trạng thái Đã xử lý (chờ đóng)**: Figma chỉ có Tất cả / Chưa xác nhận / Đang xử lý / Đã hoàn thành | Thêm tab "Chờ đóng" giữa "Đang xử lý" và "Đã hoàn thành"; 5 KPI giữ như Figma (Đã xử lý không vào ô nào) – có cần ô KPI "Chờ đóng"? |
+| 11.4 | [D] **Thiết kế riêng cho modal cập nhật gas / cháy?** | Dựng theo khung Figma áp suất: gas (thông số GS-04 + cảm biến cùng khu, 4 mục xác minh, mục tiêu < 10 % LEL), cháy (6 ô: "Đã xử lý sự cố" / "Báo động giả"; nhiệt độ HD-02, khói SD-02, gas GS-05; không có mục tiêu số). |
+| 11.5 | [K] "Không còn cảnh báo liên quan đang hoạt động": phạm vi cùng thiết bị hay cùng KHU? | Cùng thiết bị HOẶC cùng khu, chỉ tính Chưa xác nhận / Đang xử lý. Hệ quả: ALT-00128 không đóng được khi Khu bồn LPG còn ALT-00123 / ALT-00122 mở. |
+| 11.6 | [K] "Thiết bị đã trở về trạng thái ổn định" kiểm theo gì? | Tín hiệu chính đọc được + tín hiệu phụ không vượt ngưỡng cảnh báo (cháy: đầu báo trực tuyến + đã phục hồi, khói không báo động). Loại không có số trực tiếp → coi là đạt, ghi chú "theo kết quả xử lý đã ghi". |
+| 11.7 | [D] Ảnh modal đóng: "Trôi cảm biến", 9.8 bar – khác ảnh modal cập nhật (10.8 bar, không có "Trôi cảm biến") | Hiện đúng dữ liệu đã nhập ở modal cập nhật (docs/figma-diffs.md). |
+| 11.8 | [K] Đóng hàng loạt có cần cho cảnh báo Nghiêm trọng không? | Có, nhưng bỏ qua dòng mà người đóng là người xử lý; chỉ dòng đủ 3 điều kiện hệ thống; một ghi chú kết luận chung. |
 
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 

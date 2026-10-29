@@ -8,12 +8,13 @@ import { AuthProvider } from '@/app/auth';
 import { liveSimulator } from '@/data/live';
 import { alertRecords } from '@/mocks/alerts';
 import AlertsPage from './AlertsPage';
-import PressureUpdateModal from './PressureUpdateModal';
+import AlertUpdateModal from './AlertUpdateModal';
 
 /*
  * Modal "Cập nhật xử lý cảnh báo áp suất" (loại tank-overpressure, ALT-00128 – ảnh 28/10/2026): mở từ drawer (Đang xử lý),
  * hạng mục kiểm tra dùng chung drawer ↔ modal, điều kiện "Đã xử lý" theo live / sau xử lý / mất tín hiệu, xác minh mâu thuẫn,
- * cảnh báo nêu tên hạng mục "Có vấn đề", theo dõi sau xử lý, nháp. Gas / cháy giữ modal gọn.
+ * cảnh báo nêu tên hạng mục "Có vấn đề", theo dõi sau xử lý, nháp. Từ 28/10/2026 modal là khung chung `AlertUpdateModal`
+ * (gas / cháy: AlertGasDrawer.test.tsx, AlertFireDrawer.test.tsx); "Đã xử lý" → chờ xác nhận đóng (AlertClose.test.tsx).
  * File riêng → store cảnh báo riêng. Live mock PT-101 = 9.2 bar (dưới ngưỡng 10.5). Test đổi dữ liệu nối tiếp nhau trên ALT-00128.
  */
 
@@ -159,11 +160,13 @@ describe('modal cập nhật xử lý cảnh báo áp suất (ALT-00128)', () =>
     await user.type(within(m).getByRole('textbox', { name: /Nội dung đã xử lý/ }), 'Vệ sinh, chỉnh lại PR-101');
     await user.click(within(m).getByRole('button', { name: 'Lưu cập nhật' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: MODAL })).toBeNull());
-    expect(within(d).getByText(/Cảnh báo đã xử lý xong/)).toBeInTheDocument();
+    // Đổi có chủ đích (28/10/2026): Đã xử lý = chờ xác nhận đóng (không còn "Cảnh báo đã xử lý xong" ngay).
+    expect(within(d).getByText(/Đã xử lý lúc \d{2}:\d{2}, chờ xác nhận đóng/)).toBeInTheDocument();
+    expect(within(d).getByRole('button', { name: 'Xác nhận đóng cảnh báo' })).toBeInTheDocument();
     expect(within(d).getByText(/^Đang theo dõi đến \d{2}:\d{2}, mục tiêu < 10 bar\.$/)).toBeInTheDocument();
     // Bảng cũng hiện theo dõi
     expect(screen.getByRole('table', { name: /cảnh báo/i })).toHaveTextContent(/Đang theo dõi đến \d{2}:\d{2}/);
-  });
+  }, 15_000);
 });
 
 describe('nháp + loại khác', () => {
@@ -171,16 +174,16 @@ describe('nháp + loại khác', () => {
     const user = userEvent.setup();
     const rec = { ...alertRecords.find((x) => x.id === 'ALT-00128')!, status: 'in-progress' as const, phase: 'inspecting' as const, assignee: 'Nguyễn Văn A' };
     const onClose = vi.fn();
-    const first = render(<PressureUpdateModal alert={rec} actor="Vận hành A" onClose={onClose} onSubmit={() => ({ ok: true, record: rec })} />);
+    const first = render(<AlertUpdateModal alert={rec} actor="Vận hành A" onClose={onClose} onSubmit={() => ({ ok: true, record: rec })} />);
     const m = screen.getByRole('dialog', { name: MODAL });
     await user.type(within(m).getByRole('textbox', { name: /Nguyên nhân xử lý/ }), 'Bộ điều áp kẹt');
     await user.click(within(m).getByRole('button', { name: 'Lưu nháp' }));
-    expect(sessionStorage.getItem('demo-lpg:alert-pressure-update-draft:ALT-00128')).toContain('Bộ điều áp kẹt');
+    expect(sessionStorage.getItem('demo-lpg:alert-update-draft:ALT-00128')).toContain('Bộ điều áp kẹt');
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(1);
     first.unmount();
 
-    render(<PressureUpdateModal alert={rec} actor="Vận hành A" onClose={onClose} onSubmit={() => ({ ok: true, record: rec })} />);
+    render(<AlertUpdateModal alert={rec} actor="Vận hành A" onClose={onClose} onSubmit={() => ({ ok: true, record: rec })} />);
     const m2 = screen.getByRole('dialog', { name: MODAL });
     expect(within(m2).getByText('Bản nháp đã được khôi phục.')).toBeInTheDocument();
     expect(within(m2).getByRole('textbox', { name: /Nguyên nhân xử lý/ })).toHaveValue('Bộ điều áp kẹt');
@@ -192,19 +195,19 @@ describe('nháp + loại khác', () => {
   });
 
   test('nháp hỏng (sai dạng) → bỏ qua, mở form mặc định', () => {
-    sessionStorage.setItem('demo-lpg:alert-pressure-update-draft:ALT-00128', '{"state":"xyz"}');
+    sessionStorage.setItem('demo-lpg:alert-update-draft:ALT-00128', '{"state":"xyz"}');
     const rec = { ...alertRecords.find((x) => x.id === 'ALT-00128')!, status: 'in-progress' as const, assignee: 'Nguyễn Văn A' };
-    render(<PressureUpdateModal alert={rec} actor="A" onClose={() => {}} onSubmit={() => ({ ok: true, record: rec })} />);
+    render(<AlertUpdateModal alert={rec} actor="A" onClose={() => {}} onSubmit={() => ({ ok: true, record: rec })} />);
     expect(screen.queryByText('Bản nháp đã được khôi phục.')).toBeNull();
     expect(radio(screen.getByRole('dialog', { name: MODAL }), 'Đang kiểm tra')).toHaveAttribute('aria-checked', 'true');
   });
-
-  test('gas (ALT-00127) vẫn mở modal gọn "Cập nhật xử lý", không phải modal áp suất', async () => {
+  // Đổi có chủ đích (28/10/2026): gas không còn modal gọn – mở khung chung với tiêu đề theo loại.
+  test('gas (ALT-00127) mở khung chung với tiêu đề theo loại, không phải tiêu đề áp suất', async () => {
     const user = userEvent.setup();
     renderAt('/alerts?alert=ALT-00127');
     const d = await screen.findByRole('dialog', { name: 'Cảnh báo rò rỉ Gas nhẹ' });
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    expect(await screen.findByRole('dialog', { name: 'Cập nhật xử lý' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Cập nhật xử lý cảnh báo rò rỉ khí' }, LONG)).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: MODAL })).toBeNull();
   });
 });
