@@ -24,8 +24,8 @@ describe('mock khớp hợp đồng shared', () => {
     }
   });
 
-  test('mọi cảnh báo hợp lệ theo AlertSchema (đổi daysAgo + time → occurredAt)', () => {
-    for (const { daysAgo, time, ...full } of alertRecords) {
+  test('mọi cảnh báo hợp lệ theo AlertSchema (đổi daysAgo + time → occurredAt; trạng thái "resolved" chưa có trong API)', () => {
+    for (const { daysAgo, time, ...full } of alertRecords.filter((a) => a.status !== 'resolved')) {
       const rest: Record<string, unknown> & { id: string } = { ...full };
       for (const k of ALERT_FE_ONLY_FIELDS) delete rest[k];
       const occurredAt = `2026-10-${String(22 - daysAgo).padStart(2, '0')}T${time}+07:00`;

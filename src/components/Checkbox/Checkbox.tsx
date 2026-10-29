@@ -17,6 +17,8 @@ export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' |
   variant?: 'default' | 'card';
 };
 
+const isTrue = (v: unknown) => v === true || v === 'true';
+
 /**
  * Ô chọn 16px – nền surface-sunken, viền line, bo 2px (Figma 70:3036).
  * Trạng thái checked/indeterminate: Figma chưa có → nền info, dấu màu fg-inverse.
@@ -41,7 +43,6 @@ export function Checkbox({ showLabel, variant = 'default', ...props }: CheckboxP
           checked={checked}
           // Khoá: trả ô về giá trị cũ, không gọi onChange (aria-disabled không chặn click như `disabled`).
           onChange={(v) => (locked ? undefined : onChange(v))}
-          className={locked ? 'opacity-60' : undefined}
         />
         <span className={cn(locked && 'text-fg-secondary')}>{label}</span>
       </label>
@@ -49,9 +50,15 @@ export function Checkbox({ showLabel, variant = 'default', ...props }: CheckboxP
   }
   if (!showLabel) return <CheckboxBox {...props} />;
   const { label, className, disabled } = props;
+  // Khoá mà vẫn focus/đọc được: aria-disabled (lý do qua aria-describedby) hoặc aria-readonly (giá trị do hệ thống quyết định).
+  const locked = isTrue(props['aria-disabled']) || isTrue(props['aria-readonly']);
   return (
     <label
-      className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-fg-secondary', disabled && 'cursor-not-allowed opacity-50', className)}
+      className={cn(
+        'inline-flex items-center gap-2 text-sm text-fg-secondary',
+        disabled ? 'cursor-not-allowed opacity-50' : locked ? 'cursor-default' : 'cursor-pointer',
+        className,
+      )}
     >
       <CheckboxBox {...props} className={undefined} aria-label={undefined} />
       <span>{label}</span>
@@ -66,6 +73,7 @@ function CheckboxBox({ checked, onChange, indeterminate = false, label, classNam
   }, [indeterminate]);
 
   const on = checked || indeterminate;
+  const locked = isTrue(rest['aria-disabled']) || isTrue(rest['aria-readonly']);
   return (
     <span className={cn('relative inline-flex size-4 shrink-0', className)}>
       <input
@@ -74,9 +82,12 @@ function CheckboxBox({ checked, onChange, indeterminate = false, label, classNam
         aria-label={'aria-label' in rest ? rest['aria-label'] : label}
         checked={checked}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
+        // Khoá bằng aria-disabled / aria-readonly: không gọi onChange (ô controlled nên giữ giá trị cũ).
+        onChange={(e) => (locked ? undefined : onChange(e.target.checked))}
         className={cn(
-          'peer size-4 cursor-pointer appearance-none rounded-xs border transition-colors',
+          'peer size-4 appearance-none rounded-xs border transition-colors',
+          locked ? 'cursor-default' : 'cursor-pointer',
+          isTrue(rest['aria-disabled']) && 'opacity-60',
           'disabled:cursor-not-allowed disabled:opacity-50',
           on ? 'border-info bg-info' : 'border-line bg-surface-sunken hover:border-accent/60',
         )}

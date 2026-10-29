@@ -6,8 +6,6 @@ import {
   alertSteps,
   assignAlert,
   bulkMessage,
-  fireUpdate,
-  gasUpdate,
   requestSupport,
   guideLockHint,
   linkedMaintenance,
@@ -56,14 +54,15 @@ describe('quy trình chỉ đi tiến', () => {
   test('không có đường từ Chưa xác nhận sang Hoàn thành', () => {
     expect(resolveAlert(alert(), 'Đã xử lý', ctx)).toEqual({ ok: false, reason: 'status' });
   });
-  test('đánh dấu đã xử lý: bắt buộc ghi chú (trống / chỉ khoảng trắng bị chặn)', () => {
+  // Đổi có chủ đích (28/10/2026): "Đánh dấu đã xử lý" → Đã xử lý (resolved, chờ đóng), không còn nhảy thẳng sang Hoàn thành.
+  test('đánh dấu đã xử lý: bắt buộc ghi chú; → Đã xử lý (chờ đóng) + người xử lý', () => {
     const ip = alert({ status: 'in-progress', assignee: 'Lê Thị C' });
     expect(resolveAlert(ip, '', ctx)).toEqual({ ok: false, reason: 'note' });
     expect(resolveAlert(ip, '   ', ctx)).toEqual({ ok: false, reason: 'note' });
     const res = resolveAlert(ip, '  Đã xả áp, áp suất về 9.8 bar ', ctx);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(res.record).toMatchObject({ status: 'done', resolvedAt: ctx.at.toISOString() });
+    expect(res.record).toMatchObject({ status: 'resolved', resolvedAt: ctx.at.toISOString(), resolvedBy: 'Nguyễn Văn A', actionTaken: 'Đã xả áp, áp suất về 9.8 bar' });
     expect(res.record.notes).toEqual([{ id: 'A1-n1', author: 'Nguyễn Văn A', at: ctx.at.toISOString(), text: 'Đã xả áp, áp suất về 9.8 bar' }]);
     expect(res.record.history!.at(-1)).toMatchObject({ kind: 'resolve' });
     expect(resolveAlert(res.record, 'lại', ctx)).toEqual({ ok: false, reason: 'status' });
@@ -92,6 +91,7 @@ describe('hướng dẫn xử lý (checklist)', () => {
     expect(toggleGuideStep(un, step, ctx)).toBe(un);
     expect(guideLockHint(un)).toBe('Xác nhận cảnh báo để bắt đầu xử lý.');
     expect(guideLockHint(alert({ status: 'done' }))).toMatch(/chỉ xem/);
+    expect(guideLockHint(alert({ status: 'resolved' }))).toMatch(/chờ xác nhận đóng/);
     expect(guideLockHint(alert({ status: 'in-progress' }))).toBeNull();
   });
   test('tick rồi bỏ tick: lưu theo id bước + 2 dòng lịch sử', () => {
@@ -160,7 +160,8 @@ describe('tiến trình 5 bước', () => {
     expect(s.steps.map((x) => x.label)).toEqual(['Đã phát hiện', 'Đã gửi thông báo', 'Chưa xác nhận', 'Đang xử lý', 'Hoàn thành']);
     expect(s.steps.map((x) => x.time)).toEqual(['10:45:22', '10:45:25', undefined, undefined, undefined]);
   });
-  test('Đang xử lý / Hoàn thành + giờ thao tác theo giờ nhà máy', () => {
+  // Đổi có chủ đích (28/10/2026): bước "Đã xử lý" xong khi resolved, "Hoàn thành" chỉ xong khi đóng (giờ đóng).
+  test('Đang xử lý / Đã xử lý / Hoàn thành + giờ thao tác theo giờ nhà máy', () => {
     const ip = acknowledgeAlert(alert(), ctx);
     const s = alertSteps(ip);
     expect(s).toMatchObject({ completed: 3, current: 3 });
@@ -168,14 +169,18 @@ describe('tiến trình 5 bước', () => {
     expect(s.steps[3]).toMatchObject({ label: 'Đang xử lý', time: undefined });
     const done = resolveAlert(ip, 'ok', { ...ctx, at: new Date('2026-10-27T04:30:00Z') });
     if (!done.ok) throw new Error('resolve');
-    const d = alertSteps(done.record);
+    const r = alertSteps(done.record);
+    expect(r).toMatchObject({ completed: 4, current: 4 });
+    expect(r.steps[3]).toMatchObject({ label: 'Đã xử lý', time: '11:30:00' });
+    expect(r.steps[4]).toMatchObject({ label: 'Hoàn thành', time: undefined });
+    const d = alertSteps({ ...done.record, status: 'done', closedAt: '2026-10-27T04:45:00Z' });
     expect(d).toMatchObject({ completed: 5, current: null });
     expect(d.steps.map((x) => `${x.label} ${x.time}`)).toEqual([
       'Đã phát hiện 10:45:22',
       'Đã gửi thông báo 10:45:25',
       'Đã xác nhận 10:52:10',
       'Đã xử lý 11:30:00',
-      'Hoàn thành 11:30:00',
+      'Hoàn thành 11:45:00',
     ]);
   });
 });
@@ -190,66 +195,5 @@ describe('yêu cầu hỗ trợ', () => {
     expect(requestSupport(a, { people: [], reason: 'x' }, ctx)).toBe(a);
     const done = alert({ status: 'done' });
     expect(requestSupport(done, { people: ['X'], reason: 'y' }, ctx)).toBe(done);
-  });
-});
-
-describe('cập nhật xử lý (gas)', () => {
-  const ip = alert({ status: 'in-progress', device: 'GS-04', unit: '% LEL' });
-  const chk = (live: number | undefined) => ({ live, limit: 10, unit: '% LEL' });
-  test('tiếp tục: ghi chú bắt buộc, giữ Đang xử lý, lịch sử kèm số đo lại', () => {
-    expect(gasUpdate(ip, { action: 'continue', note: ' ' }, chk(25), ctx)).toEqual({ ok: false, reason: 'note' });
-    const r = gasUpdate(ip, { action: 'continue', note: 'Đã khoanh vùng', measured: 22 }, chk(25), ctx);
-    expect(r.ok && r.record.status).toBe('in-progress');
-    expect(r.ok && r.record.history!.at(-1)!.text).toBe('Tiếp tục xử lý · đo lại tại chỗ: 22% LEL: Đã khoanh vùng');
-  });
-  test('đã xử lý xong: khoá khi live còn trên ngưỡng hoặc mất tín hiệu mà không đo lại', () => {
-    expect(gasUpdate(ip, { action: 'close', note: 'ok' }, chk(25), ctx)).toMatchObject({ ok: false, reason: 'above' });
-    expect(gasUpdate(ip, { action: 'close', note: 'ok' }, chk(undefined), ctx)).toMatchObject({ ok: false, reason: 'need-measure' });
-  });
-  test('đã xử lý xong khi live < ngưỡng / số đo lại < ngưỡng → Hoàn thành, lịch sử ghi nồng độ lúc đóng', () => {
-    const r = gasUpdate(ip, { action: 'close', note: 'Đã siết khớp nối' }, chk(6), ctx);
-    if (!r.ok) throw new Error('close');
-    expect(r.record).toMatchObject({ status: 'done', closingReading: { value: 6, source: 'live' } });
-    expect(r.record.history!.at(-1)!.text).toBe('Đã xử lý xong – nồng độ lúc đóng 6% LEL (số trực tiếp): Đã siết khớp nối');
-    const m = gasUpdate(ip, { action: 'close', note: 'Đo tay', measured: 3 }, chk(undefined), ctx);
-    expect(m.ok && m.record.closingReading).toEqual({ value: 3, source: 'measured' });
-    expect(gasUpdate(alert(), { action: 'close', note: 'x' }, chk(1), ctx)).toEqual({ ok: false, reason: 'status' });
-  });
-});
-
-describe('cập nhật xử lý (báo cháy)', () => {
-  const ip = alert({ status: 'in-progress', device: 'HD-02', unit: '°C', value: '68', threshold: '57' });
-  const live = { alarm: 'cleared' as const, device: 'online' as const, detector: 'HD-02' };
-  const active = { ...live, alarm: 'active' as const };
-  const lost = { alarm: 'unknown' as const, device: 'lost' as const, detector: 'HD-02' };
-  test('ghi chú bắt buộc cho CẢ 3 lựa chọn; chỉ Đang xử lý', () => {
-    for (const action of ['continue', 'handled', 'false-alarm'] as const) expect(fireUpdate(ip, { action, note: '  ' }, live, ctx)).toEqual({ ok: false, reason: 'note' });
-    expect(fireUpdate(alert(), { action: 'continue', note: 'x' }, live, ctx)).toEqual({ ok: false, reason: 'status' });
-  });
-  test('tiếp tục: giữ Đang xử lý (được cả khi còn báo động), một ghi chú + một dòng lịch sử, không có resolution', () => {
-    const r = fireUpdate(ip, { action: 'continue', note: 'Đã cử người kiểm tra' }, active, ctx);
-    if (!r.ok) throw new Error();
-    expect(r.record.status).toBe('in-progress');
-    expect(r.record.resolution).toBeUndefined();
-    expect(r.record.notes).toHaveLength(1);
-    expect(r.record.history!.at(-1)).toMatchObject({ kind: 'update', text: 'Tiếp tục xử lý: Đã cử người kiểm tra' });
-  });
-  test('đóng khi còn báo động → chặn; mất tín hiệu chưa kiểm tra tại chỗ → chặn', () => {
-    expect(fireUpdate(ip, { action: 'handled', note: 'ok' }, active, ctx)).toMatchObject({ ok: false, reason: 'still-alarm' });
-    expect(fireUpdate(ip, { action: 'false-alarm', note: 'ok' }, lost, ctx)).toMatchObject({ ok: false, reason: 'need-field-check' });
-  });
-  test('đã xử lý sự cố (phục hồi live) → Hoàn thành + resolution handled/live', () => {
-    const r = fireUpdate(ip, { action: 'handled', note: 'Dập cháy nhỏ bằng bình CO2' }, live, ctx);
-    if (!r.ok) throw new Error();
-    expect(r.record).toMatchObject({ status: 'done', resolvedAt: ctx.at.toISOString(), resolution: { kind: 'handled', closedBy: 'live' } });
-    expect(r.record.history!.at(-1)).toMatchObject({ kind: 'resolve', text: 'Đã xử lý sự cố (đầu báo HD-02 đã phục hồi): Dập cháy nhỏ bằng bình CO2' });
-  });
-  test('báo động giả → resolution false-alarm (thống kê); mất tín hiệu + kiểm tra tại chỗ → closedBy field', () => {
-    const r = fireUpdate(ip, { action: 'false-alarm', note: 'Hơi nóng từ ống xả', fieldChecked: true }, lost, ctx);
-    if (!r.ok) throw new Error();
-    expect(r.record.resolution).toEqual({ kind: 'false-alarm', closedBy: 'field' });
-    expect(r.record.history!.at(-1)!.text).toBe('Báo động giả (đầu báo HD-02 mất tín hiệu – đã kiểm tra tại chỗ): Hơi nóng từ ống xả');
-    // Chạy lại trên bản đã đóng → không đổi trạng thái
-    expect(fireUpdate(r.record, { action: 'handled', note: 'x' }, live, ctx)).toEqual({ ok: false, reason: 'status' });
   });
 });

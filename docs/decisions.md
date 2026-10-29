@@ -2,6 +2,34 @@
 
 Chuyển nguyên văn từ CLAUDE.md ngày 28/10/2026: roadmap/nhật ký từng giai đoạn (kèm số test, bundle), kiến trúc 3D + Scene Editor (quyết định), TODO kỹ thuật và màu đã duyệt, hợp đồng API cần bổ sung. Ghi quyết định mới vào đây (mới nhất lên đầu mục liên quan), KHÔNG vào CLAUDE.md.
 
+## Quyết định – Quy trình đóng cảnh báo + khung cập nhật chung (28/10/2026, 5N, nhánh `feat/alert-update-close`)
+
+Mọi quyết định dưới đây do người dùng chốt trước khi làm. Chi tiết luồng: docs/guide/alerts.md (4o), (4p).
+
+**A. Workflow mới (chỉ đi tiến)**
+- Chưa xác nhận → (Xác nhận) → Đang xử lý → (Cập nhật xử lý chọn "Đã xử lý" / "Đánh dấu đã xử lý") → **Đã xử lý (`resolved`, chờ đóng)** → (Xác nhận đóng) → **Hoàn thành (`done`)**; hoặc (Tiếp tục theo dõi) → giữ `resolved` + `followUp`.
+- `resolved` là trạng thái CHỈ FE (`AlertStatus` ở `src/mocks/alerts.ts`); `packages/shared` không sửa. **API cần bổ sung**: `resolved` trong `ALERT_STATUSES`; trường `resolvedBy`, `closedAt`, `closedBy`, `closingNote`, `closeChecks` (đã thêm vào `ALERT_FE_ONLY_FIELDS`); endpoint `PATCH /alerts/:id/update`, `POST /alerts/:id/close`, `POST /alerts/:id/monitor`, `POST /alerts/close` (hàng loạt) – server kiểm lại live, 3 điều kiện và vai trò người đóng.
+- Hàm thuần: `workflow.ts` (resolve → resolved, tiến trình 5 bước: "Đã xử lý" xong khi resolved, "Hoàn thành" khi đóng), `close.ts` (đóng, theo dõi, điều kiện, hàng loạt), `update.ts` (khung cập nhật). Ngoại lệ hiện có giữ nguyên (phân công không tự xác nhận, gas/cháy giữ điều kiện cũ).
+- **PT-201 (`pressure-high`) bỏ ngoại lệ**: "Đánh dấu đã xử lý" → Đã xử lý, đóng qua modal đóng như mọi loại.
+
+**B. Dùng chung modal cập nhật**
+- `PressureUpdateModal` → khung `AlertUpdateModal` + `AlertUpdateConfig` theo loại trong `ALERT_KINDS` (`PRESSURE_UPDATE`, `GAS_UPDATE`, `FIRE_UPDATE`); áp suất giữ như trước (bám Figma). Bỏ `GasUpdateModal`, `FireUpdateModal`, `gasUpdate`, `fireUpdate` (logic chuyển vào `updateCloseCheck` + `alertUpdate`).
+- Gas: nồng độ GS-04 + cảm biến cùng khu (%LEL, màu theo bands); xác minh 4 mục; mục tiêu theo dõi < 10 % LEL; điều kiện giữ nguyên (`canCloseGas`).
+- Cháy: "Đã xử lý sự cố" / "Báo động giả" (cả hai → resolved, lưu `resolution`); nhiệt độ HD-02, khói SD-02, gas GS-05; xác minh 4 mục ("Đã xác minh qua camera/tại chỗ" = căn cứ khi đầu báo mất tín hiệu, "Có cháy thật" mâu thuẫn "Báo động giả"); theo dõi không có mục tiêu số; điều kiện giữ nguyên (`canCloseFire`). Sau báo động giả drawer vẫn có "Tạo yêu cầu bảo trì".
+- Hạng mục kiểm tra = danh sách hiện có của từng loại (một nguồn với drawer). Nháp đổi khoá sessionStorage `demo-lpg:alert-update-draft:<id>` (nháp cũ `alert-pressure-update-draft` không đọc nữa – chỉ sessionStorage, không cần chuyển).
+
+**C. Modal "Xác nhận đóng cảnh báo"** (chung mọi loại, ảnh `scratch/figma-ref/alert-close-modal-*.png`)
+- Kết quả kỹ thuật chỉ đọc (`closeSummary`); 3 điều kiện HỆ THỐNG (ổn định, live trong ngưỡng, không còn cảnh báo mở cùng thiết bị/khu) tự tick / không tick được kèm lý do + link; 2 mục tick tay không bắt buộc.
+- Ghi chú kết luận bắt buộc khi đóng, không bắt buộc khi theo dõi; thời gian theo dõi điền sẵn, MỘT giá trị `followUp`.
+- Người đóng: Nghiêm trọng → khác người xử lý; chưa đăng nhập = 'Admin'; **TODO backend kiểm tra vai trò**.
+
+**D. Màn /alerts**
+- Tab "Chờ đóng" (số đếm từ dữ liệu); 5 KPI giữ như Figma; thẻ ưu tiên bỏ cảnh báo Đã xử lý; badge "Đã xử lý" xanh, "Hoàn thành" trung tính (`Badge` thêm `resolved`, `closed`).
+- Hàng loạt "Đóng cảnh báo" thay "Đánh dấu hoàn thành" (đã bỏ – thao tác cũ nhảy thẳng Đang xử lý → Hoàn thành, bỏ qua điều kiện đóng theo loại).
+- Mock: ALT-00120 (Cao, Khu bơm – đóng được) và ALT-00116 (Nghiêm trọng, hết giờ theo dõi, còn cảnh báo mở cùng khu) đổi từ Đã hoàn thành sang Đã xử lý để thử.
+
+**Ngoài phạm vi chốt (tự quyết, báo lại):** phân công vẫn cho phép khi Đã xử lý (`canAssignAlert` = khác Hoàn thành); ghi chú vẫn thêm được khi Đã xử lý; "Tiếp tục theo dõi" bắt buộc chọn thời gian > 0.
+
 ## Quyết định – Modal "Cập nhật xử lý cảnh báo áp suất" (28/10/2026, 5M)
 
 Luồng chi tiết: `docs/guide/alerts.md` (4o). Sai khác ảnh: `docs/figma-diffs.md` nhóm "Cảnh báo / Modal cập nhật áp suất". Câu hỏi còn mở: `docs/questions.md` mục 10.
@@ -9,7 +37,7 @@ Luồng chi tiết: `docs/guide/alerts.md` (4o). Sai khác ảnh: `docs/figma-di
 - **Đóng khi còn hạng mục chưa kiểm tra / "Có vấn đề": chỉ cảnh báo, KHÔNG chặn.** `pressureWarnings` nêu tên từng hạng mục (aria-live). Chặn chỉ khi: điều kiện đóng sai, thiếu nguyên nhân/nội dung, chưa chọn "Hệ thống đã trở về bình thường", xác minh mâu thuẫn, hạng mục "Có vấn đề" thiếu ghi chú, "Khác" thiếu mô tả, theo dõi tùy chỉnh sai giờ.
 - **Điều kiện "Đã xử lý"**: áp suất live < ngưỡng cảnh báo (cấu hình tag, thiếu → ngưỡng bản ghi) **và** giá trị sau xử lý < ngưỡng; mất tín hiệu / không có tag → nguồn xác minh có "Đồng hồ cơ" + số đo tay < ngưỡng; đang chờ số đầu tiên → khoá (`canClosePressure`).
 - **Mục tiêu theo dõi mặc định `< 10 bar` lấy từ cấu hình loại** (`PRESSURE_UPDATE.followUp.target` trong `src/mocks/alertKinds.ts`), không hardcode trong UI. Thời điểm kiểm tra lại = lúc LƯU + thời gian (không phải lúc mở modal).
-- **`pressure-high` (PT-201) giữ nút "Đánh dấu đã xử lý" – có chủ đích**: dòng thông số / bộ điều áp / van an toàn của modal là của BỒN. Loại khác muốn dùng → thêm `update: { kind: 'pressure-update', … }` vào mục của loại đó.
+- `pressure-high` (PT-201) dùng "Đánh dấu đã xử lý" (modal cập nhật là của BỒN). Ngoại lệ "giữ nguyên Hoàn thành ngay" đã BỎ ở 5N: Đánh dấu đã xử lý → Đã xử lý → đóng qua modal đóng như mọi loại.
 - **Một danh sách hạng mục cho drawer + modal**: `ALERT_KINDS[kind].steps`, dữ liệu `guide`; dạng cũ `{at, by}` = Đạt, đọc qua MỘT hàm (`src/features/alerts/inspection.ts`). Giữ id bước cũ để tiến độ đã tick không mất.
 - **Tag áp suất sau PR-101 = `PT-103` (giả định)**, không dùng PT-102 (đã dùng cho bơm P-101A, ALT-00122, MT-00116).
 - **NumberField chỉ chốt khi người dùng đã gõ** (rời ô / Enter không gõ → không `onChange`; ↑/↓ chốt ngay) – sửa lỗi Tab qua ô "Sau" bị ghi thành số đo tay; áp dụng toàn app.

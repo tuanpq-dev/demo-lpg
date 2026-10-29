@@ -7,10 +7,12 @@ import { formatGaugeNumber, gaugeScale, isBreached, withUnit, type GaugeScale } 
 import { tagSignal } from '@/features/live/signal';
 import { formatDayVi, parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
 import type { AlertDirection, AlertRecord } from '@/mocks/alerts';
-import { ALERT_KINDS, GAS_BANDS, REGULATORS, fillPlaybookText, type AlertKindConfig, type PressureUpdateConfig } from '@/mocks/alertKinds';
+import { ALERT_KINDS, DEFAULT_FOLLOW_UP, GAS_BANDS, REGULATORS, fillPlaybookText, type AlertKindConfig, type AlertUpdateConfig, type FollowUpConfig } from '@/mocks/alertKinds';
 import { ASSET_TAGS, REGULATOR_TAGS } from '@/features/live/tags';
-import { parsePressureDraft, type PressureDraft } from '@/features/alerts/pressure';
+import { parseUpdateDraft, type UpdateDraft } from '@/features/alerts/update';
+import { closeConditions, relatedOpenAlerts, type CloseCondition, type CloseConditionInput } from '@/features/alerts/close';
 import { AREA_EQUIPMENT, AREA_FIRE_SIGNALS, HEAT_DETECTORS, nearbySensor, sensorsInArea, type HeatDetector } from '@/mocks/sensors';
+import type { Area } from '@/mocks/areas';
 import {
   crossConfirm,
   detectorStatus,
@@ -24,7 +26,7 @@ import {
   type TagReading,
 } from '@/features/alerts/fire';
 import type { LiveData } from '@/features/live/types';
-import { bandOf } from '@/features/alerts/bands';
+import { bandOf, levelStart } from '@/features/alerts/bands';
 import { formatMeasure } from '@/features/alerts/gauge';
 import { assetMocks } from '@/mocks/assets';
 import { STAFF } from '@/mocks/maintenance';
@@ -116,7 +118,8 @@ export function alertOccurredAt(a: Pick<AlertRecord, 'daysAgo' | 'time'>, now: D
   return parsePlantDateTime(`${day}T${a.time}`) ?? now;
 }
 
-export type AlertLiveReading = { state: 'none' | 'pending' | 'lost' | 'ok'; value?: number };
+/** `text` = giá trị chuỗi của tag trạng thái (vd `SD-02.ALARM` 'alarm' | 'normal'); `value` chỉ khi là số. */
+export type AlertLiveReading = { state: 'none' | 'pending' | 'lost' | 'ok'; value?: number; text?: string };
 
 /** Số trực tiếp của tag cảnh báo ("Hiện tại: x bar"). Không có tag → none; mất tín hiệu theo `tagSignal` lúc render. */
 export function useAlertLive(tag: string | undefined): AlertLiveReading {
@@ -128,19 +131,21 @@ export function useAlertLive(tag: string | undefined): AlertLiveReading {
   return { state: 'ok', value: tv.value };
 }
 
-/** Số trực tiếp của nhiều tag cùng lúc (cùng quy tắc `useAlertLive`) – dòng thông số modal cập nhật xử lý áp suất. */
+/** Đọc một tag từ LiveData theo quy tắc mất tín hiệu (`tagSignal` lúc gọi). Số → `value`, chuỗi trạng thái → `text`. */
+function liveReading(live: LiveData | undefined, tag: string, now: number): AlertLiveReading {
+  if (!live) return { state: 'pending' };
+  const tv = live[tag];
+  if (tagSignal(tv, now) === 'lost' || tv === undefined) return { state: 'lost' };
+  if (typeof tv.value === 'number') return { state: 'ok', value: tv.value };
+  return typeof tv.value === 'string' ? { state: 'ok', text: tv.value } : { state: 'lost' };
+}
+
+/** Số trực tiếp của nhiều tag cùng lúc (cùng quy tắc `useAlertLive`) – dòng thông số modal cập nhật xử lý. */
 export function useTagReadings(tags: readonly (string | undefined)[]): Record<string, AlertLiveReading> {
   const list = tags.filter((t): t is string => !!t);
   const live = useLiveData(list, { enabled: list.length > 0 });
-  const out: Record<string, AlertLiveReading> = {};
-  for (const tag of list) {
-    if (!live) out[tag] = { state: 'pending' };
-    else {
-      const tv = live[tag];
-      out[tag] = tagSignal(tv, Date.now()) === 'lost' || typeof tv?.value !== 'number' ? { state: 'lost' } : { state: 'ok', value: tv.value };
-    }
-  }
-  return out;
+  const now = Date.now();
+  return Object.fromEntries(list.map((tag) => [tag, liveReading(live, tag, now)]));
 }
 
 export type AlertGauge = { kind: 'scale'; scale: GaugeScale } | { kind: 'off' } | { kind: 'invalid' };
@@ -257,6 +262,17 @@ export function useFireReadings(a: Pick<AlertRecord, 'device' | 'area' | 'tag'>)
   };
 }
 
+/** Trạng thái đầu báo (báo cháy) theo `HEAT_DETECTORS[device]`; không phải đầu báo → undefined (không đọc tag nào). */
+export function useDetectorStatus(device: string): { name: string; alarm: DetectorAlarm; device: DetectorDevice } | undefined {
+  const d = HEAT_DETECTORS[device];
+  const tags = d ? [d.alarmTag, d.stateTag] : [];
+  const live = useLiveData(tags, { enabled: tags.length > 0 });
+  if (!d) return undefined;
+  const now = Date.now();
+  const st = detectorStatus(readingOf(live, d.alarmTag, now), readingOf(live, d.stateTag, now));
+  return { name: d.id, alarm: st.alarm, device: live ? st.device : 'pending' };
+}
+
 // ---- Nháp modal "Phân công xử lý cảnh báo" (sessionStorage theo mã; chỉ một cảnh báo – hàng loạt không có nháp) ----
 
 /** Nháp = form phân công trừ ô thông báo (mặc định lại theo mức độ khi mở). */
@@ -290,18 +306,21 @@ export function alertRecordedValue(a: AlertRecord): { value: string; threshold: 
   };
 }
 
-// ---- Modal "Cập nhật xử lý cảnh báo áp suất" (docs/guide/alerts.md (4o)) ----
+// ---- Modal "Cập nhật xử lý" (khung chung theo loại – docs/guide/alerts.md (4o)) ----
 
-/** Cấu hình cập nhật áp suất của loại cảnh báo; loại khác → null (drawer giữ modal/nút hiện có). */
-export function pressureUpdateConfig(a: Pick<AlertRecord, 'kind'>): PressureUpdateConfig | null {
+/** Cấu hình cập nhật của loại cảnh báo; loại `resolve-note` → null (drawer giữ nút "Đánh dấu đã xử lý"). */
+export function updateConfig(a: Pick<AlertRecord, 'kind'>): AlertUpdateConfig | null {
   const u = alertKind(a).update;
-  return u.kind === 'pressure-update' ? u : null;
+  return u.kind === 'alert-update' ? u : null;
 }
+
+/** Cấu hình theo dõi sau xử lý của loại (loại không có modal cập nhật → mặc định không theo dõi). */
+export const followUpConfig = (a: Pick<AlertRecord, 'kind'>): FollowUpConfig => updateConfig(a)?.followUp ?? DEFAULT_FOLLOW_UP;
 
 /** Ngưỡng của tag trong cấu hình tài sản (null = không có cấu hình). */
 export const tagThresholds = (tag: string | undefined) => configFor(tag) ?? null;
 
-export type PressureReadingRow = {
+export type UpdateReadingRow = {
   id: string;
   label: string;
   unit: string;
@@ -312,32 +331,159 @@ export type PressureReadingRow = {
   danger?: number;
   /** Dòng quyết định điều kiện "Đã xử lý". */
   primary: boolean;
+  /** Tag trạng thái chuỗi (đầu báo khói 'alarm' | 'normal') – không có số, không nhập tay. */
+  alarm?: boolean;
 };
 
+const gasLimits = (cfg: AlertKindConfig) => ({ warn: levelStart(cfg.bands ?? GAS_BANDS, 'level-1'), danger: levelStart(cfg.bands ?? GAS_BANDS, 'level-2') });
+
 /**
- * Dòng "Thông số trước và sau xử lý" theo cấu hình loại: tra tag + ngưỡng theo thiết bị. Áp suất = tag của cảnh báo, ngưỡng
- * như "Ngưỡng cho phép" (`alertMetric`); sau bộ điều áp = `REGULATOR_TAGS` (PT-103 GIẢ ĐỊNH, chưa có ngưỡng); nhiệt độ =
- * tag nhiệt độ của tài sản + ngưỡng cấu hình.
+ * Ngưỡng ĐÓNG của tag chính: áp suất / loại khác = "Ngưỡng cho phép" (`alertMetric`) · gas = đầu mức `closeBelow` (cấp 1) ·
+ * cháy = nhiệt độ báo động của đầu báo (`HEAT_DETECTORS`, thiếu → ngưỡng bản ghi).
  */
-export function pressureReadingRows(a: AlertRecord, cfg: PressureUpdateConfig): PressureReadingRow[] {
+export function closeLimit(a: AlertRecord): number {
+  const u = updateConfig(a);
+  const kindCfg = alertKind(a);
+  if (u?.close.rule === 'gas') return levelStart(kindCfg.bands ?? GAS_BANDS, u.close.closeBelow) ?? Number(a.threshold);
+  if (u?.close.rule === 'fire') return HEAT_DETECTORS[a.device]?.alarmAt ?? Number(a.threshold);
+  return alertMetric(a).threshold;
+}
+
+/**
+ * Dòng "Thông số trước và sau xử lý" theo cấu hình loại: tra tag + ngưỡng theo thiết bị. Chính = tag của cảnh báo (cháy:
+ * nhiệt độ đầu báo) + ngưỡng đóng; sau bộ điều áp = `REGULATOR_TAGS` (PT-103 GIẢ ĐỊNH, chưa có ngưỡng); nhiệt độ bồn = tag
+ * tài sản; cảm biến cùng khu (gas) + khói / gas của khu (cháy) – màu theo bands gas.
+ */
+export function updateReadingRows(a: AlertRecord, cfg: AlertUpdateConfig): UpdateReadingRow[] {
   const assetTags = ASSET_TAGS[a.device as keyof typeof ASSET_TAGS] as { pressure?: string; temperature?: string } | undefined;
-  const vars = { tag: a.tag };
-  return cfg.readings.map((r) => {
-    const label = fillPlaybookText(r.label, a.device, vars);
-    if (r.field === 'pressure') {
+  const kindCfg = alertKind(a);
+  const detector = HEAT_DETECTORS[a.device];
+  const signals = AREA_FIRE_SIGNALS[(detector?.area ?? a.area) as Area] ?? [];
+  const signal = (k: 'smoke' | 'gas') => signals.find((x) => x.kind === k);
+  const vars = { tag: a.tag, smoke: signal('smoke')?.id, gas: signal('gas')?.id };
+  const fill = (t: string, extra: { sensor?: string } = {}) => fillPlaybookText(t, a.device, { ...vars, ...extra });
+  const gl = gasLimits(kindCfg);
+  return cfg.readings.flatMap((r): UpdateReadingRow[] => {
+    if (r.field === 'primary') {
       const m = alertMetric(a);
-      return { id: r.id, label, unit: a.unit, tag: a.tag ?? assetTags?.pressure, before: Number.isFinite(m.value) ? m.value : undefined, warn: m.threshold, danger: m.danger, primary: true };
+      const limit = closeLimit(a);
+      const tag = cfg.close.rule === 'fire' ? (detector?.tempTag ?? a.tag) : (a.tag ?? assetTags?.pressure);
+      const danger = cfg.close.rule === 'gas' ? gl.danger : cfg.close.rule === 'fire' ? undefined : m.danger;
+      return [{ id: r.id, label: fill(r.label), unit: a.unit, tag, before: Number.isFinite(m.value) ? m.value : undefined, warn: limit, danger, primary: true }];
+    }
+    if (r.field === 'areaSensors') {
+      return sensorsInArea(a.area)
+        .filter((x) => x.tag !== a.tag)
+        .map((x) => ({ id: `${r.id}-${x.tag}`, label: fill(r.label, { sensor: x.tag }), unit: '% LEL', tag: x.tag, warn: gl.warn, danger: gl.danger, primary: false }));
+    }
+    if (r.field === 'smoke' || r.field === 'gas') {
+      const sg = signal(r.field);
+      if (!sg) return [];
+      return r.field === 'smoke'
+        ? [{ id: r.id, label: fill(r.label), unit: '', tag: sg.tag, primary: false, alarm: true }]
+        : [{ id: r.id, label: fill(r.label), unit: '% LEL', tag: sg.tag, warn: gl.warn, danger: gl.danger, primary: false }];
     }
     const tag = r.field === 'regulatorOut' ? REGULATOR_TAGS[REGULATORS[a.device] ?? '']?.outletPressure : assetTags?.temperature;
     const th = tagThresholds(tag);
-    return { id: r.id, label, unit: r.field === 'temperature' ? '°C' : 'bar', tag, before: a.readingsAtAlert?.[r.id], warn: th?.warn, danger: th?.danger, primary: false };
+    return [{ id: r.id, label: fill(r.label), unit: r.field === 'temperature' ? '°C' : 'bar', tag, before: a.readingsAtAlert?.[r.id], warn: th?.warn, danger: th?.danger, primary: false }];
   });
 }
 
 /** Mục "Kết quả xác minh" đã điền chữ. */
-export function verificationItems(a: Pick<AlertRecord, 'device' | 'tag'>, cfg: PressureUpdateConfig) {
+export function verificationItems(a: Pick<AlertRecord, 'device' | 'tag'>, cfg: AlertUpdateConfig) {
   return cfg.verification.map((v) => ({ ...v, text: fillPlaybookText(v.text, a.device, { tag: a.tag }) }));
 }
 
-/** Nháp modal cập nhật xử lý áp suất – sessionStorage theo mã (try/catch trong `createSessionDraft`). */
-export const pressureDraft = createSessionDraft<PressureDraft>('demo-lpg:alert-pressure-update-draft:', parsePressureDraft);
+/** Nháp modal cập nhật xử lý – sessionStorage theo mã (try/catch trong `createSessionDraft`). */
+export const updateDraft = createSessionDraft<UpdateDraft>('demo-lpg:alert-update-draft:', parseUpdateDraft);
+
+// ---- Modal "Xác nhận đóng cảnh báo" – 3 điều kiện hệ thống (features/alerts/close.ts) ----
+
+type CloseSpec = {
+  primary: { label: string; tag?: string; limit: number; unit: string; direction: AlertDirection } | null;
+  secondary: { label: string; tag: string; warn?: number; alarm?: boolean }[];
+  detector?: HeatDetector;
+};
+
+/** Tag cần đọc để kiểm 3 điều kiện của một cảnh báo (theo cấu hình loại). */
+function closeSpec(a: AlertRecord): CloseSpec {
+  const u = updateConfig(a);
+  if (u) {
+    const rows = updateReadingRows(a, u);
+    const p = rows.find((r) => r.primary)!;
+    return {
+      primary: p.tag ? { label: p.label, tag: p.tag, limit: closeLimit(a), unit: p.unit, direction: 'above' } : { label: p.label, limit: closeLimit(a), unit: p.unit, direction: 'above' },
+      secondary: rows.filter((r) => !r.primary && r.tag).map((r) => ({ label: r.label, tag: r.tag!, warn: r.warn, alarm: r.alarm })),
+      detector: u.close.rule === 'fire' ? HEAT_DETECTORS[a.device] : undefined,
+    };
+  }
+  const m = alertMetric(a);
+  return { primary: a.tag ? { label: a.tag, tag: a.tag, limit: m.threshold, unit: a.unit, direction: m.direction } : null, secondary: [] };
+}
+
+/** Trạng thái tín hiệu phụ: số ≥ ngưỡng cảnh báo / chuỗi 'alarm' → bất thường; mất tín hiệu không chặn. */
+function secondaryState(s: CloseSpec['secondary'][number], r: AlertLiveReading): 'ok' | 'abnormal' | 'lost' | 'pending' {
+  if (r.state === 'pending') return 'pending';
+  if (r.state !== 'ok') return 'lost';
+  if (s.alarm) return r.text === 'alarm' ? 'abnormal' : 'ok';
+  return s.warn !== undefined && r.value !== undefined && r.value >= s.warn ? 'abnormal' : 'ok';
+}
+
+/** Đầu vào thuần của `closeConditions` từ LiveData đã đọc (tách khỏi hook để test). */
+export function closeConditionInput(a: AlertRecord, all: readonly AlertRecord[], live: LiveData | undefined, now: number): CloseConditionInput {
+  const spec = closeSpec(a);
+  const read = (tag: string | undefined): AlertLiveReading => (tag ? liveReading(live, tag, now) : { state: 'lost' });
+  const p = spec.primary;
+  const pr = p ? read(p.tag) : undefined;
+  const d = spec.detector;
+  const st = d ? detectorStatus(readingOf(live, d.alarmTag, now), readingOf(live, d.stateTag, now)) : undefined;
+  return {
+    primary: p && pr ? { label: p.label, reading: { state: pr.state === 'none' ? 'lost' : pr.state, value: pr.value }, limit: p.limit, unit: p.unit, direction: p.direction } : null,
+    secondary: spec.secondary.map((s) => ({ label: s.label, state: secondaryState(s, read(s.tag)) })),
+    detector: d && st ? { name: d.id, alarm: st.alarm, device: live ? st.device : 'pending' } : undefined,
+    related: relatedOpenAlerts(a, all),
+  };
+}
+
+/** Tag cần đọc cho danh sách cảnh báo (một lần `useLiveData` cho cả modal đóng lẫn đóng hàng loạt). */
+function closeTags(alerts: readonly AlertRecord[]): string[] {
+  const out = new Set<string>();
+  for (const a of alerts) {
+    const s = closeSpec(a);
+    if (s.primary?.tag) out.add(s.primary.tag);
+    s.secondary.forEach((x) => out.add(x.tag));
+    if (s.detector) [s.detector.alarmTag, s.detector.stateTag].forEach((t) => out.add(t));
+  }
+  return [...out].sort();
+}
+
+/** 3 điều kiện hệ thống theo id cảnh báo – đọc live một lần cho cả danh sách. Mất tín hiệu theo `tagSignal` lúc render. */
+export function useCloseConditions(alerts: readonly AlertRecord[], all: readonly AlertRecord[]): Record<string, CloseCondition[]> {
+  const tags = closeTags(alerts);
+  const live = useLiveData(tags, { enabled: tags.length > 0 });
+  const now = Date.now();
+  return Object.fromEntries(alerts.map((a) => [a.id, closeConditions(closeConditionInput(a, all, tags.length ? live : {}, now))]));
+}
+
+/**
+ * "Kết quả kỹ thuật" (modal đóng, chỉ đọc – từ dữ liệu modal cập nhật): nguyên nhân, hành động, số trước/sau của tag chính
+ * + ngưỡng đóng ("< 10.5 bar"; chiều thấp → "> …"). Cháy báo động giả → `falseAlarm` (UI thay khối thông số).
+ */
+export function closeSummary(a: AlertRecord) {
+  const u = updateConfig(a);
+  const primaryId = u ? updateReadingRows(a, u).find((r) => r.primary)?.id : undefined;
+  const m = alertMetric(a);
+  const after = a.readings?.rows.find((r) => r.id === primaryId)?.after ?? a.closingReading?.value;
+  const lastNote = a.notes?.at(-1)?.text;
+  return {
+    cause: a.cause ?? null,
+    action: a.actionTaken ?? lastNote ?? null,
+    falseAlarm: a.resolution?.kind === 'false-alarm',
+    quantity: u ? u.quantity : 'Giá trị',
+    before: Number.isFinite(m.value) && alertKind(a).numericValue !== false ? m.value : undefined,
+    after,
+    limit: closeLimit(a),
+    direction: m.direction,
+    unit: a.unit,
+  };
+}

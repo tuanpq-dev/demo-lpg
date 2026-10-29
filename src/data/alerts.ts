@@ -3,15 +3,8 @@ import type { AlertCardData, AlertHandling, SelectOption, Severity } from '@/com
 import {
   acknowledgeAlert,
   addAlertNote,
-  fireUpdate,
-  gasUpdate,
   requestSupport,
-  type FireUpdateInput,
-  type FireUpdateResult,
-  type GasUpdateInput,
-  type GasUpdateResult,
   canAcknowledge,
-  canResolve,
   planBulk,
   recordMaintenanceCreated,
   resolveAlert,
@@ -28,7 +21,18 @@ import {
   validateBulkAlertAssign,
   type AlertAssignForm,
 } from '@/features/alerts/assign';
-import { pressureUpdate, type PressureCheck, type PressureUpdateInput, type PressureUpdateResult } from '@/features/alerts/pressure';
+import { alertUpdate, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
+import {
+  bulkCloseMessage,
+  closeAlert,
+  continueMonitoring,
+  planBulkClose,
+  type CloseCondition,
+  type CloseInput,
+  type CloseResult,
+  type MonitorResult,
+} from '@/features/alerts/close';
+import type { FollowUpConfig } from '@/mocks/alertKinds';
 import { appNow } from '@/lib/demoNow';
 import { withUnit } from '@/features/alerts/gauge';
 import type { AlertRecord, AlertStatus } from '@/mocks/alerts';
@@ -101,7 +105,7 @@ export const inRange = (a: AlertRecord, range: AlertRange) => a.daysAgo <= RANGE
  * ?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=
  */
 export const ALERT_PARAMS = {
-  tab: { values: ['all', 'unacknowledged', 'in-progress', 'done'], default: 'all' },
+  tab: { values: ['all', 'unacknowledged', 'in-progress', 'resolved', 'done'], default: 'all' },
   q: { default: '' },
   severity: { values: ['critical', 'high', 'medium', 'low'] },
   area: {},
@@ -133,7 +137,7 @@ export function filterAlerts(alerts: readonly AlertRecord[], f: AlertFilters, op
 export const byNewest = (a: AlertRecord, b: AlertRecord) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time);
 
 export function countByStatus(alerts: readonly AlertRecord[]) {
-  const c = { all: alerts.length, unacknowledged: 0, 'in-progress': 0, done: 0 } satisfies Record<AlertTab, number>;
+  const c = { all: alerts.length, unacknowledged: 0, 'in-progress': 0, resolved: 0, done: 0 } satisfies Record<AlertTab, number>;
   alerts.forEach((a) => (c[a.status] += 1));
   return c;
 }
@@ -158,13 +162,19 @@ export function tableValue(a: AlertRecord) {
 /** Trạng thái xử lý trên thẻ: chưa xác nhận + nghiêm trọng → "Cần xử lý". */
 export function handlingOf(a: AlertRecord): AlertHandling {
   if (a.status === 'unacknowledged') return a.severity === 'critical' ? 'action-required' : 'unacknowledged';
-  return a.status;
+  return a.status === 'resolved' ? 'done' : a.status;
 }
 
-/** 3 cảnh báo ưu tiên = mới nhất, chưa hoàn thành, mức Nghiêm trọng/Cao (khớp Figma 70:2910). */
+/** Badge trạng thái của cảnh báo: Đã xử lý (chờ đóng) xanh như Figma · Hoàn thành (đã đóng) trung tính. */
+export const alertBadgeStatus = (s: AlertStatus) => (s === 'done' ? 'closed' : s);
+
+/**
+ * 3 cảnh báo ưu tiên = mới nhất, CÒN PHẢI XỬ LÝ (Chưa xác nhận / Đang xử lý – Đã xử lý chờ đóng không còn ưu tiên), mức
+ * Nghiêm trọng/Cao (khớp Figma 70:2910).
+ */
 export function derivePriorityCards(alerts: readonly AlertRecord[], limit = 3): AlertCardData[] {
   return alerts
-    .filter((a) => a.status !== 'done' && (a.severity === 'critical' || a.severity === 'high'))
+    .filter((a) => (a.status === 'unacknowledged' || a.status === 'in-progress') && (a.severity === 'critical' || a.severity === 'high'))
     .sort(byNewest)
     .slice(0, limit)
     .map((a) => ({
@@ -178,7 +188,7 @@ export function derivePriorityCards(alerts: readonly AlertRecord[], limit = 3): 
     }));
 }
 
-/** 5 KPI (70:2957) tính trên khoảng thời gian đang chọn. */
+/** 5 KPI (70:2957) tính trên khoảng thời gian đang chọn – giữ như Figma; Đã xử lý (chờ đóng) chỉ đếm ở tab "Chờ đóng". */
 export function deriveAlertKpis(alerts: readonly AlertRecord[], range: AlertRange = 'today'): KpiMock[] {
   const scoped = alerts.filter((a) => inRange(a, range));
   const c = countByStatus(scoped);
@@ -243,18 +253,42 @@ export async function assignAlerts(ids: readonly string[], form: AlertAssignForm
 }
 
 /**
- * Hoàn thành hàng loạt: chỉ dòng Đang xử lý, MỘT ghi chú chung cho cả lô (bắt buộc). Dòng khác bỏ qua – không còn đường
- * nào nhảy từ Chưa xác nhận sang Hoàn thành.
+ * Đóng hàng loạt: chỉ dòng Đã xử lý ĐỦ 3 điều kiện hệ thống (`conditions` – UI đọc live), MỘT ghi chú kết luận chung; bỏ qua
+ * dòng Nghiêm trọng nếu người đóng là người xử lý. Giữ nguyên theo dõi đang có của từng dòng.
  */
-export async function completeAlerts(ids: readonly string[], note: string, by = 'Admin'): Promise<BulkResult> {
-  if (!note.trim()) throw new Error('Cần ghi chú kết quả xử lý.');
-  const { eligible, skipped } = planBulk(currentAlerts(), ids, canResolve);
+export async function closeAlerts(
+  ids: readonly string[],
+  note: string,
+  conditions: Readonly<Record<string, readonly CloseCondition[]>>,
+  followUpOf: (a: AlertRecord) => FollowUpConfig,
+  by = 'Admin',
+): Promise<{ done: number; skipped: number; message: string }> {
+  if (!note.trim()) throw new Error('Cần ghi chú kết luận.');
+  const plan = planBulkClose(currentAlerts(), ids, (a) => conditions[a.id] ?? [], by);
   const ctx = ctxOf(by);
-  mutateAlerts(eligible, (a) => {
-    const r = resolveAlert(a, note, ctx);
+  mutateAlerts(plan.eligible, (a) => {
+    const r = closeAlert(a, { note, followUpMinutes: a.followUp?.minutes ?? 0, manualChecks: [] }, conditions[a.id] ?? [], followUpOf(a), ctx);
     return r.ok ? r.record : a;
   });
-  return { done: eligible.length, skipped };
+  return { done: plan.eligible.length, skipped: plan.skipped.length, message: bulkCloseMessage(plan.eligible.length, plan.skipped) };
+}
+
+/** "Xác nhận đóng cảnh báo" một cảnh báo – `conditions` = 3 điều kiện hệ thống đọc lúc bấm (hàm thuần kiểm lại). */
+export async function closeOneAlert(id: string, input: CloseInput, conditions: readonly CloseCondition[], follow: FollowUpConfig, by = 'Admin'): Promise<CloseResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, reason: 'status', message: 'Không tìm thấy cảnh báo.' };
+  const res = closeAlert(a, input, conditions, follow, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
+}
+
+/** "Tiếp tục theo dõi" – giữ Đã xử lý + một giá trị theo dõi. */
+export async function monitorAlert(id: string, input: { minutes: number; note: string }, follow: FollowUpConfig, by = 'Admin'): Promise<MonitorResult> {
+  const a = currentAlerts().find((x) => x.id === id);
+  if (!a) return { ok: false, reason: 'status', message: 'Không tìm thấy cảnh báo.' };
+  const res = continueMonitoring(a, input, follow, ctxOf(by));
+  if (res.ok) mutateAlerts([id], () => res.record);
+  return res;
 }
 
 /** Đánh dấu đã xử lý một cảnh báo (drawer) – trả lý do khi bị chặn. */
@@ -266,39 +300,11 @@ export async function resolveOneAlert(id: string, note: string, by = 'Admin'): P
   return res;
 }
 
-/** "Cập nhật xử lý" cảnh báo gas – `check` = số live hiện tại + ngưỡng đóng (UI đọc live, hàm thuần kiểm lại). */
-export async function updateGasAlert(
-  id: string,
-  input: GasUpdateInput,
-  check: { live: number | undefined; limit: number; unit: string },
-  by = 'Admin',
-): Promise<GasUpdateResult> {
-  const a = currentAlerts().find((x) => x.id === id);
-  if (!a) return { ok: false, reason: 'status' };
-  const res = gasUpdate(a, input, check, ctxOf(by));
-  if (res.ok) mutateAlerts([id], () => res.record);
-  return res;
-}
-
-/** "Cập nhật xử lý" báo cháy – `check` = trạng thái đầu báo đọc từ live lúc gửi (hàm thuần kiểm lại điều kiện đóng). */
-export async function updateFireAlert(
-  id: string,
-  input: FireUpdateInput,
-  check: Parameters<typeof fireUpdate>[2],
-  by = 'Admin',
-): Promise<FireUpdateResult> {
-  const a = currentAlerts().find((x) => x.id === id);
-  if (!a) return { ok: false, reason: 'status' };
-  const res = fireUpdate(a, input, check, ctxOf(by));
-  if (res.ok) mutateAlerts([id], () => res.record);
-  return res;
-}
-
-/** "Cập nhật xử lý" cảnh báo áp suất – `check` = điều kiện đóng tính từ live lúc lưu (hàm thuần kiểm lại toàn bộ form). */
-export async function updatePressureAlert(id: string, input: PressureUpdateInput, check: PressureCheck, by = 'Admin'): Promise<PressureUpdateResult> {
+/** "Cập nhật xử lý" (modal chung theo loại) – `check` = điều kiện "Đã xử lý" tính từ live lúc lưu (hàm thuần kiểm lại toàn bộ form). */
+export async function updateAlert(id: string, input: AlertUpdateInput, check: UpdateCheck, by = 'Admin'): Promise<AlertUpdateResult> {
   const a = currentAlerts().find((x) => x.id === id);
   if (!a) return { ok: false, errors: { state: 'Không tìm thấy cảnh báo.' } };
-  const res = pressureUpdate(a, input, check, ctxOf(by));
+  const res = alertUpdate(a, input, check, ctxOf(by));
   if (res.ok) mutateAlerts([id], () => res.record);
   return res;
 }
@@ -325,21 +331,21 @@ export async function noteMaintenanceCreated(id: string, code: string, by = 'Adm
   mutateAlerts([id], (a) => recordMaintenanceCreated(a, code, ctx));
 }
 
-/** Hook dữ liệu cảnh báo: `{ status, data, error, refetch, acknowledge, complete, assign, resolve, toggleGuide, addNote, noteMaintenance }`. */
+/** Hook dữ liệu cảnh báo: `{ status, data, error, refetch, acknowledge, assign, resolve, update, close, monitor, closeMany, … }`. */
 export function useAlerts() {
   return {
     ...alertStore.useCollection(),
     acknowledge: acknowledgeAlerts,
-    complete: completeAlerts,
+    closeMany: closeAlerts,
     assign: assignAlerts,
     assignOne: assignOneAlert,
     resolve: resolveOneAlert,
     toggleGuide: toggleAlertGuide,
     addNote: addNoteToAlert,
     noteMaintenance: noteMaintenanceCreated,
-    gasUpdate: updateGasAlert,
-    fireUpdate: updateFireAlert,
-    pressureUpdate: updatePressureAlert,
+    update: updateAlert,
+    close: closeOneAlert,
+    monitor: monitorAlert,
     requestSupport: requestAlertSupport,
   };
 }

@@ -25,14 +25,16 @@ import {
   alertDateTimeLabel,
   alertMetric,
   alertPlaybook,
+  closeLimit,
   metricText,
-  pressureDraft,
-  pressureReadingRows,
-  pressureUpdateConfig,
+  updateConfig,
+  updateDraft,
+  updateReadingRows,
+  useDetectorStatus,
   useTagReadings,
   verificationItems,
 } from '@/data/alertDetail';
-import type { AlertRecord } from '@/data/alerts';
+import { alertBadgeStatus, type AlertRecord } from '@/data/alerts';
 import {
   INSPECTION_STATUSES,
   INSPECTION_STATUS_LABEL,
@@ -42,29 +44,30 @@ import {
   type InspectionStatus,
 } from '@/features/alerts/inspection';
 import {
-  PRESSURE_STATE_LABEL,
-  PRESSURE_STATES,
-  SOURCE_LABEL,
-  canClosePressure,
+  fieldItemId,
   followUpChoiceLabel,
   followUpWindow,
   hasErrors,
   hasGauge,
+  isResolvedState,
   normalItemId,
-  pressureStateOf,
-  pressureWarnings,
   readingTone,
+  sourceLabel,
+  stateLabel,
   suggestsSupport,
-  validatePressureUpdate,
+  updateCloseCheck,
+  updateStateOf,
+  updateWarnings,
+  validateAlertUpdate,
+  type AlertUpdateInput,
+  type AlertUpdateResult,
   type FollowUpChoice,
-  type PressureCheck,
-  type PressureErrors,
-  type PressureFile,
-  type PressureState,
-  type PressureUpdateInput,
-  type PressureUpdateResult,
+  type UpdateCheck,
+  type UpdateErrors,
+  type UpdateFile,
+  type UpdateState,
   type VerificationSource,
-} from '@/features/alerts/pressure';
+} from '@/features/alerts/update';
 import { UPLOAD_ACCEPT, UPLOAD_HINT, checkUploads, uploadKind } from '@/features/maintenance/progress';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
@@ -76,18 +79,18 @@ import { STAFF } from '@/mocks/maintenance';
 import { downloadSampleAttachment } from '../maintenance/attachments';
 import { supportStaffItems } from './SupportRequestModal';
 
-export type PressureUpdateModalProps = {
+export type AlertUpdateModalProps = {
   alert: AlertRecord;
   /** Người đang thao tác – tự điền "Người kiểm tra" khi đổi trạng thái hạng mục. */
   actor: string;
   onClose: () => void;
-  /** Ghi bản ghi (data layer gọi `pressureUpdate` – kiểm lại toàn bộ). Nơi gọi đóng modal khi ok. */
-  onSubmit: (input: PressureUpdateInput, check: PressureCheck) => Promise<PressureUpdateResult> | PressureUpdateResult;
+  /** Ghi bản ghi (data layer gọi `alertUpdate` – kiểm lại toàn bộ). Nơi gọi đóng modal khi ok. */
+  onSubmit: (input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
   /** Giờ cố định (playground). */
   fixedNow?: Date;
 };
 
-type FormValues = Omit<PressureUpdateInput, 'files' | 'readings'> & {
+type FormValues = Omit<AlertUpdateInput, 'files' | 'readings'> & {
   source: VerificationSource;
   /** Giờ nhà máy "yyyy-mm-ddTHH:mm". */
   recordedAt: string;
@@ -97,36 +100,43 @@ type FormValues = Omit<PressureUpdateInput, 'files' | 'readings'> & {
   customAtLocal: string;
 };
 
-type TempFile = PressureFile & { id: string };
+type TempFile = UpdateFile & { id: string };
 
-const STATE_TONE: Record<PressureState, StatusOption['tone']> = {
+const STATE_TONE: Record<UpdateState, StatusOption['tone']> = {
   inspecting: 'primary',
   resolving: 'primary',
   paused: 'warning',
   'needs-support': 'warning',
   resolved: 'primary',
+  'false-alarm': 'primary',
 };
 const STATUS_OPTIONS = INSPECTION_STATUSES.map((s) => ({ value: s, label: INSPECTION_STATUS_LABEL[s] }));
-const SOURCE_OPTIONS = (Object.keys(SOURCE_LABEL) as VerificationSource[]).map((s) => ({ value: s, label: SOURCE_LABEL[s] }));
+const SOURCES: readonly VerificationSource[] = ['sensor', 'gauge', 'both'];
+const ALARM_TEXT: Record<string, { text: string; tone: 'danger' | 'normal' }> = { alarm: { text: 'Báo động', tone: 'danger' }, normal: { text: 'Bình thường', tone: 'normal' } };
 const OWNER_OPTIONS = STAFF.map((p) => ({ value: p.name, label: p.name }));
 
 /**
- * Modal "Cập nhật xử lý cảnh báo áp suất" (ảnh `scratch/figma-ref/alert-pressure-update-modal-design.png`, 28/10/2026; chưa
- * có node – lệch ảnh ghi docs/figma-diffs.md; docs/guide/alerts.md (4o)). Chỉ loại có `update.kind = 'pressure-update'` (tank-overpressure).
- * Thẻ đầu · Trạng thái xử lý (5 ô) · Kết quả kiểm tra thiết bị (= hướng dẫn của drawer, một nguồn) · Thông số trước/sau ·
+ * Modal "Cập nhật xử lý" – KHUNG CHUNG mọi loại `update.kind = 'alert-update'` (ảnh áp suất
+ * `scratch/figma-ref/alert-pressure-update-modal-design.png`, 28/10/2026; gas + cháy dựng theo khung đó, chưa có thiết kế
+ * riêng – lệch ảnh ghi docs/figma-diffs.md; docs/guide/alerts.md (4o)). Phần theo loại lấy từ `ALERT_KINDS[kind].update`:
+ * tiêu đề, ô trạng thái (cháy tách "Đã xử lý sự cố" / "Báo động giả"), dòng thông số, nguồn xác minh, mục xác minh, theo dõi.
+ * Thẻ đầu · Trạng thái xử lý · Kết quả kiểm tra thiết bị (= hướng dẫn của drawer, một nguồn) · Thông số trước/sau ·
  * Kết quả xác minh · Nguyên nhân / Nội dung · Ảnh và tài liệu · Vấn đề phát sinh · Theo dõi sau xử lý.
- * Quy tắc: `features/alerts/pressure.ts`. Nháp sessionStorage theo mã. Chỉ mount khi mở (chunk lazy riêng).
+ * Quy tắc: `features/alerts/update.ts`. Nháp sessionStorage theo mã. Chỉ mount khi mở (chunk lazy riêng).
  */
-export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit, fixedNow }: PressureUpdateModalProps) {
+export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, fixedNow }: AlertUpdateModalProps) {
   const liveNow = useNow(30_000);
   const now = fixedNow ?? liveNow;
-  const cfg = pressureUpdateConfig(a)!;
+  const cfg = updateConfig(a)!;
   const steps = useMemo(() => alertPlaybook(a).steps, [a]);
-  const rowsCfg = useMemo(() => pressureReadingRows(a, cfg), [a, cfg]);
+  const rowsCfg = useMemo(() => updateReadingRows(a, cfg), [a, cfg]);
   const verItems = useMemo(() => verificationItems(a, cfg), [a, cfg]);
   const normalId = normalItemId(cfg);
+  const fieldId = fieldItemId(cfg);
   const metric = alertMetric(a);
   const readings = useTagReadings(rowsCfg.map((r) => r.tag));
+  const detector = useDetectorStatus(a.device);
+  const sourceOptions = cfg.sources ? SOURCES.map((s) => ({ value: s, label: sourceLabel(cfg, s) })) : null;
 
   const uid = useId();
   const ids = {
@@ -140,7 +150,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
 
   const [initial] = useState(() => {
     const base: FormValues = {
-      state: pressureStateOf(a),
+      state: updateStateOf(a),
       holdReason: a.hold?.reason ?? '',
       supportPeople: [],
       inspection: Object.fromEntries(inspectionItems(steps, a.guide).map(({ id, text: _t, ...e }) => [id, e])),
@@ -149,12 +159,12 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
       actionTaken: a.actionTaken ?? '',
       issue: { kind: a.issue?.kind ?? 'none', note: a.issue?.note ?? '' },
       followUp: { choice: cfg.followUp.defaultMinutes, target: cfg.followUp.target, owner: a.assignee ?? '' },
-      source: 'both',
+      source: cfg.sources ? 'both' : 'sensor',
       recordedAt: plantDateTimeKey(fixedNow ?? appNow()),
       manualAfter: {},
       customAtLocal: '',
     };
-    const draft = pressureDraft.load(a.id);
+    const draft = updateDraft.load(a.id);
     if (!draft) return { base, values: base, draft: false };
     const manualAfter: Record<string, number | null> = {};
     for (const r of draft.readings.rows) if (r.manual) manualAfter[r.id] = r.after ?? null;
@@ -171,7 +181,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   const [v, setV] = useState<FormValues>(initial.values);
   const [files, setFiles] = useState<TempFile[]>([]);
   const [uploadError, setUploadError] = useState('');
-  const [errors, setErrors] = useState<PressureErrors>({});
+  const [errors, setErrors] = useState<UpdateErrors>({});
   const [triedSubmit, setTriedSubmit] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -187,45 +197,52 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   useEffect(() => setErrors({}), [v]);
 
   const set = <K extends keyof FormValues>(k: K, val: FormValues[K]) => setV((cur) => ({ ...cur, [k]: val }));
-  const editable = hasGauge(v.source);
+  const editable = !!cfg.sources && hasGauge(v.source);
 
   // ---- Thông số trước/sau ----
   const rowValues = rowsCfg.map((r) => {
     const rd = r.tag ? readings[r.tag] : undefined;
     const live = rd?.state === 'ok' ? rd.value : undefined;
-    const manual = editable && r.id in v.manualAfter;
+    const manual = editable && !r.alarm && r.id in v.manualAfter;
     const after = manual ? (v.manualAfter[r.id] ?? undefined) : live;
     return { cfg: r, reading: rd ?? { state: 'none' as const }, live, after, manual };
   });
   const primary = rowValues.find((x) => x.cfg.primary)!;
-  const warn = primary.cfg.warn ?? Number(a.threshold);
-  const close = canClosePressure({
+  const warn = closeLimit(a);
+  const close = updateCloseCheck(cfg.close, {
     liveState: primary.reading.state,
     live: primary.live,
     after: primary.after,
+    manual: primary.manual,
     source: v.source,
-    warn,
+    limit: warn,
     unit: a.unit,
+    detector,
+    fieldChecked: !!fieldId && v.verification.includes(fieldId),
   });
-  const readingRows: ReadingRowView[] = rowValues.map(({ cfg: r, after, reading }) => ({
-    id: r.id,
-    label: r.label,
-    limit: r.primary && r.warn !== undefined ? `Giới hạn: ${metricText(r.warn, r.unit)}` : undefined,
-    unit: r.unit,
-    before: r.before,
-    after,
-    beforeTone: readingTone(r.before, r.warn, r.danger),
-    afterTone: readingTone(after, r.warn, r.danger),
-    editable,
-    afterPlaceholder: reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
-  }));
+  const readingRows: ReadingRowView[] = rowValues.map(({ cfg: r, after, reading }) => {
+    const alarm = r.alarm && reading.state === 'ok' ? ALARM_TEXT[reading.text ?? ''] : undefined;
+    return {
+      id: r.id,
+      label: r.label,
+      limit: r.primary && r.warn !== undefined ? `Giới hạn: ${metricText(r.warn, r.unit)}` : undefined,
+      unit: r.unit,
+      before: r.before,
+      after,
+      beforeTone: readingTone(r.before, r.warn, r.danger),
+      afterTone: alarm ? alarm.tone : readingTone(after, r.warn, r.danger),
+      afterText: alarm?.text,
+      editable: editable && !r.alarm,
+      afterPlaceholder: reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
+    };
+  });
 
   // ---- Input + kiểm tra ----
   const verText = (id: string) => verItems.find((x) => x.id === id)?.text ?? id;
-  const check: PressureCheck = { close, config: cfg, steps, verificationText: verText, unit: a.unit };
+  const check: UpdateCheck = { close, config: cfg, steps, verificationText: verText, unit: a.unit };
   const recordedIso = (parsePlantDateTime(v.recordedAt) ?? now).toISOString();
   const customIso = v.customAtLocal ? parsePlantDateTime(v.customAtLocal)?.toISOString() : undefined;
-  const input: PressureUpdateInput = {
+  const input: AlertUpdateInput = {
     state: v.state,
     holdReason: v.holdReason,
     supportPeople: v.supportPeople,
@@ -243,10 +260,11 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
     followUp: { ...v.followUp, customAt: v.followUp.choice === 'custom' ? customIso : undefined },
   };
   // Lỗi hiện sau lần bấm "Lưu cập nhật" đầu tiên (rồi cập nhật theo giá trị) – trước đó chỉ hiện lỗi mâu thuẫn xác minh.
-  const liveErrors = validatePressureUpdate(input, check, now);
-  const shown: PressureErrors = triedSubmit ? liveErrors : { verification: liveErrors.verification };
-  const warnings = pressureWarnings(input, check);
-  const resolved = v.state === 'resolved';
+  const liveErrors = validateAlertUpdate(input, check, now);
+  const shown: UpdateErrors = triedSubmit ? liveErrors : { verification: liveErrors.verification };
+  const warnings = updateWarnings(input, check);
+  const resolved = isResolvedState(v.state);
+  const resolvedLabel = stateLabel(cfg, 'resolved');
   const followActive = resolved && v.followUp.choice !== 0;
   const preview_ = followUpWindow(v.followUp.choice, customIso, now);
 
@@ -262,7 +280,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   const discard = () => onClose();
   const saveDraft = () => {
     const { files: _f, ...rest } = input;
-    const ok = pressureDraft.save(a.id, { ...rest, savedAt: appNow().toISOString() });
+    const ok = updateDraft.save(a.id, { ...rest, savedAt: appNow().toISOString() });
     if (ok) {
       setHasDraft(true);
       setSavedSnap(JSON.stringify(v));
@@ -284,7 +302,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   const submit = async () => {
     setTriedSubmit(true);
     setErrors({});
-    const e = validatePressureUpdate(input, check, appNow());
+    const e = validateAlertUpdate(input, check, appNow());
     if (hasErrors(e)) {
       announce('Chưa lưu được – xem các mục cần bổ sung.');
       return;
@@ -292,7 +310,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
     setBusy(true);
     try {
       const res = await onSubmit(input, check);
-      if (res.ok) pressureDraft.clear(a.id);
+      if (res.ok) updateDraft.clear(a.id);
       else setErrors(res.errors);
     } finally {
       setBusy(false);
@@ -300,7 +318,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   };
 
   // Lý do chặn nút "Lưu cập nhật" (sau lần bấm đầu) – tính lại theo giá trị hiện tại (+ lỗi trả về lúc lưu, xoá khi bấm lại).
-  const err: PressureErrors = triedSubmit ? { ...errors, ...liveErrors } : shown;
+  const err: UpdateErrors = triedSubmit ? { ...errors, ...liveErrors } : shown;
   const issues = [
     err.state && { id: 'state', label: err.state },
     err.close && { id: 'close', label: err.close },
@@ -315,11 +333,11 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
   ].filter(Boolean) as { id: string; label: string }[];
   const blocked = triedSubmit && issues.length > 0;
 
-  const stateOptions: StatusOption<PressureState>[] = PRESSURE_STATES.map((s) => ({
+  const stateOptions: StatusOption<UpdateState>[] = cfg.states.map((s) => ({
     id: s,
-    label: PRESSURE_STATE_LABEL[s],
+    label: stateLabel(cfg, s),
     tone: STATE_TONE[s],
-    ...(s === 'resolved' && !close.ok ? { disabled: true, describedBy: ids.stateReason } : {}),
+    ...(isResolvedState(s) && !close.ok ? { disabled: true, describedBy: ids.stateReason } : {}),
   }));
   const followOptions: StatusOption<string>[] = [...cfg.followUp.options, 'custom' as const].map((c) => ({
     id: String(c),
@@ -356,7 +374,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
       open
       onClose={requestClose}
       size="xl"
-      title="Cập nhật xử lý cảnh báo áp suất"
+      title={cfg.title}
       description={`Ghi nhận kết quả kiểm tra và tình trạng xử lý cảnh báo ${a.code}`}
       dismissOnBackdrop={!dirty}
       onSubmit={(e) => {
@@ -388,7 +406,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
             { id: 'area', label: 'Khu vực', value: areaLabel(a.area) },
             { id: 'severity', label: 'Mức độ', value: <Badge variant="severity" value={a.severity} size="chip" /> },
             { id: 'assignee', label: 'Người xử lý', value: assigneeShown },
-            { id: 'status', label: 'Trạng thái', value: <Badge variant="status" value={a.status} />, newRow: true },
+            { id: 'status', label: 'Trạng thái', value: <Badge variant="status" value={alertBadgeStatus(a.status)} />, newRow: true },
             { id: 'time', label: 'Thời gian bắt đầu', value: alertDateTimeLabel(a, now) },
             { id: 'value', label: 'Giá trị lúc cảnh báo', value: metricText(metric.value, metric.unit), tone: 'danger' },
             { id: 'threshold', label: 'Ngưỡng cho phép', value: metricText(metric.threshold, metric.unit) },
@@ -409,11 +427,11 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
           onChange={(s) => set('state', s)}
           layout="inline"
           size="sm"
-          columns={5}
+          columns={cfg.states.length > 5 ? 3 : 5}
         />
         {!close.ok && (
           <p id={ids.stateReason} className="text-sm text-warning">
-            Chưa chọn được "Đã xử lý": {close.message}
+            Chưa chọn được "{cfg.states.filter(isResolvedState).map((s) => stateLabel(cfg, s)).join('" / "')}": {close.message}
           </p>
         )}
         {(v.state === 'paused' || v.state === 'needs-support') && (
@@ -484,19 +502,25 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
             onAfterChange={(id, val) => set('manualAfter', { ...v.manualAfter, [id]: val ?? null })}
             footer={
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <span id={`${uid}-src`} className="text-sm text-fg-secondary">
-                    Nguồn xác minh
-                  </span>
-                  <Select variant="field" label="Nguồn xác minh" labelledBy={`${uid}-src`} options={SOURCE_OPTIONS} value={v.source} onChange={(s) => s && set('source', s)} />
-                </div>
+                {sourceOptions && (
+                  <div className="flex flex-col gap-1.5">
+                    <span id={`${uid}-src`} className="text-sm text-fg-secondary">
+                      Nguồn xác minh
+                    </span>
+                    <Select variant="field" label="Nguồn xác minh" labelledBy={`${uid}-src`} options={sourceOptions} value={v.source} onChange={(s) => s && set('source', s)} />
+                  </div>
+                )}
                 <DatePicker type="datetime-local" label="Thời gian ghi nhận" value={v.recordedAt} onChange={(t) => set('recordedAt', t)} />
               </div>
             }
           />
           <p className="text-sm text-fg-secondary">
-            "Trước" = số lúc cảnh báo. "Sau" = số trực tiếp{editable ? '; sửa tay theo đồng hồ cơ' : ' (chọn nguồn có "Đồng hồ cơ" để nhập tay)'}.
-            {primary.reading.state === 'lost' && ' Áp suất đang mất tín hiệu – nhập số đo bằng đồng hồ cơ.'}
+            "Trước" = số lúc cảnh báo. "Sau" = số trực tiếp
+            {cfg.sources ? (editable ? `; sửa tay theo ${sourceLabel(cfg, 'gauge').toLowerCase()}` : ` (chọn nguồn có "${sourceLabel(cfg, 'gauge')}" để nhập tay)`) : ''}.
+            {primary.reading.state === 'lost' &&
+              (cfg.sources
+                ? ` ${cfg.quantity[0]!.toUpperCase()}${cfg.quantity.slice(1)} đang mất tín hiệu – nhập số đo bằng ${sourceLabel(cfg, 'gauge').toLowerCase()}.`
+                : ' Đầu báo mất tín hiệu – kiểm tra tại chỗ trước khi đóng.')}
           </p>
         </section>
 
@@ -517,9 +541,11 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
               />
             );
           })}
-          <p id={ids.normalHint} className="text-sm text-fg-secondary">
-            "{verText(normalId ?? '')}" chỉ chọn được khi áp suất hiện tại và sau xử lý đều dưới {metricText(warn, a.unit)}.
-          </p>
+          {normalId && (
+            <p id={ids.normalHint} className="text-sm text-fg-secondary">
+              "{verText(normalId)}" chỉ chọn được khi {cfg.close.rule === 'fire' ? cfg.normalHint : `${cfg.normalHint ?? `${cfg.quantity} hiện tại dưới ngưỡng`} (${metricText(warn, a.unit)})`}.
+            </p>
+          )}
           {shown.verification && (
             <p role="alert" className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-fg">
               {shown.verification}
@@ -539,7 +565,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
           rows={3}
           maxLength={1000}
           error={err.cause}
-          hint={resolved ? undefined : 'Bắt buộc khi chọn "Đã xử lý".'}
+          hint={resolved ? undefined : `Bắt buộc khi chọn "${resolvedLabel}".`}
           placeholder="Nhập nguyên nhân gây ra cảnh báo..."
         />
         <Textarea
@@ -551,7 +577,7 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
           rows={3}
           maxLength={1000}
           error={err.actionTaken}
-          hint={resolved ? undefined : 'Bắt buộc khi chọn "Đã xử lý".'}
+          hint={resolved ? undefined : `Bắt buộc khi chọn "${resolvedLabel}".`}
           placeholder="Mô tả các bước đã thực hiện..."
         />
       </div>
@@ -647,22 +673,26 @@ export default function PressureUpdateModal({ alert: a, actor, onClose, onSubmit
         />
         {!resolved && (
           <p id={ids.followHint} className="text-sm text-fg-secondary">
-            Áp dụng khi chọn "Đã xử lý" – sau khi đóng, cảnh báo hiện "Đang theo dõi đến …".
+            Áp dụng khi chọn "{resolvedLabel}" – cảnh báo hiện "Đang theo dõi đến …" ở drawer và bảng; chỉnh lại được khi xác nhận đóng.
           </p>
         )}
         <div className="grid gap-4 md:grid-cols-3">
-          <NumberField
-            label="Giá trị mục tiêu"
-            prefix="<"
-            unit={a.unit}
-            value={v.followUp.target}
-            onChange={(n) => set('followUp', { ...v.followUp, target: n })}
-            onClear={() => set('followUp', { ...v.followUp, target: undefined })}
-            min={0}
-            step={0.1}
-            precision={2}
-            disabled={!followActive}
-          />
+          {cfg.followUp.target !== undefined ? (
+            <NumberField
+              label="Giá trị mục tiêu"
+              prefix="<"
+              unit={a.unit}
+              value={v.followUp.target}
+              onChange={(n) => set('followUp', { ...v.followUp, target: n })}
+              onClear={() => set('followUp', { ...v.followUp, target: undefined })}
+              min={0}
+              step={0.1}
+              precision={2}
+              disabled={!followActive}
+            />
+          ) : (
+            <TextField label="Giá trị mục tiêu" value="Không có mục tiêu số" onChange={() => {}} readOnly hint="Theo dõi trạng thái đầu báo và tín hiệu liên quan." />
+          )}
           {v.followUp.choice === 'custom' ? (
             <DatePicker type="datetime-local" label="Thời điểm kiểm tra lại" value={v.customAtLocal} onChange={(t) => set('customAtLocal', t)} disabled={!followActive} />
           ) : (

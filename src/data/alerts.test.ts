@@ -2,8 +2,10 @@ import { describe, expect, test } from 'vitest';
 import type { AlertRecord } from '@/mocks/alerts';
 import {
   acknowledgeAlerts,
+  alertBadgeStatus,
   assignAlerts,
-  completeAlerts,
+  closeAlerts,
+  closeOneAlert,
   countByStatus,
   DEFAULT_FILTERS,
   deriveAlertKpis,
@@ -13,8 +15,11 @@ import {
   matchAlert,
   resolveOneAlert,
   shiftOf,
-  updateFireAlert,
+  updateAlert,
 } from './alerts';
+import { followUpConfig, updateConfig, closeConditionInput, closeSummary } from './alertDetail';
+import { updateCloseCheck, type AlertUpdateInput } from '@/features/alerts/update';
+import type { CloseCondition } from '@/features/alerts/close';
 import { alertDateTimeLabel, alertGauge, alertMetric, alertOccurredAt, alertPlaybook, alertRecordedValue, alertShortTimeLabel } from './alertDetail';
 import { alertRecords } from '@/mocks/alerts';
 import { maintenanceRecords } from '@/mocks/maintenance';
@@ -69,7 +74,17 @@ describe('matchAlert / filterAlerts', () => {
   test('ignoreTab: số đếm tab theo các bộ lọc còn lại', () => {
     const f = { ...DEFAULT_FILTERS, tab: 'done' as const, range: '30d' as const };
     expect(filterAlerts(rows, f)).toHaveLength(1);
-    expect(countByStatus(filterAlerts(rows, f, { ignoreTab: true }))).toEqual({ all: 4, unacknowledged: 2, 'in-progress': 1, done: 1 });
+    // Đổi có chủ đích (28/10/2026): thêm số đếm tab "Chờ đóng" (resolved).
+    expect(countByStatus(filterAlerts(rows, f, { ignoreTab: true }))).toEqual({ all: 4, unacknowledged: 2, 'in-progress': 1, resolved: 0, done: 1 });
+  });
+  test('tab "Chờ đóng" = Đã xử lý; đếm từ dữ liệu; badge Đã xử lý ≠ Hoàn thành', () => {
+    const withResolved = [...rows, alert('A5', { status: 'resolved' })];
+    expect(filterAlerts(withResolved, { ...DEFAULT_FILTERS, tab: 'resolved' }).map((a) => a.id)).toEqual(['A5']);
+    expect(countByStatus(withResolved).resolved).toBe(1);
+    expect(alertBadgeStatus('resolved')).toBe('resolved');
+    expect(alertBadgeStatus('done')).toBe('closed');
+    // Mock: ALT-00120 + ALT-00116 chờ đóng
+    expect(alertRecords.filter((a) => a.status === 'resolved').map((a) => a.id)).toEqual(['ALT-00120', 'ALT-00116']);
   });
 });
 
@@ -83,6 +98,11 @@ describe('deriveAlertKpis / derivePriorityCards', () => {
   test('thẻ ưu tiên: chưa xong, mức nghiêm trọng/cao, mới nhất trước', () => {
     expect(derivePriorityCards(rows).map((c) => c.id)).toEqual(['A2', 'A1']);
     expect(derivePriorityCards(rows)[1]!.handling).toBe('action-required');
+  });
+  test('thẻ ưu tiên bỏ cảnh báo Đã xử lý (chờ đóng); KPI giữ 5 ô như Figma', () => {
+    const r = [...rows, alert('A6', { status: 'resolved', severity: 'critical', time: '23:00:00' })];
+    expect(derivePriorityCards(r).map((c) => c.id)).toEqual(['A2', 'A1']);
+    expect(deriveAlertKpis(r, 'today').map((k) => k.id)).toEqual(['total', 'critical', 'unacknowledged', 'in-progress', 'done']);
   });
 });
 
@@ -208,20 +228,24 @@ describe('thao tác trên store (mock) – cùng quy tắc với drawer', () => 
     expect((await get('ALT-00122')).history!.at(-1)!.text).toBe('Đổi người xử lý: Phạm Văn D → Trần Bình – lý do: Gom việc khu');
     expect((await get('ALT-00119')).status).toBe('unacknowledged');
   });
-  test('hoàn thành hàng loạt: chỉ dòng Đang xử lý, ghi chú chung bắt buộc, không nhảy từ Chưa xác nhận', async () => {
-    await expect(completeAlerts(['ALT-00125'], '  ', 'Tester')).rejects.toThrow();
-    const r = await completeAlerts(['ALT-00123', 'ALT-00125', 'ALT-00124'], 'Đã vệ sinh lọc', 'Tester');
-    expect(r).toEqual({ done: 1, skipped: 2 });
-    expect((await get('ALT-00123')).status).toBe('unacknowledged');
-    const done = await get('ALT-00125');
-    expect(done.status).toBe('done');
-    expect(done.notes?.at(-1)?.text).toBe('Đã vệ sinh lọc');
+  // Thay "hoàn thành hàng loạt" (đã bỏ – không còn thao tác nhảy thẳng sang Hoàn thành) bằng đóng hàng loạt.
+  test('đóng hàng loạt: chỉ dòng Đã xử lý đủ 3 điều kiện, ghi chú chung bắt buộc, báo bỏ qua + lý do', async () => {
+    const ok: CloseCondition[] = [{ id: 'stable', ok: true }, { id: 'in-range', ok: true }, { id: 'no-related', ok: true }];
+    const bad: CloseCondition[] = [ok[0]!, ok[1]!, { id: 'no-related', ok: false, reason: 'x' }];
+    const conds = { 'ALT-00120': ok, 'ALT-00116': bad };
+    await expect(closeAlerts(['ALT-00120'], '  ', conds, followUpConfig, 'Tester')).rejects.toThrow();
+    const r = await closeAlerts(['ALT-00120', 'ALT-00116', 'ALT-00125'], 'Đã kiểm tra, ổn định', conds, followUpConfig, 'Tester');
+    expect(r).toEqual({ done: 1, skipped: 2, message: 'Đã đóng 1 · bỏ qua 2 (1 chưa đủ điều kiện hệ thống; 1 không ở trạng thái Chờ đóng)' });
+    expect(await get('ALT-00120')).toMatchObject({ status: 'done', closedBy: 'Tester', closingNote: 'Đã kiểm tra, ổn định' });
+    expect((await get('ALT-00116')).status).toBe('resolved');
+    expect((await get('ALT-00125')).status).toBe('in-progress');
   });
   test('xác nhận hàng loạt chỉ dòng Chưa xác nhận; đánh dấu đã xử lý một dòng cần ghi chú', async () => {
     expect(await acknowledgeAlerts(['ALT-00123', 'ALT-00125'], 'Tester')).toEqual({ done: 1, skipped: 1 });
     expect(await resolveOneAlert('ALT-00123', '', 'Tester')).toEqual({ ok: false, reason: 'note' });
     expect((await resolveOneAlert('ALT-00123', 'Đã điều chỉnh lịch nhập', 'Tester')).ok).toBe(true);
-    expect((await get('ALT-00123')).status).toBe('done');
+    // Đổi có chủ đích (28/10/2026): Đánh dấu đã xử lý → Đã xử lý (chờ đóng).
+    expect((await get('ALT-00123')).status).toBe('resolved');
   });
 });
 
@@ -252,12 +276,83 @@ describe('báo cháy FIR-00018 – chung danh sách cảnh báo', () => {
     // Nghiêm trọng + chưa xác nhận + mới nhất → thẻ ưu tiên đầu tiên
     expect(derivePriorityCards(alertRecords)[0]!.id).toBe('FIR-00018');
   });
-  test('store: báo động giả lưu resolution; không đóng khi còn báo động', async () => {
+  // Đổi có chủ đích (28/10/2026): modal gọn của cháy bỏ – cập nhật qua khung chung (`updateAlert`), báo động giả → Đã xử lý.
+  test('store: báo động giả lưu resolution, chờ đóng; không chọn được khi còn báo động; đóng cần người khác (Nghiêm trọng)', async () => {
     const get = async () => (await fetchAlerts()).find((a) => a.id === 'FIR-00018')!;
     await acknowledgeAlerts(['FIR-00018'], 'Tester');
-    expect(await updateFireAlert('FIR-00018', { action: 'false-alarm', note: 'x' }, { alarm: 'active', device: 'online', detector: 'HD-02' }, 'Tester')).toMatchObject({ ok: false, reason: 'still-alarm' });
-    const r = await updateFireAlert('FIR-00018', { action: 'false-alarm', note: 'Camera không thấy khói' }, { alarm: 'cleared', device: 'online', detector: 'HD-02' }, 'Tester');
-    expect(r.ok).toBe(true);
-    expect(await get()).toMatchObject({ status: 'done', resolution: { kind: 'false-alarm', closedBy: 'live' } });
+    const cfg = updateConfig(fir)!;
+    const input: AlertUpdateInput = {
+      state: 'false-alarm',
+      holdReason: '',
+      supportPeople: [],
+      inspection: {},
+      readings: { source: 'sensor', at: new Date().toISOString(), rows: [] },
+      verification: ['field-verified'],
+      cause: 'Hơi nóng từ ống xả',
+      actionTaken: 'Camera không thấy khói',
+      issue: { kind: 'none', note: '' },
+      files: [],
+      followUp: { choice: 0, owner: '' },
+    };
+    const check = (alarm: 'active' | 'cleared') => ({
+      close: updateCloseCheck(cfg.close, { liveState: 'ok', source: 'sensor', limit: 57, unit: '°C', detector: { alarm, device: 'online', name: 'HD-02' } }),
+      config: cfg,
+      steps: [],
+      verificationText: (id: string) => id,
+      unit: '°C',
+    });
+    expect(await updateAlert('FIR-00018', input, check('active'), 'Tester')).toMatchObject({ ok: false, errors: { close: expect.stringMatching(/vẫn đang báo động/) } });
+    expect((await updateAlert('FIR-00018', input, check('cleared'), 'Tester')).ok).toBe(true);
+    expect(await get()).toMatchObject({ status: 'resolved', resolvedBy: 'Tester', resolution: { kind: 'false-alarm', closedBy: 'live' } });
+    expect(closeSummary(await get())).toMatchObject({ falseAlarm: true });
+    const ok: CloseCondition[] = [{ id: 'stable', ok: true }, { id: 'in-range', ok: true }, { id: 'no-related', ok: true }];
+    expect(await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Tester')).toMatchObject({ ok: false, reason: 'closer' });
+    expect((await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Trưởng ca')).ok).toBe(true);
+    expect(await get()).toMatchObject({ status: 'done', closedBy: 'Trưởng ca' });
+  });
+
+});
+
+describe('3 điều kiện hệ thống – đầu vào từ live (closeConditionInput)', () => {
+  const NOW = 1_000_000;
+  const tv = (value: number | string) => ({ value, unit: '', ts: NOW, quality: 'good' as const });
+  const find = (id: string) => alertRecords.find((a) => a.id === id)!;
+  test('không có tag (ALT-00116): không có số trực tiếp; còn cảnh báo đang mở cùng khu', () => {
+    const inp = closeConditionInput(find('ALT-00116'), alertRecords, {}, NOW);
+    expect(inp.primary).toBeNull();
+    expect(inp.related.map((r) => r.id)).toEqual(expect.arrayContaining(['ALT-00128', 'ALT-00123', 'ALT-00122']));
+    expect(closeConditionInput(find('ALT-00120'), alertRecords, {}, NOW).related).toEqual([]);
+  });
+  test('áp suất ALT-00128: tag chính PT-101 + ngưỡng đóng 10.5; tín hiệu phụ vượt ngưỡng → bất thường', () => {
+    const live = { 'PT-101': tv(9.2), 'PT-103': tv(4.2), 'TT-101': tv(31) };
+    const inp = closeConditionInput(find('ALT-00128'), alertRecords, live, NOW);
+    expect(inp.primary).toMatchObject({ reading: { state: 'ok', value: 9.2 }, limit: 10.5, direction: 'above' });
+    expect(closeConditionInput(find('ALT-00128'), alertRecords, { ...live, 'PT-101': { ...tv(9.2), ts: NOW - 20_000 } }, NOW).primary!.reading.state).toBe('lost');
+  });
+  test('cháy FIR-00018: đầu báo + khói SD-02 báo động → bất thường; chưa có live → đang đọc', () => {
+    const live = { 'HD-02': tv(40), 'HD-02.ALARM': tv('normal'), 'HD-02.STATE': tv('online'), 'SD-02.ALARM': tv('alarm'), 'GS-05': tv(3) };
+    const inp = closeConditionInput(find('FIR-00018'), alertRecords, live, NOW);
+    expect(inp.detector).toEqual({ name: 'HD-02', alarm: 'cleared', device: 'online' });
+    expect(inp.primary).toMatchObject({ limit: 57, reading: { value: 40 } });
+    expect(inp.secondary.find((x) => x.label.includes('SD-02'))?.state).toBe('abnormal');
+    expect(closeConditionInput(find('FIR-00018'), alertRecords, undefined, NOW).detector?.device).toBe('pending');
+  });
+});
+
+describe('PT-201 (pressure-high) theo luồng mới – bỏ ngoại lệ', () => {
+  test('"Đánh dấu đã xử lý" → Đã xử lý (chờ đóng) → đóng qua modal đóng (cùng quy tắc) → Hoàn thành', async () => {
+    const { resolveAlert } = await import('@/features/alerts/workflow');
+    const { closeAlert } = await import('@/features/alerts/close');
+    const a = { ...alertRecords.find((x) => x.id === 'ALT-00113')!, status: 'in-progress' as const };
+    expect(a.tag).toBe('PT-201');
+    expect(alertKind(a).update.kind).toBe('resolve-note');
+    const ctx = { by: 'Trần Văn B', at: new Date('2026-10-28T04:00:00Z') };
+    const r = resolveAlert(a, 'Chỉnh lại van điều áp', ctx);
+    if (!r.ok) throw new Error('resolve');
+    expect(r.record).toMatchObject({ status: 'resolved', resolvedBy: 'Trần Văn B' });
+    const ok = [{ id: 'stable' as const, ok: true }, { id: 'in-range' as const, ok: true }, { id: 'no-related' as const, ok: true }];
+    // Mức Cao: người xử lý tự đóng được
+    const c = closeAlert(r.record, { note: 'Ổn định', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(a), ctx);
+    expect(c).toMatchObject({ ok: true, record: { status: 'done', closedBy: 'Trần Văn B' } });
   });
 });

@@ -84,7 +84,7 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Design system | Quy ước (3), token → primitive → nghiệp vụ (4g), **bảng component** (6), quy ước đầy đủ (Phụ lục B), bảng component tóm tắt (Phụ lục C) | [docs/guide/design-system.md](docs/guide/design-system.md) |
 | Tổng quan + bản đồ 3D | Luồng dữ liệu Tổng quan (4b), bản đồ 3D (4e), chế độ sửa + Scene Editor (4f), chi tiết tài sản `/map/:assetId` (4h); thêm KPI / asset 3D / ống / cổng / scene | [docs/guide/overview-map-3d.md](docs/guide/overview-map-3d.md) |
 | Số liệu trực tiếp | `TagValue`/`LiveData`, mất tín hiệu, nguồn mock → WebSocket, thêm tag (4b – live) | [docs/guide/live-data.md](docs/guide/live-data.md) |
-| Cảnh báo | Danh sách /alerts (4c), drawer theo loại áp suất/gas/cháy (4m), phân công (4n), cập nhật xử lý áp suất (4o); **bảng mã mock để thử** | [docs/guide/alerts.md](docs/guide/alerts.md) |
+| Cảnh báo | Danh sách /alerts (4c), drawer theo loại áp suất/gas/cháy (4m), phân công (4n), cập nhật xử lý khung chung áp suất/gas/cháy (4o), xác nhận đóng + tab Chờ đóng (4p); **bảng mã mock để thử** | [docs/guide/alerts.md](docs/guide/alerts.md) |
 | Bảo trì | Model + quá hạn + modal tạo (4d), chi tiết yêu cầu (4i), tiến độ (4j), nghiệm thu (4k), phân công (4l); **mã mock để thử** | [docs/guide/maintenance.md](docs/guide/maintenance.md) |
 | Đăng nhập + backend | Biến môi trường, chạy cùng backend, hợp đồng API, luồng đăng nhập, gọi endpoint mới (9a–9f, Phụ lục D) | [docs/guide/backend-auth.md](docs/guide/backend-auth.md) |
 | Test + chất lượng | Lệnh, nơi đặt test, thêm test, axe/accessibility (7b) | [docs/guide/testing.md](docs/guide/testing.md) |

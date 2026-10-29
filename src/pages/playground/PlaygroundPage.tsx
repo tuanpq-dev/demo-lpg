@@ -10,7 +10,7 @@ import { ChartsTableSection } from './ChartsTableSection';
 import { LayoutSection } from './LayoutSection';
 import { MaintenanceDetailSection } from './MaintenanceDetailSection';
 import { NavigationSection } from './NavigationSection';
-import { PressureUpdateSection } from './PressureUpdateSection';
+import { AlertUpdateSection } from './AlertUpdateSection';
 import { PrimitivesSection } from './PrimitivesSection';
 import { ProgressUpdateSection } from './ProgressUpdateSection';
 import { ReviewSection } from './ReviewSection';
@@ -34,8 +34,8 @@ export default function PlaygroundPage() {
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
 
-      <Section id="pressure-update" title="17. Cập nhật xử lý cảnh báo áp suất (ảnh thiết kế): modal, InspectionTable, BeforeAfterReadings, Checkbox card">
-        <PressureUpdateSection />
+      <Section id="alert-update" title="17. Cập nhật xử lý (áp suất theo ảnh, gas, cháy) + xác nhận đóng cảnh báo: modal, InspectionTable, BeforeAfterReadings, Checkbox card">
+        <AlertUpdateSection />
       </Section>
 
       <Section id="alert-assign" title="16. Phân công xử lý cảnh báo (ảnh thiết kế): modal một / hàng loạt / đổi người, thẻ đầu, StaffPickerCard có xét ca, StaffFilters">

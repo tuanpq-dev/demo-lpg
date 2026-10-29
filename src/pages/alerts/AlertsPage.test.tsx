@@ -161,12 +161,15 @@ describe('drawer chi tiết cảnh báo', () => {
     expect(d).toHaveTextContent('Võ Thị F');
   });
 
-  test('quy trình: xác nhận → tick hướng dẫn → đánh dấu đã xử lý bắt buộc ghi chú → Hoàn thành; tab + KPI cập nhật', async () => {
+  // Đổi có chủ đích (28/10/2026): "Đánh dấu đã xử lý" → Đã xử lý (tab "Chờ đóng"); Hoàn thành chỉ qua "Xác nhận đóng cảnh báo".
+  test('quy trình: xác nhận → tick hướng dẫn → đánh dấu đã xử lý bắt buộc ghi chú → Chờ đóng; đóng bị chặn khi còn cảnh báo mở cùng khu → tiếp tục theo dõi', async () => {
     const user = userEvent.setup();
     renderAt('/alerts?alert=ALT-00126');
     const d = await screen.findByRole('dialog', { name: 'Nhiệt độ máy hóa hơi thấp' });
     const tab = (name: RegExp) => screen.getByRole('tab', { name });
     const unackBefore = tab(/Chưa xác nhận/).textContent;
+    const pendingClose = () => Number(tab(/Chờ đóng/).textContent!.replace(/\D/g, ''));
+    const pendingBefore = pendingClose();
     const kpiBefore = kpis();
 
     await user.click(within(d).getByRole('button', { name: 'Xác nhận cảnh báo' }));
@@ -193,11 +196,60 @@ describe('drawer chi tiết cảnh báo', () => {
     // Ô có nội dung → dùng luôn khi đánh dấu
     await user.type(note, 'Đã tăng nhiệt cấp, nhiệt độ về 52 °C');
     await user.click(within(d).getByRole('button', { name: 'Đánh dấu đã xử lý' }));
-    await waitFor(() => expect(within(d).getByText(/Cảnh báo đã xử lý xong/)).toBeInTheDocument());
+    await waitFor(() => expect(within(d).getByText(/Đã xử lý lúc \d{2}:\d{2}, chờ xác nhận đóng/)).toBeInTheDocument());
     expect(within(d).getByText('Đã tăng nhiệt cấp, nhiệt độ về 52 °C')).toBeInTheDocument();
-    expect(within(d).queryByRole('textbox')).toBeNull();
-    expect(within(d).queryByRole('button', { name: /Phân công|Đổi người/ })).toBeNull();
+    expect(within(steps).getByText(/^Hoàn thành/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(pendingClose()).toBe(pendingBefore + 1);
     expect(kpis()).not.toBe(kpiBefore);
+
+    // Xác nhận đóng: Trạm hóa hơi còn FIR-00018 (Chưa xác nhận) → điều kiện 3 sai, có link; nút đóng khoá
+    await user.click(within(d).getByRole('button', { name: 'Xác nhận đóng cảnh báo' }));
+    const m = await screen.findByRole('dialog', { name: 'Xác nhận đóng cảnh báo' }, { timeout: 6000 });
+    const related = within(m).getByRole('checkbox', { name: /Không còn cảnh báo liên quan đang hoạt động/ });
+    expect(related).not.toBeChecked();
+    expect(related).toHaveAttribute('aria-disabled', 'true');
+    expect(related).toHaveAccessibleDescription(/FIR-00018/);
+    expect(within(m).getByRole('link', { name: 'FIR-00018' })).toHaveAttribute('href', '/alerts?alert=FIR-00018');
+    await user.type(within(m).getByRole('textbox', { name: /Ghi chú kết luận/ }), 'Ổn định');
+    const closeBtn = within(m).getByRole('button', { name: 'Xác nhận đóng cảnh báo' });
+    expect(closeBtn).toHaveAttribute('aria-disabled', 'true');
+    await user.click(closeBtn);
+    expect(screen.getByRole('dialog', { name: 'Xác nhận đóng cảnh báo' })).toBeInTheDocument();
+    // Loại không có modal cập nhật → mặc định "Không theo dõi": Tiếp tục theo dõi khoá đến khi chọn thời gian
+    expect(within(m).getByRole('button', { name: 'Tiếp tục theo dõi' })).toHaveAttribute('aria-disabled', 'true');
+    await user.click(within(m).getByRole('button', { name: /Thời gian theo dõi sau xử lý/ }));
+    await user.click(screen.getByRole('option', { name: '30 phút' }));
+    await user.click(within(m).getByRole('button', { name: 'Tiếp tục theo dõi' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Xác nhận đóng cảnh báo' })).toBeNull());
+    expect(within(d).getByText(/^Đang theo dõi đến \d{2}:\d{2}\.$/)).toBeInTheDocument();
+    expect(d).toHaveTextContent('Tiếp tục theo dõi đến');
+    expect(screen.getByRole('table', { name: /cảnh báo/i })).toHaveTextContent(/Đang theo dõi đến \d{2}:\d{2}/);
+  });
+
+  test('đóng hàng loạt: chỉ dòng Đã xử lý đủ 3 điều kiện, ghi chú chung, báo "Đã đóng X · bỏ qua N (lý do)"; không còn "Đánh dấu hoàn thành"', async () => {
+    const user = userEvent.setup();
+    renderAt('/alerts?range=7d&tab=resolved');
+    // Tab "Chờ đóng": ALT-00120 (Khu bơm – không còn cảnh báo mở) + ALT-00116 (Khu bồn LPG – còn ALT-00128… đang mở)
+    expect(screen.getByRole('tab', { name: /Chờ đóng/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('table', { name: /cảnh báo/i })).toHaveTextContent('Đến giờ kiểm tra lại'); // ALT-00116 hết giờ theo dõi
+    await user.click(await screen.findByRole('checkbox', { name: 'Chọn hàng ALT-00120' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Chọn hàng ALT-00116' }));
+    expect(screen.queryByRole('button', { name: /Đánh dấu hoàn thành/ })).toBeNull();
+    const bulk = await screen.findByRole('button', { name: 'Đóng cảnh báo (1)' }, { timeout: 6000 });
+    await user.click(bulk);
+    const m = await screen.findByRole('dialog', { name: 'Đóng cảnh báo' });
+    expect(m).toHaveTextContent('Sẽ bỏ qua 1 (1 chưa đủ điều kiện hệ thống).');
+    await user.click(within(m).getByRole('button', { name: 'Đóng 1 cảnh báo' }));
+    expect(within(m).getByText('Nhập ghi chú kết luận chung cho cả lô.')).toBeInTheDocument();
+    await user.type(within(m).getByRole('textbox', { name: /Ghi chú kết luận/ }), 'Đã kiểm tra ổn định');
+    await user.click(within(m).getByRole('button', { name: 'Đóng 1 cảnh báo' }));
+    expect(await screen.findByText('Đã đóng 1 · bỏ qua 1 (1 chưa đủ điều kiện hệ thống)')).toBeInTheDocument();
+    // ALT-00120 rời tab Chờ đóng → mở từ tab Đã hoàn thành
+    await user.click(screen.getByRole('tab', { name: /Đã hoàn thành/ }));
+    await user.click(await screen.findByRole('button', { name: 'Xem chi tiết ALT-00120' }));
+    const d = await screen.findByRole('dialog', { name: 'Rung động bơm P-101A vượt mức' });
+    expect(d).toHaveTextContent('Hoàn thành');
+    expect(d).toHaveTextContent('Xác nhận đóng cảnh báo: Đã kiểm tra ổn định');
   });
 
   test('tạo yêu cầu bảo trì: modal mở TRÊN drawer, Esc chỉ đóng modal; tạo xong → "Xem MT-…" thay nút, không tạo trùng', async () => {

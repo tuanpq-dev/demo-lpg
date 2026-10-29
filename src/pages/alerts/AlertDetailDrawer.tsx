@@ -7,10 +7,11 @@ import { cn } from '@/lib/cn';
 import { resolveAssetId } from '@/data/assetDetail';
 import { alertDateTimeLabel, alertKind, alertPlaybook } from '@/data/alertDetail';
 import { INSPECTION_STATUS_LABEL, inspectedCount, inspectionItems } from '@/features/alerts/inspection';
-import { ALERT_HOLD_LABEL, followUpLabel, type PressureCheck, type PressureUpdateInput, type PressureUpdateResult } from '@/features/alerts/pressure';
+import { ALERT_HOLD_LABEL, FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel, isResolvedState, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
+import type { CloseCondition, CloseInput, CloseResult, MonitorResult } from '@/features/alerts/close';
 import { fillPlaybookText } from '@/mocks/alertKinds';
 import { areaLabel } from '@/mocks/areas';
-import type { AlertRecord } from '@/data/alerts';
+import { alertBadgeStatus, type AlertRecord } from '@/data/alerts';
 import {
   alertSteps,
   canAcknowledge,
@@ -18,25 +19,20 @@ import {
   canAssignAlert,
   canResolve,
   guideLockHint,
-  type FireUpdateInput,
-  type FireUpdateResult,
-  type GasUpdateInput,
-  type GasUpdateResult,
   type ResolveResult,
 } from '@/features/alerts/workflow';
 import { AlertAssignModal } from './AlertAssignModal';
 import { alertAssignChange, type AlertAssignForm } from '@/features/alerts/assign';
 import { Collapsible, Section, fmtAt } from './drawerParts';
 import { EmergencyProcedureModal } from './EmergencyProcedureModal';
-import { FireUpdateModal, type FireCheck } from './FireUpdateModal';
-import { GasUpdateModal } from './GasUpdateModal';
 import { FirePanel } from './panels/FirePanel';
 import { GasPanel } from './panels/GasPanel';
 import { ThresholdPanel } from './panels/ThresholdPanel';
 import { SupportRequestModal } from './SupportRequestModal';
 
-// Modal lớn chỉ của cảnh báo áp suất → chunk lazy riêng (không vào bundle chính / chunk trang Cảnh báo).
-const PressureUpdateModal = lazy(() => import('./PressureUpdateModal'));
+// Modal lớn (cập nhật xử lý theo loại, xác nhận đóng) → chunk lazy riêng (không vào bundle chính / chunk trang Cảnh báo).
+const AlertUpdateModal = lazy(() => import('./AlertUpdateModal'));
+const AlertCloseModal = lazy(() => import('./AlertCloseModal'));
 
 export type AlertDrawerHandlers = {
   onAcknowledge: (id: string) => void;
@@ -47,14 +43,14 @@ export type AlertDrawerHandlers = {
   onAddNote: (id: string, text: string) => void;
   /** Mở modal "Tạo yêu cầu bảo trì" (trang giữ modal, mở TRÊN drawer). `title` = tên điền sẵn (báo động giả → "Kiểm tra đầu báo …"). */
   onCreateMaintenance: (alert: AlertRecord, opts?: { title?: string }) => void;
-  /** "Cập nhật xử lý" (loại `update.kind = 'gas-update'`). */
-  onGasUpdate: (id: string, input: GasUpdateInput, check: { live: number | undefined; limit: number; unit: string }) => Promise<GasUpdateResult> | GasUpdateResult;
   /** "Yêu cầu hỗ trợ" (nút phụ `support`): thêm người phối hợp + lịch sử. */
   onRequestSupport: (id: string, input: { people: readonly string[]; reason: string }) => void;
-  /** "Cập nhật xử lý" báo cháy (loại `update.kind = 'fire-update'`). */
-  onFireUpdate: (id: string, input: FireUpdateInput, check: FireCheck) => Promise<FireUpdateResult> | FireUpdateResult;
-  /** "Cập nhật xử lý" cảnh báo áp suất (loại `update.kind = 'pressure-update'`) – modal lớn, lazy. */
-  onPressureUpdate: (id: string, input: PressureUpdateInput, check: PressureCheck) => Promise<PressureUpdateResult> | PressureUpdateResult;
+  /** "Cập nhật xử lý" (loại `update.kind = 'alert-update'` – áp suất / gas / cháy) – modal chung, lazy. */
+  onUpdate: (id: string, input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
+  /** "Xác nhận đóng cảnh báo" (Đã xử lý → Hoàn thành). */
+  onCloseAlert: (id: string, input: CloseInput, conditions: readonly CloseCondition[]) => Promise<CloseResult> | CloseResult;
+  /** "Tiếp tục theo dõi" (giữ Đã xử lý + theo dõi). */
+  onMonitor: (id: string, input: { minutes: number; note: string }) => Promise<MonitorResult> | MonitorResult;
 };
 
 export type AlertDetailDrawerProps = AlertDrawerHandlers & {
@@ -70,7 +66,7 @@ export type AlertDetailDrawerProps = AlertDrawerHandlers & {
   canAct: boolean;
   /** Quyền `maintenance:write`. */
   canCreateMaintenance: boolean;
-  /** Người đang thao tác (tự điền "Người kiểm tra" ở modal cập nhật xử lý áp suất). */
+  /** Người đang thao tác (tự điền "Người kiểm tra" ở modal cập nhật; người đóng ở modal xác nhận đóng). */
   actor?: string;
 };
 
@@ -178,10 +174,15 @@ function DrawerHeader({ alert: a, titleId, now }: { alert: AlertRecord; titleId:
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="status" value={a.status} size="md" />
+        <Badge variant="status" value={alertBadgeStatus(a.status)} size="md" />
         {a.status === 'in-progress' && a.hold && (
           <Badge variant="tag" tone="warning" size="md">
             {ALERT_HOLD_LABEL[a.hold.kind]}
+          </Badge>
+        )}
+        {followUpDue(a, now) && (
+          <Badge variant="tag" tone="warning" size="md">
+            {FOLLOW_UP_DUE_LABEL}
           </Badge>
         )}
       </div>
@@ -248,7 +249,7 @@ function AlertLog({ alert: a }: { alert: AlertRecord }) {
       id: h.id,
       title: h.actor ? `${h.text} – ${h.actor}` : h.text,
       time: fmtAt(h.at),
-      tone: h.kind === 'resolve' ? ('success' as const) : h.kind === 'acknowledge' || h.kind === 'assign' || h.kind === 'support' ? ('info' as const) : ('neutral' as const),
+      tone: h.kind === 'resolve' || h.kind === 'close' ? ('success' as const) : h.kind === 'acknowledge' || h.kind === 'assign' || h.kind === 'support' ? ('info' as const) : ('neutral' as const),
     })),
   ];
   return (
@@ -372,8 +373,8 @@ function NotesBody({
 }
 
 /**
- * Chân drawer: nút chính theo trạng thái + `update` của loại (resolve-note / gas-update); nút phụ theo `actions` (assign /
- * support / maintenance) – các modal mở TRÊN drawer.
+ * Chân drawer: nút chính theo trạng thái + `update` của loại (resolve-note / alert-update); Đã xử lý → "Xác nhận đóng cảnh
+ * báo"; nút phụ theo `actions` (assign / support / maintenance) – các modal mở TRÊN drawer.
  */
 function DrawerFooter({
   alert: a,
@@ -386,16 +387,16 @@ function DrawerFooter({
   onAssign,
   onResolve,
   onCreateMaintenance,
-  onGasUpdate,
   onRequestSupport,
-  onFireUpdate,
-  onPressureUpdate,
+  onUpdate,
+  onCloseAlert,
+  onMonitor,
   actor = 'Admin',
   now,
   note,
 }: { alert: AlertRecord; linkRef: RefObject<HTMLAnchorElement>; note: NoteDraft } & Omit<AlertDetailDrawerProps, 'alert' | 'onClose'>) {
   const cfg = alertKind(a);
-  const [modal, setModal] = useState<'assign' | 'support' | 'update' | 'procedure' | null>(null);
+  const [modal, setModal] = useState<'assign' | 'support' | 'update' | 'close' | 'procedure' | null>(null);
   const [busy, setBusy] = useState(false);
 
   const resolve = async () => {
@@ -475,13 +476,15 @@ function DrawerFooter({
     );
   }
 
+  const follow = followUpLabel(a, now);
+  const due = followUpDue(a, now);
   const primary =
     canAct && canAcknowledge(a) ? (
       <Button variant="danger" size="lg" className="w-full" onClick={() => onAcknowledge(a.id)}>
         Xác nhận cảnh báo
       </Button>
     ) : canAct && canResolve(a) ? (
-      cfg.update.kind === 'gas-update' || cfg.update.kind === 'fire-update' || cfg.update.kind === 'pressure-update' ? (
+      cfg.update.kind === 'alert-update' ? (
         // Nền `info` (#87CFFF) – token có sẵn trùng màu nút trong ảnh gas.
         <Button variant="info" size="lg" className="w-full" onClick={() => setModal('update')}>
           Cập nhật xử lý
@@ -491,11 +494,26 @@ function DrawerFooter({
           Đánh dấu đã xử lý
         </Button>
       )
+    ) : a.status === 'resolved' ? (
+      <div className="flex flex-col gap-2">
+        <p className="text-center text-base text-success">
+          {a.resolution?.kind === 'false-alarm' ? 'Đã xử lý – báo động giả' : 'Đã xử lý'}
+          {a.resolvedAt ? ` lúc ${fmtAt(a.resolvedAt).slice(0, 5)}` : ''}, chờ xác nhận đóng.
+          {follow && <span className="block text-sm text-info">{follow}.</span>}
+          {due && <span className="block text-sm text-warning">{FOLLOW_UP_DUE_LABEL}.</span>}
+        </p>
+        {canAct && (
+          <Button variant="primary" size="lg" className="w-full" onClick={() => setModal('close')}>
+            Xác nhận đóng cảnh báo
+          </Button>
+        )}
+      </div>
     ) : a.status === 'done' ? (
-      <p className="text-center text-base text-success">
-        {a.resolution?.kind === 'false-alarm' ? 'Đã đóng – báo động giả' : 'Cảnh báo đã xử lý xong'}
-        {a.resolvedAt ? ` lúc ${fmtAt(a.resolvedAt).slice(0, 5)}` : ''}.
-        {followUpLabel(a, now) && <span className="block text-sm text-info">{followUpLabel(a, now)}.</span>}
+      <p className="text-center text-base text-fg">
+        {a.resolution?.kind === 'false-alarm' ? 'Đã đóng – báo động giả' : 'Cảnh báo đã hoàn thành'}
+        {a.closedAt ? ` lúc ${fmtAt(a.closedAt).slice(0, 5)}` : a.resolvedAt ? ` lúc ${fmtAt(a.resolvedAt).slice(0, 5)}` : ''}
+        {a.closedBy ? ` – ${a.closedBy}` : ''}.
+        {follow && <span className="block text-sm text-info">{follow}.</span>}
       </p>
     ) : null;
 
@@ -534,52 +552,48 @@ function DrawerFooter({
         />
       )}
       {modal === 'procedure' && cfg.emergency && <EmergencyProcedureModal procedure={cfg.emergency} onClose={() => setModal(null)} />}
-      {modal === 'update' && cfg.update.kind === 'fire-update' && (
-        <FireUpdateModal
-          alert={a}
-          onClose={() => setModal(null)}
-          onSubmit={async (input, check) => {
-            const res = await onFireUpdate(a.id, input, check);
-            if (res.ok) {
-              setModal(null);
-              announce(
-                input.action === 'continue' ? 'Đã lưu cập nhật xử lý.' : input.action === 'false-alarm' ? `Đã đóng ${a.code} – báo động giả.` : `Đã đánh dấu ${a.code} đã xử lý sự cố.`,
-              );
-            }
-            return res;
-          }}
-        />
-      )}
-      {modal === 'update' && cfg.update.kind === 'pressure-update' && (
+      {modal === 'update' && cfg.update.kind === 'alert-update' && (
         <Suspense fallback={null}>
-          <PressureUpdateModal
+          <AlertUpdateModal
             alert={a}
             actor={actor}
             onClose={() => setModal(null)}
             onSubmit={async (input, check) => {
-              const res = await onPressureUpdate(a.id, input, check);
+              const res = await onUpdate(a.id, input, check);
               if (res.ok) {
                 setModal(null);
-                announce(input.state === 'resolved' ? `Đã đánh dấu ${a.code} đã xử lý.` : 'Đã lưu cập nhật xử lý.');
+                announce(isResolvedState(input.state) ? `Đã đánh dấu ${a.code} đã xử lý – chờ xác nhận đóng.` : 'Đã lưu cập nhật xử lý.');
               }
               return res;
             }}
           />
         </Suspense>
       )}
-      {modal === 'update' && cfg.update.kind === 'gas-update' && (
-        <GasUpdateModal
-          alert={a}
-          onClose={() => setModal(null)}
-          onSubmit={async (input, check) => {
-            const res = await onGasUpdate(a.id, input, check);
-            if (res.ok) {
-              setModal(null);
-              announce(input.action === 'close' ? `Đã đánh dấu ${a.code} đã xử lý xong.` : 'Đã lưu cập nhật xử lý.');
-            }
-            return res;
-          }}
-        />
+      {modal === 'close' && (
+        <Suspense fallback={null}>
+          <AlertCloseModal
+            alert={a}
+            allAlerts={allAlerts}
+            actor={actor}
+            onClose={() => setModal(null)}
+            onConfirmClose={async (input, conditions) => {
+              const res = await onCloseAlert(a.id, input, conditions);
+              if (res.ok) {
+                setModal(null);
+                announce(`Đã đóng cảnh báo ${a.code} – Hoàn thành.`);
+              }
+              return res;
+            }}
+            onMonitor={async (input) => {
+              const res = await onMonitor(a.id, input);
+              if (res.ok) {
+                setModal(null);
+                announce(`Tiếp tục theo dõi ${a.code}.`);
+              }
+              return res;
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -12,8 +12,10 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low';
  * - review:         "Chờ nghiệm thu" (bảo trì – chưa có trong Figma bảng, màu warning-soft)
  * - done:           "Đã hoàn thành"
  * - cancelled:      "Đã hủy" (bảo trì – chỉ FE, trung tính)
+ * - resolved:       "Đã xử lý" (cảnh báo chờ đóng – xanh như ảnh modal đóng cảnh báo)
+ * - closed:         "Hoàn thành" (cảnh báo đã đóng – trung tính, phân biệt với "Đã xử lý")
  */
-export type WorkStatus = 'unacknowledged' | 'pending' | 'assigned' | 'in-progress' | 'review' | 'done' | 'cancelled';
+export type WorkStatus = 'unacknowledged' | 'pending' | 'assigned' | 'in-progress' | 'review' | 'done' | 'cancelled' | 'resolved' | 'closed';
 
 type CommonProps = {
   /** Ghi đè nhãn mặc định (tiếng Việt). */
@@ -154,6 +156,8 @@ const statusClass: Record<WorkStatus, string> = {
   review: 'border-warning-soft/20 bg-warning-soft/10 text-warning-soft',
   done: 'border-success/20 bg-success/10 text-success',
   cancelled: 'border-line/30 bg-surface-muted text-fg-secondary',
+  resolved: 'border-success/40 bg-success/10 text-success',
+  closed: 'border-line/30 bg-surface-muted text-fg',
 };
 
 const statusLabel: Record<WorkStatus, string> = {
@@ -164,6 +168,8 @@ const statusLabel: Record<WorkStatus, string> = {
   review: 'Chờ nghiệm thu',
   done: 'Đã hoàn thành',
   cancelled: 'Đã hủy',
+  resolved: 'Đã xử lý',
+  closed: 'Hoàn thành',
 };
 
 export function Badge(props: BadgeProps) {
