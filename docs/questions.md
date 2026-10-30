@@ -13,7 +13,7 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 |---|---|---|
 | 1.1 | [D] Chữ đỏ toàn app sáng hơn Figma ~20 % để đạt tương phản AA. Designer có đồng ý không? | Chữ: `danger-text` #DC6D79. Viền, nền, icon vẫn #D34957. Nền đặc có chữ trắng: `danger-solid` #B42034 (tối hơn). PO đã duyệt 26/10. |
 | 1.2 | [D] Chữ menu chưa chọn (Figma 2.43:1, không đạt) | `fg-secondary/70` #8994A0 (5.56:1), hơi ngả xanh so với xám trung tính của Figma. |
-| 1.3 | [D] Menu "Vận hành" có mũi tên dropdown – menu con gồm những gì? | Chỉ hiện mục, chưa có menu con. |
+| 1.3 | [D] Menu "Vận hành" có mũi tên dropdown – menu con gồm những gì? | Khách chốt 30/10: Vận hành · Nhật ký vận hành · AI mô phỏng sự cố (`/operations/overview|logs|ai-simulation`, tạm dùng `SimplePage`). Chưa có thiết kế dropdown – dựng theo kiểu menu tài khoản; chevron Figma màu tối (#3B4048, ảnh `<img>`) nay mục đã bật – cần icon chevron sáng hơn. |
 | 1.4 | [D] Các phần **chưa có thiết kế**: trang 404, thanh thao tác hàng loạt (+ hộp "Đánh dấu hoàn thành" / "Phân công xử lý" của cảnh báo), chân drawer cảnh báo sau khi xác nhận, checkbox đã tick, badge "Đã phân công" / "Chờ nghiệm thu", trang `/map` (bản đồ toàn nhà máy), `/reports`, Scene Editor. | Dựng theo token sẵn có, cùng ngôn ngữ với các màn đã có ảnh. |
 | 1.5 | [D] Các form/modal mới có ảnh, chưa có node Figma – cần node để lấy số đo chính xác. | Số đo ước lượng từ ảnh, gom trong `tokens.css`. |
 | 1.6 | [D] Icon chỉ có trong ảnh (AlertCircle, History, Map, Focus, Info, chevron phân trang, ghim vị trí, bản active của icon nav Bản đồ/Vận hành/Báo cáo) | Icon SVG tạm (`TempIcons`). |

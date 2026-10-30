@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { IconName } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
 import { useRovingFocus } from '@/lib/useRovingFocus';
@@ -15,9 +15,19 @@ export type NavTabItem = {
   /** Số hiển thị trong vòng tròn đỏ cạnh label (70:349). 0/undefined → ẩn. */
   count?: number;
   disabled?: boolean;
-  /** Hiện chevron ▾ (mục có menu con – "Vận hành"). */
-  hasSubmenu?: boolean;
+  /**
+   * Menu con (vd "Vận hành" → Vận hành · Nhật ký vận hành · AI mô phỏng sự cố). Có → mục hiện chevron ▾, bấm mở
+   * dropdown thay vì chọn; `onChange` nhận id mục con. Mục cha sáng khi `value` là id một mục con.
+   */
+  children?: readonly NavSubItem[];
 };
+
+export type NavSubItem = { id: string; label: string; disabled?: boolean };
+
+/** id mục cấp 1 đang sáng: chính `value` hoặc mục cha chứa `value`. */
+export function navTopId(items: readonly NavTabItem[], value: string): string {
+  return items.find((i) => i.id === value || i.children?.some((c) => c.id === value))?.id ?? value;
+}
 
 export type NavTabsProps = {
   items: readonly NavTabItem[];
@@ -33,27 +43,92 @@ export type NavTabsProps = {
  * Bàn phím: ←/→/Home/End chuyển focus, Enter/Space để chọn (manual activation vì đổi trang).
  */
 export function NavTabs({ items, value, onChange, label = 'Điều hướng chính', className }: NavTabsProps) {
-  const { setRef, onKeyDown, getTabIndex } = useRovingFocus({ items, value, onChange, activation: 'manual' });
+  const topValue = navTopId(items, value);
+  const [openId, setOpenId] = useState<string | null>(null);
+  /** Mục con nhận focus khi menu vừa mở: 'first' | 'last'. */
+  const [initialFocus, setInitialFocus] = useState<'first' | 'last'>('first');
+  const [menuLeft, setMenuLeft] = useState(0);
+  const root = useRef<HTMLElement>(null);
+  const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+  const menuId = useId();
+
+  const openMenu = (id: string, focus: 'first' | 'last' = 'first') => {
+    setMenuLeft(tabRefs.current.get(id)?.offsetLeft ?? 0);
+    setInitialFocus(focus);
+    setOpenId(id);
+  };
+  const closeMenu = (returnFocus: boolean) => {
+    const id = openId;
+    setOpenId(null);
+    if (returnFocus && id) tabRefs.current.get(id)?.focus();
+  };
+
+  const select = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (item?.children?.length) {
+      if (openId === id) closeMenu(false);
+      else openMenu(id);
+      return;
+    }
+    onChange(id);
+  };
+  const { setRef, onKeyDown, getTabIndex } = useRovingFocus({ items, value: topValue, onChange: select, activation: 'manual' });
+
+  // Click ra ngoài → đóng (không kéo focus).
+  useEffect(() => {
+    if (!openId) return;
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpenId(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [openId]);
+
+  const openItem = items.find((i) => i.id === openId);
 
   return (
-    <nav aria-label={label} className={className}>
+    <nav aria-label={label} className={cn('relative', className)} ref={root}>
       {/* xl–wide (1280–1519): chỉ icon (mục đang mở giữ chữ), tên ẩn cho trình đọc màn hình + tooltip. ≥ wide: như Figma. */}
       <div role="tablist" aria-label={label} aria-orientation="horizontal" className="flex items-center gap-7 wide:gap-11">
         {items.map((item) => {
-          const active = item.id === value;
+          const active = item.id === topValue;
+          const hasMenu = !!item.children?.length;
+          const expanded = openId === item.id;
+          // Đang ở trang con → tab hiện tên trang con (vd "Nhật ký vận hành"); tên mục cha vẫn đọc cho trình đọc màn hình.
+          const currentChild = item.children?.find((c) => c.id === value);
+          const shownLabel = currentChild?.label ?? item.label;
           return (
             <button
               key={item.id}
-              ref={setRef(item.id)}
+              ref={(el) => {
+                setRef(item.id)(el);
+                if (el) tabRefs.current.set(item.id, el);
+                else tabRefs.current.delete(item.id);
+              }}
               type="button"
               role="tab"
               aria-selected={active}
               aria-disabled={item.disabled || undefined}
+              aria-haspopup={hasMenu ? 'menu' : undefined}
+              aria-expanded={hasMenu ? expanded : undefined}
+              aria-controls={expanded ? menuId : undefined}
               disabled={item.disabled}
               tabIndex={getTabIndex(item.id)}
-              onClick={() => onChange(item.id)}
-              onKeyDown={(e) => onKeyDown(e, item.id)}
-              title={item.label}
+              onClick={() => select(item.id)}
+              onKeyDown={(e) => {
+                if (hasMenu && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                  e.preventDefault();
+                  openMenu(item.id, e.key === 'ArrowUp' ? 'last' : 'first');
+                  return;
+                }
+                if (hasMenu && e.key === 'Escape' && expanded) {
+                  e.preventDefault();
+                  closeMenu(true);
+                  return;
+                }
+                onKeyDown(e, item.id);
+              }}
+              title={currentChild && currentChild.label !== item.label ? `${item.label} – ${currentChild.label}` : item.label}
               className={cn(
                 'group flex h-[41px] shrink-0 items-center gap-2.5 rounded-md text-md font-semibold leading-normal transition-opacity',
                 active && 'text-primary',
@@ -67,16 +142,136 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
                 box={24}
                 className={cn(!active && 'opacity-70 group-hover:opacity-100')}
               />
-              <span className={cn(!active && 'sr-only wide:not-sr-only')}>{item.label}</span>
+              {currentChild && currentChild.label !== item.label && <span className="sr-only">{item.label} – </span>}
+              <span className={cn(!active && 'sr-only wide:not-sr-only')}>{shownLabel}</span>
               {!!item.count && (
                 <Badge variant="count" value={item.count} tone="danger" size="md" />
               )}
-              {item.hasSubmenu && <Icon name="navChevronDown" box={24} className="hidden wide:block" />}
+              {hasMenu && (
+                <Icon name="navChevronDown" box={24} className={cn('hidden transition-transform wide:block', expanded && 'rotate-180')} />
+              )}
             </button>
           );
         })}
       </div>
+      {openItem?.children && (
+        <SubMenu
+          id={menuId}
+          label={openItem.label}
+          items={openItem.children}
+          value={value}
+          initialFocus={initialFocus}
+          style={{ left: menuLeft }}
+          onSelect={(id) => {
+            closeMenu(true);
+            onChange(id);
+          }}
+          onClose={closeMenu}
+        />
+      )}
     </nav>
+  );
+}
+
+/**
+ * Dropdown menu con của NavTabs (WAI-ARIA menu button): ↑/↓/Home/End di chuyển, Enter/Space chọn,
+ * Esc đóng + trả focus về tab cha, Tab đóng và để focus đi tiếp.
+ */
+function SubMenu({
+  id,
+  label,
+  items,
+  value,
+  initialFocus,
+  style,
+  onSelect,
+  onClose,
+}: {
+  id: string;
+  label: string;
+  items: readonly NavSubItem[];
+  value: string;
+  initialFocus: 'first' | 'last';
+  style: CSSProperties;
+  onSelect: (id: string) => void;
+  onClose: (returnFocus: boolean) => void;
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const enabled = items.map((it, i) => (it.disabled ? -1 : i)).filter((i) => i >= 0);
+
+  useEffect(() => {
+    const target = initialFocus === 'last' ? enabled[enabled.length - 1] : enabled[0];
+    if (target !== undefined) refs.current[target]?.focus();
+    // Chỉ khi vừa mở.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    const pos = enabled.indexOf(index);
+    let next: number | undefined;
+    switch (e.key) {
+      case 'ArrowDown':
+        next = enabled[(pos + 1) % enabled.length];
+        break;
+      case 'ArrowUp':
+        next = enabled[(pos - 1 + enabled.length) % enabled.length];
+        break;
+      case 'Home':
+        next = enabled[0];
+        break;
+      case 'End':
+        next = enabled[enabled.length - 1];
+        break;
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        onClose(true);
+        return;
+      case 'Tab':
+        onClose(false);
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    if (next !== undefined) refs.current[next]?.focus();
+  };
+
+  return (
+    <ul
+      id={id}
+      role="menu"
+      aria-label={label}
+      style={style}
+      className="absolute top-full z-40 mt-2 min-w-60 rounded-lg border border-line/30 bg-surface-raised p-1 shadow-card"
+    >
+      {items.map((item, i) => {
+        const current = item.id === value;
+        return (
+          <li key={item.id} role="none">
+            <button
+              ref={(el) => {
+                refs.current[i] = el;
+              }}
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
+              aria-current={current ? 'page' : undefined}
+              aria-disabled={item.disabled || undefined}
+              onClick={() => !item.disabled && onSelect(item.id)}
+              onKeyDown={(e) => onKeyDown(e, i)}
+              className={cn(
+                'flex w-full items-center rounded-md px-3 py-2 text-left text-md hover:bg-surface-muted/50',
+                current ? 'font-semibold text-primary' : 'text-fg-secondary',
+                item.disabled && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              {item.label}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -89,7 +284,7 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const listId = useId();
-  const current = items.find((i) => i.id === value);
+  const current = items.flatMap((i) => [i, ...(i.children ?? [])]).find((i) => i.id === value);
 
   useEffect(() => {
     if (!open) return;
@@ -128,17 +323,53 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
         <ul id={listId} className="absolute left-0 top-full z-40 mt-1 min-w-56 rounded-lg border border-line/30 bg-surface-raised p-1 shadow-card">
           {items.map((item) => {
             const active = item.id === value;
+            const choose = (id: string) => {
+              setOpen(false);
+              onChange(id);
+              button.current?.focus();
+            };
+            // Mục có menu con: tên mục làm tiêu đề nhóm, các mục con thụt vào bên dưới.
+            if (item.children?.length) {
+              const groupId = `${listId}-${item.id}`;
+              const inGroup = item.children.some((c) => c.id === value);
+              return (
+                <li key={item.id}>
+                  <span id={groupId} className={cn('flex items-center gap-2.5 px-3 py-2 text-md', inGroup ? 'font-semibold text-primary' : 'text-fg-secondary')}>
+                    <Icon name={item.icon} box={24} />
+                    {item.label}
+                  </span>
+                  <ul aria-labelledby={groupId}>
+                    {item.children.map((child) => {
+                      const childActive = child.id === value;
+                      return (
+                        <li key={child.id}>
+                          <button
+                            type="button"
+                            aria-current={childActive ? 'page' : undefined}
+                            disabled={child.disabled}
+                            onClick={() => choose(child.id)}
+                            className={cn(
+                              'flex w-full items-center rounded-md py-2 pl-[46px] pr-3 text-left text-md hover:bg-surface-muted/50',
+                              childActive ? 'font-semibold text-primary' : 'text-fg-secondary',
+                              child.disabled && 'cursor-not-allowed opacity-50',
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              );
+            }
             return (
               <li key={item.id}>
                 <button
                   type="button"
                   aria-current={active ? 'page' : undefined}
                   disabled={item.disabled}
-                  onClick={() => {
-                    setOpen(false);
-                    onChange(item.id);
-                    button.current?.focus();
-                  }}
+                  onClick={() => choose(item.id)}
                   className={cn(
                     'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-md hover:bg-surface-muted/50',
                     active ? 'font-semibold text-primary' : 'text-fg-secondary',

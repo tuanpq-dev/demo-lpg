@@ -31,7 +31,16 @@ function StateLine({ children }: { children: ReactNode }) {
 const navItems: NavTabItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: 'navOverview', activeIcon: 'navOverviewActive' },
   { id: 'map', label: 'Bản đồ nội khu', icon: 'navMap' },
-  { id: 'operation', label: 'Vận hành', icon: 'navOperation', disabled: true, hasSubmenu: true },
+  {
+    id: 'operation',
+    label: 'Vận hành',
+    icon: 'navOperation',
+    children: [
+      { id: 'operation-main', label: 'Vận hành' },
+      { id: 'operation-logs', label: 'Nhật ký vận hành' },
+      { id: 'operation-ai-simulation', label: 'AI mô phỏng sự cố' },
+    ],
+  },
   { id: 'alerts', label: 'Cảnh báo', icon: 'navAlert', activeIcon: 'navAlertActive', count: 2 },
   { id: 'maintenance', label: 'Bảo trì', icon: 'navMaintenance', activeIcon: 'navMaintenanceActive' },
   { id: 'report', label: 'Báo cáo', icon: 'navReport' },
@@ -136,10 +145,10 @@ export function NavigationSection() {
   return (
     <div className="flex flex-col gap-10">
       <Demo title="NavTabs" node="53:23">
-        <div className="overflow-x-auto rounded-md bg-bg-header px-6 py-2.5">
+        <div className="rounded-md bg-bg-header px-6 py-2.5">
           <NavTabs items={navItems} value={nav} onChange={setNav} />
         </div>
-        <StateLine>value = &quot;{nav}&quot; · ←/→ di chuyển, Enter chọn · &quot;Vận hành&quot; disabled</StateLine>
+        <StateLine>value = &quot;{nav}&quot; · ←/→ di chuyển, Enter chọn · &quot;Vận hành&quot; mở menu con (↓/Enter, Esc đóng)</StateLine>
         <StateLine>1280–1519px: chỉ icon (mục đang mở giữ chữ) · dưới 1280px: NavMenu bên dưới</StateLine>
         <div className="rounded-md bg-bg-header px-6 py-2.5">
           <NavMenu items={navItems} value={nav} onChange={setNav} />

@@ -3,7 +3,7 @@ import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
 import { ROLE_LABELS } from '@/features/auth/permissions';
 import { useAuth } from './auth';
 import { LiveAnnouncer } from './LiveAnnouncer';
-import { NAV_ROUTES, navIdFromPath } from './navigation';
+import { NAV_ROUTES, navIdFromPath, navPathFromId } from './navigation';
 
 /** AppHeader gắn với React Router: tab active theo URL, chọn tab → navigate. */
 export function RoutedAppHeader() {
@@ -16,7 +16,7 @@ export function RoutedAppHeader() {
       navItems={NAV_ROUTES}
       navValue={navIdFromPath(pathname)}
       onNavChange={(id) => {
-        const path = NAV_ROUTES.find((r) => r.id === id)?.path;
+        const path = navPathFromId(id);
         if (path) navigate(path);
       }}
       user={{
