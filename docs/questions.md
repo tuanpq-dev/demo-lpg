@@ -208,6 +208,17 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 12.8 | [K] Mã báo cáo tháng/quý/năm, ca vận hành (chỉ "Ca 1"?), danh sách người kiểm tra/duyệt | `BCVH-T-062026`, `BCVH-Q-22026`, `BCVH-NAM-2026`; mọi báo cáo ngày "Ca 1"; người: mock 3 kiểm tra + 2 duyệt. |
 | 12.9 | [D][K] "Thiếu mốc" trong "Cần xử lý hôm nay": mốc đã quá giờ chưa nhập, hay mọi mốc còn lại trong ngày? "Xử lý ngay" dẫn tới đâu? | Chỉ mốc đã tới giờ mà chưa có dữ liệu. "Xử lý ngay" lọc bảng theo mã báo cáo; "Xem tất cả" lọc Chờ xác nhận. |
 
+## 13. Vận hành – chi tiết thiết bị (`/operations/devices/E-101A`, ảnh 31/10/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 13.1 | [K] Tag thật của E-101A: nhiệt độ vào, áp suất RA (riêng hay dùng chung PT-202 của tháp điều áp C-101), hiệu suất (PLC tính sẵn?), lưu lượng khí ra; tên biến PLC (`Vaporizer_Outlet_Temp`…) có đúng? | TT-200, PT-202 (chung C-101), E-101A.EFF, FT-201; tên biến như ảnh. |
+| 13.2 | [K] Ngưỡng nhiệt độ ra: ảnh "< 75" nhưng cảnh báo ALT-00126 báo thấp dưới 50 °C. Áp suất ra: bảng "2.0 - 4.5" vs biểu đồ "Ngưỡng áp suất cao 5.0"; áp suất vào "2.0 - 6.0" vs cảnh 3D 5/6 bar | 50–75 °C; áp suất 2.0–5.0, nguy hiểm 6 (theo cảnh 3D + biểu đồ). |
+| 13.3 | [D] "Theo dõi" (lưu lượng, không ngưỡng) màu vàng có ý cảnh giác không? | Giữ vàng như ảnh. |
+| 13.4 | [K] "Chế độ vận hành" (SCADA từ xa / tại chỗ) đọc từ tag nào? "Hạng mục chi tiết" ở thẻ Bảo trì lấy từ đâu (checklist yêu cầu kế tiếp hay kế hoạch bảo dưỡng định kỳ)? | Số tạm trong mock thiết bị. |
+| 13.5 | [D] Màn danh sách "Giám sát thiết bị" (breadcrumb) và nút "Xem tất cả" nhật ký vận hành? | Chưa có – `/operations/devices` mở thẳng E-101A. |
+| 13.6 | [D] Khu vực "Khu hóa hơi" (ảnh) vs "Trạm hóa hơi" (Cảnh báo/Bảo trì/báo cháy FZ-02) | "Trạm hóa hơi". |
+
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 
 Gồm cả phần chưa có ở các mục trên (modal "Phân công xử lý cảnh báo", modal "Cập nhật xử lý cảnh báo áp suất").

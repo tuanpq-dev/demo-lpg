@@ -18,8 +18,12 @@ export type AlertItemProps = AlertItemData & {
   /**
    * - stacked (mặc định): mã + giờ trên, nội dung dưới – "Cảnh báo ưu tiên" Tổng quan (53:470)
    * - inline: icon theo `tone` + nội dung + giờ trên một dòng – "Cảnh báo liên quan" (trang chi tiết tài sản)
+   * - bar: khối nền nhạt có vạch màu `tone` bên trái, nội dung + "giờ - trạng thái" – "Cảnh báo liên quan" màn Vận hành
+   *   (ảnh `op-device-right.png`)
    */
-  layout?: 'stacked' | 'inline';
+  layout?: 'stacked' | 'inline' | 'bar';
+  /** layout="bar": nhãn trạng thái sau giờ ("Đang xử lý"). */
+  statusLabel?: string;
   /** Icon/màu của dạng inline; mặc định suy từ severity (critical → danger, còn lại warning). */
   tone?: AlertItemTone;
   /** Nền đỏ mờ cho cảnh báo nổi bật nhất (53:471). */
@@ -45,6 +49,13 @@ const inlineTone: Record<AlertItemTone, string> = {
   success: 'text-success',
 };
 
+/** Màu vạch trái của layout="bar" (viền – không phải chữ). */
+const barTone: Record<AlertItemTone, string> = {
+  danger: 'border-l-danger',
+  warning: 'border-l-warning',
+  success: 'border-l-success',
+};
+
 /** Một dòng cảnh báo trong danh sách "Cảnh báo ưu tiên" – cột phải Tổng quan (Figma 53:470). */
 export function AlertItem({
   id,
@@ -56,10 +67,35 @@ export function AlertItem({
   tone,
   highlighted,
   last,
+  statusLabel,
   onClick,
   className,
 }: AlertItemProps) {
   const Tag = onClick ? 'button' : 'div';
+  if (layout === 'bar') {
+    const t: AlertItemTone = tone ?? (severity === 'critical' ? 'danger' : 'warning');
+    return (
+      <Tag
+        type={onClick ? 'button' : undefined}
+        onClick={onClick ? () => onClick(id) : undefined}
+        className={cn(
+          'flex w-full flex-col gap-1 rounded-md border-l-2 bg-surface-muted/20 px-3 py-2.5 text-left',
+          barTone[t],
+          onClick && 'transition-colors hover:bg-surface-muted/40',
+          className,
+        )}
+      >
+        <span className={cn('text-base', t === 'success' ? 'text-success' : 'text-fg')}>
+          <span className="sr-only">{code}: </span>
+          {message}
+        </span>
+        <span className="text-sm text-fg-secondary">
+          {time}
+          {statusLabel && ` - ${statusLabel}`}
+        </span>
+      </Tag>
+    );
+  }
   if (layout === 'inline') {
     const t: AlertItemTone = tone ?? (severity === 'critical' ? 'danger' : 'warning');
     const IconC = t === 'success' ? CheckCircleIcon : AlertCircleIcon;

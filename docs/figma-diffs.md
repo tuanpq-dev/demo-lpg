@@ -9,6 +9,7 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - **Lâu dài (chỉ máy dev):** ảnh chụp trong `scratch/figma-ref/` (`53-11-overview.png`, `70-2809-alerts.png`, `70-3964-maintenance.png`, các crop node), ảnh thiết kế modal `mt-create-modal-design.png` và trang chi tiết tài sản `asset-v101-design.png` (919×790, ~0,59× khung 1565 – cỡ chữ/khoảng cách là ước lượng; không có node), chi tiết yêu cầu bảo trì `mt-detail-design.png` (1565×2665, thu từ ảnh 2× người dùng gửi; không có node – số đo ước lượng gom trong `tokens.css` khối "Layout chi tiết yêu cầu bảo trì"), modal cập nhật tiến độ `mt-progress-modal-design.png` (1242×952 có bóng, modal ~1160 px; không có node), modal phân công `mt-assign-modal-design.png` (1565×1175 = cả trang, thu ×1/2 từ ảnh 2× – đã làm, mục 5H). Hai modal nghiệm thu (`mt-submit-review-modal-design.png`, `mt-review-modal-design.png`, 1156 px, thu ×1/3 từ ảnh 3×) nằm ở **`scratch/figma-ref/`** (gitignore, chỉ máy dev) – ảnh thiết kế mới KHÔNG đặt trong `public/` (bị deploy công khai); playground chỉ tham chiếu khi `import.meta.env.DEV`.
   - **Cache design context** (có thể mất khi đổi phiên): `C:/Users/ptuan/AppData/Local/Temp/claude/f--TEMPO-demo-lpg/0d061ac4-b5cd-4d25-bf82-aad81de290f4/scratchpad/figma/{53-11,70-2809,70-3964}.part0.txt`. Mỗi file bị cắt ở 100KB: 53:11 cắt sau 53:498, 70:3964 cắt ở 70:5402.
   - Màn Báo cáo (29/10/2026, ảnh người dùng gửi, không có node): `reports-design.png` (cả trang 1565×1239), crop ×3 `reports-header.png`, `reports-kpi.png`, `reports-summary-cards.png`, `reports-table.png`.
+  - Màn Vận hành – chi tiết thiết bị E-101A (31/10/2026, ảnh người dùng gửi, không có node): `op-device-full.png` (cả trang 1565×2116), crop ×3 `op-device-header.png`, `op-device-kpi.png`, `op-device-left.png`, `op-device-right.png`.
   - Ảnh hoặc SVG người dùng gửi trong chat.
   - Khi thiếu thông số: đọc pixel từ ảnh chụp rồi map về token gần nhất, kích thước lấy từ metadata.
 
@@ -154,6 +155,16 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - "Tự chuẩn chẩn đoán" → "Tự chẩn đoán". Cảnh báo liên quan lấy từ danh sách cảnh báo (ALT-00128/116/112) thay vì 3 dòng mẫu trong ảnh.
   - Hình cắt vẽ phẳng theo token (ảnh là render 3D bóng bẩy), giữ đúng tỉ lệ dài/đường kính nên dẹt hơn ảnh. Màu: LPG `info`, pha hơi `neutral`, nước `warning`; loại sự kiện: Cảm biến `info`, Vận hành `warning`, Hệ thống `fg-secondary`, Cảnh báo `danger`.
   - Figma 53:470 (Cảnh báo ưu tiên Tổng quan) ghi "PT-101 – Áp suất đầu vào hóa hơi cao" → đổi thành PT-201 vì PT-101 nay là áp suất bồn V-101 (đã duyệt); mock cảnh báo ALT-00113 cũng chuyển PT-201.
+
+## Vận hành – chi tiết thiết bị (/operations/devices/E-101A, ảnh 31/10/2026)
+
+- **Số liệu theo mock chung, không theo ảnh (CÓ CHỦ ĐÍCH – một nguồn):** nhiệt độ ra TT-201 ≈ 45,6 °C (khớp callout Tổng quan Figma + cảnh báo ALT-00126 "Nhiệt độ máy hóa hơi thấp" ngưỡng 50) → "Thấp" vàng ở KPI/bảng/sơ đồ (ảnh 58,4 °C "Bình thường"); áp suất vào PT-201 ≈ 4,1 (ảnh 5,2); lưu lượng FT-201 ≈ 155 m³/h (ảnh 32,1 – tag lưu lượng ống PL-07 của cảnh 3D); cảnh báo liên quan + bảo trì lấy từ store (ảnh: 3 cảnh báo minh hoạ, "Nguyễn Văn A", 12/09/2023, "12 ngày").
+- **Ngưỡng:** "Nhiệt độ ra" `50 - 75` (ảnh "< 75"; thêm biên dưới = ngưỡng ALT-00126). Áp suất vào/ra `2.0 - 5.0`, nguy hiểm 6 = binding cảnh 3D (ảnh bảng "2.0 - 6.0" / "2.0 - 4.5"; biểu đồ ảnh dùng 5.0 cho áp suất cao – khớp app).
+- Khu vực "Trạm hóa hơi" (tên chung AREAS) – ảnh "Khu hóa hơi".
+- Biểu đồ: thang áp suất 3–11 bar (để đường nhiệt độ ~46 °C không đè nhãn "Ngưỡng áp suất cao" – ảnh ở 58 °C không chạm); đường nhiệt độ 2 px, áp suất nét đứt 1,5 px.
+- Nhật ký: mục chưa chọn giữ chữ trắng (ảnh mờ dần) – dùng `EventTimeline variant="schedule"` có sẵn.
+- "Theo dõi" (lưu lượng, không có ngưỡng) giữ vàng như ảnh.
+- Icon nhiệt kế / đồng hồ áp / tia sét / chip / ghim = icon tạm (`TempIcons`).
 
 ## Báo cáo (/reports)
 

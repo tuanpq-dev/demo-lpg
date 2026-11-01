@@ -36,3 +36,19 @@ describe('MetricListCard', () => {
     expect(screen.getByText('0%')).toBeInTheDocument();
   });
 });
+
+describe('MetricListCard – separated', () => {
+  test('dòng separated có vạch trên, dòng khác không', () => {
+    render(
+      <MetricListCard
+        title="Trạng thái nhanh"
+        rows={[
+          { id: 'a', label: 'Cảm biến lỗi', value: 0 },
+          { id: 'b', label: 'Bảo trì tiếp theo', value: '12 ngày', separated: true },
+        ]}
+      />,
+    );
+    expect(screen.getByText('Bảo trì tiếp theo').parentElement).toHaveClass('border-t');
+    expect(screen.getByText('Cảm biến lỗi').parentElement).not.toHaveClass('border-t');
+  });
+});

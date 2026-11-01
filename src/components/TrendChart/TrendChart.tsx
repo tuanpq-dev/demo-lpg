@@ -3,8 +3,11 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ComposedChart,
   Line,
   LineChart,
+  ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -151,6 +154,164 @@ export function LineTrendChart({
           isAnimationActive={false}
         />
       </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ============================================================================
+// Hai chỉ số, hai thang đo – "Xu hướng vận hành (60 phút)" màn Vận hành (ảnh `op-device-left.png`)
+// ============================================================================
+
+export type DualTrendSeries = {
+  /** Khoá trong mỗi điểm dữ liệu. */
+  id: string;
+  /** Tên trong tooltip / chú thích: "Nhiệt độ (°C)". */
+  name: string;
+  /** Hậu tố nhãn giá trị cuối đường: "°C", " bar". */
+  suffix: string;
+  color: ColorToken;
+  /** Đường nét đứt (series thứ hai trong ảnh). */
+  dashed?: boolean;
+  /** Tô vùng dưới đường (gradient như AreaTrendChart). */
+  area?: boolean;
+  /** Thang riêng của series – hai series khác đơn vị nên không chung trục. */
+  domain: [number, number];
+  /** Đường ngưỡng: số ở mép trái, tên ở mép phải (màu `color`). */
+  threshold?: { value: number; label: string; color: ColorToken };
+  digits?: number;
+};
+
+/** Một điểm: `label` trục X + giá trị theo `id` của series (null = mất tín hiệu → đứt đường). */
+export type DualTrendPoint = { label: string } & Record<string, number | string | null>;
+
+export type DualTrendChartProps = {
+  data: readonly DualTrendPoint[];
+  series: readonly [DualTrendSeries, DualTrendSeries];
+  xTicks: readonly string[];
+};
+
+/** Giá trị ở điểm CUỐI (hiện tại) – null/thiếu (mất tín hiệu) → không có nhãn, không lùi về số cũ. */
+function lastValue(data: readonly DualTrendPoint[], id: string): { label: string; value: number } | undefined {
+  const last = data[data.length - 1];
+  const v = last?.[id];
+  return typeof v === 'number' ? { label: last.label, value: v } : undefined;
+}
+
+/**
+ * Hai đường trên cùng khung, MỖI series một trục Y ẩn (thang riêng) – ngưỡng vẽ bằng ReferenceLine (số trái, tên phải),
+ * giá trị hiện tại là nhãn khung ở cuối đường. Màu qua token. Không animation (giảm chuyển động + số trực tiếp).
+ */
+export function DualTrendChart({ data, series, xTicks }: DualTrendChartProps) {
+  const c = useTokenColors();
+  const gid = useId().replace(/:/g, '');
+  const fmt = (s: DualTrendSeries, v: number) => v.toFixed(s.digits ?? 1);
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart data={[...data]} margin={{ top: 12, right: 64, bottom: 0, left: 36 }}>
+        <defs>
+          {series.map((s) => (
+            <linearGradient key={s.id} id={`dual-${gid}-${s.id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={c(s.color, 0.18)} />
+              <stop offset="100%" stopColor={c(s.color, 0)} />
+            </linearGradient>
+          ))}
+        </defs>
+        <CartesianGrid vertical={false} stroke={c('line', 0.15)} />
+        <XAxis
+          dataKey="label"
+          ticks={[...xTicks]}
+          interval={0}
+          axisLine={{ stroke: c('line', 0.4) }}
+          tickLine={false}
+          tick={{ fontSize: 10, fill: c('text-muted') }}
+          tickMargin={8}
+        />
+        {series.map((s) => (
+          <YAxis key={s.id} yAxisId={s.id} hide domain={s.domain} allowDataOverflow />
+        ))}
+        <Tooltip
+          cursor={{ stroke: c('line'), strokeDasharray: '3 3' }}
+          content={<ChartTooltip format={(v) => v.toFixed(1)} />}
+        />
+        {series.map((s) =>
+          s.threshold ? (
+            <ReferenceLine
+              key={`t-${s.id}`}
+              yAxisId={s.id}
+              y={s.threshold.value}
+              stroke={c(s.threshold.color, 0.6)}
+              strokeDasharray="3 3"
+              label={(p: { viewBox: { x: number; y: number; width: number } }) => (
+                <g>
+                  <text x={p.viewBox.x - 6} y={p.viewBox.y} dy={3} textAnchor="end" fontSize={10} fontWeight={700} fill={c(s.threshold!.color)}>
+                    {fmt(s, s.threshold!.value)}
+                  </text>
+                  <text x={p.viewBox.x + p.viewBox.width} y={p.viewBox.y} dy={-6} textAnchor="end" fontSize={12} fill={c(s.threshold!.color)}>
+                    {s.threshold!.label}
+                  </text>
+                </g>
+              )}
+            />
+          ) : null,
+        )}
+        {series.map((s) =>
+          s.area ? (
+            <Area
+              key={s.id}
+              yAxisId={s.id}
+              type="monotone"
+              dataKey={s.id}
+              name={s.name}
+              stroke={c(s.color)}
+              strokeWidth={2}
+              fill={`url(#dual-${gid}-${s.id})`}
+              connectNulls={false}
+              isAnimationActive={false}
+              activeDot={{ r: 3, fill: c(s.color), stroke: c('surface') }}
+            />
+          ) : (
+            <Line
+              key={s.id}
+              yAxisId={s.id}
+              type="monotone"
+              dataKey={s.id}
+              name={s.name}
+              stroke={c(s.color)}
+              strokeWidth={1.5}
+              strokeDasharray={s.dashed ? '8 6' : undefined}
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              activeDot={{ r: 3, fill: c(s.color), stroke: c('surface') }}
+            />
+          ),
+        )}
+        {series.map((s) => {
+          const last = lastValue(data, s.id);
+          if (!last) return null;
+          const text = `${fmt(s, last.value)}${s.suffix}`;
+          const w = text.length * 7 + 14;
+          return (
+            <ReferenceDot
+              key={`v-${s.id}`}
+              yAxisId={s.id}
+              x={last.label}
+              y={last.value}
+              r={0}
+              ifOverflow="visible"
+              label={(p: { viewBox: { x: number; y: number } }) => (
+                <g>
+                  <rect x={p.viewBox.x - w + 8} y={p.viewBox.y - 12} width={w} height={24} rx={3} fill={c('surface-sunken')} stroke={c(s.dashed ? 'text-secondary' : s.color, 0.8)} />
+                  <text x={p.viewBox.x + 1} y={p.viewBox.y} dy={4} textAnchor="end" fontSize={12} fontWeight={700} fill={c(s.dashed ? 'text-primary' : s.color)}>
+                    {text}
+                  </text>
+                </g>
+              )}
+            />
+          );
+        })}
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

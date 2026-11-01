@@ -33,6 +33,9 @@ export const liveBase: Record<string, LiveValue> = {
   'PT-103': 4.2,
   [VAPORIZER_TAGS.temperature]: 45.6,
   [VAPORIZER_TAGS.inletPressure]: 4.1,
+  // Màn Vận hành E-101A (ảnh op-device-*.png): nhiệt độ vào 24,8 °C, hiệu suất 92 %.
+  [VAPORIZER_TAGS.inletTemperature]: 24.8,
+  [VAPORIZER_TAGS.efficiency]: 92,
   'PT-202': 3.8,
   'FT-201': 155,
   // Cảnh tram-chiet-nap: V-303 mức cao (warning), P-302B sự cố (danger).
@@ -71,7 +74,7 @@ export const liveBase: Record<string, LiveValue> = {
 /** Đơn vị theo tiền tố tag (SCADA thật gửi kèm đơn vị). */
 export function liveUnit(tag: string): string | undefined {
   if (tag.endsWith('.STATE')) return undefined;
-  if (tag.endsWith('.POS')) return '%';
+  if (tag.endsWith('.POS') || tag.endsWith('.EFF')) return '%';
   if (tag.startsWith('INV-')) return 'Nm³';
   if (tag.startsWith('FQ-')) return 'Nm³/h';
   if (tag.startsWith('LT-')) return '%';
@@ -100,6 +103,8 @@ export const liveJitter: Record<string, number> = {
   'PT-103': 0.05,
   [VAPORIZER_TAGS.temperature]: 1.2,
   [VAPORIZER_TAGS.inletPressure]: 0.15,
+  [VAPORIZER_TAGS.inletTemperature]: 0.4,
+  [VAPORIZER_TAGS.efficiency]: 0.6,
   'PT-202': 0.12,
   'FT-201': 8,
   'FT-311': 10,

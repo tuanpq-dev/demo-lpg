@@ -8,7 +8,7 @@ import LoginPage from './pages/login/LoginPage';
 import PendingPage from './pages/login/PendingPage';
 import RegisterPage from './pages/login/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
-import { DEFAULT_ASSET_ID, assetPath } from './app/assetRoutes';
+import { DEFAULT_ASSET_ID, DEFAULT_OPERATION_DEVICE, assetPath, operationDevicePath } from './app/assetRoutes';
 
 // Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
 const OverviewPage = lazy(() => import('./pages/overview/OverviewPage'));
@@ -20,6 +20,7 @@ const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 const AssetDetailPage = lazy(() => import('./pages/asset/AssetDetailPage'));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
 const SimplePage = lazy(() => import('./pages/SimplePage'));
+const DeviceDetailPage = lazy(() => import('./pages/operations/DeviceDetailPage'));
 
 function Root() {
   return (
@@ -61,9 +62,12 @@ const router = createBrowserRouter([
           // Tab "Bản đồ nội khu" mở thẳng trang chi tiết bồn V-101 (như ảnh 5D); chưa có bản đồ toàn nhà máy.
           { path: '/map', loader: () => redirect(assetPath(DEFAULT_ASSET_ID)) },
           { path: '/map/:assetId', element: <AssetDetailPage /> },
-          // Menu "Vận hành": chưa có nội dung → SimplePage. Route tĩnh xếp hạng trên /operations/:assetId (đường dẫn cũ).
-          { path: '/operations', loader: () => redirect('/operations/overview') },
-          { path: '/operations/overview', element: <SimplePage section="Vận hành" title="Vận hành" /> },
+          // Menu "Vận hành" → "Giám sát thiết bị" (chưa có danh sách thiết bị → mở E-101A, ảnh op-device-*.png).
+          // Route tĩnh xếp hạng trên /operations/:assetId (đường dẫn cũ). /operations/overview = link cũ của mục menu.
+          { path: '/operations', loader: () => redirect('/operations/devices') },
+          { path: '/operations/overview', loader: () => redirect('/operations/devices') },
+          { path: '/operations/devices', loader: () => redirect(operationDevicePath(DEFAULT_OPERATION_DEVICE)) },
+          { path: '/operations/devices/:deviceId', element: <DeviceDetailPage /> },
           { path: '/operations/logs', element: <SimplePage section="Vận hành" title="Nhật ký vận hành" /> },
           { path: '/operations/ai-simulation', element: <SimplePage section="Vận hành" title="AI mô phỏng sự cố" /> },
           { path: '/operations/:assetId', loader: legacyAssetRedirect },

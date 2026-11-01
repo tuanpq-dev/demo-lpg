@@ -164,7 +164,8 @@ const statusClass: Record<WorkStatus, string> = {
   closed: 'border-line/30 bg-surface-muted text-fg',
 };
 
-const statusLabel: Record<WorkStatus, string> = {
+/** Nhãn tiếng Việt của trạng thái công việc (badge status) – dùng lại khi cần chữ không kèm badge. */
+export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   unacknowledged: 'Chưa xác nhận',
   pending: 'Chờ tiếp nhận',
   assigned: 'Đã phân công',
@@ -241,7 +242,7 @@ export function Badge(props: BadgeProps) {
       )}
     >
       {icon}
-      {children ?? statusLabel[props.value]}
+      {children ?? WORK_STATUS_LABEL[props.value]}
     </span>
   );
 }

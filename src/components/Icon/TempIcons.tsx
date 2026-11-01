@@ -347,3 +347,47 @@ export const MoreVerticalIcon = ({ size = 18, ...p }: P) => (
     <circle cx="12" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
   </svg>
 );
+
+// ---- Màn Vận hành – chi tiết thiết bị (ảnh `scratch/figma-ref/op-device-*.png`, chưa có node Figma) ----
+
+/** Nhiệt kế + vạch – "Nhiệt độ đầu ra", cảm biến nhiệt trên sơ đồ. */
+export const ThermometerIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M9 14.8V4.5a2.5 2.5 0 0 1 5 0v10.3a4 4 0 1 1-5 0Z" />
+    <path d="M11.5 10v6.5" />
+    <path d="M17 5h3M17 8.5h3" />
+  </svg>
+);
+
+/** Đồng hồ áp suất – "Áp suất đầu ra". */
+export const GaugeIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M4.5 18a9 9 0 1 1 15 0" />
+    <path d="m12 14 4-5" />
+    <circle cx="12" cy="14" r="1.2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+/** Tia sét – "Hiệu suất hóa hơi". */
+export const BoltIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z" />
+  </svg>
+);
+
+/** Chip vi xử lý – trạng thái PLC. */
+export const CpuIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="6" y="6" width="12" height="12" rx="1.5" />
+    <rect x="9.5" y="9.5" width="5" height="5" rx="0.5" />
+    <path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5" />
+  </svg>
+);
+
+/** Ghim vị trí – "Khu vực". */
+export const MapPinIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 21.5s7-6.2 7-11.5a7 7 0 0 0-14 0c0 5.3 7 11.5 7 11.5Z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </svg>
+);

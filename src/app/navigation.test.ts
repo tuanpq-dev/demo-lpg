@@ -16,7 +16,9 @@ describe('navIdFromPath', () => {
     expect(navIdFromPath('/operations/V-101')).toBe('');
   });
   it('menu con "Vận hành": khớp đường dẫn dài nhất, mục cha không có trang riêng', () => {
-    expect(navIdFromPath('/operations/overview')).toBe('operation-main');
+    // Đổi có chủ đích (31/10): mục "Vận hành" trỏ /operations/devices (màn chi tiết thiết bị); /operations/overview chỉ chuyển hướng.
+    expect(navIdFromPath('/operations/devices')).toBe('operation-main');
+    expect(navIdFromPath('/operations/devices/E-101A')).toBe('operation-main');
     expect(navIdFromPath('/operations/logs')).toBe('operation-logs');
     expect(navIdFromPath('/operations/logs/123')).toBe('operation-logs');
     expect(navIdFromPath('/operations/ai-simulation')).toBe('operation-ai-simulation');
