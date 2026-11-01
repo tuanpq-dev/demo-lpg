@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Badge, type CountTone } from '../Badge';
 import { Button } from '../Button';
-import { Card, type CardAction } from '../Card';
+import { Card, type CardAction, type CardProps } from '../Card';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
 
 export type MetricTone = 'default' | 'success' | 'warning' | 'danger';
@@ -13,6 +13,8 @@ export type MetricRow = {
   value: ReactNode;
   /** Màu số (danger → chữ `danger-text`). */
   tone?: MetricTone;
+  /** Vạch kẻ phía trên dòng – tách nhóm ("Bảo trì tiếp theo" ở "Trạng thái nhanh", ảnh `op-device-right.png`). */
+  separated?: boolean;
 };
 
 export type MetricListCardProps = {
@@ -24,6 +26,8 @@ export type MetricListCardProps = {
   rows: readonly MetricRow[];
   /** Link cuối thẻ, căn phải ("Xem tất cả"). */
   action?: CardAction;
+  /** Kiểu header của Card (mặc định như Card). `divided` = tiêu đề + vạch dưới (màn Vận hành). */
+  headerVariant?: CardProps['headerVariant'];
   className?: string;
 };
 
@@ -38,11 +42,12 @@ const valueTone: Record<MetricTone, string> = {
  * Thẻ danh sách chỉ số nhãn – số (tuỳ chọn thanh tiến độ ở đầu, chip đếm ở tiêu đề, link cuối).
  * Màn Báo cáo (ảnh thiết kế): "Chờ xác nhận" (chip + 3 dòng vai trò + "Xem tất cả"), "Tiến độ tháng 06" (thanh + 3 dòng).
  */
-export function MetricListCard({ title, count, progress, rows, action, className }: MetricListCardProps) {
+export function MetricListCard({ title, count, progress, rows, action, headerVariant, className }: MetricListCardProps) {
   const pct = progress && progress.max > 0 ? Math.round((progress.value / progress.max) * 100) : 0;
   return (
     <Card
       title={title}
+      headerVariant={headerVariant}
       radius="lg"
       headerEnd={
         count ? (
@@ -67,7 +72,7 @@ export function MetricListCard({ title, count, progress, rows, action, className
       )}
       <dl className="flex flex-col gap-2.5">
         {rows.map((r) => (
-          <div key={r.id} className="flex items-baseline justify-between gap-3 text-base">
+          <div key={r.id} className={cn('flex items-baseline justify-between gap-3 text-base', r.separated && 'mt-1.5 border-t border-line/30 pt-4')}>
             <dt className="min-w-0 text-fg-secondary">{r.label}</dt>
             <dd className={cn('shrink-0 font-semibold tabular-nums', valueTone[r.tone ?? 'default'])}>{r.value}</dd>
           </div>

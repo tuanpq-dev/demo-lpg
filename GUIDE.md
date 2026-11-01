@@ -28,6 +28,7 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 | `/overview?map=3d&focus=V-101` | Mở 3D và bay tới object (thêm chế độ xem "<nhãn object>") – nút "Xem trên bản đồ" của trang chi tiết |
 | `/map` · `/map/V-101` | Tab "Bản đồ nội khu": `/map` mở thẳng chi tiết "Bồn LPG V-101" (như ảnh 5D). `/map/v-101` → `/map/V-101`; mã lạ → "Không tìm thấy tài sản"; `/operations/V-101` (link cũ) → `/map/V-101`; `?hide=alert,sensor` ẩn loại sự kiện; `?create=1` mở modal tạo yêu cầu bảo trì |
 | `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
+| `/operations` · `/operations/devices/E-101A` | Menu "Vận hành": chi tiết máy hóa hơi E-101A (ảnh op-device-*.png); mã khác kiểu chữ → mã chuẩn; mã lạ → "Không tìm thấy thiết bị" – docs/guide/operations.md |
 | `/reports?now=2026-06-24T18:30` | Báo cáo vận hành định kỳ, dữ liệu gần đúng ảnh thiết kế (`?now=` chỉ dev) – docs/guide/reports.md |
 | `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
@@ -87,6 +88,7 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Số liệu trực tiếp | `TagValue`/`LiveData`, mất tín hiệu, nguồn mock → WebSocket, thêm tag (4b – live) | [docs/guide/live-data.md](docs/guide/live-data.md) |
 | Cảnh báo | Danh sách /alerts (4c), drawer theo loại áp suất/gas/cháy (4m), phân công (4n), cập nhật xử lý khung chung áp suất/gas/cháy (4o), xác nhận đóng + tab Chờ đóng (4p); **bảng mã mock để thử** | [docs/guide/alerts.md](docs/guide/alerts.md) |
 | Bảo trì | Model + quá hạn + modal tạo (4d), chi tiết yêu cầu (4i), tiến độ (4j), nghiệm thu (4k), phân công (4l); **mã mock để thử** | [docs/guide/maintenance.md](docs/guide/maintenance.md) |
+| Vận hành – chi tiết thiết bị | `/operations/devices/E-101A`: URL, luồng dữ liệu (tag/ngưỡng một nguồn, số tạm), vùng ↔ component, thêm thiết bị | [docs/guide/operations.md](docs/guide/operations.md) |
 | Báo cáo định kỳ | `/reports`: tách lớp dùng chung ngày/tháng/quý/năm (5O-1), quy tắc trạng thái (5O-2), **URL thử với `?now=`** (5O-3), chưa làm (5O-4) | [docs/guide/reports.md](docs/guide/reports.md) |
 | Đăng nhập + backend | Biến môi trường, chạy cùng backend, hợp đồng API, luồng đăng nhập, gọi endpoint mới (9a–9f, Phụ lục D) | [docs/guide/backend-auth.md](docs/guide/backend-auth.md) |
 | Test + chất lượng | Lệnh, nơi đặt test, thêm test, axe/accessibility (7b) | [docs/guide/testing.md](docs/guide/testing.md) |

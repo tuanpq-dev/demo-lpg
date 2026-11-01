@@ -21,7 +21,7 @@
 |---|---|
 | `src/components/<Name>/` | Component thuần (không import router/data, trừ PageHeader dùng `<Link>`); barrel `src/components/index.ts`. TextField/Textarea/DatePicker/NumberField trong `FormField/` |
 | `src/app/` | Nối router: `navigation.ts`, `Page.tsx`, `auth/` (`AuthProvider`, `RequireAuth`, `useCan`), `ConnectedPlantMap`, `LiveAnnouncer`, `useTableFilters`, `assetRoutes.ts` |
-| `src/pages/<màn>/` | `overview`, `alerts` (drawer + panel theo loại + modal), `maintenance`, `asset`, `reports` (`shared/` = khối dùng chung mọi màn báo cáo), `editor`, `login`, `playground` (mục 1–18) |
+| `src/pages/<màn>/` | `overview`, `alerts` (drawer + panel theo loại + modal), `maintenance`, `asset`, `operations` (chi tiết thiết bị), `reports` (`shared/` = khối dùng chung mọi màn báo cáo), `editor`, `login`, `playground` (mục 1–18) |
 | `src/data/` | Lớp dữ liệu theo màn (hook `useOverviewData`/`useAlerts`/`useMaintenance`…, hàm `derive*`), `live/` (nguồn số liệu trực tiếp), `scene.ts`, `sceneRepository.ts` |
 | `src/features/<miền>/` | Logic THUẦN có test: `alerts/` (workflow, bands, fire, gauge, assign, inspection, pressure, update, close), `maintenance/`, `staff/`, `live/` (`tags.ts` = tên tag giả định – MỘT chỗ), `reports/` (kỳ, trạng thái suy dẫn, lọc), `tank/`, `scene/`, `scene-editor/`, `auth/` |
 | `src/mocks/` | Dữ liệu mẫu từ Figma; `alertKinds.ts` = cấu hình theo LOẠI cảnh báo; `scenes/*.json` cảnh 3D |
@@ -58,6 +58,7 @@
 ## 6. Trạng thái hiện tại (28/10/2026)
 - ✅ Đã duyệt: GĐ0–4B (tokens → primitives → form → layout/router → nghiệp vụ → chart/bảng), 5A Tổng quan, 5B Cảnh báo, 5C Bảo trì, 3D-1/1b/1c/2.
 - 🔍 Chờ review (chi tiết: `docs/decisions.md` mục Roadmap): 3D-3/3D-4 Editor + ống, ground-plane, Live data, a11y/responsive, BE-1 + FE-API, 5D–5H (tài sản, chi tiết/tiến độ/nghiệm thu/phân công bảo trì), 5I–5L (drawer + phân công cảnh báo), 5M cập nhật xử lý áp suất, 5N quy trình đóng cảnh báo + khung cập nhật chung, **5O Báo cáo vận hành định kỳ + phần dùng chung báo cáo** (nhánh `feat/reports`, chưa commit – docs/guide/reports.md).
+- 🔍 **Vận hành – chi tiết thiết bị E-101A** (31/10, nhánh `feat/operation-device`, chưa commit – docs/guide/operations.md): `/operations/devices/:id`, số liệu theo mock chung (khác ảnh – docs/figma-diffs.md), vitest 751, bundle chính 127,11 KB gzip.
 - Số đo gần nhất (29/10, 5O): vitest 708 (`--testTimeout=30000`; test drawer/modal Cảnh báo chập chờn khi chạy cả bộ – có cả trên `main`); bundle chính 125,30 KB gzip, chunk ReportsPage 6,8 KB; SceneViewer ~254 KB, PostEffects ~80 KB, recharts ~118 KB (chỉ Tổng quan).
 
 ## 7. Việc tiếp theo
@@ -72,7 +73,7 @@
 | File | Khi nào đọc |
 |---|---|
 | `GUIDE.md` | Mục lục: cách chạy, bản đồ thư mục, bảng luồng → file |
-| `docs/guide/<luồng>.md` | `app-structure` (route, mẹo tìm code, giả lập/TODO) · `design-system` (quy ước đầy đủ, bảng component) · `overview-map-3d` (Tổng quan, 3D, Editor, chi tiết tài sản) · `reports` (báo cáo định kỳ + phần dùng chung) · `live-data` · `alerts` · `maintenance` (kèm mã mock để thử) · `backend-auth` · `testing` – mở đúng file khi làm luồng đó |
+| `docs/guide/<luồng>.md` | `app-structure` (route, mẹo tìm code, giả lập/TODO) · `design-system` (quy ước đầy đủ, bảng component) · `overview-map-3d` (Tổng quan, 3D, Editor, chi tiết tài sản) · `reports` (báo cáo định kỳ + phần dùng chung) · `live-data` · `alerts` · `maintenance` (kèm mã mock để thử) · `operations` (Vận hành – chi tiết thiết bị) · `backend-auth` · `testing` – mở đúng file khi làm luồng đó |
 | `docs/figma-diffs.md` | Trước khi so ảnh / sửa giao diện một màn: mọi sai khác Figma đã chuẩn hoá (nhóm theo màn) + nguồn ảnh tham chiếu |
 | `docs/decisions.md` | Nhật ký từng giai đoạn (số test, bundle, script kiểm), kiến trúc 3D + Scene Editor, TODO kỹ thuật, màu đã duyệt, hợp đồng API cần bổ sung |
 | `docs/questions.md` | Câu hỏi chờ designer/khách + phương án đang dùng tạm (nhóm theo màn) |

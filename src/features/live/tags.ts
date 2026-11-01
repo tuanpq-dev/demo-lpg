@@ -28,12 +28,23 @@ export const V101_TAGS = {
   temperature: 'TT-101',
 } as const;
 
-/** Trạm hóa hơi E-101A. */
+/** Trạm hóa hơi E-101A (màn Vận hành – chi tiết thiết bị đọc cả 6 tag). */
 export const VAPORIZER_TAGS = {
   /** Áp suất đầu vào hóa hơi (bar). */
   inletPressure: 'PT-201',
   /** Nhiệt độ đầu ra (°C). */
   temperature: 'TT-201',
+  /** Nhiệt độ LPG lỏng đầu vào (°C). */
+  inletTemperature: 'TT-200',
+  /**
+   * Áp suất khí đầu ra (bar). Dùng chung PT-202 với tháp điều áp C-101 trong cảnh 3D (đầu ra E-101A nối thẳng vào C-101,
+   * chưa có tag riêng – docs/questions.md).
+   */
+  outletPressure: 'PT-202',
+  /** Hiệu suất hóa hơi (%) – PLC tính sẵn. */
+  efficiency: 'E-101A.EFF',
+  /** Lưu lượng khí ra (m³/h) – cùng tag lưu lượng ống PL-07 trong cảnh 3D. */
+  outletFlow: 'FT-201',
 } as const;
 
 /** Cảm biến khí gas khu nạp xuất (đầu dò % LEL) – mã tag = mã thiết bị. Khu của từng cảm biến: `mocks/sensors.ts`. */
