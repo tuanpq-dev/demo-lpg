@@ -1,4 +1,5 @@
-import { VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import type { AlertKind } from './alertKinds';
+import { GAS_TAGS, MAIN_LINE_TAGS, PLC_SCADA_TAGS, REGULATOR_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { Area } from './areas';
 
 /**
@@ -33,12 +34,30 @@ export type DeviceParam = {
   okTone: 'success' | 'warning';
 };
 
-export type PlcSignal = { id: string; label: string; /** Địa chỉ/tên biến trên PLC (ảnh). */ address: string; tag: string };
+export type PlcSignal = { id: string; label: string; /** Địa chỉ/tên biến trên PLC (ảnh); không có → chỉ hiện `label`. */ address?: string; tag: string };
 
 /** Một dòng nhật ký: `minutesAgo` so với lúc mở trang (mốc tương đối – giờ hiển thị tính từ `now`). */
 export type OperationLogEntry = { id: string; minutesAgo: number; text: string };
 
+/** Phần chung mọi loại thiết bị (header, cảnh báo, bảo trì, tín hiệu PLC, nhật ký). */
+export type OperationDeviceBase = {
+  id: string;
+  /** "Máy hóa hơi LPG" – ô "Tên" ở header. */
+  name: string;
+  /** Khu thực địa (`AREAS`) hoặc nơi đặt khác ("Trung tâm điều khiển" – không thuộc bộ lọc khu của Cảnh báo/Bảo trì). */
+  area: string;
+  /** Thiết bị / tag dùng để lọc "Cảnh báo liên quan" và đếm cảnh báo nghiêm trọng. */
+  relatedDevices: readonly string[];
+  /** Thêm: mọi cảnh báo thuộc các LOẠI này (vd lỗi tín hiệu cảm biến cho hệ PLC/SCADA). */
+  relatedKinds?: readonly AlertKind[];
+  plcSignals: readonly PlcSignal[];
+  /** Phạm vi bảo dưỡng định kỳ ("Hạng mục chi tiết") – SỐ TẠM, chờ kế hoạch bảo trì từ API. */
+  maintenanceScope: readonly string[];
+  log: readonly OperationLogEntry[];
+};
+
 export type OperationDeviceMock = {
+  kind: 'vaporizer';
   id: string;
   /** "Máy hóa hơi LPG" – ô "Tên" ở header. */
   name: string;
@@ -51,6 +70,8 @@ export type OperationDeviceMock = {
   standby: { id: string; stateTag: string };
   /** Thiết bị / tag dùng để lọc "Cảnh báo liên quan" và đếm cảnh báo nghiêm trọng. */
   relatedDevices: readonly string[];
+  /** Thêm: mọi cảnh báo thuộc các LOẠI này (không dùng cho máy hóa hơi). */
+  relatedKinds?: readonly AlertKind[];
   params: readonly DeviceParam[];
   /** 4 KPI đầu trang. */
   kpi: { temperature: DeviceParamId; pressure: DeviceParamId; efficiency: DeviceParamId };
@@ -72,6 +93,7 @@ const T = VAPORIZER_TAGS;
 
 export const operationDevices: Record<string, OperationDeviceMock> = {
   'E-101A': {
+    kind: 'vaporizer',
     id: 'E-101A',
     name: 'Máy hóa hơi LPG',
     diagramTitle: 'MÁY HÓA HƠI E-101A',
@@ -111,6 +133,84 @@ export const operationDevices: Record<string, OperationDeviceMock> = {
       { id: 'l3', minutesAgo: 214, text: 'Kiểm tra định kỳ cảm biến áp suất đầu ra' },
       { id: 'l4', minutesAgo: 469, text: 'Khởi động quy trình hóa hơi buổi sáng' },
       { id: 'l5', minutesAgo: 604, text: 'Bàn giao ca trực - Thiết bị ổn định' },
+    ],
+  },
+};
+
+// ============================================================================
+// Hệ thống PLC/SCADA (Figma bản sao A88YJ2BRhICDDdeu2rtRg1 – 168:4689)
+// ============================================================================
+
+export type PlcSourceIcon = 'tank' | 'vaporizer' | 'regulator' | 'line' | 'gas' | 'fire';
+
+/** Một nhóm thiết bị gửi dữ liệu về PLC (nút trái của "Sơ đồ kết nối PLC/SCADA"); `tags` quyết định trạng thái nút. */
+export type PlcSource = { id: string; label: string; icon: PlcSourceIcon; tags: readonly string[] };
+
+export type PlcScadaDeviceMock = OperationDeviceBase & {
+  kind: 'plc-scada';
+  /** "Siemens S7-1200" – khối giữa sơ đồ + dòng phụ KPI. */
+  controller: string;
+  tags: typeof PLC_SCADA_TAGS;
+  sources: readonly PlcSource[];
+  /** Tag giám sát – "Tag khả dụng" = số tag còn tín hiệu / tổng. */
+  monitoredTags: readonly string[];
+  limits: {
+    /** Độ trễ dữ liệu (s): ≥ warn → "Cao". */
+    latency: { warn: number };
+    /** Mất gói tin (%): ≥ warn → "Cao". */
+    packetLoss: { warn: number };
+    /** Tag khả dụng tối thiểu (dưới mức này → "Thấp"). */
+    minAvailableTags: number;
+  };
+  trend: { minutes: number; latency: { domain: [number, number]; amplitude: number } };
+  /** Hoạt động liên tục từ (phút trước lúc mở trang) – SỐ TẠM, chờ tag uptime của PLC. */
+  runningSinceMinutes: number;
+};
+
+const P = PLC_SCADA_TAGS;
+
+/** 6 nhóm nguồn như sơ đồ trong ảnh; tag lấy từ `features/live/tags.ts` (cùng tag các màn khác dùng). */
+const PLC_SOURCES: readonly PlcSource[] = [
+  { id: 'v101', label: 'Bồn LPG V-101', icon: 'tank', tags: [V101_TAGS.level, V101_TAGS.waterLevel, V101_TAGS.pressure, V101_TAGS.temperature] },
+  { id: 'e101', label: 'E-101A/B', icon: 'vaporizer', tags: [VAPORIZER_TAGS.temperature, VAPORIZER_TAGS.inletPressure, VAPORIZER_TAGS.inletTemperature, VAPORIZER_TAGS.outletPressure, VAPORIZER_TAGS.efficiency, VAPORIZER_TAGS.outletFlow, VAPORIZER_AREA_TAGS.runA, VAPORIZER_AREA_TAGS.runB] },
+  { id: 'pr101', label: 'PR-101', icon: 'regulator', tags: [REGULATOR_TAGS['PR-101']!.outletPressure] },
+  { id: 'lines', label: 'Line 0/1/2', icon: 'line', tags: [MAIN_LINE_TAGS.flow, SYSTEM_TAGS.pressure] },
+  { id: 'gas', label: 'Gas Detector', icon: 'gas', tags: [...GAS_TAGS, VAPORIZER_AREA_TAGS.gas] },
+  { id: 'fire', label: 'Báo cháy', icon: 'fire', tags: [VAPORIZER_AREA_TAGS.heatTemp] },
+];
+
+export const plcScadaDevices: Record<string, PlcScadaDeviceMock> = {
+  'PLC-SCADA': {
+    kind: 'plc-scada',
+    id: 'PLC-SCADA',
+    name: 'Hệ thống PLC/SCADA',
+    area: 'Trung tâm điều khiển',
+    controller: 'Siemens S7-1200',
+    tags: P,
+    sources: PLC_SOURCES,
+    // 21 tag = toàn bộ tag của 6 nhóm nguồn (ảnh "Tag khả dụng 21/21").
+    monitoredTags: [...new Set(PLC_SOURCES.flatMap((s) => s.tags))],
+    // Ảnh: "> 3.0 giây", "> 5.0%", "< 18/21 tag".
+    limits: { latency: { warn: 3 }, packetLoss: { warn: 5 }, minAvailableTags: 18 },
+    trend: { minutes: 60, latency: { domain: [0, 3.2], amplitude: 0.3 } },
+    runningSinceMinutes: 45 * 1440 + 12 * 60,
+    relatedDevices: ['PLC-SCADA', 'PLC-01', 'SCADA-01'],
+    // Ảnh minh hoạ COM-WARN-01 / PLC-SYNC-02 / SYS-REST-00 – store chung chưa có cảnh báo truyền thông → lấy cảnh báo mất tín hiệu cảm biến.
+    relatedKinds: ['sensor-signal-lost'],
+    plcSignals: [
+      { id: 'heartbeat', label: 'PLC_Heartbeat', tag: P.heartbeat },
+      { id: 'scada', label: 'SCADA_Connection_Status', tag: P.scadaLink },
+      { id: 'tags', label: 'Active_Tag_Count', tag: P.activeTagCount },
+      { id: 'latency', label: 'Data_Latency', tag: P.latency },
+      { id: 'historian', label: 'Historian_Sync_Status', tag: P.historian },
+    ],
+    maintenanceScope: ['Kiểm tra truyền thông PLC (PLC communication)', 'Đối chiếu ánh xạ tag (Tag mapping)', 'Sao lưu cấu hình (Config backup)'],
+    log: [
+      { id: 'p1', minutesAgo: 1, text: 'Cập nhật thông số vận hành (Real-time)' },
+      { id: 'p2', minutesAgo: 19, text: 'Đồng bộ dữ liệu lịch sử (Historian) thành công' },
+      { id: 'p3', minutesAgo: 214, text: 'Kiểm tra định kỳ kết nối PLC – SCADA' },
+      { id: 'p4', minutesAgo: 469, text: 'Sao lưu cấu hình PLC tự động' },
+      { id: 'p5', minutesAgo: 604, text: 'Bàn giao ca trực - Hệ thống ổn định' },
     ],
   },
 };

@@ -65,6 +65,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 |---|---|---|---|---|
 | Button | `src/components/Button/Button.tsx` | `variant` (primary/**danger** – nền `danger-solid`/**info** – nền `info`, "Cập nhật xử lý" gas/ghost/outline/subtle/plain/icon/toolbar/overlay/link), `size` (sm/md/**lg** 44px), `icon`, `pressed`; `buttonClass(variant, size)` cho `<Link>` trông như nút | mọi trang | `#primitives`, `#maintenance-detail`, `#alert-drawer` |
 | InfoChip | `src/components/InfoChip/InfoChip.tsx` | `icon`, `label` ("Tên" – tự thêm ":"), `value`, `tone` (default/success/warning/danger/muted) – ô "Nhãn: Giá trị" cao 36px trong actions PageHeader, chỉ hiển thị | Vận hành | – |
+| PlcScadaDiagram | `src/components/PlcScadaDiagram/PlcScadaDiagram.tsx` | `sources` ({ id, label, icon, state ok/lost/pending/danger }), `controller`, `heartbeat`, `scada`, `link`, `syncText`, `label` – "Sơ đồ kết nối PLC/SCADA" cố định 1060×323 (đặt trong vùng cuộn ngang), đường nối SVG `stroke-*`, nút mất tín hiệu xám + chữ ẩn | Vận hành (PLC-SCADA) | – |
 | VaporizerDiagram | `src/components/VaporizerDiagram/VaporizerDiagram.tsx` | `title`, `temperature`/`pressure` ({ text, tone normal/warning/danger/lost/pending }), `label` (tên truy cập `role="img"`) – sơ đồ SVG máy hóa hơi, viewBox 1330×390, màu qua class `fill-*`/`stroke-*` | Vận hành | – |
 | Badge | `src/components/Badge/Badge.tsx` | `variant` (severity – `withIcon` md, `outline` sm · status – `size` sm/md, `cancelled` · count – `tone` neutral/info/**warning**/danger · tag – `tone` neutral/primary/muted/success/warning/danger, `size`), `value` · export `WORK_STATUS_LABEL` (nhãn trạng thái dạng chữ) | Cảnh báo, Bảo trì, Báo cáo | `#primitives`, `#maintenance-detail`, `#progress-update`, `#review` |
 | StatusDot | `src/components/StatusDot/StatusDot.tsx` | `status` (+ `verify` tím – đọc tại chỗ / cần xác minh, `primary` cyan – nguồn IOT), `shape`, `pulse`, `label` | `src/app/HeaderActions.tsx` | `#primitives` |
@@ -87,7 +88,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | StaffFilters | `src/components/StaffPicker/StaffFilters.tsx` | `search` (ô tìm), phòng ban / ca (Select), `onShiftOnly` (Switch "Chỉ người đang trong ca") – nút lọc = disclosure (`aria-expanded`, tên kèm số bộ lọc đang bật), vùng lọc mở ngay dưới | Modal phân công cảnh báo | `#alert-assign` |
 | AssignNotices | `src/components/StaffPicker/AssignNotices.tsx` | `warnings` ({ id, label, action? }) không chặn – vùng aria-live polite CHỈ chữ, khối nhìn thấy có nút; `issues` chặn → khối `id={blockId}` cho `aria-describedby` của nút xác nhận | Hai modal phân công | `#assign`, `#alert-assign` |
 | SearchInput | `src/components/SearchInput/SearchInput.tsx` | `value`, `onChange`, `onClear`, `label` | Editor; trong FilterBar | `#navigation` |
-| Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel`, `hideAllInTrigger` (ô lọc chưa chọn chỉ hiện nhãn) | Cảnh báo, Bảo trì, Editor | `#navigation`, `#forms` |
+| Select | `src/components/Select/Select.tsx` | `options`, `value`, `onChange`, `variant` (filter/button/field), `allLabel`, `hideAllInTrigger` (ô lọc chưa chọn chỉ hiện nhãn), `fullWidth` (trigger giãn theo bề rộng `className` – bề rộng cố định khi giá trị đổi) | Cảnh báo, Bảo trì, Editor, Vận hành | `#navigation`, `#forms` |
 | Combobox | `src/components/Combobox/Combobox.tsx` | `options`, `value`, `onChange`, `multiple`, `clearable`, `showAvatar` | form Bảo trì, Editor | `#forms` |
 | FormField + TextField, Textarea, DatePicker | `src/components/FormField/FormField.tsx`, `src/components/FormField/TextField.tsx` | `label`, `value`, `onChange`, `required`, `hint`, `error`, `labelVariant` (field/section – nhãn 18px như tiêu đề mục; DatePicker cũng có), DatePicker `hideLabel` (ô lọc ngày – chỉ aria-label) | form Bảo trì, Editor | `#forms` |
 | NumberField, Vec3Field | `src/components/FormField/NumberField.tsx` | `value`, `onChange` (chốt khi Enter/blur – chỉ khi đã gõ; ↑/↓ chốt ngay), `min`, `max`, `integer`, `unit`, `onClear`, `tone` (default/warning/danger – màu số theo ngưỡng), `align` (start/center) | Editor, modal cập nhật xử lý áp suất | `#editor`, `#alert-update` |
@@ -101,7 +102,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
 | AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` (`detail` hiện trong menu), `userMenu` + `onUserMenuSelect` (menu tài khoản – Đăng xuất) | `src/app/Page.tsx` | `#layout` (bản gắn router) |
-| PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions` | mọi trang | `#layout` |
+| PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions`, `titleEnd` (cạnh tiêu đề, ngoài `<h1>` – ô chọn "Thiết bị" Vận hành) | mọi trang | `#layout` |
 | AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
 
 **GĐ4A – Nghiệp vụ**
@@ -233,7 +234,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Component | Mô tả |
 |---|---|
-| Icon / TempIcons / EditorIcons | `<Icon name>` từ assets Figma · `Icon/TempIcons.tsx` là SVG tạm (chỉ có trong ảnh; `SignalLostIcon` = mất tín hiệu; `ThermometerIcon`/`GaugeIcon`/`BoltIcon`/`CpuIcon`/`MapPinIcon` – màn Vận hành; `PdfFileIcon`/`SignaturePenIcon` – modal ký báo cáo) · `Icon/EditorIcons.tsx` icon tạm cho Editor (công cụ, ẩn/khoá, tệp, undo/redo, ống) |
+| Icon / TempIcons / EditorIcons | `<Icon name>` từ assets Figma · `Icon/TempIcons.tsx` là SVG tạm (chỉ có trong ảnh; `SignalLostIcon` = mất tín hiệu; `ThermometerIcon`/`GaugeIcon`/`BoltIcon`/`CpuIcon`/`MapPinIcon` – màn Vận hành; `PdfFileIcon`/`SignaturePenIcon` – modal ký báo cáo; `BroadcastIcon`/`NetworkIcon`/`SlidersIcon`/`PipeLineIcon`/`FlameIcon`/`MonitorIcon` – sơ đồ PLC/SCADA) · `Icon/EditorIcons.tsx` icon tạm cho Editor (công cụ, ẩn/khoá, tệp, undo/redo, ống) |
 | Button | primary/danger (nền `danger-solid` chữ trắng – "Xác nhận cảnh báo")/ghost/outline/subtle/plain (chỉ chữ phụ – "Hủy" chân modal tiến độ)/icon/toolbar/overlay/link, sm/md/lg (44px), `pressed`; `buttonClass()` cho `<Link>` trông như nút |
 | Badge | severity (sm/md/chip, `withIcon` md/chip, `outline` sm) · status (unacknowledged/pending/assigned/in-progress/review/done/cancelled; `size` sm/md) · count · tag (neutral/primary/muted/warning/danger – "Tạm dừng"/"Gặp sự cố", sm/md) |
 | StatusDot, StatusPill | Chấm trạng thái (circle/square, pulse, `verify`) · pill trạng thái hệ thống (`size` md/sm, tone thêm `neutral`) |

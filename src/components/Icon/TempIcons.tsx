@@ -408,3 +408,53 @@ export const SignaturePenIcon = ({ size = 18, ...p }: P) => (
     <path d="M3 21c1.5-1.3 2.6-1.3 3.5 0s2 1.3 3.5 0 2.4-1.3 3.5 0" />
   </svg>
 );
+
+/** Sóng phát – nút "Bồn LPG V-101" (sơ đồ kết nối PLC/SCADA). */
+export const BroadcastIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="1.6" />
+    <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+  </svg>
+);
+
+/** Sơ đồ nhánh – nút "E-101A/B". */
+export const NetworkIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="9" y="3" width="6" height="5" rx="1" />
+    <rect x="3" y="16" width="6" height="5" rx="1" />
+    <rect x="15" y="16" width="6" height="5" rx="1" />
+    <path d="M12 8v4M6 16v-4h12v4" />
+  </svg>
+);
+
+/** Thanh trượt – nút "PR-101" (điều áp). */
+export const SlidersIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M6 4v16M12 4v16M18 4v16" />
+    <path d="M4 9h4M10 14h4M16 8h4" />
+  </svg>
+);
+
+/** Ống chữ U – nút "Line 0/1/2". */
+export const PipeLineIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M7 3v10a5 5 0 0 0 10 0V3" />
+    <path d="M4 6h6M14 6h6" />
+  </svg>
+);
+
+/** Ngọn lửa – nút "Báo cháy". */
+export const FlameIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 21a6 6 0 0 0 6-6c0-3.5-2.5-5.5-3.5-8-1 2-2 2.5-3 2.5 0-2-1-4-3-6 .5 3-3.5 5.5-3.5 11a6 6 0 0 0 7 6.5Z" />
+    <path d="M12 21a2.5 2.5 0 0 0 2.5-2.5c0-1.5-1-2.2-1.5-3.3-.5 1-1.3 1.3-2 1.3a2.5 2.5 0 0 0 1 4.5Z" />
+  </svg>
+);
+
+/** Màn hình – khối "SCADA / HMI". */
+export const MonitorIcon = ({ size = 24, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3" y="4" width="18" height="12" rx="1.5" />
+    <path d="M9 20h6M12 16v4" />
+  </svg>
+);

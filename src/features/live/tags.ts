@@ -98,3 +98,19 @@ export const PLC_REPORT_TAGS = {
   tankZoneTemperature: 'Tank_Temperature_Zone_C',
   tankGas: 'Tank_Gas_Detector',
 } as const;
+
+/**
+ * Hệ thống PLC/SCADA (màn Vận hành – chi tiết thiết bị PLC-SCADA, Figma bản sao 168:4689): tag chẩn đoán do PLC/gateway
+ * công bố – GIẢ ĐỊNH (docs/questions.md 13.x). Chuỗi: heartbeat 'ok' | 'lost'; link 'active' | 'down';
+ * mode 'scada-remote' | 'local'; historian 'ok' | 'failed'. Số: độ trễ (s), mất gói (%), số tag PLC báo khả dụng.
+ */
+export const PLC_SCADA_TAGS = {
+  heartbeat: 'PLC-01.HEARTBEAT',
+  plcLink: 'PLC-01.LINK',
+  scadaLink: 'SCADA-01.LINK',
+  latency: 'PLC-01.LATENCY',
+  packetLoss: 'PLC-01.PKT_LOSS',
+  activeTagCount: 'PLC-01.TAG_OK',
+  mode: 'PLC-01.MODE',
+  historian: 'HIST-01.SYNC',
+} as const;

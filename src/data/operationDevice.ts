@@ -3,7 +3,7 @@ import { WORK_STATUS_LABEL } from '@/components/Badge';
 import { mockHistory, tagSeed, trendLabel, type ViewTone } from '@/features/operations/device';
 import { formatDayVi } from '@/lib/plantTime';
 import type { AlertRecord } from '@/mocks/alerts';
-import { operationDevices, type OperationDeviceMock } from '@/mocks/operations';
+import { operationDevices, plcScadaDevices, type OperationDeviceMock, type PlcScadaDeviceMock } from '@/mocks/operations';
 import { liveBase } from '@/mocks/scenes/live';
 import { alertBadgeStatus } from './alerts';
 import { useAlertList } from './alertStore';
@@ -11,10 +11,18 @@ import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
 import type { QueryState } from './overview';
 
-export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcSignal } from '@/mocks/operations';
+export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/mocks/operations';
+
+/** Mọi loại thiết bị có trang chi tiết (`kind` quyết định KPI / cột trái của trang). */
+export type AnyOperationDevice = OperationDeviceMock | PlcScadaDeviceMock;
+
+const allDevices: Record<string, AnyOperationDevice> = { ...operationDevices, ...plcScadaDevices };
 
 /** Mã thiết bị có trang chi tiết ở màn Vận hành. */
-export const OPERATION_DEVICE_IDS = Object.keys(operationDevices);
+export const OPERATION_DEVICE_IDS = Object.keys(allDevices);
+
+/** Lựa chọn ô "Thiết bị" ở header trang chi tiết – chỉ mã (tên đã có ở chip "Tên" ngay cạnh; nhãn dài đẩy header xuống 3 hàng). */
+export const OPERATION_DEVICE_OPTIONS: readonly { value: string; label: string }[] = OPERATION_DEVICE_IDS.map((id) => ({ value: id, label: id }));
 
 /** Mã chuẩn từ URL ("e-101a" → "E-101A"); không có trang → null. */
 export function resolveOperationDeviceId(raw: string | null | undefined): string | null {
@@ -24,8 +32,8 @@ export function resolveOperationDeviceId(raw: string | null | undefined): string
 }
 
 /** GET /api/devices/:id – mock hôm nay. */
-export async function fetchOperationDevice(id: string): Promise<OperationDeviceMock> {
-  const d = operationDevices[id];
+export async function fetchOperationDevice(id: string): Promise<AnyOperationDevice> {
+  const d = allDevices[id];
   if (!d) throw new Error(`Không có thiết bị "${id}" (có: ${OPERATION_DEVICE_IDS.join(', ')})`);
   return d;
 }
@@ -56,9 +64,9 @@ export type DeviceAlerts = {
 
 const isClosed = (a: AlertRecord) => a.status === 'done' || a.status === 'resolved';
 
-/** Cảnh báo có thiết bị thuộc `devices`, mới nhất trước; `limit` mục đầu để hiển thị. */
-export function deriveDeviceAlerts(alerts: readonly AlertRecord[], devices: readonly string[], now: Date, limit = 3): DeviceAlerts {
-  const mine = alerts.filter((a) => devices.includes(a.device)).sort((a, b) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time));
+/** Cảnh báo có thiết bị thuộc `devices` (hoặc LOẠI thuộc `kinds`), mới nhất trước; `limit` mục đầu để hiển thị. */
+export function deriveDeviceAlerts(alerts: readonly AlertRecord[], devices: readonly string[], now: Date, limit = 3, kinds: readonly string[] = []): DeviceAlerts {
+  const mine = alerts.filter((a) => devices.includes(a.device) || (a.kind !== undefined && kinds.includes(a.kind))).sort((a, b) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time));
   return {
     total: mine.length,
     criticalOpen: mine.filter((a) => a.severity === 'critical' && !isClosed(a)).length,
@@ -122,6 +130,22 @@ export function deviceHistory(device: OperationDeviceMock, now: number): Record<
   return out;
 }
 
+/**
+ * Lịch sử mock độ trễ dữ liệu (s) của hệ PLC/SCADA – cùng cách giả lập với `deviceHistory`.
+ * TODO(backend): `GET /api/tags/history?tags=PLC-01.LATENCY&minutes=60`.
+ */
+export function plcLatencyHistory(device: PlcScadaDeviceMock, now: number): number[] {
+  const base = liveBase[device.tags.latency];
+  return typeof base === 'number' ? mockHistory(base, device.trend.latency.amplitude, tagSeed(device.tags.latency), device.trend.minutes, now) : [];
+}
+
+/** Tag cần theo dõi trực tiếp của thiết bị (tham số / tín hiệu PLC / trạng thái chạy / tag giám sát). */
+export function deviceLiveTags(d: AnyOperationDevice): string[] {
+  const common = d.plcSignals.map((s) => s.tag);
+  const own = d.kind === 'vaporizer' ? [...d.params.map((p) => p.tag), d.stateTag, d.standby.stateTag] : [...Object.values(d.tags), ...d.monitoredTags];
+  return [...new Set([...own, ...common])];
+}
+
 /** Điểm biểu đồ: lịch sử + điểm "Bây giờ" = số trực tiếp (null khi mất tín hiệu → không vẽ, không hiện số cũ). */
 export function trendPoints(
   minutes: number,
@@ -144,7 +168,7 @@ export function trendPoints(
  * + tín hiệu PLC + trạng thái chạy); trang tự tính trạng thái bằng hàm thuần trong `features/operations/device.ts`.
  */
 export function useOperationDevice(id: string) {
-  const [state, setState] = useState<QueryState<OperationDeviceMock>>({ status: 'loading' });
+  const [state, setState] = useState<QueryState<AnyOperationDevice>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -159,10 +183,7 @@ export function useOperationDevice(id: string) {
   }, [id, attempt]);
 
   const d = state.data;
-  const tags = useMemo(
-    () => (d ? [...new Set([...d.params.map((p) => p.tag), ...d.plcSignals.map((s) => s.tag), d.stateTag, d.standby.stateTag])] : []),
-    [d],
-  );
+  const tags = useMemo(() => (d ? deviceLiveTags(d) : []), [d]);
   const liveData = useLiveData(tags, { enabled: !!d });
   const alerts = useAlertList();
   const refetchAlerts = alerts.refetch;
