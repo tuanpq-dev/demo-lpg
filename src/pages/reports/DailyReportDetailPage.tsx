@@ -3,12 +3,14 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, DatePicker, FilterBar, Icon, PageHeader, StatusDot, type FilterDef } from '@/components';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
+import { useCan } from '@/app/auth';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useDailyReport } from '@/data/dailyReport';
 import {
   DAILY_DETAIL_PARAMS,
   DAILY_GROUPS,
   ROW_RESULTS,
+  canRecordCheckpoint,
   ROW_RESULT_LABEL,
   checkpointStates,
   completionOf,
@@ -28,6 +30,7 @@ import {
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
+import { CheckpointRecordModal } from './daily/CheckpointRecordModal';
 import { CheckpointTimeline } from './daily/CheckpointTimeline';
 import { DailyReadingsTable, FIELD_NOTE } from './daily/DailyReadingsTable';
 import { CompletionBadge, SignatureBadge } from './shared/ReportBadges';
@@ -139,6 +142,13 @@ function DailyReportView({
   const f = table.values;
   const today = plantDayKey(now);
 
+  // ---- Ghi nhận mốc (?record=<mốc>): chỉ mốc đã tới hạn chưa có dữ liệu; mốc lạ / đã ghi / thiếu quyền → không mở.
+  const canRecord = useCan('report:record');
+  const recordKey = table.search.get('record');
+  const recordOpen = canRecord && recordKey && canRecordCheckpoint(r, recordKey, now) ? recordKey : null;
+  const openRecord = canRecord ? (key: string) => table.setExtra({ record: key }) : undefined;
+  const firstMissing = checkpoints.find((c) => c.state === 'missing');
+
   const header = (
     <PageHeader
       breadcrumb={[...BREADCRUMB_LIST, { label: r.code }]}
@@ -152,6 +162,11 @@ function DailyReportView({
       }
       actions={
         <>
+          {openRecord && firstMissing && (
+            <Button variant="primary" onClick={() => openRecord(firstMissing.key)}>
+              Ghi nhận mốc {firstMissing.label}
+            </Button>
+          )}
           <CompletionBadge status={completionOf(r, now)} />
           <SignatureBadge status={signatureOf(r, now)} />
         </>
@@ -162,7 +177,7 @@ function DailyReportView({
   return (
     <Page pageHeader={header}>
       <ReportStatCards cards={cards} label={`Tóm tắt báo cáo ${r.code}`} />
-      <CheckpointTimeline items={checkpoints} />
+      <CheckpointTimeline items={checkpoints} onRecord={openRecord} />
 
       <Card padding="none" radius="lg" title="Số liệu kiểm tra theo mốc" headerEnd={<Legend />}>
         <FilterBar
@@ -189,6 +204,7 @@ function DailyReportView({
         />
         <DailyReadingsTable rows={table.filtered} checkpoints={checkpoints} label={`Số liệu kiểm tra ${r.code}`} />
       </Card>
+      {recordOpen && <CheckpointRecordModal key={`${r.id}@${recordOpen}`} report={r} checkpoint={recordOpen} onClose={() => table.setExtra({ record: null })} />}
     </Page>
   );
 }

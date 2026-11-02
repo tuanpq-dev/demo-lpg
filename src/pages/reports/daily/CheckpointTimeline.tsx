@@ -1,4 +1,4 @@
-import { Card, StatusDot, type DotStatus } from '@/components';
+import { Button, Card, StatusDot, type DotStatus } from '@/components';
 import { CHECKPOINT_STATE_LABEL, type CheckpointState, type CheckpointView } from '@/features/reports';
 import { cn } from '@/lib/cn';
 
@@ -20,7 +20,7 @@ const TEXT: Record<CheckpointState, string> = {
  * Dải 6 mốc kiểm tra trong ngày (frame 117:4250, ô nền #091522 → `bg-app`): giờ + chấm + trạng thái mốc.
  * Bố cục suy ra từ mô tả (không lấy node Figma) – docs/figma-diffs.md.
  */
-export function CheckpointTimeline({ items }: { items: readonly CheckpointView[] }) {
+export function CheckpointTimeline({ items, onRecord }: { items: readonly CheckpointView[]; onRecord?: (key: string) => void }) {
   return (
     <Card title="Mốc kiểm tra trong ngày" radius="lg">
       <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -37,6 +37,12 @@ export function CheckpointTimeline({ items }: { items: readonly CheckpointView[]
               <StatusDot status={DOT[c.state]} />
               {CHECKPOINT_STATE_LABEL[c.state]}
             </span>
+            {/* Mốc tới hạn chưa có dữ liệu → mở modal "Ghi nhận mốc kiểm tra" (Figma 126:8506). */}
+            {onRecord && c.state === 'missing' && (
+              <Button variant="outline" size="sm" className="mt-1 self-start" aria-label={`Ghi nhận mốc ${c.label}`} onClick={() => onRecord(c.key)}>
+                Ghi nhận
+              </Button>
+            )}
           </li>
         ))}
       </ol>

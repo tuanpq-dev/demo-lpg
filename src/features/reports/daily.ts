@@ -39,6 +39,8 @@ export type DailyReadingRow = {
   source: ReadingSource;
   /** Giá trị theo khoá mốc ("08:00"); null = chưa có dữ liệu. */
   values: Readonly<Record<string, number | null>>;
+  /** Ghi chú theo khoá mốc – ô ngoài ngưỡng cần có ghi chú trước khi ký (điều kiện "Không có bất thường chưa ghi chú"). */
+  notes?: Readonly<Record<string, string>>;
 };
 
 /** Trạng thái một mốc của báo cáo (timeline). */

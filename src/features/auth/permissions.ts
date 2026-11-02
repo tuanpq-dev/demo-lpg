@@ -20,6 +20,10 @@ export const PERMISSIONS = {
   // Nghiệm thu đạt / Yêu cầu làm lại (chi tiết bảo trì). TODO(backend): @Roles tương ứng khi có endpoint bảo trì.
   'maintenance:review': 'engineer',
   'scene:write': 'engineer',
+  // Ký xác nhận báo cáo vận hành (bước Người kiểm tra). TODO(backend): máy chủ kiểm đúng người kiểm tra của báo cáo.
+  'report:sign': 'operator',
+  // Ghi nhận mốc kiểm tra báo cáo ngày (modal "Ghi nhận mốc kiểm tra"). TODO(backend): @Roles tương ứng.
+  'report:record': 'operator',
   'user:manage': 'admin',
 } as const satisfies Record<string, Role>;
 

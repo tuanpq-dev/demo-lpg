@@ -5,7 +5,7 @@
  */
 import { tagSeed } from '@/features/operations/device';
 import { GAS_TAGS, MAIN_LINE_TAGS, REGULATOR_TAGS, V101_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
-import type { DailyGroupId, DailyReadingRow, ReadingLimits, ReadingSource, ReportRecord } from '@/features/reports';
+import { DAILY_CHECKPOINTS, type DailyGroupId, type DailyReadingRow, type ReadingLimits, type ReadingSource, type ReportRecord } from '@/features/reports';
 import { dayNumber, plantDayKey } from '@/lib/plantTime';
 
 type ItemDef = {
@@ -58,33 +58,63 @@ export const DAILY_ITEMS: readonly ItemDef[] = [
 
 /**
  * Số ngoài ngưỡng theo số ngày LÙI từ hôm nay (cùng kiểu kịch bản với mocks/reports.ts).
- * Lùi 2 ngày: GS-02 12:00 = 13 % LEL (Cảnh báo). Lùi 9 ngày: áp suất bồn 14:00 = 14,3 bar (Bất thường).
+ * Lùi 2 ngày: GS-02 12:00 = 13 % LEL (Cảnh báo). Lùi 9 ngày: áp suất bồn 14:00 = 14,3 bar (Bất thường) – cả hai đã có ghi chú.
+ * Lùi 4 ngày (báo cáo "Bị trả lại"): GS-03 10:00 = 12 % LEL CHƯA ghi chú → modal ký khoá ở điều kiện "bất thường chưa ghi chú".
  */
-const OUT_OF_RANGE: Record<number, readonly { item: string; checkpoint: string; value: number }[]> = {
-  2: [{ item: 'gas-gs-02', checkpoint: '12:00', value: 13 }],
-  9: [{ item: 'v101-pressure', checkpoint: '14:00', value: 14.3 }],
+const OUT_OF_RANGE: Record<number, readonly { item: string; checkpoint: string; value: number; note?: string }[]> = {
+  2: [{ item: 'gas-gs-02', checkpoint: '12:00', value: 13, note: 'Rò rỉ nhỏ tại mặt bích, đã siết lại – 12:20 còn 3 % LEL.' }],
+  4: [{ item: 'gas-gs-03', checkpoint: '10:00', value: 12 }],
+  9: [{ item: 'v101-pressure', checkpoint: '14:00', value: 14.3, note: 'Nắng gắt, đã bật phun nước làm mát bồn – 14:40 về 11,8 bar.' }],
 };
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits;
 
-/** Số đo của một báo cáo ngày; `now` chỉ dùng để tra kịch bản ngoài ngưỡng theo số ngày lùi. */
-export function buildDailyReadings(report: Pick<ReportRecord, 'periodKey' | 'checkpoints'>, now: Date): DailyReadingRow[] {
-  const day = report.periodKey;
+/**
+ * Số đo IoT của MỘT hạng mục tại mốc thứ `index` của ngày `day` (kể cả kịch bản ngoài ngưỡng) – dùng chung cho bảng báo cáo
+ * ngày và ảnh chụp mốc của modal "Ghi nhận mốc kiểm tra" (mocks/checkpointRecord.ts) để hai nơi cùng số.
+ */
+export function dailyItemReading(itemId: string, day: string, index: number, now: Date): { value: number; note?: string } | null {
+  const it = DAILY_ITEMS.find((x) => x.id === itemId);
+  const key = DAILY_CHECKPOINTS[index];
+  if (!it || key === undefined) return null;
   const back = dayNumber(plantDayKey(now)) - dayNumber(day);
+  const hit = (OUT_OF_RANGE[back] ?? []).find((o) => o.item === it.id && o.checkpoint === key);
+  if (hit) return { value: hit.value, ...(hit.note ? { note: hit.note } : {}) };
   const daySeed = dayNumber(day) % 89;
-  const overrides = OUT_OF_RANGE[back] ?? [];
+  const v = it.base + (it.drift ?? 0) * index + it.noise * Math.sin(daySeed * 1.7 + tagSeed(it.id) + index * 2.3);
+  return { value: Math.max(0, round(v, it.digits)) };
+}
+
+/**
+ * Số đo của một báo cáo ngày; `now` chỉ dùng để tra kịch bản ngoài ngưỡng theo số ngày lùi. Mốc đã ghi nhận trong phiên có
+ * giá trị nhập tay (`checkpointLog[mốc].manual[hạng mục]`) → dùng số nhập tay thay số IoT.
+ */
+export function buildDailyReadings(report: Pick<ReportRecord, 'periodKey' | 'checkpoints' | 'checkpointLog'>, now: Date): DailyReadingRow[] {
+  const day = report.periodKey;
   return DAILY_ITEMS.map((it) => {
-    const seed = tagSeed(it.id);
     const values: Record<string, number | null> = {};
+    const notes: Record<string, string> = {};
     report.checkpoints.forEach((c, i) => {
       if (!c.done) {
         values[c.key] = null;
         return;
       }
-      const hit = overrides.find((o) => o.item === it.id && o.checkpoint === c.key);
-      const v = it.base + (it.drift ?? 0) * i + it.noise * Math.sin(daySeed * 1.7 + seed + i * 2.3);
-      values[c.key] = hit ? hit.value : Math.max(0, round(v, it.digits));
+      const manual = report.checkpointLog?.[c.key]?.manual?.[it.id];
+      const reading = dailyItemReading(it.id, day, i, now);
+      values[c.key] = manual ?? reading?.value ?? null;
+      if (manual === undefined && reading?.note) notes[c.key] = reading.note;
     });
-    return { id: it.id, groupId: it.groupId, label: it.label, device: it.device, unit: it.unit, digits: it.digits, limits: it.limits, source: it.source ?? 'auto', values };
+    return {
+      id: it.id,
+      groupId: it.groupId,
+      label: it.label,
+      device: it.device,
+      unit: it.unit,
+      digits: it.digits,
+      limits: it.limits,
+      source: it.source ?? 'auto',
+      values,
+      ...(Object.keys(notes).length ? { notes } : {}),
+    };
   });
 }

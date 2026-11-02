@@ -391,3 +391,20 @@ export const MapPinIcon = ({ size = 16, ...p }: P) => (
     <circle cx="12" cy="10" r="2.5" />
   </svg>
 );
+
+/** Tệp PDF xếp chồng – "Biểu mẫu báo cáo bản nháp" (modal ký báo cáo). */
+export const PdfFileIcon = ({ size = 32, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M3.5 7.5v12a1 1 0 0 0 1 1h12" />
+    <rect x="7" y="3.5" width="13.5" height="13.5" rx="1.2" />
+    <path d="M9.6 13.2v-5h1.4a1.3 1.3 0 0 1 0 2.6H9.6M13.2 13.2v-5h.9a1.6 1.6 0 0 1 1.6 1.6v1.8a1.6 1.6 0 0 1-1.6 1.6h-.9ZM17.9 8.2h-1.4v5M16.5 10.6h1.2" strokeWidth={1.2} />
+  </svg>
+);
+
+/** Bút ký có nét chữ ký – nút "Ký xác nhận báo cáo". */
+export const SignaturePenIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m14.5 5.5 4 4M16.5 3.5a2.1 2.1 0 0 1 3 3L9 17l-4 1 1-4Z" />
+    <path d="M3 21c1.5-1.3 2.6-1.3 3.5 0s2 1.3 3.5 0 2.4-1.3 3.5 0" />
+  </svg>
+);

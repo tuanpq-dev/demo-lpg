@@ -19,3 +19,13 @@ const store = createCollectionStore(fetchReports);
 export function useReports() {
   return store.useCollection();
 }
+
+/** Bản hiện tại (đồng bộ) cho thao tác ghi; chưa tải xong → rỗng. */
+export const currentReports = (): readonly ReportRecord[] => store.getState().data ?? [];
+
+/** Thay một bản ghi (optimistic). TODO(backend): POST rồi refetch – hợp đồng ở docs/decisions.md. */
+export function replaceReport(next: ReportRecord) {
+  const s = store.getState();
+  if (s.status !== 'success') return;
+  store.commit(s.data.map((r) => (r.id === next.id ? next : r)));
+}

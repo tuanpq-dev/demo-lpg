@@ -1,4 +1,4 @@
-import { useId, useRef, type FormEvent, type ReactNode } from 'react';
+import { useId, useRef, type FormEvent, type ReactNode, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useDialog } from '@/lib/useDialog';
@@ -23,6 +23,12 @@ export type ModalProps = {
   dismissOnBackdrop?: boolean;
   /** Màu tiêu đề: primary = modal "Cập nhật tiến độ bảo trì" (ảnh thiết kế, tiêu đề cyan). */
   titleTone?: 'default' | 'primary';
+  /** Nội dung trong header, dưới tiêu đề (dải thông tin mã/ngày/ca – modal "Ghi nhận mốc kiểm tra", Figma 126:7977). */
+  headerExtra?: ReactNode;
+  /** Dải KHÔNG cuộn giữa header và thân (tab điều hướng nhanh – Figma 126:8003). */
+  beforeBody?: ReactNode;
+  /** Ref vùng thân cuộn (cuộn tới mục / theo dõi mục đang xem). */
+  bodyRef?: Ref<HTMLDivElement>;
 };
 
 /**
@@ -44,6 +50,9 @@ export function Modal({
   icon,
   footerStart,
   titleTone = 'default',
+  headerExtra,
+  beforeBody,
+  bodyRef,
 }: ModalProps) {
   const titleId = useId();
   const descId = useId();
@@ -54,7 +63,10 @@ export function Modal({
 
   const body = (
     <>
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">{children}</div>
+      {beforeBody}
+      <div ref={bodyRef} className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+        {children}
+      </div>
       {(footer || footerStart) && (
         <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line/30 bg-surface-raised px-5 py-4">
           {footerStart && <div className="mr-auto flex items-center gap-3">{footerStart}</div>}
@@ -81,7 +93,8 @@ export function Modal({
           size === 'xl' && 'max-w-[1072px]',
         )}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-line/30 bg-surface-raised px-5 py-4">
+        <header className="flex flex-col gap-4 border-b border-line/30 bg-surface-raised px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
           {icon && (
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/30 bg-surface-muted text-primary">
@@ -109,6 +122,8 @@ export function Modal({
               <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
+          </div>
+          {headerExtra}
         </header>
         {onSubmit ? (
           <form noValidate onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
