@@ -53,3 +53,14 @@ describe('KpiCard variant="danger" – chữ đỏ', () => {
     expect(isLargeText('text-2xl')).toBe(true);
   });
 });
+
+describe('KpiCard valueNote (KPI Nhật ký vận hành)', () => {
+  test('ghi chú cùng dòng sau số, màu theo tone; mất tín hiệu → ẩn ghi chú', () => {
+    const { rerender } = render(<KpiCard variant="compact" label="Cảnh báo phát sinh" value={8} valueNote="(2 chưa xử lý)" valueNoteTone="danger" />);
+    const note = screen.getByText('(2 chưa xử lý)');
+    expect(note.closest('p')).toHaveTextContent('8(2 chưa xử lý)');
+    expect(note).toHaveClass('text-sm', 'text-danger-text');
+    rerender(<KpiCard variant="compact" label="Cảnh báo phát sinh" value={8} valueNote="(2 chưa xử lý)" signalLost />);
+    expect(screen.queryByText('(2 chưa xử lý)')).toBeNull();
+  });
+});

@@ -43,6 +43,8 @@ export type FilterBarProps = {
    *   (ảnh thiết kế)
    */
   layout?: 'split' | 'inline';
+  /** Thanh lọc đứng riêng (không có bảng ngay dưới – danh sách thẻ kịch bản AI mô phỏng): bỏ vạch kẻ dưới. */
+  standalone?: boolean;
   className?: string;
 };
 
@@ -66,6 +68,7 @@ export function FilterBar({
   clearLabel = 'Xóa bộ lọc',
   clearDisabled,
   layout = 'split',
+  standalone,
   className,
 }: FilterBarProps) {
   const inline = layout === 'inline';
@@ -73,7 +76,8 @@ export function FilterBar({
     <div
       role="search"
       className={cn(
-        'flex flex-wrap border-b border-line/20 bg-surface-muted/10 px-4 pb-[13px] pt-3',
+        'flex flex-wrap bg-surface-muted/10 px-4 pb-[13px] pt-3',
+        !standalone && 'border-b border-line/20',
         inline ? 'items-center gap-2' : 'items-start justify-between gap-3',
         className,
       )}

@@ -14,8 +14,9 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low';
  * - cancelled:      "Đã hủy" (bảo trì – chỉ FE, trung tính)
  * - resolved:       "Đã xử lý" (cảnh báo chờ đóng – xanh như ảnh modal đóng cảnh báo)
  * - closed:         "Hoàn thành" (cảnh báo đã đóng – trung tính, phân biệt với "Đã xử lý")
+ * - monitoring:     "Đang theo dõi" (nhật ký vận hành, Figma 64:989 – pill vàng nền /10 viền /20)
  */
-export type WorkStatus = 'unacknowledged' | 'pending' | 'assigned' | 'in-progress' | 'review' | 'done' | 'cancelled' | 'resolved' | 'closed';
+export type WorkStatus = 'unacknowledged' | 'pending' | 'assigned' | 'in-progress' | 'review' | 'done' | 'cancelled' | 'resolved' | 'closed' | 'monitoring';
 
 type CommonProps = {
   /** Ghi đè nhãn mặc định (tiếng Việt). */
@@ -162,6 +163,7 @@ const statusClass: Record<WorkStatus, string> = {
   cancelled: 'border-line/30 bg-surface-muted text-fg-secondary',
   resolved: 'border-success/40 bg-success/10 text-success',
   closed: 'border-line/30 bg-surface-muted text-fg',
+  monitoring: 'border-warning/20 bg-warning/10 text-warning',
 };
 
 /** Nhãn tiếng Việt của trạng thái công việc (badge status) – dùng lại khi cần chữ không kèm badge. */
@@ -175,6 +177,7 @@ export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   cancelled: 'Đã hủy',
   resolved: 'Đã xử lý',
   closed: 'Hoàn thành',
+  monitoring: 'Đang theo dõi',
 };
 
 export function Badge(props: BadgeProps) {

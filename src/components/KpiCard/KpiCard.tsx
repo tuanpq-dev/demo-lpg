@@ -24,6 +24,13 @@ export type KpiCardProps = {
   unit?: string;
   /** Text dòng phụ (tuỳ chọn, mặc định không có): "+2.5%", "Ổn định", "+12% vs tháng trước"… */
   sub?: ReactNode;
+  /**
+   * Ghi chú nhỏ (12px) CÙNG DÒNG, ngay sau số – "↑12", "(67%)", "(2 chưa xử lý)" (KPI Nhật ký vận hành, Figma 64:875).
+   * Màu theo `valueNoteTone` (mặc định muted), icon tuỳ chọn `valueNoteIcon` (mũi tên tăng). Chỉ variant md.
+   */
+  valueNote?: ReactNode;
+  valueNoteTone?: KpiSubTone;
+  valueNoteIcon?: ReactNode;
   /** Mất tín hiệu (tag bad / quá 10 s không cập nhật): số xám "—", dòng phụ "Mất tín hiệu" + icon – không hiện số cũ. */
   signalLost?: boolean;
   subTone?: KpiSubTone;
@@ -119,6 +126,9 @@ export function KpiCard({
   subTone = 'success',
   subIcon,
   subDim,
+  valueNote,
+  valueNoteTone = 'muted',
+  valueNoteIcon,
   variant = 'default',
   tone = 'neutral',
   toneLabel,
@@ -252,6 +262,12 @@ export function KpiCard({
           {unit && !signalLost && (
             // Đơn vị phụ ("Active"): thứ bậc bằng CỠ (16px thường so với số 28px đậm), không bằng độ mờ.
             <span className={cn('text-md font-normal', danger ? 'text-danger-text' : 'text-fg-muted')}>{unit}</span>
+          )}
+          {valueNote !== undefined && !signalLost && (
+            <span className={cn('ml-1 inline-flex items-center gap-0.5 text-sm font-normal', subToneClass[valueNoteTone])}>
+              {valueNoteIcon}
+              {valueNote}
+            </span>
           )}
         </p>
 
