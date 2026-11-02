@@ -51,6 +51,7 @@
   --color-danger-strong: 250 36 57;   /* #FA2439 – viền/vòng sáng cảnh báo + SỐ LỚN (≥ 24px, hoặc ≥ 18.66px đậm – chuẩn "chữ lớn" WCAG, 4.5:1 đủ 3:1) */
   --color-danger-solid: 180 32 52;    /* #B42034 – NỀN ĐẶC có chữ trắng (nút/ô chọn "Nghiêm trọng"): chữ fg 5.07:1. Duyệt 26/10/2026 */
   --color-neutral: 189 200 210;       /* #BDC8D2 – mức "Thấp"/offline */
+  --color-verify: 167 139 250;        /* #A78BFA – tím Figma 117:4250: số đo nhập tay / "XM hiện trường" (CHỜ DUYỆT – 6,5:1 trên surface) */
 
   /* ---------- Cảnh 3D: scene-* ----------
    * Đọc pixel ảnh bản đồ Figma 53:244; lệch < 5% (khoảng cách RGB) so với token sẵn có → alias.

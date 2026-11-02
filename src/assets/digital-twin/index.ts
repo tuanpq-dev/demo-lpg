@@ -63,6 +63,15 @@ import mapPinSuccess from './map-pin-success.svg';
 import mapZoomIn from './map-zoom-in.svg';
 import mapZoomOut from './map-zoom-out.svg';
 
+// Chi tiết báo cáo ngày – file A88YJ2BRhICDDdeu2rtRg1 (bản sao), frame 117:4250.
+import reportProgress from './report-progress.svg';
+import reportConfirmed from './report-confirmed.svg';
+import reportAbnormalNone from './report-abnormal-none.svg';
+import reportMissing from './report-missing.svg';
+import reportSignature from './report-signature.svg';
+import tableGroupChevron from './report-group-chevron.svg';
+import reportReadingAuto from './report-reading-auto.svg';
+
 export { default as avatarAdmin } from './avatar-admin.png';
 /** 53:244 – ảnh bản đồ 2.5D (2730×1536, KHÔNG có nhãn – nhãn là overlay HTML). */
 export { default as plantMapImage } from './plant-map.png';
@@ -175,6 +184,22 @@ export const icons = {
   navMaintenance,
   navMaintenanceActive,
   navReport,
+
+  // ---- Chi tiết báo cáo ngày (117:4250) ----
+  /** 117:4371 thẻ "Tiến độ kiểm tra" – biểu đồ cột cyan, 18×18 */
+  reportProgress,
+  /** 117:4388 thẻ "Dữ liệu đã xác nhận" – ô tick xanh, 18×18 */
+  reportConfirmed,
+  /** 117:4399 thẻ "Dữ liệu bất thường" khi = 0 – tam giác XANH, 18×18 (> 0 dùng `danger`) */
+  reportAbnormalNone,
+  /** 117:4411 thẻ "Dữ liệu còn thiếu" – tròn chấm than vàng, 18×18 */
+  reportMissing,
+  /** 117:4423 thẻ "Xác nhận báo cáo" – hai người (xám #4A6880), 18×18 */
+  reportSignature,
+  /** 117:4605 dòng tiêu đề nhóm của DataTable (nhóm thiết bị) – mũi tên xuống cyan, 14×14 */
+  tableGroupChevron,
+  /** 117:4619 ô giờ – sóng tín hiệu cyan = số đo tự động (SCADA), 9×9 */
+  reportReadingAuto,
 } as const;
 
 export type IconName = keyof typeof icons;

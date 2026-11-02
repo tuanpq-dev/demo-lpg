@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn';
 
-export type DotStatus = 'success' | 'warning' | 'danger' | 'offline' | 'live';
+export type DotStatus = 'success' | 'warning' | 'danger' | 'offline' | 'live' | 'verify';
 
 export type StatusDotProps = {
   /**
@@ -9,6 +9,7 @@ export type StatusDotProps = {
    * - danger:  #FA2439 (Cảnh báo, 53:416)
    * - offline: nền muted + viền line/50 (53:422)
    * - live:    #0DE635 (chấm "Dữ liệu trực tiếp"/"Hệ thống bình thường" 53:126)
+   * - verify:  #A78BFA (số đọc tại hiện trường / mốc cần xác minh – chi tiết báo cáo ngày 117:4250)
    */
   status: DotStatus;
   /** sm = 6px (danh sách thiết bị), md = 8px (mặc định). */
@@ -28,6 +29,7 @@ const statusClass: Record<DotStatus, string> = {
   danger: 'bg-danger-strong',
   offline: 'border border-line/50 bg-surface-muted',
   live: 'bg-live',
+  verify: 'bg-verify',
 };
 
 export function StatusDot({ status, size = 'md', shape = 'circle', pulse, label, className }: StatusDotProps) {

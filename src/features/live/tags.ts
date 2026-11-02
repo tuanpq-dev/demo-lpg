@@ -47,6 +47,11 @@ export const VAPORIZER_TAGS = {
   outletFlow: 'FT-201',
 } as const;
 
+/** Tuyến chính sau trạm hóa hơi – lưu lượng khí cấp (m³/h; Tổng quan 53:11 "FT-101 203 m³/h", báo cáo ngày). */
+export const MAIN_LINE_TAGS = {
+  flow: 'FT-101',
+} as const;
+
 /** Cảm biến khí gas khu nạp xuất (đầu dò % LEL) – mã tag = mã thiết bị. Khu của từng cảm biến: `mocks/sensors.ts`. */
 export const GAS_TAGS = ['GS-01', 'GS-02', 'GS-03', 'GS-04'] as const;
 

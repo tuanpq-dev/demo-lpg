@@ -67,3 +67,50 @@ describe('DataTable – số dòng mỗi trang', () => {
     expect(screen.queryByRole('combobox', { name: 'Số dòng mỗi trang' })).not.toBeInTheDocument();
   });
 });
+
+describe('DataTable – nhóm dòng (groupBy)', () => {
+  type G = { id: string; name: string; group: string };
+  const grouped: G[] = [
+    { id: 'a', name: 'Mức bồn', group: 'V-101' },
+    { id: 'b', name: 'Áp suất bồn', group: 'V-101' },
+    { id: 'c', name: 'Nồng độ khí', group: 'GS' },
+  ];
+  const renderGrouped = () =>
+    render(
+      <DataTable
+        label="Số liệu"
+        columns={[{ id: 'name', header: 'Hạng mục', className: (r: G) => (r.id === 'c' ? 'bg-bg-app' : undefined) }]}
+        rows={grouped}
+        getRowId={(r) => r.id}
+        groupBy={(r) => ({ id: r.group, label: `Nhóm ${r.group}` })}
+        density="dense"
+        gridLines
+      />,
+    );
+
+  test('mỗi nhóm một dòng tiêu đề (colgroup) trước các dòng của nhóm', () => {
+    renderGrouped();
+    const headers = screen.getAllByRole('columnheader').filter((h) => h.getAttribute('scope') === 'colgroup');
+    expect(headers.map((h) => h.textContent)).toEqual(['Nhóm V-101', 'Nhóm GS']);
+    expect(screen.getAllByRole('row').map((r) => r.textContent)).toEqual(['Hạng mục', 'Nhóm V-101', 'Mức bồn', 'Áp suất bồn', 'Nhóm GS', 'Nồng độ khí']);
+  });
+
+  test('bấm tên nhóm → thu gọn (aria-expanded=false, ẩn dòng); bấm lại → mở', async () => {
+    const user = userEvent.setup();
+    renderGrouped();
+    const btn = screen.getByRole('button', { name: 'Nhóm V-101' });
+    expect(btn).toHaveAttribute('aria-expanded', 'true');
+    await user.click(btn);
+    expect(btn).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Mức bồn')).not.toBeInTheDocument();
+    expect(screen.getByText('Nồng độ khí')).toBeInTheDocument();
+    await user.click(btn);
+    expect(screen.getByText('Mức bồn')).toBeInTheDocument();
+  });
+
+  test('className dạng hàm áp theo từng dòng', () => {
+    renderGrouped();
+    expect(screen.getByText('Nồng độ khí').closest('td')).toHaveClass('bg-bg-app');
+    expect(screen.getByText('Mức bồn').closest('td')).not.toHaveClass('bg-bg-app');
+  });
+});

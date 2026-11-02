@@ -200,13 +200,18 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 |---|---|---|
 | 12.1 | [D] Mô tả trang trong ảnh chép từ Bảo trì ("Theo dõi, phân công và quản lý tiến độ bảo trì thiết bị…") | "Theo dõi tiến độ, chữ ký và dữ liệu thiếu của báo cáo vận hành ngày, tháng, quý và năm trong hệ thống LPG". |
 | 12.2 | [D] Số trong ảnh không khớp nhau (Tất cả 186 vs 185; ngày 176 vs 175 ngày từ 1/1; đã ký 168) | Mọi số tính từ danh sách; 4 nhóm Đang thực hiện / Chờ xác nhận / Đã ký / Thiếu dữ liệu tách rời, tổng = KPI Tổng. |
-| 12.3 | [D] Màn chi tiết báo cáo (nút 👁, bấm mã), menu ⋮ có những thao tác gì? | 👁 và ⋮ hiện nhưng khoá (`aria-disabled`, "chờ thiết kế"); mã là chữ màu info. |
+| 12.3 | [D] Màn chi tiết báo cáo THÁNG/QUÝ/NĂM, menu ⋮ có những thao tác gì? | Báo cáo ngày: mã + 👁 mở `/reports/daily/:code` (01/11/2026). Tháng/quý/năm: 👁 khoá (`aria-disabled`), mã là chữ; ⋮ khoá. |
 | 12.4 | [D] Icon phễu cạnh "Xóa bộ lọc" làm gì? | Chưa đặt (không có chức năng). |
 | 12.5 | [K] Quy trình ký: Người kiểm tra → Người duyệt → Ban TAP? "Bị trả lại" quay về ai? "Chờ xác nhận" có tính báo cáo bị trả lại / chưa gửi ký không? | Đúng thứ tự trên; bị trả lại / chưa gửi → chờ Người kiểm tra; cả hai tính vào Chờ xác nhận. |
 | 12.6 | [K] Báo cáo tháng/quý/năm "đủ mốc" nghĩa là gì? Có tính báo cáo ngày đã ký hay chỉ cần đủ dữ liệu? | Tháng: mỗi ngày đủ dữ liệu là một mốc; quý: mỗi tháng đã ký; năm: mỗi quý đã ký. |
 | 12.7 | [K] Hạn nộp: tuần (thứ Sáu 17:00), tháng (ngày cuối 12:00), quý (ngày cuối 17:00), năm (31/12 17:00)? Có báo cáo tuần thật không (ảnh có "Báo cáo tuần 4" trong lịch nhưng không có tab tuần)? | Như vế đầu; báo cáo tuần chỉ có trong lịch, chưa có bản ghi/tab. |
 | 12.8 | [K] Mã báo cáo tháng/quý/năm, ca vận hành (chỉ "Ca 1"?), danh sách người kiểm tra/duyệt | `BCVH-T-062026`, `BCVH-Q-22026`, `BCVH-NAM-2026`; mọi báo cáo ngày "Ca 1"; người: mock 3 kiểm tra + 2 duyệt. |
 | 12.9 | [D][K] "Thiếu mốc" trong "Cần xử lý hôm nay": mốc đã quá giờ chưa nhập, hay mọi mốc còn lại trong ngày? "Xử lý ngay" dẫn tới đâu? | Chỉ mốc đã tới giờ mà chưa có dữ liệu. "Xử lý ngay" lọc bảng theo mã báo cáo; "Xem tất cả" lọc Chờ xác nhận. |
+
+| 12.10 | [D] Chi tiết báo cáo ngày (Figma bản sao 117:4250): header có nút gì (Xuất báo cáo, Gửi ký, Nhập mốc…)? Thứ tự thanh lọc / dải mốc / thẻ? Tím `#A78BFA` dùng cho gì? | Chỉ 2 badge trạng thái, không nút; thứ tự thẻ → dải mốc → card bảng (lọc trong card); tím = đọc tại chỗ ("XM hiện trường") + mốc "Cần xác minh". |
+| 12.11 | [K] Danh mục hạng mục đo của báo cáo ngày + ngưỡng chuẩn (biểu mẫu thật)? PR-101 chưa có ngưỡng. | 14 hạng mục giả định (`mocks/dailyReport.ts`), ngưỡng E-101A theo màn Vận hành, gas theo mức cảnh báo (10/20 % LEL), FT-101 thấp 15 m³/h (ALT-00124); PR-101 "—". |
+| 12.12 | [K] "XM hiện trường" nghĩa chính xác? Số nào đọc tại chỗ? Ô có cần lưu người/giờ xác minh không? | Hiểu là "xác minh hiện trường" = số đọc đồng hồ tại chỗ (E-101B dự phòng, đồng hồ PR-101); chỉ hiện ghi chú. |
+| 12.13 | [K] Kết quả dòng khi có mốc thiếu dữ liệu? Có "Cảnh báo" riêng với "Bất thường" không? | Theo ảnh: mốc thiếu không đổi kết quả; ngoài ngưỡng cảnh báo = "Cảnh báo" (vàng), ngoài ngưỡng nguy hiểm = "Bất thường" (đỏ). |
 
 ## 13. Vận hành – chi tiết thiết bị (`/operations/devices/E-101A`, ảnh 31/10/2026)
 

@@ -19,6 +19,7 @@ const PlaygroundPage = lazy(() => import('./pages/playground/PlaygroundPage'));
 const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 const AssetDetailPage = lazy(() => import('./pages/asset/AssetDetailPage'));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
+const DailyReportDetailPage = lazy(() => import('./pages/reports/DailyReportDetailPage'));
 const SimplePage = lazy(() => import('./pages/SimplePage'));
 const DeviceDetailPage = lazy(() => import('./pages/operations/DeviceDetailPage'));
 
@@ -76,6 +77,8 @@ const router = createBrowserRouter([
           // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
           { path: '/maintenance/:id', element: <MaintenanceDetailPage /> },
           { path: '/reports', element: <ReportsPage /> },
+          // Chi tiết báo cáo ngày (Figma 117:4250); tháng/quý/năm chưa có thiết kế.
+          { path: '/reports/daily/:code', element: <DailyReportDetailPage /> },
           { path: '/editor', element: <EditorRoute /> },
           { path: '/playground', element: <PlaygroundPage /> },
           { path: '*', element: <NotFoundPage /> },
