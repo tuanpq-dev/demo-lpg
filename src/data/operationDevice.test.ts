@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { AlertRecord } from '@/mocks/alerts';
 import type { MaintenanceSummary } from './assetDetail';
 import type { MaintenanceRecord } from './maintenance';
-import { deriveDeviceAlerts, deriveDeviceMaintenance, deviceHistory, fetchOperationDevice, resolveOperationDeviceId, trendPoints } from './operationDevice';
+import { deriveDeviceAlerts, deriveDeviceMaintenance, deviceHistory, deviceLiveTags, fetchOperationDevice, plcLatencyHistory, resolveOperationDeviceId, trendPoints } from './operationDevice';
 
 const NOW = new Date('2026-10-31T09:00:00Z');
 const alert = (o: Partial<AlertRecord>): AlertRecord =>
@@ -37,6 +37,11 @@ describe('deriveDeviceAlerts', () => {
     expect(deriveDeviceAlerts([list[0]!], ['E-101A'], NOW).items[0]).toMatchObject({ statusLabel: 'Hoàn thành', time: 'Hôm qua' });
     expect(deriveDeviceAlerts([], ['E-101A'], NOW)).toEqual({ items: [], total: 0, criticalOpen: 0 });
   });
+  test('thêm cảnh báo theo LOẠI (hệ PLC/SCADA: mất tín hiệu cảm biến)', () => {
+    const lost = { ...list[0]!, id: 'X', device: 'PT-102', kind: 'sensor-signal-lost' as const };
+    expect(deriveDeviceAlerts([...list, lost], ['PLC-SCADA'], NOW, 3, ['sensor-signal-lost']).items.map((a) => a.id)).toEqual(['X']);
+    expect(deriveDeviceAlerts([lost], ['PLC-SCADA'], NOW).total).toBe(0);
+  });
 });
 
 describe('deriveDeviceMaintenance', () => {
@@ -64,9 +69,26 @@ describe('deriveDeviceMaintenance', () => {
   });
 });
 
+describe('PLC-SCADA', () => {
+  test('mã viết thường → PLC-SCADA; tag trực tiếp gồm chẩn đoán + 21 tag giám sát; lịch sử độ trễ 61 điểm', async () => {
+    expect(resolveOperationDeviceId('plc-scada')).toBe('PLC-SCADA');
+    const d = await fetchOperationDevice('PLC-SCADA');
+    if (d.kind !== 'plc-scada') throw new Error('PLC-SCADA phải là hệ PLC/SCADA');
+    const tags = deviceLiveTags(d);
+    expect(tags).toContain(d.tags.heartbeat);
+    for (const t of d.monitoredTags) expect(tags).toContain(t);
+    expect(new Set(tags).size).toBe(tags.length);
+    const h = plcLatencyHistory(d, NOW.getTime());
+    expect(h).toHaveLength(61);
+    expect(Math.min(...h)).toBeGreaterThan(0.8);
+    expect(Math.max(...h)).toBeLessThan(1.6);
+  });
+});
+
 describe('xu hướng', () => {
   test('lịch sử đủ điểm cho 2 tag của biểu đồ', async () => {
     const d = await fetchOperationDevice('E-101A');
+    if (d.kind !== 'vaporizer') throw new Error('E-101A phải là máy hóa hơi');
     const h = deviceHistory(d, NOW.getTime());
     expect(Object.keys(h).sort()).toEqual(['PT-202', 'TT-201']);
     expect(h['TT-201']).toHaveLength(61);

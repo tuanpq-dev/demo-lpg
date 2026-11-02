@@ -6,7 +6,7 @@ import { RouterProvider, createMemoryRouter, useLocation } from 'react-router-do
 import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
 import { liveSimulator } from '@/data/live';
-import { VAPORIZER_TAGS } from '@/features/live/tags';
+import { PLC_SCADA_TAGS, VAPORIZER_TAGS, V101_TAGS } from '@/features/live/tags';
 import DeviceDetailPage from './DeviceDetailPage';
 
 /*
@@ -107,3 +107,54 @@ describe('nội dung', () => {
     expect(screen.getByRole('img', { name: /áp suất đầu ra Mất tín hiệu/ })).toBeInTheDocument();
   });
 });
+
+describe('hệ thống PLC/SCADA (/operations/devices/PLC-SCADA)', () => {
+  test('mã viết thường → PLC-SCADA; KPI, sơ đồ 6 nhóm nguồn, bảng 9 thông số', async () => {
+    renderAt('/operations/devices/plc-scada');
+    await waitFor(() => expect(where()).toBe('/operations/devices/PLC-SCADA'));
+    expect(screen.getByText('Chi tiết thiết bị - PLC-SCADA')).toHaveAttribute('aria-current', 'page');
+    await waitFor(() => expect(within(rowOf('Tag khả dụng')).getByText('21/21')).toBeInTheDocument(), { timeout: 4000 });
+    const kpis = screen.getByRole('region', { name: 'Chỉ số chính' });
+    expect(within(kpis).getByText('Trực tuyến')).toBeInTheDocument();
+    expect(within(kpis).getByText('Đã kết nối')).toBeInTheDocument();
+    expect(within(kpis).getByText('Siemens S7-1200 ổn định')).toBeInTheDocument();
+    expect(screen.getByText('Trạng thái: Đang hoạt động')).toBeInTheDocument();
+    expect(within(table()).getAllByRole('row')).toHaveLength(10);
+    expect(within(rowOf('Độ trễ dữ liệu')).getByText('> 3.0 giây')).toBeInTheDocument();
+    expect(within(rowOf('Chế độ vận hành')).getByText('Thông tin')).toBeInTheDocument();
+    const diagram = screen.getByRole('group', { name: /Sơ đồ kết nối: 6 nhóm thiết bị.*PLC Siemens S7-1200 \(Trực tuyến\).*Tag đồng bộ 21\/21/ });
+    expect(within(within(diagram).getByRole('list', { name: 'Nhóm thiết bị gửi dữ liệu' })).getAllByRole('listitem')).toHaveLength(6);
+  });
+
+  test('cảnh báo liên quan = cảnh báo mất tín hiệu cảm biến (store chung)', async () => {
+    renderAt('/operations/devices/PLC-SCADA');
+    expect(await screen.findByRole('button', { name: /ALT-00122: Mất tín hiệu cảm biến áp suất PT-102/ })).toBeInTheDocument();
+  });
+
+  test('mất tín hiệu tag bồn → tag khả dụng giảm, nút "Bồn LPG V-101" mất tín hiệu; mất heartbeat → PLC xám', async () => {
+    renderAt('/operations/devices/PLC-SCADA');
+    await waitFor(() => expect(within(rowOf('Tag khả dụng')).getByText('21/21')).toBeInTheDocument(), { timeout: 4000 });
+    liveSimulator.setBad([V101_TAGS.pressure, PLC_SCADA_TAGS.heartbeat]);
+    await waitFor(() => expect(within(rowOf('Tag khả dụng')).getByText('20/21')).toBeInTheDocument(), { timeout: 4000 });
+    expect(within(rowOf('Tag lỗi')).getByText('Cảnh báo')).toBeInTheDocument();
+    expect(within(rowOf('PLC Heartbeat')).getAllByText('Mất tín hiệu').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Bồn LPG V-101/).closest('li')).toHaveTextContent('mất tín hiệu');
+    expect(screen.getByRole('group', { name: /Nhóm mất tín hiệu: Bồn LPG V-101/ })).toBeInTheDocument();
+  });
+});
+
+describe('đổi thiết bị ở header', () => {
+  test('ô "Thiết bị" liệt kê mọi thiết bị; chọn PLC-SCADA → chuyển trang, giữ query', async () => {
+    const user = userEvent.setup();
+    renderAt('/operations/devices/E-101A?x=1');
+    const picker = await screen.findByRole('button', { name: /^Thiết bị/ });
+    expect(picker).toHaveTextContent('E-101A');
+    await user.click(picker);
+    const options = screen.getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual(['E-101A', 'PLC-SCADA']);
+    await user.click(screen.getByRole('option', { name: 'PLC-SCADA' }));
+    await waitFor(() => expect(where()).toBe('/operations/devices/PLC-SCADA?x=1'));
+    expect(await screen.findByText('Chi tiết thiết bị - PLC-SCADA')).toHaveAttribute('aria-current', 'page');
+  });
+});
+

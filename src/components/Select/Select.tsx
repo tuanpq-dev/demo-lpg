@@ -47,6 +47,11 @@ export type SelectProps<V extends string = string> = {
   describedBy?: string;
   /** id nhãn ngoài (FormField) – variant="field" ghép thành aria-labelledby = nhãn + giá trị đang chọn. */
   labelledBy?: string;
+  /**
+   * filter/button: trigger giãn hết bề rộng khung (đặt bề rộng qua `className`), chevron dồn phải – giữ bề rộng cố định khi
+   * giá trị đổi (ô "Thiết bị" ở chi tiết thiết bị Vận hành).
+   */
+  fullWidth?: boolean;
   className?: string;
 };
 
@@ -73,6 +78,7 @@ export function Select<V extends string = string>({
   id,
   describedBy,
   labelledBy,
+  fullWidth,
   className,
 }: SelectProps<V>) {
   const uid = useId();
@@ -193,7 +199,7 @@ export function Select<V extends string = string>({
   };
 
   return (
-    <div ref={rootRef} className={cn('relative', variant === 'field' ? 'flex w-full' : 'inline-flex', className)}>
+    <div ref={rootRef} className={cn('relative', variant === 'field' ? 'flex w-full' : fullWidth ? 'flex' : 'inline-flex', className)}>
       <button
         ref={triggerRef}
         id={id}
@@ -213,6 +219,7 @@ export function Select<V extends string = string>({
           'disabled:cursor-not-allowed disabled:opacity-50',
           variant === 'filter' &&
             cn('h-[34px] gap-1 rounded-md bg-surface-sunken px-[13px]', open ? 'border-accent/60' : 'border-line hover:border-accent/40'),
+          fullWidth && 'w-full justify-between',
           variant === 'button' &&
             cn('h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-[4px]', open ? 'border-accent/60' : 'border-accent/30 hover:border-accent/60'),
           variant === 'field' &&

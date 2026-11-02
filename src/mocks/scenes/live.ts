@@ -1,4 +1,4 @@
-import { GAS_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import { GAS_TAGS, PLC_SCADA_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { LiveValue } from '@/features/live/types';
 
 /**
@@ -69,6 +69,15 @@ export const liveBase: Record<string, LiveValue> = {
   [VAPORIZER_AREA_TAGS.gas]: 6,
   [VAPORIZER_AREA_TAGS.runA]: 'running',
   [VAPORIZER_AREA_TAGS.runB]: 'standby',
+  // Chẩn đoán PLC/SCADA (màn Vận hành PLC-SCADA, Figma 168:4689): độ trễ 1,2 s, mất gói 0,2 %, PLC báo 21 tag khả dụng.
+  [PLC_SCADA_TAGS.heartbeat]: 'ok',
+  [PLC_SCADA_TAGS.plcLink]: 'active',
+  [PLC_SCADA_TAGS.scadaLink]: 'active',
+  [PLC_SCADA_TAGS.latency]: 1.2,
+  [PLC_SCADA_TAGS.packetLoss]: 0.2,
+  [PLC_SCADA_TAGS.activeTagCount]: 21,
+  [PLC_SCADA_TAGS.mode]: 'scada-remote',
+  [PLC_SCADA_TAGS.historian]: 'ok',
 };
 
 /** Đơn vị theo tiền tố tag (SCADA thật gửi kèm đơn vị). */
@@ -120,4 +129,6 @@ export const liveJitter: Record<string, number> = {
   [GAS_TAGS[3]]: 0.6,
   [VAPORIZER_AREA_TAGS.heatTemp]: 0.5,
   [VAPORIZER_AREA_TAGS.gas]: 0.3,
+  [PLC_SCADA_TAGS.latency]: 0.25,
+  [PLC_SCADA_TAGS.packetLoss]: 0.1,
 };

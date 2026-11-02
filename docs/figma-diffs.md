@@ -167,6 +167,18 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - "Theo dõi" (lưu lượng, không có ngưỡng) giữ vàng như ảnh.
 - Icon nhiệt kế / đồng hồ áp / tia sét / chip / ghim = icon tạm (`TempIcons`).
 
+## Vận hành – hệ thống PLC/SCADA (/operations/devices/PLC-SCADA, Figma bản sao 168:4689, 02/11/2026)
+
+- Dựng theo ẢNH CHỤP node (get_design_context của frame chỉ trả metadata thưa; node sơ đồ 168:5396 gọi 2 lần đều rớt kết nối – người dùng chọn dựng từ ảnh). Ảnh + cây lớp: `scratch/figma-ref/op-device-2/`.
+- Khung trang dùng chung với E-101A (header, KPI, 2 cột 360 px, thẻ cột phải) – khoảng cách/cỡ chữ theo màn E-101A, không đo lại.
+- Số liệu tính từ tag trực tiếp: "Tag khả dụng 21/21" = 21 tag của 6 nhóm nguồn còn tín hiệu; "Cảnh báo liên quan" lấy store chung (ảnh minh hoạ COM-WARN-01 / PLC-SYNC-02 / SYS-REST-00 – chưa có cảnh báo truyền thông → hiện cảnh báo mất tín hiệu cảm biến ALT-00122, nên "Cảnh báo nghiêm trọng" = 1 thay vì "Không có"). Bảo trì: chưa có yêu cầu bảo trì nào cho PLC-SCADA → "Chưa lên lịch / Chưa phân công / Chưa có" (ảnh: Nguyễn Văn A, 12/09/2023, còn 12 ngày).
+- Cột "Cập nhật" dùng giờ "18:03:42" như ảnh (E-101A dùng "1s trước" theo ảnh của màn đó).
+- "Thời gian hoạt động tiếp" (ảnh) → "Thời gian hoạt động liên tục"; "Hạng mục đãn thực hiện" → "Hạng mục chi tiết" (cùng thẻ E-101A); hạng mục trùng "PLC communication" ×2 → 3 hạng mục khác nhau.
+- Thêm ô chọn "Thiết bị ( mã )" cạnh tiêu đề "Chi tiết thiết bị" (cả E-101A; rộng cố định 200 px để không đổi vị trí/bề rộng khi chuyển thiết bị) – Figma không có; chưa có màn danh sách thiết bị (người dùng duyệt 02/11/2026).
+- KPI không icon (như ảnh); "Trực tuyến"/"Đã kết nối" 24 px đậm (ảnh ~28).
+- Biểu đồ xu hướng cao 220 px (ảnh ~190); đường "Tag khả dụng (%)" thang 0–104 % → 100 % nằm sát ngưỡng 3,0 s như ảnh.
+- Icon nút nguồn sơ đồ, CPU, màn hình: icon tạm (`TempIcons` – `BroadcastIcon`, `NetworkIcon`, `SlidersIcon`, `PipeLineIcon`, `FlameIcon`, `MonitorIcon`).
+
 ## Báo cáo (/reports)
 
 - **Modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:7966, 02/11/2026):**

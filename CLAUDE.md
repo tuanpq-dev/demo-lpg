@@ -62,6 +62,7 @@
 - 🔍 **Chi tiết báo cáo ngày** (01/11, nhánh `feat/report-daily-detail`, chưa commit – docs/guide/reports.md 5P): `/reports/daily/:code`, Figma bản sao 117:4250, DataTable `groupBy`, token `verify` chờ duyệt; vitest 791, bundle chính 128,58 KB gzip.
 - 🔍 **Ký xác nhận báo cáo ngày – bước Người kiểm tra** (02/11, nhánh `feat/report-sign-modal`, chưa commit – docs/guide/reports.md 5Q): modal mở bằng `?sign=<mã>` từ nút bút ký trên `/reports`; 8 điều kiện ở `features/reports/sign.ts`; vitest 816, bundle chính 127,12 KB gzip, chunk ReportsPage 9,7 KB.
 - 🔍 **Ghi nhận mốc kiểm tra** (02/11, cùng nhánh `feat/report-sign-modal` – docs/guide/reports.md 5R): modal Figma bản sao 126:7966 mở bằng `?record=<mốc>` trên chi tiết ngày; logic `features/reports/record.ts`; vitest 841, bundle chính 127,65 KB gzip, chunk DailyReportDetailPage 12,4 KB.
+- 🔍 **Vận hành – hệ thống PLC/SCADA** (02/11, nhánh `feat/operation-plc-scada`, chưa commit – docs/guide/operations.md mục 6): `/operations/devices/PLC-SCADA`, Figma bản sao 168:4689 (dựng theo ảnh chụp), trang tách theo `kind` (VaporizerView / PlcScadaView); vitest 863, bundle chính 128,12 KB gzip, chunk DeviceDetailPage 12,6 KB.
 - Số đo gần nhất (29/10, 5O): vitest 708 (`--testTimeout=30000`; test drawer/modal Cảnh báo chập chờn khi chạy cả bộ – có cả trên `main`); bundle chính 125,30 KB gzip, chunk ReportsPage 6,8 KB; SceneViewer ~254 KB, PostEffects ~80 KB, recharts ~118 KB (chỉ Tổng quan).
 
 ## 7. Việc tiếp theo

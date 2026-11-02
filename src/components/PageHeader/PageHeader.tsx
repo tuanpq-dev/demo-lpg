@@ -21,10 +21,15 @@ export type PageHeaderProps = {
    * Nếu không có breadcrumb/title (màn Tổng quan – 53:124) thì actions dồn phải thành một hàng.
    */
   actions?: ReactNode;
+  /**
+   * Nội dung cạnh tiêu đề, cùng hàng (ngoài `<h1>`) – ô chọn "Thiết bị" ở chi tiết thiết bị Vận hành: vị trí cố định, không
+   * xô theo độ rộng `actions` (chip đổi theo thiết bị).
+   */
+  titleEnd?: ReactNode;
   className?: string;
 };
 
-export function PageHeader({ breadcrumb, title, description, actions, className }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, title, description, actions, titleEnd, className }: PageHeaderProps) {
   const hasHeading = !!breadcrumb?.length || title !== undefined;
 
   if (!hasHeading) {
@@ -68,7 +73,15 @@ export function PageHeader({ breadcrumb, title, description, actions, className 
               </ol>
             </nav>
           )}
-          {title !== undefined && <h1 className="text-3xl font-bold leading-8 text-fg">{title}</h1>}
+          {title !== undefined &&
+            (titleEnd ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <h1 className="text-3xl font-bold leading-8 text-fg">{title}</h1>
+                {titleEnd}
+              </div>
+            ) : (
+              <h1 className="text-3xl font-bold leading-8 text-fg">{title}</h1>
+            ))}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
       </div>

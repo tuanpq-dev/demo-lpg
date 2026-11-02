@@ -4,7 +4,7 @@ import { resolveBindings } from '@/features/scene/fields';
 import { parseSceneConfig } from '@/features/scene/parse';
 import { alertRecords } from './alerts';
 import { AREAS } from './areas';
-import { operationDevices } from './operations';
+import { operationDevices, plcScadaDevices } from './operations';
 import { liveBase } from './scenes/live';
 import khuBon from './scenes/khu-bon-lpg.json';
 
@@ -42,3 +42,23 @@ describe('E-101A – một nguồn', () => {
     expect(param(d.trend.pressure.param)).toBeDefined();
   });
 });
+
+describe('PLC-SCADA – một nguồn', () => {
+  const plc = plcScadaDevices['PLC-SCADA']!;
+  it('mọi tag chẩn đoán / nguồn / tín hiệu PLC có trong nguồn số liệu giả lập', () => {
+    for (const t of [...Object.values(plc.tags), ...plc.monitoredTags, ...plc.plcSignals.map((s) => s.tag)]) expect(liveBase, t).toHaveProperty([t]);
+  });
+  it('21 tag giám sát = toàn bộ tag của 6 nhóm nguồn (ảnh "21/21")', () => {
+    expect(plc.sources).toHaveLength(6);
+    expect(plc.monitoredTags).toHaveLength(21);
+    expect(new Set(plc.monitoredTags)).toEqual(new Set(plc.sources.flatMap((s) => s.tags)));
+  });
+  it('nhóm E-101A/B gồm đủ tag của thiết bị E-101A ở màn Vận hành', () => {
+    const e101 = plc.sources.find((s) => s.id === 'e101')!;
+    for (const p of d.params) expect(e101.tags).toContain(p.tag);
+  });
+  it('ngưỡng theo ảnh: độ trễ > 3 s, mất gói > 5 %, tối thiểu 18 tag', () => {
+    expect(plc.limits).toEqual({ latency: { warn: 3 }, packetLoss: { warn: 5 }, minAvailableTags: 18 });
+  });
+});
+

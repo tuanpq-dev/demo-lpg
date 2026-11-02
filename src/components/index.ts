@@ -63,4 +63,5 @@ export * from './TreeView';
 export * from './TrendChart';
 export * from './UploadTile';
 export * from './VaporizerDiagram';
+export * from './PlcScadaDiagram';
 export * from './WorkflowStepper';

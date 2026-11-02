@@ -228,6 +228,8 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 13.3 | [D] "Theo dõi" (lưu lượng, không ngưỡng) màu vàng có ý cảnh giác không? | Giữ vàng như ảnh. |
 | 13.4 | [K] "Chế độ vận hành" (SCADA từ xa / tại chỗ) đọc từ tag nào? "Hạng mục chi tiết" ở thẻ Bảo trì lấy từ đâu (checklist yêu cầu kế tiếp hay kế hoạch bảo dưỡng định kỳ)? | Số tạm trong mock thiết bị. |
 | 13.5 | [D] Màn danh sách "Giám sát thiết bị" (breadcrumb) và nút "Xem tất cả" nhật ký vận hành? | Chưa có – `/operations/devices` mở thẳng E-101A. |
+| 13.7 | [K] Hệ PLC/SCADA: tên tag chẩn đoán thật (heartbeat, liên kết PLC/SCADA, độ trễ, mất gói, chế độ, historian, uptime)? "Tag khả dụng 21/21" đếm những tag nào? Cảnh báo truyền thông (COM-WARN…, PLC-SYNC…) có trong hệ thống cảnh báo không? | Tag giả định `PLC_SCADA_TAGS`; 21 = tag của 6 nhóm nguồn trong sơ đồ; cảnh báo liên quan = cảnh báo "Mất tín hiệu cảm biến". |
+| 13.8 | [D] Vào màn PLC/SCADA từ đâu (chưa có danh sách "Giám sát thiết bị")? Bấm nút nguồn trong sơ đồ có mở thiết bị không? | Ô chọn "Thiết bị" đầu header mọi trang chi tiết thiết bị (02/11/2026, người dùng chọn); nút sơ đồ không bấm được. |
 | 13.6 | [D] Khu vực "Khu hóa hơi" (ảnh) vs "Trạm hóa hơi" (Cảnh báo/Bảo trì/báo cháy FZ-02) | "Trạm hóa hơi". |
 
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
