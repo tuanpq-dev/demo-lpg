@@ -39,6 +39,9 @@ export type StoredSignature =
   | { status: 'signed' }
   | { status: 'rejected'; reason?: string };
 
+/** Một lần ký (FE – chờ API): bước, người ký, lúc ký "yyyy-mm-ddTHH:mm" (giờ nhà máy), ghi chú khi ký. */
+export type SignLogEntry = { step: SignatureStep; by: string; at: string; note?: string };
+
 export type ReportRecord = {
   id: string;
   code: string;
@@ -53,6 +56,24 @@ export type ReportRecord = {
   signature: StoredSignature;
   /** Cập nhật cuối "yyyy-mm-ddTHH:mm" (giờ nhà máy). */
   updatedAt: string;
+  /** Nhận xét cuối ca của người kiểm tra (chỉ báo cáo ngày) – điều kiện ký. Màn nhập chưa có thiết kế. */
+  shiftRemark?: string;
+  /** Nhật ký ký (mới nhất cuối). */
+  signLog?: readonly SignLogEntry[];
+  /** Ghi nhận mốc trong phiên (modal "Ghi nhận mốc kiểm tra") theo khoá mốc ("18:00"). */
+  checkpointLog?: Readonly<Record<string, CheckpointLogEntry>>;
+};
+
+/**
+ * Một lần ghi nhận mốc: người, lúc "yyyy-mm-ddTHH:mm" (giờ nhà máy), nhận xét, giá trị nhập tay theo hạng mục bảng ngày
+ * (`DAILY_ITEMS` id → số, ghi đè số IoT), tên tệp đính kèm (chưa upload).
+ */
+export type CheckpointLogEntry = {
+  by: string;
+  at: string;
+  remark: string;
+  manual?: Readonly<Record<string, number>>;
+  files?: readonly string[];
 };
 
 export const COMPLETION_STATUSES = ['in-progress', 'done', 'missing-data'] as const;

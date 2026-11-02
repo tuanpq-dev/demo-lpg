@@ -42,6 +42,14 @@ const MISSING: Record<number, readonly string[]> = {
 };
 /** Mốc hôm nay cần xác minh. */
 const TODAY_VERIFY = '14:00';
+/** Lý do trả lại của báo cáo "Bị trả lại" (khớp kịch bản GS-03 chưa ghi chú ở mocks/dailyReport.ts). */
+const REJECT_REASON = 'Chưa ghi chú nồng độ khí GS-03 lúc 10:00 vượt ngưỡng cảnh báo.';
+/** Nhận xét cuối ca mẫu – có ở mọi báo cáo ngày đã đủ mốc (màn nhập nhận xét chưa có thiết kế). */
+const SHIFT_REMARKS = [
+  'Hệ thống vận hành ổn định, không phát sinh sự cố. Mức bồn giảm theo tiêu thụ bình thường.',
+  'Thiết bị hóa hơi E-101A chạy liên tục, E-101B dự phòng. Áp suất cấp ổn định.',
+  'Đã kiểm tra đầu dò khí khu nạp xuất, không phát hiện rò rỉ. Bàn giao ca đầy đủ.',
+] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const mod = (n: number, m: number) => ((n % m) + m) % m;
@@ -78,7 +86,7 @@ function dailyReport(day: string, back: number, nowKey: string): ReportRecord {
   const signature: StoredSignature = !complete
     ? { status: 'not-sent' }
     : step === 'rejected'
-      ? { status: 'rejected' }
+      ? { status: 'rejected', reason: REJECT_REASON }
       : step
         ? { status: 'pending', step }
         : { status: 'signed' };
@@ -96,6 +104,7 @@ function dailyReport(day: string, back: number, nowKey: string): ReportRecord {
     approver: complete ? REPORT_APPROVERS[mod(-n + 1, 2)] : undefined,
     signature,
     updatedAt,
+    ...(complete ? { shiftRemark: SHIFT_REMARKS[mod(n, SHIFT_REMARKS.length)] } : {}),
   };
 }
 

@@ -27,8 +27,9 @@ describe('buildDailyReadings', () => {
     expect(v[4]).toBeLessThan(v[0]!);
   });
 
+  // 02/11/2026: bỏ 20/06 khỏi danh sách – lùi 4 ngày giờ có kịch bản GS-03 chưa ghi chú (modal ký báo cáo).
   it('ngày thường: không ô nào ngoài ngưỡng (thẻ "Dữ liệu bất thường" = 0)', () => {
-    for (const day of ['2026-06-24', '2026-06-23', '2026-06-20', '2026-06-10']) {
+    for (const day of ['2026-06-24', '2026-06-23', '2026-06-19', '2026-06-10']) {
       const r = daily(day);
       expect(flaggedReadings(buildDailyReadings(r, NOW), r.checkpoints.map((c) => c.key))).toEqual([]);
     }
@@ -41,6 +42,14 @@ describe('buildDailyReadings', () => {
     const d9 = daily('2026-06-15');
     const pressure = buildDailyReadings(d9, NOW).find((r) => r.id === 'v101-pressure')!;
     expect(rowResult(pressure)).toBe('abnormal');
+    expect(pressure.notes?.['14:00']).toBeTruthy();
+  });
+
+  it('kịch bản ký: lùi 4 ngày (bị trả lại) GS-03 10:00 Cảnh báo, chưa ghi chú', () => {
+    const d4 = daily('2026-06-20');
+    const rows = buildDailyReadings(d4, NOW);
+    expect(flaggedReadings(rows, d4.checkpoints.map((c) => c.key))).toEqual([{ rowId: 'gas-gs-03', device: 'GS-03', checkpoint: '10:00', level: 'warning' }]);
+    expect(rows.find((r) => r.id === 'gas-gs-03')!.notes).toBeUndefined();
   });
 
   it('ổn định: cùng báo cáo → cùng số (F5 không đổi)', () => {

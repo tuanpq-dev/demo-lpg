@@ -169,6 +169,27 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 
 ## Báo cáo (/reports)
 
+- **Modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:7966, 02/11/2026):**
+  - Màu map token: #8AEBFF → `primary`, #31E6A1 → `success`, #90A5BD → `fg-secondary`, #EAF3FF → `fg`, nền #0B1626 → `surface-raised`, viền #1A344E → `line-card`, header bảng #2C3545 → header DataTable chung. Font Segoe UI/Inter trong Figma → font app.
+  - Khung Modal chung: header nền `surface-raised` (ảnh cùng nền thân); tab dùng `text-md` 16 đậm, gạch chân primary 2 px.
+  - Số liệu tính từ mock chung (ảnh: áp suất bồn 9,2 bar, nhiệt độ 28,7 °C; app: số bảng báo cáo ngày cùng mốc – 6,8 bar, 31,0 °C). "Tiến độ xác minh 14/21" (ảnh, mâu thuẫn "7/7 nhóm, 100 %") → đếm thông số có giá trị / tổng (22/22). "Tổng cảm biến 15" → 16 (đếm từ danh mục).
+  - Ngưỡng gas: ảnh "* Ngưỡng cảnh báo PLC: 20% LEL" → "cảnh báo 10% · nguy hiểm 20% LEL" (cùng ngưỡng bảng ngày / cảnh báo gas).
+  - Số đường cấp: ảnh "2,038 Nm3", "28.5 °C" (dấu chấm thập phân, khác phần còn lại) → "2038 Nm3", "28,4°C" (dấu phẩy như toàn modal).
+  - Nút "Nhập giá trị đồng hồ cơ" bật/tắt ô nhập (nhãn đổi "Xong nhập đồng hồ cơ"); nguồn "Đồng hồ" (xanh) / "Thủ công" (vàng) – ảnh chỉ có "PLC".
+  - Lỗi "Cần nhập nhận xét…" hiện ngay khi trống (như ảnh). Thêm danh sách lý do dưới thẻ tóm tắt khi chưa đủ điều kiện.
+  - Bỏ khung "AI Insights" (lớp 126:8459 có trong cây nhưng không hiện trên ảnh chụp node). Ô tải tệp dùng `FileDropzone` chung (chữ "Kéo thả hoặc chọn tệp để tải lên").
+
+- **Modal "Hoàn thành nhận xét & ký xác nhận" (ảnh 02/11/2026, chưa có node Figma; ảnh `scratch/figma-ref/report-sign/`):**
+  - Khung Modal chung: header + footer nền `surface-raised`, viền header kéo hết bề ngang (ảnh: header cùng nền thân, vạch dưới header thụt lề) – giữ như mọi modal app.
+  - "21/21 thông số PLC/SCADA" → **12/12** = số hạng mục đo tự động trong danh mục mock (14 hạng mục, 2 đọc tại chỗ) – tính từ dữ liệu, không dùng số ảnh.
+  - "Ngày / Ca": ảnh "Ca ngày 08:00–20:00" → `{shift} 08:00–20:00` ("Ca 1", tên ca của mock danh sách; giờ ca giả định – questions 12.14).
+  - Tệp bản nháp: bỏ "• 1.2 MB" (chưa có tệp thật). "Tải bản nháp PDF" khoá (`aria-disabled` + lý do) – chưa có dịch vụ xuất PDF.
+  - Ô "Mã xác nhận / mật khẩu ký": ảnh là ô cao 2 dòng, placeholder xuống dòng → ô `TextField` một dòng (type password), placeholder rút "Nhập mã hoặc mật khẩu ký".
+  - Nút "Ký xác nhận báo cáo" khoá = `Button subtle` + mờ (ảnh nền xám chữ xám); đủ điều kiện → `primary`. "Hủy" = `subtle` (ảnh viền xám nền trong).
+  - Điều kiện CHƯA đạt (ảnh chỉ có trạng thái đạt): icon ⓘ `warning` + chữ `fg`, nhãn đổi theo lý do ("Mới hoàn thành 5/6 mốc…", "Còn 1 bất thường chưa ghi chú: GS-03 lúc 10:00").
+  - Badge "Bị trả lại – chờ ký lại" (`danger`) + dòng "Lý do trả lại" trong thẻ thông tin – ảnh chỉ có trạng thái "Chờ người kiểm tra ký".
+  - Luồng phê duyệt: `WorkflowStepper marker="dot"` – chữ nhãn 12 px / dòng phụ 11 px (ảnh ~13/12).
+
 - **Chi tiết báo cáo ngày (`/reports/daily/:code`, Figma bản sao 117:4250, 01/11/2026):**
   - Màu Figma bản sao lệch palette app → map token: nền thẻ `#0B1929` → `surface` (Card chung, không ghi đè nền) · viền `#1A3548` → `line/30` · nền ô timeline/dòng nhóm/ô thiếu `#091522`/`#091622` → `bg-app` · chữ `#E2EFF7` → `fg` · `#92B5D2` → `fg-label` (tiêu đề thẻ) · `#7BA4C0`/`#C1D2DF` → `fg-secondary` · xanh `#22C55E` → `success` (#34D399) · vàng `#F59E0B` → `warning` (#FFBB43) · viền thẻ xám `#4A6880` → `line-card` (Card `strong`) · số `#F8F8F8` → `fg`. Tím `#A78BFA` không có token gần → **token mới `verify`** (chờ duyệt – docs/decisions.md).
   - Cỡ chữ 13 px (tiêu đề/mô tả thẻ, hạng mục, số đo) → tiêu đề thẻ/hạng mục/số `base` 14, mô tả thẻ `sm` 12 (thẻ 268 px – câu "Toàn bộ dữ liệu hiện có đã được xác nhận" 13 px tràn trong ảnh). Thẻ cao theo nội dung (ảnh cố định 132,5). Font Segoe UI/Inter → font chung app (`--font-sans`).

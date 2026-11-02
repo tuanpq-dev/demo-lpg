@@ -8,6 +8,7 @@ import {
   Icon,
   InfoIcon,
   MoreVerticalIcon,
+  SignaturePenIcon,
   Tabs,
   type DataTableColumn,
   type FilterDef,
@@ -58,6 +59,11 @@ export type ReportTableSectionProps = {
   tabNotes: Partial<Record<ReportTab, string>>;
   /** Tên bảng (caption ẩn). */
   label: string;
+  /**
+   * Nút "Ký xác nhận" (bút ký) ở cột thao tác – chỉ dòng `canSign(r)` (báo cáo ngày chờ Người kiểm tra). Không truyền → không có nút.
+   */
+  onSign?: (r: ReportRecord) => void;
+  canSign?: (r: ReportRecord) => boolean;
 };
 
 const SIGNATURE_FILTER_OPTIONS: { value: SignatureFilter; label: string }[] = [
@@ -74,7 +80,7 @@ const MORE_PENDING = 'Chưa có thao tác khác – chờ thiết kế.';
  * cột "Ca vận hành" chỉ ở báo cáo ngày; tab gộp ("Tất cả", "Biểu mẫu đã ký") → "Kỳ báo cáo".
  */
 export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionProps>(function ReportTableSection(
-  { table, rows, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label },
+  { table, rows, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label, onSign, canSign },
   ref,
 ) {
   const uid = useId();
@@ -195,6 +201,17 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
           getRowId={(r) => r.id}
           rowActions={(r) => (
             <span className="inline-flex items-center gap-1">
+              {onSign && canSign?.(r) && (
+                <button
+                  type="button"
+                  aria-label={`Ký xác nhận ${r.code}`}
+                  title="Hoàn thành nhận xét & ký xác nhận"
+                  onClick={() => onSign(r)}
+                  className="inline-flex rounded-sm p-1 text-primary hover:bg-primary/10"
+                >
+                  <SignaturePenIcon size={18} />
+                </button>
+              )}
               {reportDetailPath(r) ? (
                 <Link to={reportDetailPath(r)!} aria-label={`Xem báo cáo ${r.code}`} className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100">
                   <Icon name="eye" box={18} />

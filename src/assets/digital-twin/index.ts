@@ -69,6 +69,7 @@ import reportConfirmed from './report-confirmed.svg';
 import reportAbnormalNone from './report-abnormal-none.svg';
 import reportMissing from './report-missing.svg';
 import reportSignature from './report-signature.svg';
+import reportRecordEdit from './report-record-edit.svg';
 import tableGroupChevron from './report-group-chevron.svg';
 import reportReadingAuto from './report-reading-auto.svg';
 
@@ -196,6 +197,8 @@ export const icons = {
   reportMissing,
   /** 117:4423 thẻ "Xác nhận báo cáo" – hai người (xám #4A6880), 18×18 */
   reportSignature,
+  /** 126:8067 – bút chì "Nhập giá trị đồng hồ cơ" (modal Ghi nhận mốc kiểm tra), 10.5×10.5 */
+  reportRecordEdit,
   /** 117:4605 dòng tiêu đề nhóm của DataTable (nhóm thiết bị) – mũi tên xuống cyan, 14×14 */
   tableGroupChevron,
   /** 117:4619 ô giờ – sóng tín hiệu cyan = số đo tự động (SCADA), 9×9 */

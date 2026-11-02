@@ -1,10 +1,14 @@
 import { useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, PageHeader } from '@/components';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
+import { useCan } from '@/app/auth';
+import { findDailyReport, reportDetailPath } from '@/data/dailyReport';
 import { useReports } from '@/data/reports';
 import {
   DAILY_CHECKPOINTS,
+  canInspectorSign,
   deriveAwaitingByStep,
   deriveMonthProgress,
   deriveReportKpis,
@@ -19,6 +23,7 @@ import { ReportKpiRow } from './shared/ReportKpiRow';
 import { ReportSummaryCards } from './shared/ReportSummaryCards';
 import { ReportTableSection } from './shared/ReportTableSection';
 import { useReportTable } from './shared/useReportTable';
+import { ReportSignModal } from './sign/ReportSignModal';
 
 const DEFAULT_TAB: ReportTab = 'daily';
 
@@ -35,6 +40,15 @@ export default function ReportsPage() {
   const now = useNow(60_000);
   const table = useReportTable(rows, now, DEFAULT_TAB);
   const tableRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  // TODO(backend): chỉ đúng Người kiểm tra của báo cáo được ký (hiện: mọi vai trò có report:sign).
+  const canSignRole = useCan('report:sign');
+
+  // ---- Ký xác nhận (?sign=<mã>): chỉ báo cáo ngày đang chờ Người kiểm tra; mã lạ / đã qua bước → không mở.
+  const signCode = table.search.get('sign');
+  const signReport = canSignRole && signCode ? findDailyReport(rows, signCode) : undefined;
+  const signOpen = signReport && canInspectorSign(signReport, now) ? signReport : undefined;
+  const closeSign = () => table.setExtra({ sign: null });
 
   const kpis = useMemo(() => deriveReportKpis(rows, now), [rows, now]);
   const awaitingByStep = useMemo(() => deriveAwaitingByStep(rows, now), [rows, now]);
@@ -113,7 +127,25 @@ export default function ReportsPage() {
           showTable(`Đang hiển thị báo cáo ${report.code}.`);
         }}
       />
-      <ReportTableSection ref={tableRef} table={table} rows={rows} now={now} tabNotes={tabNotes} label="Danh sách báo cáo vận hành" />
+      <ReportTableSection
+        ref={tableRef}
+        table={table}
+        rows={rows}
+        now={now}
+        tabNotes={tabNotes}
+        label="Danh sách báo cáo vận hành"
+        onSign={canSignRole ? (r) => table.setExtra({ sign: r.code }) : undefined}
+        canSign={(r) => canInspectorSign(r, now)}
+      />
+      {signOpen && (
+        <ReportSignModal
+          key={signOpen.id}
+          report={signOpen}
+          onClose={closeSign}
+          onBackToEdit={() => navigate(reportDetailPath(signOpen)!)}
+          nowParam={table.search.get('now')}
+        />
+      )}
     </Page>
   );
 }

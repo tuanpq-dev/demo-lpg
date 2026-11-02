@@ -85,3 +85,16 @@ export const REGULATOR_TAGS: Readonly<Record<string, { outletPressure: string }>
 export const ASSET_TAGS = {
   'V-101': V101_TAGS,
 } as const;
+
+/**
+ * Tên tag PLC hiển thị trong modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:8506, bảng Bồn chứa LPG) – GIẢ ĐỊNH theo
+ * Figma, chưa đối chiếu danh mục tag PLC thật (docs/questions.md 12.18). Giá trị đọc qua tag SCADA tương ứng ở trên.
+ */
+export const PLC_REPORT_TAGS = {
+  tankLevel: 'Tank_Liquid_Level_Percent',
+  tankVolume: 'Tank_Liquid_Level_m3',
+  tankPressure: 'Tank_Pressure_Bar',
+  tankTemperature: 'Tank_Temperature_C',
+  tankZoneTemperature: 'Tank_Temperature_Zone_C',
+  tankGas: 'Tank_Gas_Detector',
+} as const;
