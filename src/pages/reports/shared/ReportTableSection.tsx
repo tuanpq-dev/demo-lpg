@@ -1,4 +1,5 @@
 import { forwardRef, useId } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Card,
   DataTable,
@@ -33,6 +34,7 @@ import {
   type ReportTab,
   type SignatureFilter,
 } from '@/features/reports';
+import { reportDetailPath } from '@/data/dailyReport';
 import { CompletionBadge, SignatureBadge } from './ReportBadges';
 import type { ReportTableState } from './useReportTable';
 
@@ -63,8 +65,9 @@ const SIGNATURE_FILTER_OPTIONS: { value: SignatureFilter; label: string }[] = [
   { value: 'awaiting', label: 'Chờ xác nhận (chờ duyệt + bị trả lại)' },
 ];
 
-/** Thông báo chung cho 2 nút thao tác chưa có thiết kế (đọc kèm qua aria-describedby). */
-const ACTIONS_PENDING = 'Chưa có màn chi tiết báo cáo – chờ thiết kế.';
+/** Thông báo cho nút thao tác chưa có thiết kế (đọc kèm qua aria-describedby). Báo cáo ngày đã có màn chi tiết. */
+const ACTIONS_PENDING = 'Chưa có màn chi tiết cho loại báo cáo này – chờ thiết kế.';
+const MORE_PENDING = 'Chưa có thao tác khác – chờ thiết kế.';
 
 /**
  * Khối tab loại báo cáo + bảng có lọc (ảnh màn Báo cáo). Cột theo tab: tab một kỳ → tiêu đề cột kỳ theo kỳ đó,
@@ -77,6 +80,7 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
   const uid = useId();
   const panelId = `${uid}-panel`;
   const pendingId = `${uid}-pending`;
+  const morePendingId = `${uid}-more-pending`;
   const { values: f, setValues } = table;
   const counts = table.tabCounts as Record<ReportTab, number>;
   const period: ReportPeriod | undefined = (REPORT_PERIODS as readonly string[]).includes(f.tab) ? (f.tab as ReportPeriod) : undefined;
@@ -99,8 +103,17 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
       header: 'Mã báo cáo',
       align: 'start',
       width: 120,
-      // Ảnh tô mã như link nhưng chưa có màn chi tiết → chữ thường màu info (không phải nút).
-      cell: (r) => <span className="text-sm font-semibold text-info">{r.code}</span>,
+      // Báo cáo ngày → link tới màn chi tiết; loại khác chưa có màn → chữ thường màu info (không phải link).
+      cell: (r) => {
+        const to = reportDetailPath(r);
+        return to ? (
+          <Link to={to} className="rounded-sm text-sm font-semibold text-info hover:underline">
+            {r.code}
+          </Link>
+        ) : (
+          <span className="text-sm font-semibold text-info">{r.code}</span>
+        );
+      },
     },
     {
       id: 'period',
@@ -168,6 +181,9 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
         <span id={pendingId} hidden>
           {ACTIONS_PENDING}
         </span>
+        <span id={morePendingId} hidden>
+          {MORE_PENDING}
+        </span>
         <DataTable
           label={label}
           density="compact"
@@ -179,22 +195,28 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
           getRowId={(r) => r.id}
           rowActions={(r) => (
             <span className="inline-flex items-center gap-1">
-              <button
-                type="button"
-                aria-disabled="true"
-                aria-label={`Xem báo cáo ${r.code}`}
-                aria-describedby={pendingId}
-                title={ACTIONS_PENDING}
-                className="inline-flex cursor-not-allowed rounded-sm p-1 opacity-60"
-              >
-                <Icon name="eye" box={18} />
-              </button>
+              {reportDetailPath(r) ? (
+                <Link to={reportDetailPath(r)!} aria-label={`Xem báo cáo ${r.code}`} className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100">
+                  <Icon name="eye" box={18} />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  aria-label={`Xem báo cáo ${r.code}`}
+                  aria-describedby={pendingId}
+                  title={ACTIONS_PENDING}
+                  className="inline-flex cursor-not-allowed rounded-sm p-1 opacity-60"
+                >
+                  <Icon name="eye" box={18} />
+                </button>
+              )}
               <button
                 type="button"
                 aria-disabled="true"
                 aria-label={`Thao tác khác ${r.code}`}
-                aria-describedby={pendingId}
-                title={ACTIONS_PENDING}
+                aria-describedby={morePendingId}
+                title={MORE_PENDING}
                 className="inline-flex cursor-not-allowed rounded-sm p-1 text-fg-secondary opacity-60"
               >
                 <MoreVerticalIcon />

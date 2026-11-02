@@ -58,7 +58,9 @@ function matchSignature(r: ReportRecord, f: SignatureFilter, now: Date): boolean
   return f === 'awaiting' ? reportState(r, now) === 'awaiting' : signatureOf(r, now) === f;
 }
 
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+/** Bỏ dấu tiếng Việt + chữ thường (tìm không dấu). */
+export const foldSearch = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+const norm = foldSearch;
 
 /** Tìm theo mã, kỳ ("24/06/2026", "Tháng 06/2026"), người kiểm tra/duyệt – không phân biệt dấu/hoa thường. */
 export function matchQuery(r: ReportRecord, q: string): boolean {

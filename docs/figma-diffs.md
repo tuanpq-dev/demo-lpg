@@ -10,6 +10,7 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - **Cache design context** (có thể mất khi đổi phiên): `C:/Users/ptuan/AppData/Local/Temp/claude/f--TEMPO-demo-lpg/0d061ac4-b5cd-4d25-bf82-aad81de290f4/scratchpad/figma/{53-11,70-2809,70-3964}.part0.txt`. Mỗi file bị cắt ở 100KB: 53:11 cắt sau 53:498, 70:3964 cắt ở 70:5402.
   - Màn Báo cáo (29/10/2026, ảnh người dùng gửi, không có node): `reports-design.png` (cả trang 1565×1239), crop ×3 `reports-header.png`, `reports-kpi.png`, `reports-summary-cards.png`, `reports-table.png`.
   - Màn Vận hành – chi tiết thiết bị E-101A (31/10/2026, ảnh người dùng gửi, không có node): `op-device-full.png` (cả trang 1565×2116), crop ×3 `op-device-header.png`, `op-device-kpi.png`, `op-device-left.png`, `op-device-right.png`.
+  - **Chi tiết báo cáo ngày (01/11/2026):** file BẢN SAO `A88YJ2BRhICDDdeu2rtRg1` (gọi MCP được), frame `117:4250` – chỉ lấy `117:4367` (5 thẻ), `117:4609` (dòng số liệu), `117:4603` (dòng nhóm). Ảnh + ghi chú + SVG gốc: `scratch/figma-ref/report-daily-{summary-cards,data-row,group-row}.png`, `report-daily-figma-notes.md`, `report-daily-svg/`. Không gọi `get_metadata`/cả frame (quá lớn).
   - Ảnh hoặc SVG người dùng gửi trong chat.
   - Khi thiếu thông số: đọc pixel từ ảnh chụp rồi map về token gần nhất, kích thước lấy từ metadata.
 
@@ -167,6 +168,13 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - Icon nhiệt kế / đồng hồ áp / tia sét / chip / ghim = icon tạm (`TempIcons`).
 
 ## Báo cáo (/reports)
+
+- **Chi tiết báo cáo ngày (`/reports/daily/:code`, Figma bản sao 117:4250, 01/11/2026):**
+  - Màu Figma bản sao lệch palette app → map token: nền thẻ `#0B1929` → `surface` (Card chung, không ghi đè nền) · viền `#1A3548` → `line/30` · nền ô timeline/dòng nhóm/ô thiếu `#091522`/`#091622` → `bg-app` · chữ `#E2EFF7` → `fg` · `#92B5D2` → `fg-label` (tiêu đề thẻ) · `#7BA4C0`/`#C1D2DF` → `fg-secondary` · xanh `#22C55E` → `success` (#34D399) · vàng `#F59E0B` → `warning` (#FFBB43) · viền thẻ xám `#4A6880` → `line-card` (Card `strong`) · số `#F8F8F8` → `fg`. Tím `#A78BFA` không có token gần → **token mới `verify`** (chờ duyệt – docs/decisions.md).
+  - Cỡ chữ 13 px (tiêu đề/mô tả thẻ, hạng mục, số đo) → tiêu đề thẻ/hạng mục/số `base` 14, mô tả thẻ `sm` 12 (thẻ 268 px – câu "Toàn bộ dữ liệu hiện có đã được xác nhận" 13 px tràn trong ảnh). Thẻ cao theo nội dung (ảnh cố định 132,5). Font Segoe UI/Inter → font chung app (`--font-sans`).
+  - Thẻ "Dữ liệu đã xác nhận" của 24/06 18:30 ra **4 mốc + "Mốc 14:00 cần xác minh lại"** (ảnh 5 mốc): mock chung của danh sách đánh dấu 14:00 hôm nay cần xác minh – giữ một nguồn cho hai màn. Thẻ "Dữ liệu bất thường"/"Dữ liệu còn thiếu" khi bằng 0 đổi viền xanh + icon ô tick (ảnh chỉ có trạng thái của 24/06); > 0 dùng icon tam giác đỏ có sẵn (`danger`).
+  - Số đo mẫu khác ảnh từng chữ số (77,1 → 77,2…) – sinh xác định theo ngày; ngưỡng là giả định (12.11).
+  - Phần KHÔNG lấy node (theo yêu cầu tiết kiệm lượt gọi) – tự dựng: header = PageHeader (breadcrumb + "Chi tiết báo cáo ngày" + dòng mô tả + 2 badge trạng thái); dải mốc = Card "Mốc kiểm tra trong ngày" 6 ô; thanh lọc = FilterBar inline (tìm, Ngày báo cáo, Nhóm thiết bị, Kết quả, Xóa bộ lọc) đặt TRONG card bảng; header bảng = header DataTable chung. Có chú giải ký hiệu ô (ảnh không thấy – cần cho a11y). Cần so lại với frame khi có ảnh cả màn (12.10).
 
 - **Báo cáo vận hành định kỳ (ảnh 29/10/2026, 5O):**
   - **Số liệu ảnh tự mâu thuẫn → tính từ danh sách:** tab "Tất cả" 186 ≠ 176 + 6 + 2 + 1 = 185; 1/1 → 24/6 chỉ có 175 ngày (ảnh 176); KPI 186 = 4 + 6 + 168 + 8 coi 4 nhóm là tách rời → app giữ tách rời, với `?now=2026-06-24T18:30` ra 184 / ngày 175 / đã ký 166; Đang thực hiện 4, Chờ xác nhận 6 (2/2/2), Thiếu dữ liệu 8, Tiến độ tháng 06 19/24 khớp ảnh. "Đang thực hiện 4" (KPI, mọi kỳ) vs "1" (thẻ tháng, chỉ báo cáo ngày tháng 06) – không mâu thuẫn.

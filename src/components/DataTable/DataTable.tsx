@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Checkbox } from '../Checkbox';
 import { Icon } from '../Icon';
@@ -15,9 +15,12 @@ export type DataTableColumn<T> = {
   width?: number | string;
   /** Mặc định "center" như Figma 70:3034 (trừ cột nội dung dùng "start"). */
   align?: ColumnAlign;
-  /** Class thêm cho ô thân (màu chữ, cắt dòng…). */
-  className?: string;
+  /** Class thêm cho ô thân (màu chữ, cắt dòng…); hàm → theo từng dòng (vd nền ô "thiếu dữ liệu"). */
+  className?: string | ((row: T) => string | undefined);
 };
+
+/** Nhóm của một dòng – dòng liền nhau cùng `id` chung một dòng tiêu đề nhóm. */
+export type DataTableGroup = { id: string; label: ReactNode };
 
 export type DataTablePagination = {
   page: number;
@@ -54,8 +57,18 @@ export type DataTableProps<T> = {
 
   /** Hiển thị khi `rows` rỗng. */
   emptyState?: ReactNode;
-  /** comfortable = hàng cao 76px (Figma), compact = 48px. */
-  density?: 'comfortable' | 'compact';
+  /**
+   * comfortable = hàng cao 76px (Figma), compact = 48px, dense = tối thiểu 38px + đệm dọc 8px (bảng số liệu báo cáo ngày
+   * 117:4609 – dòng có ghi chú tự cao hơn).
+   */
+  density?: 'comfortable' | 'compact' | 'dense';
+  /**
+   * Gom dòng theo nhóm (dòng phải xếp sẵn theo nhóm): mỗi nhóm có một dòng tiêu đề trải hết bảng, nút ▾ thu gọn/mở
+   * (`aria-expanded`) – Figma 117:4603 "Bồn chứa LPG – V-101".
+   */
+  groupBy?: (row: T) => DataTableGroup;
+  /** Kẻ dọc giữa các ô (bảng lưới số liệu – Figma 117:4609). */
+  gridLines?: boolean;
   /** Giới hạn chiều cao vùng cuộn để header dính (sticky). */
   maxHeight?: number | string;
   pagination?: DataTablePagination;
@@ -98,8 +111,18 @@ export function DataTable<T>({
   minWidth,
   stickyFirst,
   stickyActions,
+  groupBy,
+  gridLines,
   className,
 }: DataTableProps<T>) {
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleGroup = (id: string) =>
+    setCollapsed((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const ids = rows.map(getRowId);
   const selected = new Set(selectedIds);
   const selectedOnPage = ids.filter((id) => selected.has(id)).length;
@@ -119,10 +142,12 @@ export function DataTable<T>({
     onSelectionChange?.([...next]);
   };
 
-  const th = 'sticky top-0 z-[1] bg-surface-raised px-3 py-3 text-xs font-semibold tracking-label text-fg-secondary';
+  const grid = gridLines && 'border-r border-line/30 last:border-r-0';
+  const th = cn('sticky top-0 z-[1] bg-surface-raised px-3 py-3 text-xs font-semibold tracking-label text-fg-secondary', grid);
   /** Cột đầu cố định: nằm sau ô chọn (w-14 = 56px). */
   const firstLeft = cn('z-[3]', selectable ? 'left-14' : 'left-0');
-  const rowH = density === 'comfortable' ? 'h-[76px]' : 'h-12';
+  const rowH = density === 'comfortable' ? 'h-[76px]' : density === 'compact' ? 'h-12' : 'h-[38px]';
+  const cellPadY = density === 'dense' && 'py-2';
 
   const from = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
   const to = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.total) : 0;
@@ -171,10 +196,37 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => {
+              // Dòng nhóm có key riêng, ổn định khi thu gọn/mở → nút không bị gắn lại (giữ focus bàn phím).
+              rows.flatMap((row, rowIndex) => {
                 const id = getRowId(row);
                 const isSel = selected.has(id);
-                return (
+                const group = groupBy?.(row);
+                const groupStart = !!group && (rowIndex === 0 || groupBy!(rows[rowIndex - 1]!).id !== group.id);
+                const groupOpen = !group || !collapsed.has(group.id);
+                const groupRow = group && groupStart && (
+                  <tr key={`group-${group.id}`} className="border-y border-line/30 bg-bg-app">
+                    <th scope="colgroup" colSpan={colCount} className="px-3 py-1.5 text-left font-normal">
+                      {/* Nút dính mép trái để tên nhóm không trôi mất khi cuộn ngang. */}
+                      <button
+                        type="button"
+                        aria-expanded={groupOpen}
+                        onClick={() => toggleGroup(group.id)}
+                        className="sticky left-3 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold leading-[18px] text-primary"
+                      >
+                        <Icon
+                          name="tableGroupChevron"
+                          box={14}
+                          className={cn('transition-transform motion-reduce:transition-none', !groupOpen && '-rotate-90')}
+                        />
+                        {group.label}
+                      </button>
+                    </th>
+                  </tr>
+                );
+                const out = groupRow ? [groupRow] : [];
+                if (!groupOpen) return out;
+                return [
+                  ...out,
                   <tr
                     key={id}
                     aria-selected={selectable ? isSel : undefined}
@@ -203,8 +255,10 @@ export function DataTable<T>({
                         key={col.id}
                         className={cn(
                           'px-3 text-fg-secondary',
+                          cellPadY,
+                          grid,
                           alignClass[col.align ?? 'center'],
-                          col.className,
+                          typeof col.className === 'function' ? col.className(row) : col.className,
                           stickyFirst && i === 0 && cn('sticky z-[1] bg-surface', selectable ? 'left-14' : 'left-0'),
                         )}
                       >
@@ -214,8 +268,8 @@ export function DataTable<T>({
                     {rowActions && (
                       <td className={cn('pr-4 text-center', stickyActions && 'sticky right-0 z-[1] bg-surface')}>{rowActions(row)}</td>
                     )}
-                  </tr>
-                );
+                  </tr>,
+                ];
               })
             )}
           </tbody>

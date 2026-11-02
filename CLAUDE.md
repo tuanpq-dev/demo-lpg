@@ -34,7 +34,7 @@
 
 ## 4. Figma
 - File key `stJtcbE3XGzA4WFrJFE1un`. Màn: `53:11` Tổng quan · `70:2809` Cảnh báo · `70:3964` Bảo trì.
-- **MCP đã HẾT QUOTA (seat View) → KHÔNG gọi Figma MCP.** Nguồn: ảnh trong `scratch/figma-ref/` (danh sách ảnh: `docs/figma-diffs.md` mục "Nguồn tham chiếu"), ảnh/SVG người dùng gửi trong chat; thiếu thông số → đọc pixel rồi map về token gần nhất.
+- **File gốc HẾT QUOTA MCP (seat View) → KHÔNG gọi trên `stJtcbE3…`.** Bản sao `A88YJ2BRhICDDdeu2rtRg1` gọi được nhưng TIẾT KIỆM: chỉ `get_design_context` node con (không `get_metadata`/cả frame), ≤ 2–3 lần/màn, lỗi kết nối → dừng hỏi; lưu kết quả vào `scratch/figma-ref/`. Nguồn: ảnh trong `scratch/figma-ref/` (danh sách ảnh: `docs/figma-diffs.md` mục "Nguồn tham chiếu"), ảnh/SVG người dùng gửi trong chat; thiếu thông số → đọc pixel rồi map về token gần nhất.
 - **KHÔNG đặt ảnh thiết kế trong `public/`** (bị deploy công khai) – chỉ `scratch/figma-ref/`; playground tham chiếu bằng `import.meta.env.DEV ? '/scratch/figma-ref/…' : undefined`. Sau build kiểm `dist/` không có đường dẫn figma. (15 ảnh cũ vẫn còn trong lịch sử git – chưa viết lại lịch sử.)
 - Figma tự mâu thuẫn: **ưu tiên screenshot**, nhưng kiểm `opacity-*`/`hidden` trên node và node cha trước khi kết luận lệch. Lệch nhỏ (bo góc, khoảng cách, sắc màu, cỡ chữ 1–2 px) → tự chuẩn hoá về token và **ghi vào `docs/figma-diffs.md`** (đúng nhóm màn). Chỉ hỏi khi đổi ý nghĩa, hành vi hoặc bố cục lớn.
 
@@ -59,13 +59,14 @@
 - ✅ Đã duyệt: GĐ0–4B (tokens → primitives → form → layout/router → nghiệp vụ → chart/bảng), 5A Tổng quan, 5B Cảnh báo, 5C Bảo trì, 3D-1/1b/1c/2.
 - 🔍 Chờ review (chi tiết: `docs/decisions.md` mục Roadmap): 3D-3/3D-4 Editor + ống, ground-plane, Live data, a11y/responsive, BE-1 + FE-API, 5D–5H (tài sản, chi tiết/tiến độ/nghiệm thu/phân công bảo trì), 5I–5L (drawer + phân công cảnh báo), 5M cập nhật xử lý áp suất, 5N quy trình đóng cảnh báo + khung cập nhật chung, **5O Báo cáo vận hành định kỳ + phần dùng chung báo cáo** (nhánh `feat/reports`, chưa commit – docs/guide/reports.md).
 - 🔍 **Vận hành – chi tiết thiết bị E-101A** (31/10, nhánh `feat/operation-device`, chưa commit – docs/guide/operations.md): `/operations/devices/:id`, số liệu theo mock chung (khác ảnh – docs/figma-diffs.md), vitest 751, bundle chính 127,11 KB gzip.
+- 🔍 **Chi tiết báo cáo ngày** (01/11, nhánh `feat/report-daily-detail`, chưa commit – docs/guide/reports.md 5P): `/reports/daily/:code`, Figma bản sao 117:4250, DataTable `groupBy`, token `verify` chờ duyệt; vitest 791, bundle chính 128,58 KB gzip.
 - Số đo gần nhất (29/10, 5O): vitest 708 (`--testTimeout=30000`; test drawer/modal Cảnh báo chập chờn khi chạy cả bộ – có cả trên `main`); bundle chính 125,30 KB gzip, chunk ReportsPage 6,8 KB; SceneViewer ~254 KB, PostEffects ~80 KB, recharts ~118 KB (chỉ Tổng quan).
 
 ## 7. Việc tiếp theo
 - ⚠ **Ưu tiên cao**: header tràn ngang ở 390 px trên MỌI trang (trang nền ~605 px) – dưới `md` gom NavTabs/actions của PageHeader vào menu; kiểm 390/768 mọi trang.
 - Nút chuông header lỗi axe `label-content-name-mismatch` (mọi trang); số chuông còn tĩnh – derive từ cảnh báo chưa xác nhận.
 - Nối API thật cho `fetch*` trong `src/data/*` (hợp đồng cần bổ sung: `docs/decisions.md`); `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.
-- Báo cáo: màn chi tiết + ký/trả lại/nhập mốc (chờ thiết kế, `docs/questions.md` mục 12), màn báo cáo khác dùng `pages/reports/shared`. Bản đồ 3D toàn nhà máy cho `/map` (nếu cần); ống 3D: kéo điểm theo Y, tự đi ống tránh thiết bị, nhánh chữ T có cấu trúc.
+- Báo cáo: chi tiết tháng/quý/năm + ký/trả lại/nhập mốc + nút header chi tiết ngày (chờ thiết kế, `docs/questions.md` mục 12), màn báo cáo khác dùng `pages/reports/shared`. Bản đồ 3D toàn nhà máy cho `/map` (nếu cần); ống 3D: kéo điểm theo Y, tự đi ống tránh thiết bị, nhánh chữ T có cấu trúc.
 - `plant-map.png` 7.5 MB → WebP/AVIF; thay TempIcons + ảnh dự phòng khi có asset (danh sách: `docs/decisions.md` mục TODO).
 - Chờ designer/khách: `docs/questions.md`.
 

@@ -45,6 +45,7 @@ export default {
       // `text-danger-text` cho CHỮ; `danger` cho viền/nền/chấm/icon (ESLint chặn `text-danger` trần).
       danger: { DEFAULT: v('danger'), strong: v('danger-strong'), text: v('danger-text'), solid: v('danger-solid') },
       neutral: v('neutral'),
+      verify: v('verify'),
     },
     borderRadius: {
       none: '0',
