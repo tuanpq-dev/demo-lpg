@@ -1,6 +1,7 @@
 /*
  * Bộ lọc bảng báo cáo (đồng bộ URL qua `useTableFilters`) – THUẦN.
  */
+import { foldSearch } from '@/lib/foldSearch';
 import { REPORT_PERIODS, periodContains, periodLabel, periodRange, type ReportPeriod } from './period';
 import {
   COMPLETION_STATUSES,
@@ -58,8 +59,8 @@ function matchSignature(r: ReportRecord, f: SignatureFilter, now: Date): boolean
   return f === 'awaiting' ? reportState(r, now) === 'awaiting' : signatureOf(r, now) === f;
 }
 
-/** Bỏ dấu tiếng Việt + chữ thường (tìm không dấu). */
-export const foldSearch = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+/** Bỏ dấu tiếng Việt + chữ thường (tìm không dấu) – định nghĩa ở `@/lib/foldSearch`, export lại cho code cũ. */
+export { foldSearch };
 const norm = foldSearch;
 
 /** Tìm theo mã, kỳ ("24/06/2026", "Tháng 06/2026"), người kiểm tra/duyệt – không phân biệt dấu/hoa thường. */

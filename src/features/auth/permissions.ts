@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   'report:sign': 'operator',
   // Ghi nhận mốc kiểm tra báo cáo ngày (modal "Ghi nhận mốc kiểm tra"). TODO(backend): @Roles tương ứng.
   'report:record': 'operator',
+  // Chạy kịch bản AI mô phỏng sự cố (chỉ tính trên dữ liệu tham chiếu, không tác động thiết bị). TODO(backend): @Roles tương ứng.
+  'simulation:run': 'operator',
   'user:manage': 'admin',
 } as const satisfies Record<string, Role>;
 

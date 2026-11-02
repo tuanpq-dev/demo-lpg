@@ -458,3 +458,62 @@ export const MonitorIcon = ({ size = 24, ...p }: P) => (
     <path d="M9 20h6M12 16v4" />
   </svg>
 );
+
+// ---- AI mô phỏng sự cố (ảnh `scratch/figma-ref/ai-sim/`, chưa có node Figma đọc được) ----
+
+/** Hai sao 4 cánh – tiêu đề "Góp ý từ AI". */
+export const AiSparklesIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M10 4.5c.6 3.3 2.2 4.9 5.5 5.5-3.3.6-4.9 2.2-5.5 5.5-.6-3.3-2.2-4.9-5.5-5.5 3.3-.6 4.9-2.2 5.5-5.5Z" />
+    <path d="M18 2.8c.3 1.4.9 2 2.2 2.2-1.3.3-1.9.9-2.2 2.2-.3-1.3-.9-1.9-2.2-2.2 1.3-.2 1.9-.8 2.2-2.2ZM18 15.5c.3 1.4.9 2 2.2 2.2-1.3.3-1.9.9-2.2 2.2-.3-1.3-.9-1.9-2.2-2.2 1.3-.2 1.9-.8 2.2-2.2Z" />
+  </svg>
+);
+
+/** Hai khối máy chủ chồng – "Dữ liệu PLC/SCADA". */
+export const ServerIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3.5" y="4" width="17" height="7" rx="1.2" />
+    <rect x="3.5" y="13" width="17" height="7" rx="1.2" />
+    <path d="M7 7.5h.01M7 16.5h.01" strokeWidth={2.2} />
+  </svg>
+);
+
+/** Khiên có dấu cộng – "Quy tắc an toàn". */
+export const ShieldPlusIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6Z" />
+    <path d="M12 9v6M9 12h6" />
+  </svg>
+);
+
+/** Tam giác "phát" – nút "Chạy mô phỏng". */
+export const PlayIcon = ({ size = 14, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M7 4.5v15l12-7.5Z" />
+  </svg>
+);
+
+/** Bình gas có đầu dò – kịch bản rò rỉ LPG. */
+export const GasCylinderIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M9 3.5h6M10 3.5v3M14 3.5v3" />
+    <rect x="6" y="6.5" width="12" height="14" rx="3" />
+    <circle cx="12" cy="14" r="2.2" />
+  </svg>
+);
+
+/** Khung vuông có quạt – máy hóa hơi. */
+export const FanBoxIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 7v10M7 12h10M8.5 8.5l7 7M15.5 8.5l-7 7" />
+  </svg>
+);
+
+/** Dấu tick nét – danh sách "Quy tắc an toàn". */
+export const CheckIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+);

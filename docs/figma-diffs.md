@@ -179,6 +179,31 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - Biểu đồ xu hướng cao 220 px (ảnh ~190); đường "Tag khả dụng (%)" thang 0–104 % → 100 % nằm sát ngưỡng 3,0 s như ảnh.
 - Icon nút nguồn sơ đồ, CPU, màn hình: icon tạm (`TempIcons` – `BroadcastIcon`, `NetworkIcon`, `SlidersIcon`, `PipeLineIcon`, `FlameIcon`, `MonitorIcon`).
 
+## Vận hành – Nhật ký vận hành (/operations/logs, Figma bản sao 64:418, 02/11/2026)
+
+- Nguồn: MỘT lần `get_design_context` cả frame (bị cắt ở 100 KB – còn header, KPI, thanh lọc, bảng, phân trang; KHÔNG có ảnh chụp và cột phải 25 %); lần `get_screenshot` sau đó hết lượt MCP gói Starter. Code + 13 icon SVG: `scratch/figma-ref/op-logs/`.
+- **Cột phải (Figma "75/25 Layout", ~375 px) CHƯA dựng** – bảng chiếm hết bề rộng. Dòng EV-1022 trong Figma có nền highlight (dòng đang chọn) → cột phải nhiều khả năng là chi tiết sự kiện (questions 14.1).
+- **Số liệu tính từ danh sách, không chép ảnh** (128 · ↑12 · 86 (67%) · 8 (2 chưa xử lý) · 29 (5 active) · 2 (Cần kiểm tra)): tổng = số dòng bảng trong khoảng; ↑ = chênh với hôm qua CÙNG GIỜ; cảnh báo = cảnh báo của store chung phát sinh trong khoảng. Bảng Figma lặp 3 dòng mẫu ×10 → dữ liệu mock thật.
+- "(5 active)" → "(N người dùng)" = số người khác nhau có thao tác trong khoảng (chưa rõ "active" – 14.3). "Thiết bị kết nối 2 (Cần kiểm tra)" = số THIẾT BỊ có sự kiện kết nối chưa xử lý; 0 → "(Ổn định)".
+- Nút "Hôm nay" thứ hai trong thanh lọc (64:1755) bỏ – trùng nút "Hôm nay" (khoảng thời gian) ở header, dùng `DateRangeSelect` như màn Cảnh báo (14.2). Ô "Tất cả" (65:1652, không nhãn) = "Loại sự kiện" (nhãn hiện trong trigger "Loại sự kiện (Tất cả)" – cần cho trình đọc màn hình). Nút phễu = "Xoá bộ lọc" như màn Cảnh báo.
+- Mức "Trung" → "Trung bình" (thống nhất mức cảnh báo); "Cao" chữ `danger-text` (ảnh #FFB4AB). Cảnh báo Nghiêm trọng/Cao → Cao, Trung bình/Thấp → Trung bình.
+- Mã SK của dòng cảnh báo = mã cảnh báo (ALT-…) + link sang `/alerts?alert=` (Figma toàn EV-xxxx); sự kiện khác `EV-ddmm-nnn`.
+- Khu vực theo danh sách chung `AREAS` (ảnh "Trạm Bơm", "Bồn Chứa", "Tuyến Ống Chính" → "Khu bơm", "Khu bồn LPG", "Tuyến chính") + "Phòng điều khiển" cho thao tác trên HMI.
+- Số "Thao tác người dùng" màu `fg` (ảnh #B9C8DE – không token); thẻ KPI bo 8 (`compact`, ảnh 6); pill trạng thái 10 px (`Badge status`, ảnh 11 px); chữ bảng 12 px như ảnh.
+- Nút ⋮ cột Thao tác: `aria-disabled` (chưa biết menu – 14.4).
+
+## Vận hành – AI mô phỏng sự cố (/operations/ai-simulation, ảnh 02/11/2026)
+
+- Nguồn: 6 ảnh người dùng gửi (`scratch/figma-ref/ai-sim/`) – Figma không đọc được (bản sao hết lượt MCP; file "Kết quả mô phỏng" `ZujbhwBC75D6vGRMBmiNax` không có quyền edit). Đo theo pixel ảnh full 1565 px → token gần nhất.
+- **Số liệu suy dẫn, không chép ảnh:** "Lần chạy / Kết quả gần nhất" lấy từ lịch sử (ảnh ghi "--" ở mọi thẻ dù "Lịch sử gần đây" có SC-001/002/003/004) → hiện giờ + "Đạt (38 s / mục tiêu 60 s)". "Kịch bản khả dụng 5 – Sẵn sàng mô phỏng" → "5 · 4 sẵn sàng mô phỏng" (1 kịch bản cần cấu hình). "Dữ liệu PLC/SCADA" + KPI 21/21 tính từ 21 tag giám sát của màn PLC/SCADA (giờ cập nhật cuối = tag mới nhất, ảnh 18:03:42). Góp ý AI + độ tin cậy 92 % sinh bằng luật (khớp ảnh với dữ liệu mock).
+- Lịch sử sắp mới nhất trước (ảnh: 10:23 → 15:45 → 09:15 → Hôm qua, không theo thứ tự); giờ 24 giờ "15:45" thay "15:45 PM"; hôm qua "Hôm qua, 14:53".
+- "Chi tiết kịch bản" có ở MỌI thẻ và là nút mở/đóng lưới Khu vực / Dữ liệu PLC / Ngưỡng / Kết quả (ảnh: chỉ SC-001 mở, SC-003/SC-004 không có link). Mặc định mở thẻ đầu danh sách. Mở → nhãn "Thu gọn chi tiết".
+- Thẻ "Cần cấu hình mapping": nền `surface-raised` + viền vàng (ảnh nền xám sáng #3A3F4B → badge đỏ "Nghiêm trọng" không đạt tương phản AA – axe). Thêm dòng lý do dưới thẻ (ánh xạ còn thiếu + "Màn cấu hình đang chờ thiết kế").
+- Banner "Chế độ mô phỏng": ảnh cắt riêng nền kem sáng (bản export theme sáng) – dùng bản trong ảnh full: nền vàng /10, viền vàng.
+- Badge rủi ro / trạng thái: `Badge tag md` (14 px, cao 28) – ảnh ~12 px cao ~24. Tiêu đề thẻ cột phải 16 px (Card), ảnh ~18 px. Nút "Cấu hình kịch bản", "Tạo kịch bản tùy chỉnh" mờ (khoá – chưa có màn).
+- Icon: AI (sao), máy chủ, khiên +, bình gas, quạt hóa hơi, nút phát, dấu tick = icon tạm `TempIcons`; mất kết nối dùng SVG Figma `logLinkOff` của Nhật ký vận hành.
+- Dưới `xl`: cột phải xuống dưới danh sách; < 640 px badge xuống hàng dưới tên kịch bản.
+
 ## Báo cáo (/reports)
 
 - **Modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:7966, 02/11/2026):**

@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
+export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'outline-warning' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -15,6 +15,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
    * - toolbar: nút icon trong thanh lọc, nền surface-muted, viền line, bo 6px, cao 34px (70:3028)
    * - overlay: nút icon vuông 32px nổi trên bản đồ, nền surface-raised/90, viền line/30 (53:310)
    * - outline: viền + chữ primary, nền trong (ảnh MT-00128: "Tiếp nhận ngay", "Phân công người xử lý")
+   * - outline-warning: viền + chữ vàng (ảnh AI mô phỏng sự cố: "Cấu hình trước khi chạy" – kịch bản thiếu mapping)
    * - subtle:  nền chip xám, chữ fg, không viền màu (ảnh MT-00128: "Hủy yêu cầu", "Thêm ghi chú")
    * - plain:   chỉ chữ phụ, không nền/viền (modal "Cập nhật tiến độ bảo trì": "Hủy" ở chân modal)
    * - link:    chữ accent, không nền (53:468 "Xem tất cả", "Chi tiết")
@@ -41,6 +42,7 @@ const variantClass: Record<ButtonVariant, string> = {
   ghost:
     'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
   outline: 'rounded-md border border-primary/80 bg-transparent font-semibold text-primary hover:bg-primary/10',
+  'outline-warning': 'rounded-md border border-warning/80 bg-transparent font-semibold text-warning hover:bg-warning/10',
   subtle: 'rounded-md border border-line/30 bg-surface-chip/70 text-fg hover:bg-surface-chip',
   plain: 'rounded-md text-fg-secondary hover:bg-surface-muted/60 hover:text-fg',
   icon: 'rounded-lg border border-accent/30 text-fg backdrop-blur-[4px] hover:border-accent/60',
@@ -55,6 +57,7 @@ const sizeClass: Record<Exclude<ButtonVariant, 'link'>, Record<ButtonSize, strin
   info: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   ghost: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   outline: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
+  'outline-warning': { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   subtle: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-xs', lg: 'h-11 gap-2 px-5 text-md' },
   plain: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   // Figma 70:4045: 46×36 = padding 17 (16 + border) + icon 12

@@ -16,4 +16,12 @@ describe('EmergencyBanner', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.queryByRole('button')).toBeNull(); // không đóng được
   });
+
+  test('không có stage = banner tĩnh: không role="alert", nội dung đọc được; tone warning', () => {
+    const { container } = render(<EmergencyBanner tone="warning" title="Chế độ mô phỏng" text="Không tác động thiết bị thật" />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('Không tác động thiết bị thật').closest('[aria-hidden="true"]')).toBeNull();
+    expect(screen.getByText('Chế độ mô phỏng')).toHaveClass('text-warning');
+    expect(container.firstElementChild).toHaveClass('border-warning/60');
+  });
 });

@@ -59,3 +59,18 @@ describe('Button aria-disabled', () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Button outline-warning', () => {
+  test('viền + chữ vàng; aria-disabled vẫn chặn click', async () => {
+    const onClick = vi.fn();
+    render(
+      <Button variant="outline-warning" aria-disabled="true" onClick={onClick}>
+        Cấu hình trước khi chạy
+      </Button>,
+    );
+    const b = screen.getByRole('button', { name: 'Cấu hình trước khi chạy' });
+    expect(b).toHaveClass('border-warning/80', 'text-warning');
+    await userEvent.click(b);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+});

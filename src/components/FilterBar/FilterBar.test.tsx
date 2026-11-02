@@ -30,3 +30,13 @@ describe('FilterBar', () => {
     expect(onClear).toHaveBeenCalledOnce();
   });
 });
+
+describe('FilterBar standalone', () => {
+  test('mặc định có vạch dưới; standalone bỏ vạch (thanh lọc đứng riêng trên danh sách thẻ)', () => {
+    const props = { search: '', onSearchChange: () => {}, filters: [], values: {}, onValuesChange: () => {} };
+    const { rerender } = render(<FilterBar {...props} />);
+    expect(screen.getByRole('search')).toHaveClass('border-b');
+    rerender(<FilterBar {...props} standalone />);
+    expect(screen.getByRole('search')).not.toHaveClass('border-b');
+  });
+});

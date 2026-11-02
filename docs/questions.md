@@ -232,6 +232,27 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 13.8 | [D] Vào màn PLC/SCADA từ đâu (chưa có danh sách "Giám sát thiết bị")? Bấm nút nguồn trong sơ đồ có mở thiết bị không? | Ô chọn "Thiết bị" đầu header mọi trang chi tiết thiết bị (02/11/2026, người dùng chọn); nút sơ đồ không bấm được. |
 | 13.6 | [D] Khu vực "Khu hóa hơi" (ảnh) vs "Trạm hóa hơi" (Cảnh báo/Bảo trì/báo cháy FZ-02) | "Trạm hóa hơi". |
 
+## 14. Vận hành – Nhật ký vận hành (`/operations/logs`, Figma bản sao 64:418, 02/11/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 14.1 | [D] Cột phải 25 % của "75/25 Layout" chứa gì (chi tiết sự kiện đang chọn? bấm dòng để chọn?) – MCP hết lượt trước khi lấy được, cần ảnh chụp | Chưa dựng; bảng chiếm hết bề rộng. |
+| 14.2 | [D] Hai nút "Hôm nay" (header + thanh lọc) khác nhau thế nào? | Một nút ở header = khoảng thời gian (Hôm nay / 7 ngày / 30 ngày) cho cả KPI và bảng. |
+| 14.3 | [K] "(5 active)" của "Thao tác người dùng" nghĩa là gì (phiên đang đăng nhập? người dùng có thao tác?) | Số người khác nhau có thao tác trong khoảng. |
+| 14.4 | [D] Menu ⋮ của từng dòng có những thao tác nào? Ô "Tất cả" lọc theo gì? | ⋮ khoá; "Tất cả" = Loại sự kiện (vận hành / cảnh báo / thao tác người dùng / kết nối thiết bị). |
+| 14.5 | [K] Danh mục sự kiện thật (nguồn: SCADA event log, audit log người dùng, historian?), mã sự kiện, trạng thái "Ghi nhận" khác "Hoàn thành" thế nào? | Mock: 4 loại, mã `EV-ddmm-nnn`, cảnh báo lấy từ hệ thống cảnh báo (mã ALT). |
+
+## 15. Vận hành – AI mô phỏng sự cố (`/operations/ai-simulation`, ảnh 02/11/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 15.1 | [D] Bấm "Chạy mô phỏng" thì sang màn nào (file Figma tên "Kết quả mô phỏng" – chưa xem được)? Có màn đang chạy / kết quả chi tiết không? | Chạy tại chỗ: nút "Đang mô phỏng…" ~1 s → kết quả (Đạt / Cần cải thiện + giây phản ứng) vào "Lịch sử gần đây" và thẻ. |
+| 15.2 | [K] "Đạt / Cần cải thiện" đánh giá theo tiêu chí gì? Thời gian phản ứng mục tiêu từng kịch bản? | Tổng thời gian các bước phản ứng (giả định) so với mục tiêu (60–90 s). |
+| 15.3 | [D] "Lịch sử mô phỏng", "Cấu hình kịch bản", "Tạo kịch bản tùy chỉnh", "Cấu hình trước khi chạy" – thiết kế các màn này? | Lịch sử → cuộn tới "Lịch sử gần đây"; ba nút còn lại khoá kèm lý do. |
+| 15.4 | [K] "Góp ý từ AI" lấy từ dịch vụ nào, "Độ tin cậy" tính ra sao, phân tích lại khi nào? | Luật FE; độ tin cậy = 60 % thông số khả dụng + 40 % kịch bản đã chạy trong 7 ngày; giờ phân tích = lúc dữ liệu đầu vào đổi. |
+| 15.5 | [K] "Cảm biến lỗi / Mất kết nối / Dữ liệu cũ" phân loại theo gì? 21 thông số là những tag nào? | Lỗi = quality bad · mất kết nối = không có tag · cũ = ≥ 10 s không cập nhật; 21 = tag giám sát của màn PLC/SCADA. |
+| 15.6 | [D] Ai được chạy mô phỏng? | Vai trò Vận hành trở lên (`simulation:run`); Người xem chỉ xem. |
+
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 
 Gồm cả phần chưa có ở các mục trên (modal "Phân công xử lý cảnh báo", modal "Cập nhật xử lý cảnh báo áp suất").

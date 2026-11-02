@@ -72,6 +72,9 @@ import reportSignature from './report-signature.svg';
 import reportRecordEdit from './report-record-edit.svg';
 import tableGroupChevron from './report-group-chevron.svg';
 import reportReadingAuto from './report-reading-auto.svg';
+import logArrowUp from './log-arrow-up.svg';
+import logAlert from './log-alert.svg';
+import logLinkOff from './log-link-off.svg';
 
 export { default as avatarAdmin } from './avatar-admin.png';
 /** 53:244 – ảnh bản đồ 2.5D (2730×1536, KHÔNG có nhãn – nhãn là overlay HTML). */
@@ -203,6 +206,14 @@ export const icons = {
   tableGroupChevron,
   /** 117:4619 ô giờ – sóng tín hiệu cyan = số đo tự động (SCADA), 9×9 */
   reportReadingAuto,
+
+  // ---- Nhật ký vận hành (64:418) ----
+  /** 64:883 KPI "Tổng sự kiện hôm nay" – mũi tên tăng xanh cạnh số chênh lệch, 9.33×9.33 */
+  logArrowUp,
+  /** 64:895 KPI "Cảnh báo phát sinh" – tam giác viền đỏ, 12.83×11.08 */
+  logAlert,
+  /** 64:911 KPI "Thiết bị kết nối" – liên kết đứt vàng, 12.02×11.55 */
+  logLinkOff,
 } as const;
 
 export type IconName = keyof typeof icons;

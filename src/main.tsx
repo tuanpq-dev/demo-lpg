@@ -20,8 +20,9 @@ const EditorPage = lazy(() => import('./pages/editor/EditorPage'));
 const AssetDetailPage = lazy(() => import('./pages/asset/AssetDetailPage'));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
 const DailyReportDetailPage = lazy(() => import('./pages/reports/DailyReportDetailPage'));
-const SimplePage = lazy(() => import('./pages/SimplePage'));
 const DeviceDetailPage = lazy(() => import('./pages/operations/DeviceDetailPage'));
+const OperationLogsPage = lazy(() => import('./pages/operations/OperationLogsPage'));
+const AiSimulationPage = lazy(() => import('./pages/operations/AiSimulationPage'));
 
 function Root() {
   return (
@@ -69,8 +70,8 @@ const router = createBrowserRouter([
           { path: '/operations/overview', loader: () => redirect('/operations/devices') },
           { path: '/operations/devices', loader: () => redirect(operationDevicePath(DEFAULT_OPERATION_DEVICE)) },
           { path: '/operations/devices/:deviceId', element: <DeviceDetailPage /> },
-          { path: '/operations/logs', element: <SimplePage section="Vận hành" title="Nhật ký vận hành" /> },
-          { path: '/operations/ai-simulation', element: <SimplePage section="Vận hành" title="AI mô phỏng sự cố" /> },
+          { path: '/operations/logs', element: <OperationLogsPage /> },
+          { path: '/operations/ai-simulation', element: <AiSimulationPage /> },
           { path: '/operations/:assetId', loader: legacyAssetRedirect },
           { path: '/alerts', element: <AlertsPage /> },
           { path: '/maintenance', element: <MaintenancePage /> },

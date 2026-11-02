@@ -88,7 +88,7 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Số liệu trực tiếp | `TagValue`/`LiveData`, mất tín hiệu, nguồn mock → WebSocket, thêm tag (4b – live) | [docs/guide/live-data.md](docs/guide/live-data.md) |
 | Cảnh báo | Danh sách /alerts (4c), drawer theo loại áp suất/gas/cháy (4m), phân công (4n), cập nhật xử lý khung chung áp suất/gas/cháy (4o), xác nhận đóng + tab Chờ đóng (4p); **bảng mã mock để thử** | [docs/guide/alerts.md](docs/guide/alerts.md) |
 | Bảo trì | Model + quá hạn + modal tạo (4d), chi tiết yêu cầu (4i), tiến độ (4j), nghiệm thu (4k), phân công (4l); **mã mock để thử** | [docs/guide/maintenance.md](docs/guide/maintenance.md) |
-| Vận hành – chi tiết thiết bị | `/operations/devices/E-101A`: URL, luồng dữ liệu (tag/ngưỡng một nguồn, số tạm), vùng ↔ component, thêm thiết bị | [docs/guide/operations.md](docs/guide/operations.md) |
+| Vận hành – thiết bị, nhật ký, AI mô phỏng | `/operations/devices/E-101A`: URL, luồng dữ liệu (tag/ngưỡng một nguồn, số tạm), vùng ↔ component, thêm thiết bị · `/operations/logs` Nhật ký vận hành (mục 7) · `/operations/ai-simulation` AI mô phỏng sự cố (mục 8) | [docs/guide/operations.md](docs/guide/operations.md) |
 | Báo cáo định kỳ | `/reports`: tách lớp dùng chung ngày/tháng/quý/năm (5O-1), quy tắc trạng thái (5O-2), **URL thử với `?now=`** (5O-3), chưa làm (5O-4) | [docs/guide/reports.md](docs/guide/reports.md) |
 | Đăng nhập + backend | Biến môi trường, chạy cùng backend, hợp đồng API, luồng đăng nhập, gọi endpoint mới (9a–9f, Phụ lục D) | [docs/guide/backend-auth.md](docs/guide/backend-auth.md) |
 | Test + chất lượng | Lệnh, nơi đặt test, thêm test, axe/accessibility (7b) | [docs/guide/testing.md](docs/guide/testing.md) |

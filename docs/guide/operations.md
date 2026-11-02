@@ -68,3 +68,34 @@ DeviceDetailRoute (chuẩn hoá mã / không tìm thấy) → DeviceDetailPage  
 - **Đổi thiết bị**: ô "Thiết bị ( mã )" CẠNH TIÊU ĐỀ (`PageHeader titleEnd`, rộng cố định 200 px – không xô vị trí khi chip Tên/Khu vực đổi độ rộng theo thiết bị; Select `filter` `fullWidth`, `OPERATION_DEVICE_OPTIONS` – mọi thiết bị có trang, chỉ mã vì tên đã ở chip "Tên") → `/operations/devices/<mã>` giữ query. Thay cho màn danh sách "Giám sát thiết bị" tới khi có thiết kế (questions 13.5, 13.8).
 - **Thử mất tín hiệu** (dev, console): `__liveSimulator.setBad(['PT-101','PLC-01.HEARTBEAT'])` → tag khả dụng 20/21, nút "Bồn LPG V-101" xám, PLC "Mất tín hiệu".
 
+
+## 7. Nhật ký vận hành (`/operations/logs`)
+
+Figma bản sao `A88YJ2BRhICDDdeu2rtRg1` node `64:418` (code bị cắt + 13 icon: `scratch/figma-ref/op-logs/`, chỉ máy dev). Sai khác: docs/figma-diffs.md mục "Nhật ký vận hành"; câu hỏi: docs/questions.md mục 14. **Cột phải 25 % chưa dựng** (chưa có dữ liệu Figma).
+
+| Lớp | File | Ghi chú |
+|---|---|---|
+| Logic thuần | `src/features/operations/logs.ts` (+ test) | Kiểu `OperationLogEvent` (4 loại · 3 mức · 5 trạng thái + nhãn), `alertToLogEvent` (cảnh báo store → dòng nhật ký: Nghiêm trọng/Cao → Cao, Trung bình/Thấp → Trung bình; Chưa xác nhận → Chưa xử lý, Đã xử lý → Đang theo dõi), `inLogRange` (bỏ sự kiện tương lai), `deriveLogKpis` (tổng, ↑ so với hôm qua CÙNG GIỜ – chỉ khoảng Hôm nay, % vận hành, cảnh báo chưa xử lý, số người thao tác, số thiết bị mất kết nối), `LOG_PARAMS` + `matchLogEvent` (tìm không dấu), `byNewestEvent`, `logTimeText`, `logsToCsv` |
+| Mock | `src/mocks/operationLogs.ts` (+ test) | `buildOperationLogs(now)` – 31 ngày, khe 10 phút, chọn mẫu bằng PRNG theo (ngày, khe) → xác định, qua giờ chỉ thêm khe mới. Kịch bản: FT-102 (lùi 24 phút) + TT-305 (lùi 95 phút) mất kết nối **chưa xử lý** (không phải tag trực tiếp – test khoá), F-202 đang theo dõi (lùi 7 phút). Không sinh cảnh báo |
+| Dữ liệu | `src/data/operationLogs.ts` | `useOperationLogs(now)` = mock + `useAlertList` (store cảnh báo nhẹ); lỗi/tải ở một nguồn → cả trang; "Làm mới" tải lại cả hai |
+| Trang | `src/pages/operations/OperationLogsPage.tsx` (+ test) | Header: `DateRangeSelect` (khoảng – KPI + bảng) · `ExportButton` (CSV dòng đang lọc) · `RefreshButton accent` · `LiveDataButton`. 5 `KpiCard compact` (`valueNote` cùng dòng số). Card: `FilterBar` (tìm · Khu vực · Loại sự kiện · phễu = Xoá bộ lọc giữ khoảng) + `DataTable` 10 dòng/trang (mức = `StatusDot` + chữ; mã cảnh báo = link `/alerts?alert=<id>[&range=7d|30d]`; trạng thái = `Badge status` nhãn riêng; ⋮ `aria-disabled`) |
+
+- URL: `?q=` `range` (today/7d/30d, mặc định today) `area` `category` (operation/alert/user-action/connection) `page`. KPI chỉ theo `range`, không theo bộ lọc bảng.
+- Thử nhanh (dev): `/operations/logs` · `/operations/logs?category=alert` (= KPI "Cảnh báo phát sinh") · `/operations/logs?q=mat tin hieu` (2 dòng Chưa xử lý) · `/operations/logs?range=7d` (dòng cũ có nhãn "Hôm qua"/ngày). `?now=2026-11-02T18:30` để mọi cảnh báo mock hôm nay đã phát sinh (giờ cảnh báo mock cố định – trước giờ đó các dòng "tương lai" bị ẩn).
+- Chưa làm: cột phải, menu ⋮, bấm dòng; API (docs/decisions.md "Nhật ký vận hành").
+
+## 8. AI mô phỏng sự cố (`/operations/ai-simulation`)
+
+Ảnh người dùng gửi 02/11/2026 (Figma: bản sao hết lượt MCP, file "Kết quả mô phỏng" không có quyền) – `scratch/figma-ref/ai-sim/` (full, header, banner, kpi, scenario-list, right-column; chỉ máy dev). Sai khác: docs/figma-diffs.md mục "AI mô phỏng sự cố"; câu hỏi: docs/questions.md mục 15.
+
+| Lớp | File | Ghi chú |
+|---|---|---|
+| Logic thuần | `src/features/simulation/scenarios.ts` (+ test) | Kiểu `Scenario` (nhóm · rủi ro · trạng thái ready/needs-config · biến PLC hiển thị · tag SCADA tham chiếu · ngưỡng · bước phản ứng + mục tiêu giây), `SimulationRun`. `tagHealth` (21 tag: khả dụng / lỗi = bad / mất kết nối = thiếu tag / cũ ≥ 10 s + giờ cập nhật cuối), `runBlocker` (thiếu mapping → chưa có số liệu → tag mất tín hiệu), `simulateScenario` (XÁC ĐỊNH: tổng giây các bước ≤ mục tiêu → Đạt, ngược lại Cần cải thiện), `lastRunOf`, `runTimeText`, `agoText`, `deriveSimulationKpis`, `aiSuggestion` (luật + độ tin cậy giả định 60 % thông số khả dụng + 40 % kịch bản chạy trong 7 ngày), `SIMULATION_PARAMS` + `matchScenario` |
+| Mock | `src/mocks/simulation.ts` (+ test) | 5 kịch bản (tag từ `features/live/tags.ts`, biến PLC theo `PLC_REPORT_TAGS`; ngưỡng khớp ALT-00128 / ALT-00126 – test khoá); 4 lượt mẫu (3 hôm nay, SC-004 Cần cải thiện 95 s > 60 s) |
+| Dữ liệu | `src/data/simulation.ts` | `useSimulation()` = kịch bản + lịch sử (store) + `useLiveData` (21 tag `plcScadaDevices['PLC-SCADA'].monitoredTags` + tag kịch bản). `runSimulation(id, by)` – trễ giả lập 900 ms, thêm vào lịch sử; KHÔNG ghi store cảnh báo / thiết bị (test khoá). Quyền `simulation:run` (operator) |
+| Trang | `src/pages/operations/AiSimulationPage.tsx` (+ test) · `simulation/ScenarioCard.tsx` · `simulation/SimulationSideCards.tsx` | Header (Lịch sử → focus "Lịch sử gần đây"; Cấu hình / Tạo kịch bản khoá – chờ thiết kế) · `EmergencyBanner tone="warning"` tĩnh · 4 `KpiCard` · `FilterBar inline standalone` (nhóm · rủi ro · trạng thái · khu vực; phễu = Xoá bộ lọc) · thẻ kịch bản (`InfoGrid` chi tiết mở/đóng `aria-expanded`; "Chạy mô phỏng" `aria-busy`, khoá kèm lý do `aria-describedby`; thiếu mapping → `Button outline-warning` "Cấu hình trước khi chạy" khoá) · cột phải 380 px (`xl`) / 484 px (`wide`): Góp ý AI · Dữ liệu PLC/SCADA · Lịch sử gần đây (4 lượt mới nhất) · Quy tắc an toàn |
+
+- URL: `?q=` `group` (gas-leak/pressure/equipment/communication/fire) `status` (ready/needs-config) `risk` (critical/high/medium) `area`.
+- Mất tín hiệu so `ts` với giờ THẬT (`Date.now()`), không theo `?now=`. KPI / giờ hiển thị theo `useNow` (giờ nhà máy).
+- Thử nhanh (dev): `/operations/ai-simulation?now=2026-11-02T18:13` (gần ảnh: 5 · 3 · 1 · 21/21, độ tin cậy 92 %) · bấm "Chạy mô phỏng" SC-003 → lịch sử + KPI · console `__liveSimulator.setBad(['PT-201'])` → SC-003 khoá "PT-201 mất tín hiệu", khối PLC "Thiếu dữ liệu" · `?status=needs-config` → chỉ SC-005.
+- Chưa làm: màn kết quả / chi tiết một lượt mô phỏng, cấu hình kịch bản + mapping, tạo kịch bản tùy chỉnh, lịch sử đầy đủ; dịch vụ AI thật; API (docs/decisions.md "AI mô phỏng sự cố").
