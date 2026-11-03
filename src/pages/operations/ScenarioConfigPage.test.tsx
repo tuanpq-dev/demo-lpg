@@ -7,8 +7,8 @@ import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
 import { fetchAlerts } from '@/data/alertStore';
 import { liveSimulator } from '@/data/live';
-import { fetchScenarios } from '@/data/simulation';
-import { TANK_AREA_TAGS } from '@/features/live/tags';
+import { fetchScenarios, fetchSimulationRuns, fetchSimulationSessions } from '@/data/simulation';
+import { V101_TAGS } from '@/features/live/tags';
 import ScenarioConfigPage from './ScenarioConfigPage';
 
 /*
@@ -37,6 +37,7 @@ function renderAt(url: string, role: 'viewer' | 'operator' = 'operator') {
     [
       { path: '/operations/ai-simulation/:scenarioId/config', element: <ScenarioConfigPage /> },
       { path: '/operations/ai-simulation', element: <p>Danh sách</p> },
+      { path: '/operations/ai-simulation/:scenarioId/monitor', element: <h1>Màn theo dõi</h1> },
     ],
     { initialEntries: [url] },
   );
@@ -52,9 +53,12 @@ function summary(label: string) {
   const dt = within(region('Tóm tắt cấu hình')).getByText(label);
   return dt.nextElementSibling!.textContent;
 }
-const runButton = () => screen.getByRole('button', { name: /Bắt đầu chạy mô phỏng|Đang mô phỏng…/ });
-/** Chờ ảnh chụp số liệu đầu tiên (trước đó nút chạy khoá "Đang tải dữ liệu…"). */
-const waitReady = () => waitFor(() => expect(runButton()).not.toHaveAttribute('aria-disabled'), { timeout: 5000 });
+const runButton = () => screen.getByRole('button', { name: /Bắt đầu chạy mô phỏng|Đang khởi động…/ });
+/**
+ * Chờ ảnh chụp số liệu đầu tiên ("Trạng thái sẵn sàng" có 21/21). Không chờ theo nút chạy: SC-001 có lượt mẫu đang chạy →
+ * nút chạy thành link "Theo dõi mô phỏng đang chạy" (đổi 03/11/2026 – màn Theo dõi diễn biến).
+ */
+const waitReady = () => waitFor(() => expect(within(region('Trạng thái sẵn sàng')).getByText('21/21')).toBeInTheDocument(), { timeout: 5000 });
 
 afterEach(() => liveSimulator.restore());
 
@@ -88,6 +92,9 @@ describe('/operations/ai-simulation/:id/config', () => {
     expect(items[0]).toHaveTextContent('Ghi chú: Phát hiện cảnh báo đúng thời điểm.');
     expect(items[2]).toHaveTextContent('Kết quả: Cần cải thiện');
     expect(screen.getByRole('button', { name: 'Xem toàn bộ lịch sử' })).toHaveAccessibleDescription(/chờ thiết kế/);
+    // Lượt mẫu SC-001 đang chạy → link sang màn theo dõi thay cho "Bắt đầu chạy".
+    expect(screen.getByRole('link', { name: 'Theo dõi mô phỏng đang chạy' })).toHaveAttribute('href', '/operations/ai-simulation/SC-001/monitor');
+    expect(screen.queryByRole('button', { name: /Bắt đầu chạy/ })).not.toBeInTheDocument();
   });
 
   test('sửa tham số → tóm tắt đổi ngay; áp dụng gợi ý đưa về 35% / 10 phút; bỏ qua → focus "Xem lại gợi ý"', async () => {
@@ -115,11 +122,12 @@ describe('/operations/ai-simulation/:id/config', () => {
     expect(screen.getByRole('button', { name: 'Bỏ qua' })).toHaveFocus();
   });
 
+  // SC-003 (không có lượt đang chạy) thay SC-001 – cần nút "Bắt đầu chạy".
   test('bỏ hết khu vực ảnh hưởng → lỗi; Lưu + Bắt đầu chạy khoá kèm lý do', async () => {
     const user = userEvent.setup();
-    renderAt('/operations/ai-simulation/SC-001/config');
+    renderAt('/operations/ai-simulation/SC-003/config');
     await waitReady();
-    await user.click(screen.getByRole('checkbox', { name: 'Khu bồn LPG' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Trạm hóa hơi' }));
     expect(screen.getByText('Chọn ít nhất một khu vực ảnh hưởng.')).toBeInTheDocument();
     expect(summary('Khu vực:')).toBe('—');
     expect(summary('Trạng thái:')).toBe('Chưa hợp lệ');
@@ -143,26 +151,30 @@ describe('/operations/ai-simulation/:id/config', () => {
     expect(saved.config).toMatchObject({ endCondition: 'manual-stop', areas: ['Khu bồn LPG', 'Đường cấp LPG'] });
   });
 
-  test('bắt đầu chạy → lượt mới đầu "Lịch sử kịch bản này"; store cảnh báo giữ nguyên', async () => {
+  // Đổi 03/11/2026: "Bắt đầu chạy" mở lượt theo thời gian thực rồi sang màn theo dõi (trước: chạy tức thì, ghi lịch sử ngay).
+  test('bắt đầu chạy SC-003 → lượt đang chạy + sang màn theo dõi; lịch sử chưa đổi; store cảnh báo giữ nguyên', async () => {
     const alertsBefore = await fetchAlerts();
+    const runsBefore = (await fetchSimulationRuns()).length;
     const user = userEvent.setup();
-    renderAt('/operations/ai-simulation/SC-001/config');
+    renderAt('/operations/ai-simulation/SC-003/config');
     await waitReady();
+    await waitFor(() => expect(runButton()).not.toHaveAttribute('aria-disabled'), { timeout: 5000 });
     await user.click(runButton());
-    expect(await screen.findByRole('button', { name: /Đang mô phỏng…/ })).toHaveAttribute('aria-busy', 'true');
-    await screen.findByRole('button', { name: /Bắt đầu chạy mô phỏng/ }, { timeout: 3000 });
-    const first = within(screen.getByRole('region', { name: 'Lịch sử kịch bản này' })).getAllByRole('listitem')[0]!;
-    expect(first).toHaveTextContent('Kết quả: Đạt');
-    expect(first).toHaveTextContent('Ghi chú: Phản ứng 38 s, trong mục tiêu 60 s.');
+    expect(await screen.findByRole('button', { name: /Đang khởi động…/ })).toHaveAttribute('aria-busy', 'true');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Màn theo dõi' }, { timeout: 3000 })).toBeInTheDocument();
+    const session = (await fetchSimulationSessions()).find((x) => x.scenarioId === 'SC-003')!;
+    expect(session.config).toMatchObject({ target: 42, durationMin: 15, areas: ['Trạm hóa hơi'] });
+    expect(await fetchSimulationRuns()).toHaveLength(runsBefore);
     expect(await fetchAlerts()).toEqual(alertsBefore);
   });
 
+  // SC-002 thay SC-001 (SC-001 có lượt mẫu đang chạy – không có nút chạy).
   test('tag biến chính mất tín hiệu → ô bắt đầu "Mất tín hiệu", chạy khoá kèm tên tag', async () => {
-    renderAt('/operations/ai-simulation/SC-001/config');
+    renderAt('/operations/ai-simulation/SC-002/config');
     await waitReady();
-    liveSimulator.setBad([TANK_AREA_TAGS.gas]);
+    liveSimulator.setBad([V101_TAGS.pressure]);
     await waitFor(() => expect(runButton()).toHaveAttribute('aria-disabled', 'true'), { timeout: 3000 });
-    expect(runButton()).toHaveAccessibleDescription(new RegExp(`${TANK_AREA_TAGS.gas} mất tín hiệu`));
+    expect(runButton()).toHaveAccessibleDescription(new RegExp(`${V101_TAGS.pressure} mất tín hiệu`));
     expect(within(region('Tham số đầu vào')).getByText('Mất tín hiệu')).toBeInTheDocument();
     expect(summary('Dữ liệu đầu vào:')).toBe('Thiếu dữ liệu');
   });

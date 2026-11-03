@@ -30,8 +30,10 @@ export type EventTimelineProps = {
    * - event:    chấm 12px, tiêu đề rồi giờ (Sự kiện gần đây 53:532)
    * - schedule: chấm 16px, giờ rồi tiêu đề 14px rồi vị trí kèm icon ghim (Lịch sắp tới 70:4895)
    * - history:  chấm đặc 8px theo `tone`, tiêu đề trái + giờ phải trên một dòng (Lịch sử xử lý – ảnh MT-00128)
+   * - feed:     chấm đặc 8px theo `tone`, giờ (14px) trên nội dung (16px); tone neutral làm mờ nội dung – "Timeline diễn
+   *             biến" màn Theo dõi mô phỏng (ảnh `ai-sim-monitor/8.png`)
    */
-  variant?: 'event' | 'schedule' | 'history';
+  variant?: 'event' | 'schedule' | 'history' | 'feed';
   /** Click vào một mục (render thành button). */
   onEventClick?: (id: string) => void;
   className?: string;
@@ -59,6 +61,7 @@ function PinIcon() {
  */
 export function EventTimeline({ events, variant = 'event', onEventClick, className }: EventTimelineProps) {
   if (variant === 'history') return <HistoryTimeline events={events} className={className} />;
+  if (variant === 'feed') return <FeedTimeline events={events} className={className} />;
   const hasActive = events.some((e) => e.active !== undefined);
   const schedule = variant === 'schedule';
   return (
@@ -121,6 +124,28 @@ function HistoryTimeline({ events, className }: Pick<EventTimelineProps, 'events
             <span aria-hidden="true" className={cn('relative top-[-1px] size-2 shrink-0 self-center rounded-full', historyDot[tone])} />
             <span className={cn('min-w-0 flex-1 text-base', tone === 'danger' ? 'text-danger-text' : 'text-fg-secondary')}>{e.title}</span>
             <time className="shrink-0 text-sm tabular-nums text-fg-secondary">{e.time}</time>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+const feedDot: Record<TimelineTone, string> = { ...historyDot, neutral: 'bg-neutral/50', danger: 'bg-danger' };
+
+function FeedTimeline({ events, className }: Pick<EventTimelineProps, 'events' | 'className'>) {
+  return (
+    <ol className={cn('relative flex flex-col gap-4', className)}>
+      <span aria-hidden="true" className="absolute bottom-1 left-[3.5px] top-2 w-px bg-line/60" />
+      {events.map((e) => {
+        const tone = e.tone ?? 'neutral';
+        return (
+          <li key={e.id} className="relative flex gap-4">
+            <span aria-hidden="true" className={cn('relative mt-1.5 size-2 shrink-0 rounded-full', feedDot[tone])} />
+            <span className="flex min-w-0 flex-col gap-1">
+              <time className="text-sm tabular-nums text-fg-secondary">{e.time}</time>
+              <span className={cn('text-md', tone === 'neutral' ? 'text-fg-secondary' : 'text-fg')}>{e.title}</span>
+            </span>
           </li>
         );
       })}

@@ -2,6 +2,24 @@
 
 Chuyển nguyên văn từ CLAUDE.md ngày 28/10/2026: roadmap/nhật ký từng giai đoạn (kèm số test, bundle), kiến trúc 3D + Scene Editor (quyết định), TODO kỹ thuật và màu đã duyệt, hợp đồng API cần bổ sung. Ghi quyết định mới vào đây (mới nhất lên đầu mục liên quan), KHÔNG vào CLAUDE.md.
 
+## Quyết định – Kết quả mô phỏng (03/11/2026, chưa commit, trên `main`)
+- Dựng theo 14 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-result/`), ưu tiên giống ảnh. Route `/operations/ai-simulation/:scenarioId/result` (lazy, `?session=`, `?preview=1`), docs/guide/operations.md mục 11.
+- Người dùng chốt: (1) đường diễn biến chung = tăng → đỉnh mục tiêu → ESD ảo giảm ("Tăng nhanh" đỉnh ở 50 % thời lượng như ảnh; lượt mẫu đang chạy đổi sang "Tăng vừa" để màn theo dõi vẫn khớp ảnh lúc 06:32); (2) cảnh báo theo ảnh Kết quả cho cả 2 màn: SIM-AL-001 High, SIM-AL-002 High-High; bỏ cảnh báo áp suất dao động.
+- Một nguồn: `simTimeline` (monitor.ts) sinh cảnh báo + sự kiện cho cả 2 màn; `simulationResult` (result.ts) suy KPI / đánh giá / tiêu chí từ lượt + bản ghi lịch sử; trạng thái báo cáo nháp lưu trên lượt (`session.report`).
+- Mở rộng component: `TargetTrendChart` (`grid`, `dots`, `endDot`, `areaOpacity`, `thinTicks`); icon tạm `SyncIcon`, `SheetIcon`, `PreviewIcon`. `ReferenceRow.shortLabel`.
+- **Đổi test có chủ đích:** `monitor.test` (mô hình mới), `mocks/simulation.test` + `SimulationMonitorPage.test` (lúc 06:32 còn 1 cảnh báo, timeline 5 mốc) – theo quyết định (2).
+- **Hợp đồng API cần thêm:** `GET /simulation/sessions/:id/result` (KPI, tiêu chí, sự kiện, cảnh báo, gợi ý AI + độ tin cậy, điểm làm tốt / cần cải thiện); `PATCH /simulation/sessions/:id/report` `{ aiIncluded, aiDismissed }`; `POST /simulation/sessions/:id/report/export?format=pdf|xlsx` → tệp; mã phiên `SIM-RUN-ddmmyyyy-NNN` do máy chủ cấp.
+- Kiểm tra: xem mục số đo trong CLAUDE.md (vitest, bundle).
+
+## Quyết định – Theo dõi diễn biến mô phỏng (03/11/2026, chưa commit, trên `main`)
+- Dựng theo 9 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-monitor/`), không gọi Figma. Route `/operations/ai-simulation/:scenarioId/monitor` (lazy), docs/guide/operations.md mục 10.
+- Người dùng chọn: "Chạy mô phỏng" (danh sách) và "Bắt đầu chạy mô phỏng" (cấu hình) mở lượt chạy THEO THỜI GIAN THỰC (thời lượng trong tham số) rồi chuyển sang màn theo dõi; lịch sử ghi khi lượt kết thúc; thêm nút "Dừng mô phỏng". Bỏ `runSimulation` (chạy tức thì).
+- Một nguồn: lượt chạy trong store `sessions` của `data/simulation.ts`; mọi số trên màn suy từ lượt + `now` (`monitorSnapshot`); kết quả lượt dùng lại `simulateScenario`; độ tin cậy AI dùng chung `suggestionConfidence`; dữ liệu thật chỉ chụp lúc bắt đầu. Mock có lượt SC-001 đang chạy (06:32 lúc nạp) để mở thẳng màn.
+- Mở rộng component (không viết mới): `EventTimeline variant="feed"`, `TargetTrendChart` (cùng file TrendChart), `ChartTooltip labelFormat`, icon tạm `FlaskIcon`, `DetectorIcon`, `BellRingIcon`, `TrendUpIcon`/`TrendDownIcon`, `ActivityLineIcon`, `StopCircleIcon`.
+- **Đổi test có chủ đích:** `AiSimulationPage.test` + `ScenarioConfigPage.test` – chạy = mở lượt + sang màn theo dõi, lịch sử chưa đổi (trước: lịch sử +1 ngay); SC-001 có lượt mẫu đang chạy → test cần nút chạy chuyển sang SC-002/003/004; `waitReady` màn cấu hình chờ "21/21" thay vì nút chạy.
+- **Hợp đồng API cần thêm:** `POST /simulation/scenarios/:id/runs` → lượt `{ id, scenarioId, startedAt, by, config, startValue, reference[{ label, valueText }] }` (máy chủ chụp số liệu ban đầu); `POST /simulation/sessions/:id/stop`; `GET /simulation/sessions?active=1`; luồng diễn biến (WebSocket: giá trị, cảnh báo mô phỏng, mốc timeline, gợi ý AI + độ tin cậy); khi kết thúc máy chủ ghi bản ghi lịch sử.
+- Kiểm tra: vitest 974/974 cả bộ (Node 20, `--testTimeout=30000`; +24: logic 17, mock 1, trang 6). Trình duyệt 1565/1280/768/390: không console error; 390 chỉ tràn header chung (269 px, giống màn cấu hình), thân trang không tràn. Bundle chính 132,08 KB gzip (trước 131,73), chunk `SimulationMonitorPage` 5,4 KB gzip; `dist/` không có đường dẫn ảnh figma.
+
 ## Quyết định – Cấu hình kịch bản mô phỏng (03/11/2026, chưa commit, trên `main`)
 - Dựng theo 12 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-config/`), không gọi Figma. Route `/operations/ai-simulation/:scenarioId/config` (lazy), docs/guide/operations.md mục 9.
 - Một nguồn: setup + tham số nằm trong bản ghi kịch bản (`Scenario.setup` / `Scenario.config`) của store mô phỏng chung; tag từ `features/live/tags.ts` (thêm `TANK_AREA_TAGS.gas` = GS-06); 21 tag "Trạng thái sẵn sàng" = cùng nguồn màn danh sách; độ tin cậy AI dùng chung `suggestionConfidence`. Lưu cấu hình chỉ đổi lớp mô phỏng.

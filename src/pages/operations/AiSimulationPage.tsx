@@ -1,12 +1,13 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, PageHeader, buttonClass, type FilterDef } from '@/components';
-import { simulationConfigPath } from '@/app/assetRoutes';
+import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
-import { SIMULATION_REFERENCE_TAGS, runSimulation, useSimulation } from '@/data/simulation';
+import { SIMULATION_REFERENCE_TAGS, startSimulation, useSimulation } from '@/data/simulation';
+import { activeSessionOf, startBlocker } from '@/features/simulation/monitor';
 import {
   SCENARIO_GROUPS,
   SCENARIO_GROUP_LABEL,
@@ -22,8 +23,6 @@ import {
   healthSynced,
   lastRunOf,
   matchScenario,
-  runBlocker,
-  runSummary,
   tagHealth,
   type Scenario,
   type ScenarioGroup,
@@ -48,9 +47,10 @@ export default function AiSimulationPage() {
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
   const canRun = useCan('simulation:run');
-  // Phút cho KPI/giờ hiển thị (giờ nhà máy, có thể dời bằng ?now=); giây để tag "cũ" chuyển trạng thái đúng lúc.
+  // Phút cho KPI/giờ hiển thị (giờ nhà máy, có thể dời bằng ?now=).
   const now = useNow(60_000);
-  useNow(1000);
+  // Giây: tag "cũ" chuyển trạng thái đúng lúc + lượt chạy kết thúc đúng giờ.
+  const tick = useNow(1000).getTime();
   // Quy tắc mất tín hiệu so `ts` với giờ THẬT (không dùng ?now=) – CLAUDE.md "Dữ liệu trực tiếp".
   const realNow = Date.now();
 
@@ -74,17 +74,20 @@ export default function AiSimulationPage() {
   const firstId = table.filtered[0]?.id;
   const isExpanded = (id: string) => expanded[id] ?? id === firstId;
   const [running, setRunning] = useState<ReadonlySet<string>>(new Set());
+  const navigate = useNavigate();
+  const liveData = sim.liveData;
 
+  // Bắt đầu lượt chạy theo thời gian thực rồi mở màn "Theo dõi diễn biến mô phỏng".
   const onRun = useCallback(
     async (s: Scenario) => {
       setRunning((cur) => new Set(cur).add(s.id));
-      announce(`Đang mô phỏng ${s.code}…`);
+      announce(`Đang khởi động mô phỏng ${s.code}…`);
       try {
-        const run = await runSimulation(s.id, actor);
-        announce(`${s.code}: ${runSummary(run)}. Đã lưu vào lịch sử.`);
+        await startSimulation(s.id, actor, liveData);
+        announce(`Đã bắt đầu mô phỏng ${s.code}.`);
+        navigate(simulationMonitorPath(s.id));
       } catch (e) {
         announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
-      } finally {
         setRunning((cur) => {
           const next = new Set(cur);
           next.delete(s.id);
@@ -92,7 +95,7 @@ export default function AiSimulationPage() {
         });
       }
     },
-    [actor],
+    [actor, liveData, navigate],
   );
 
   const historyRef = useRef<HTMLHeadingElement>(null);
@@ -233,11 +236,12 @@ export default function AiSimulationPage() {
                   now={now}
                   expanded={isExpanded(s.id)}
                   onToggle={() => setExpanded((cur) => ({ ...cur, [s.id]: !isExpanded(s.id) }))}
-                  blocker={runBlocker(s, sim.liveData, realNow)}
+                  blocker={startBlocker(s, sim.liveData, realNow)}
                   canRun={canRun}
                   running={running.has(s.id)}
                   onRun={() => void onRun(s)}
                   configHref={simulationConfigPath(s.id)}
+                  monitorHref={activeSessionOf(s.id, sim.sessions ?? [], tick) ? simulationMonitorPath(s.id) : undefined}
                 />
               ))
             )}

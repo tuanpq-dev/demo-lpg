@@ -265,6 +265,29 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 16.6 | [K] "Kết quả mong đợi" chỉ để đọc hay người dùng bật/tắt được từng mục? | Chỉ đọc (icon ô tick). |
 | 16.7 | [K] Ai được lưu cấu hình? | Vai trò Vận hành trở lên (`simulation:configure`). |
 
+## 17. Vận hành – Theo dõi diễn biến mô phỏng (`/operations/ai-simulation/:id/monitor`, ảnh 03/11/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 17.1 | [K] Đường diễn biến theo quy luật nào (tuyến tính, hàm mũ, theo tốc độ rò rỉ)? | (03/11 – theo ảnh Kết quả) tăng smoothstep tới mục tiêu ở 50 % / 94 % / 125 % thời lượng (nhanh / vừa / chậm), chạm mục tiêu → ESD ảo giảm tuyến tính trong nửa thời lượng về mức ban đầu + 5 %. |
+| 17.2 | [D] Hết thời lượng thì sao? Có màn kết quả riêng không? | ✅ Có màn Kết quả (mục 18); màn theo dõi có link "Xem kết quả mô phỏng" khi lượt kết thúc (chưa tự chuyển trang). |
+| 17.3 | [K] Điều kiện kết thúc "về dưới ngưỡng" / "AI đủ dữ liệu" hoạt động thế nào (đường chỉ tăng)? | Kết thúc khi hết thời lượng; "người dùng dừng" chờ bấm "Dừng mô phỏng" sau khi hết giờ. |
+| 17.4 | [D] Timeline trộn phút:giây lượt chạy ("06:32 (Hiện tại)", "00:00") với giờ đồng hồ ("18:19:05") – thống nhất một kiểu? | Giữ như ảnh. |
+| 17.5 | [K] Gợi ý AI có thêm dần theo diễn biến không (KPI cả 2 ảnh ghi 4, danh sách 5)? | ✅ Cảnh báo: theo ảnh Kết quả (High / High-High). 5 gợi ý tạo cùng lúc sau cảnh báo High + bước đề xuất; KPI = số gợi ý (5). |
+| 17.6 | [D] Nút "Dừng mô phỏng" (không có trong ảnh) đặt ở đâu, có cần xác nhận? Dừng sớm có ghi kết quả? | Header bên phải, không hỏi lại; dừng sớm vẫn ghi lịch sử kèm "Dừng thủ công lúc mm:ss". |
+| 17.7 | [K] Một kịch bản chạy song song nhiều lượt được không? Nhiều kịch bản cùng lúc? | Mỗi kịch bản 1 lượt đang chạy (chạy lại → mở lượt đó); nhiều kịch bản cùng lúc được. |
+
+## 18. Vận hành – Kết quả mô phỏng (`/operations/ai-simulation/:id/result`, ảnh 03/11/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 18.1 | [K] "Xuất PDF" do máy chủ tạo hay in từ trình duyệt? "Xuất Excel" cần .xlsx hay CSV là đủ? | PDF khoá (chờ backend); Excel = CSV UTF-8 có BOM (mở được bằng Excel). |
+| 18.2 | [D] "Xem trước" mở gì? "Thêm vào báo cáo" / "Bỏ qua" xong hiển thị thế nào? | Modal tóm tắt báo cáo nháp; sau khi bấm hiện dòng trạng thái + nút hoàn tác. |
+| 18.3 | [K] 4 ô đánh giá (Phát hiện / Diễn biến / AI / An toàn) và 5 tiêu chí chấm theo luật nào? "Điểm làm tốt / cần cải thiện" do AI sinh hay nhập tay? | Luật theo mốc lượt chạy (`features/simulation/result.ts`); điểm làm tốt / cải thiện là mock theo kịch bản. |
+| 18.4 | [D] Timeline kết quả không có SIM-AL-002 (High-High) – cố ý? | Giữ như ảnh (chỉ cảnh báo đầu); SIM-AL-002 ở khối "Cảnh báo mô phỏng đã tạo". |
+| 18.5 | [K] Mã phiên "SIM-RUN-24062026-001": đánh số theo ngày cho mọi kịch bản hay từng kịch bản? | Theo ngày, mọi kịch bản. |
+| 18.6 | [D] Lượt kết thúc khi đang ở màn theo dõi: tự chuyển sang màn Kết quả? | Không tự chuyển; hiện link "Xem kết quả mô phỏng". |
+
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 
 Gồm cả phần chưa có ở các mục trên (modal "Phân công xử lý cảnh báo", modal "Cập nhật xử lý cảnh báo áp suất").
