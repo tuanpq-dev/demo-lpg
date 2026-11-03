@@ -6,6 +6,7 @@
 import { SIGNAL_LOST_LABEL, freshNumber, freshValue } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import { formatDayVi, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
+import type { MonitorSetup } from './monitor';
 import { byNewestRun, healthSynced, type RunBlocker, type Scenario, type SimulationRun, type TagHealth } from './scenarios';
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,8 @@ export type ReferenceRow = {
   label: string;
   /** Tên tag PLC hiển thị dưới nhãn (cyan). */
   plcTag: string;
+  /** Nhãn ngắn ở "Dữ liệu PLC/SCADA tham chiếu" màn Kết quả ("Áp suất V-101"). */
+  shortLabel?: string;
   /** Tag SCADA đọc số liệu. */
   tag: string;
   /** Đơn vị hiển thị ("%LEL", "bar"…); heartbeat → "—". */
@@ -120,6 +123,8 @@ export type ScenarioSetup = {
     /** Tên dữ liệu tham chiếu ("Tank_Gas_Detector", "PLC/SCADA"). */
     refs: readonly string[];
   };
+  /** Chữ riêng của màn "Theo dõi diễn biến mô phỏng". */
+  monitor: MonitorSetup;
 };
 
 /** Phần người dùng sửa được ("Tham số đầu vào"). */

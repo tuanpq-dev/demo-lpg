@@ -216,6 +216,32 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - Thêm ngoài ảnh: dòng nhắc vàng khi mục tiêu chưa tới ngưỡng PLC; lỗi đỏ khi bỏ hết khu vực; trạng thái "Chưa hợp lệ" / "Thiếu dữ liệu" / "Cần cấu hình mapping"; ô icon trạng thái sẵn sàng đổi vàng + tam giác khi chưa sẵn sàng.
 - Màn danh sách: nút "Cấu hình kịch bản" (header) và "Cấu hình trước khi chạy" (thẻ thiếu mapping) nay là link sang màn này (trước khoá).
 
+## Vận hành – Theo dõi diễn biến mô phỏng (/operations/ai-simulation/:id/monitor, ảnh 03/11/2026)
+
+- Nguồn: 9 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-monitor/`), không có node Figma; ảnh full 1565 px → token gần nhất.
+- Số từ mock chung / tính, không chép ảnh: giá trị bắt đầu = gas nền 2 % LEL (ảnh đường bắt đầu ~0); bảng tham chiếu Tank_Temperature_C 28,5 °C / mức 73,0 % (ảnh 28,7 / 76,0 – như màn cấu hình); gas "2.0% LEL" (ảnh "2%", theo số lẻ của bảng tham chiếu); giá trị lúc phát SIM-AL-002 = tính theo đường (≈ 21 %, ảnh 22 %); giờ vượt ngưỡng / gợi ý AI tính từ giờ bắt đầu + bước phản ứng (≈ 18:18:50 / 18:19:08 khi `?now=…18:20:22`; ảnh 18:18:50 / 18:19:05).
+- Vạch ngưỡng / mục tiêu đặt đúng 20 % / 35 % (ảnh vẽ lệch ~21 % / ~36 %).
+- KPI "Gợi ý AI" = số gợi ý trong danh sách (5); ảnh ghi 4 nhưng liệt kê 5.
+- Từ màn Kết quả (03/11/2026, người dùng chốt): cảnh báo theo mẫu ảnh Kết quả → lúc 06:32 chỉ có SIM-AL-001 "Gas khu vực bồn vượt ngưỡng cảnh báo PLC" (ảnh: 2 cảnh báo, 001 = áp suất dao động, 002 = vượt ngưỡng); timeline thêm mốc "AI ghi nhận xu hướng tăng (16% LEL)" (5 mốc, ảnh 4). Lượt mẫu dùng "Tăng vừa" để lúc 06:32 vẫn đang tăng 28 %.
+- Timeline giữ cách ghi giờ như ảnh: mốc hiện tại / bắt đầu theo phút:giây lượt chạy ("06:32 (Hiện tại)", "00:00"), mốc sự kiện theo giờ nhà máy ("18:19:05") – questions 17.4.
+- Huy hiệu "Đang chạy mô phỏng": icon tạm bình thí nghiệm, `Badge tag md` bo tròn; ảnh 6 (full) huy hiệu chỉ là khối vàng.
+- Banner: dùng `EmergencyBanner tone="warning"` như 2 màn mô phỏng trước (ảnh 3 nền vàng nhạt chữ vàng – ảnh chụp chế độ sáng; ảnh 6 khối vàng đặc).
+- Thêm ngoài ảnh: nút "Dừng mô phỏng" ở header (người dùng chọn 03/11/2026); trạng thái Đã hoàn thành / Đã dừng / Chờ dừng; dòng "Kết quả lượt"; câu chờ khi chưa có cảnh báo / gợi ý; "Thiếu dữ liệu" khi tag mất tín hiệu.
+- Nhãn biểu đồ 12 px (ảnh ~14 px ở 1565); chú thích đầu thẻ 14 px.
+
+## Vận hành – Kết quả mô phỏng (/operations/ai-simulation/:id/result, ảnh 03/11/2026)
+
+- Nguồn: 14 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-result/`), không có node Figma; ảnh full 1565 px. Người dùng yêu cầu ưu tiên giống ảnh.
+- Số tính từ mô hình (khác ảnh vài giây / vài %): SIM-AL-001 18:16:53 (ảnh 18:17:10), AI gợi ý 18:17:03 (ảnh 18:19:05 – theo bước phản ứng sau cảnh báo), SIM-AL-002 18:19:08 (ảnh 18:19:30), kết thúc 18:24:00 (ảnh 18:24:10), AI xu hướng 18:16:16 (ảnh 18:16:15). Đường: 1m 3,5 · 2m 11,7 · 3m 23,4 · 4m 31,6 · 5m 35 · 6m 28,6 · … · 10m 1,8 % LEL (ảnh 5 · 15 · 22 · 28 · 35 · 30 · 22 · 15 · 8 · 2).
+- KPI "Gợi ý AI" = 5 (số gợi ý trong danh sách màn theo dõi); ảnh 4. Độ tin cậy dùng chung công thức (≈ 92 %; ảnh 93 %).
+- Mã phiên + ngày theo lượt mẫu (6 ngày trước, `SIM-RUN-ddmmyyyy-001`); ảnh SIM-RUN-24062026-001.
+- Nhiệt độ "28.6°C" (ảnh "28.6 °C") – cùng cách ghi đơn vị toàn app.
+- "Xuất PDF" khoá kèm lý do (chờ backend); "Xem trước" = modal tóm tắt báo cáo; "Xuất Excel" = tệp CSV. Ảnh không thể hiện trạng thái sau khi bấm.
+- Thêm ngoài ảnh: trạng thái "Đã thêm gợi ý vào báo cáo nháp" / "Đã bỏ qua" + nút hoàn tác; "Xem chi tiết dữ liệu nền" mở toàn bộ ảnh chụp tag; thẻ "Lượt đang chạy" / "Chưa có kết quả".
+- Biểu đồ: lưới 2 chiều `line/50`, chấm rỗng mỗi phút, vùng gradient primary 15 %; khung hẹp bỏ bớt nhãn trục X.
+- Bảng tiêu chí: `DataTable headerStyle="plain" density="compact"` – cuộn ngang ở khung hẹp (min 640 px); ảnh cắt chữ cột "Nhận xét".
+- Thẻ "Điểm làm tốt / cần cải thiện": nền tối viền success / primary (ảnh 22 chụp chế độ sáng; ảnh full nền tối).
+
 ## Báo cáo (/reports)
 
 - **Modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:7966, 02/11/2026):**

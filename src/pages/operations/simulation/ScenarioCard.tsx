@@ -40,14 +40,16 @@ export type ScenarioCardProps = {
   onRun: () => void;
   /** Màn "Cấu hình kịch bản" của kịch bản này. */
   configHref: string;
+  /** Kịch bản đang có lượt chạy → link "Theo dõi mô phỏng" (mọi vai trò) thay cho nút chạy. */
+  monitorHref?: string;
 };
 
 /**
  * Một kịch bản (ảnh `scratch/figma-ref/ai-sim/scenario-list.png`): icon · tên · mã + cập nhật · badge rủi ro + trạng thái;
  * "Chi tiết kịch bản" mở/đóng lưới Khu vực / Dữ liệu PLC / Ngưỡng / Kết quả; lần chạy + kết quả gần nhất từ lịch sử;
- * "Chạy mô phỏng" (hoặc link "Cấu hình trước khi chạy" sang màn cấu hình khi thiếu mapping).
+ * "Chạy mô phỏng" (hoặc link "Cấu hình trước khi chạy" sang màn cấu hình khi thiếu mapping; đang có lượt chạy → "Theo dõi mô phỏng").
  */
-export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, blocker, canRun, running, onRun, configHref }: ScenarioCardProps) {
+export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, blocker, canRun, running, onRun, configHref, monitorHref }: ScenarioCardProps) {
   const uid = useId();
   const titleId = `${uid}-title`;
   const detailId = `${uid}-detail`;
@@ -119,7 +121,14 @@ export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, bl
             {expanded ? 'Thu gọn chi tiết' : 'Chi tiết kịch bản'}
             <span className="sr-only"> {s.code}</span>
           </Button>
-          {canRun &&
+          {monitorHref ? (
+            <Link to={monitorHref} className={buttonClass('tinted')}>
+              <PlayIcon size={14} />
+              Đang chạy – Theo dõi
+              <span className="sr-only"> {s.code}</span>
+            </Link>
+          ) : (
+            canRun &&
             (needsConfig ? (
               <Link to={configHref} aria-describedby={reasonId} className={buttonClass('outline-warning')}>
                 <ToolsIcon size={16} />
@@ -135,13 +144,14 @@ export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, bl
                 aria-busy={running || undefined}
                 onClick={() => !locked && onRun()}
               >
-                {running ? 'Đang mô phỏng…' : 'Chạy mô phỏng'}
+                {running ? 'Đang khởi động…' : 'Chạy mô phỏng'}
                 <span className="sr-only"> {s.code}</span>
               </Button>
-            ))}
+            ))
+          )}
         </div>
       </div>
-      {canRun && blocker && (
+      {canRun && blocker && !monitorHref && (
         <p id={reasonId} className={cn('text-sm sm:pl-12', blocker.kind === 'pending' ? 'text-fg-secondary' : 'text-warning')}>
           {needsConfig ? `${blocker.text} Màn cấu hình ánh xạ đang chờ thiết kế.` : blocker.text}
         </p>

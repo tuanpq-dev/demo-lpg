@@ -557,3 +557,93 @@ export const PlayCircleSolidIcon = ({ size = 18, ...p }: P) => (
     <path fill="currentColor" fillRule="evenodd" d="M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19ZM10 8.3v7.4l5.8-3.7Z" />
   </svg>
 );
+
+// ---- Màn "Theo dõi diễn biến mô phỏng" (ảnh `ai-sim-monitor/`) ----
+
+/** Bình thí nghiệm – huy hiệu "Đang chạy mô phỏng". */
+export const FlaskIcon = ({ size = 14, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M9 3h6M10 3v6.2L4.6 18.4A1.7 1.7 0 0 0 6.1 21h11.8a1.7 1.7 0 0 0 1.5-2.6L14 9.2V3" />
+    <path d="M7.2 15h9.6" />
+  </svg>
+);
+
+/** Đầu dò gas (hộp có lỗ cảm biến) – KPI "Nồng độ hiện tại". */
+export const DetectorIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="6" y="3.5" width="12" height="17" rx="2" />
+    <path d="M9.5 3.5V2M14.5 3.5V2" />
+    <circle cx="12" cy="10" r="2.2" />
+    <path d="M9.5 16h5" />
+  </svg>
+);
+
+/** Chuông có sóng – KPI "Cảnh báo mô phỏng". */
+export const BellRingIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5l1.5-1.5Z" />
+    <path d="M10 20.5a2 2 0 0 0 4 0" />
+    <path d="M3.5 8.5A8 8 0 0 1 6 4.5M20.5 8.5A8 8 0 0 0 18 4.5" />
+  </svg>
+);
+
+/** Mũi tên xu hướng tăng (xoay 180° … dùng `TrendDownIcon` cho giảm). */
+export const TrendUpIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m3 17 6-6 4 4 8-8" />
+    <path d="M15 7h6v6" />
+  </svg>
+);
+
+export const TrendDownIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m3 7 6 6 4-4 8 8" />
+    <path d="M15 17h6v-6" />
+  </svg>
+);
+
+/** Đường gấp khúc có điểm – tiêu đề "Timeline diễn biến". */
+export const ActivityLineIcon = ({ size = 20, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="m3 16 5-6 4 4 6-7" />
+    <circle cx="3" cy="16" r="1.4" fill="currentColor" />
+    <circle cx="21" cy="5.5" r="1.4" fill="currentColor" />
+  </svg>
+);
+
+/** Ô vuông trong vòng tròn – nút "Dừng mô phỏng". */
+export const StopCircleIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" />
+  </svg>
+);
+
+// ---- Màn "Kết quả mô phỏng" (ảnh `ai-sim-result/`) ----
+
+/** Hai mũi tên vòng – "Đã đồng bộ dữ liệu thời gian thực làm nền". */
+export const SyncIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M7 6.5A7 7 0 0 1 19 12" />
+    <path d="M17 17.5A7 7 0 0 1 5 12" />
+    <path d="M7 3v3.5h3.5M17 21v-3.5h-3.5" />
+  </svg>
+);
+
+/** Bảng tính – nút "Xuất Excel". */
+export const SheetIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="4" y="4" width="16" height="16" rx="1.5" />
+    <path d="M4 9h16M10 9v11M15 9v11" />
+  </svg>
+);
+
+/** Mắt trong khung – nút "Xem trước". */
+export const PreviewIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3.5" y="4" width="17" height="16" rx="1.5" />
+    <path d="M3.5 8h17" />
+    <path d="M7 14s2-3 5-3 5 3 5 3-2 3-5 3-5-3-5-3Z" />
+    <circle cx="12" cy="14" r="1.2" fill="currentColor" />
+  </svg>
+);

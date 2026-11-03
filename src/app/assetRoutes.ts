@@ -20,3 +20,10 @@ export const SIMULATION_PATH = '/operations/ai-simulation';
 
 /** Màn "Cấu hình kịch bản mô phỏng" của một kịch bản (ảnh 03/11/2026). */
 export const simulationConfigPath = (scenarioId: string) => `${SIMULATION_PATH}/${encodeURIComponent(scenarioId)}/config`;
+
+/** Màn "Theo dõi diễn biến mô phỏng" – lượt đang chạy (hoặc gần nhất) của một kịch bản (ảnh 03/11/2026). */
+export const simulationMonitorPath = (scenarioId: string) => `${SIMULATION_PATH}/${encodeURIComponent(scenarioId)}/monitor`;
+
+/** Màn "Kết quả mô phỏng" – lượt đã kết thúc (mặc định gần nhất; `sessionId` chọn lượt) (ảnh 03/11/2026). */
+export const simulationResultPath = (scenarioId: string, sessionId?: string) =>
+  `${SIMULATION_PATH}/${encodeURIComponent(scenarioId)}/result${sessionId ? `?session=${encodeURIComponent(sessionId)}` : ''}`;

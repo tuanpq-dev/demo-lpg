@@ -5,7 +5,11 @@
  * TODO(backend): GET /simulation/scenarios, GET /simulation/runs, POST /simulation/scenarios/:id/runs.
  */
 import { PLC_REPORT_TAGS, PLC_SCADA_TAGS, TANK_AREA_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import type { LiveData } from '@/features/live/types';
+import { createSession, sessionRun, type SimulationSession } from '@/features/simulation/monitor';
 import { runResult, simulateScenario, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import { parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
+import { liveBase } from './scenes/live';
 import { scenarioSetupOf } from './simulationSetup';
 
 const ago = (now: Date, minutes: number) => new Date(now.getTime() - minutes * 60_000);
@@ -159,4 +163,48 @@ export function buildSimulationRuns(now: Date, scenarios: readonly Scenario[] = 
     const run = simulateScenario(s, ago(now, r.minutesAgo), r.by, `RUN-${String(i + 1).padStart(4, '0')}`, r.note);
     return [r.responseSeconds === undefined ? run : { ...run, responseSeconds: r.responseSeconds, result: runResult(r.responseSeconds, run.targetSeconds) }];
   });
+}
+
+/** Số liệu nền (mocks/scenes/live) dạng ảnh chụp tươi tại `at` – trạng thái ban đầu của lượt mẫu. */
+function baseSnapshot(at: number): LiveData {
+  return Object.fromEntries(Object.entries(liveBase).map(([tag, value]) => [tag, { value, ts: at, quality: 'good' as const }]));
+}
+
+/** Lượt mẫu ĐANG CHẠY: SC-001 bắt đầu 06:32 trước `now` (như ảnh "Theo dõi diễn biến": 06:32 / 10:00, gas 28 % LEL). */
+export const SEED_SESSION_ELAPSED_SEC = 6 * 60 + 32;
+/** Lượt mẫu ĐÃ XONG (ảnh "Kết quả mô phỏng"): SC-001, 6 ngày trước lúc 18:14:00 giờ nhà máy. */
+export const SEED_RESULT_DAYS_AGO = 6;
+export const SEED_RESULT_TIME = '18:14:00';
+
+const FULL_HEALTH = { ok: 21, total: 21 };
+
+/**
+ * - SES-0001: đang chạy, "Tăng vừa" (đỉnh ở 94 % thời lượng → lúc 06:32 vẫn đang tăng, như ảnh Theo dõi).
+ * - SES-0000: đã hoàn thành, "Tăng nhanh" (tham số đang lưu của SC-001 – đỉnh 35 % ở phút 5 rồi ESD ảo kéo giảm, như ảnh
+ *   Kết quả), gas nền 0.1 % LEL, bảng tham chiếu như ảnh (9.2 bar · 28.6 °C · 76.2 %); kèm bản ghi lịch sử RUN-0007 (cũ hơn
+ *   mọi lượt mẫu khác → không đổi "Lịch sử gần đây" / 3 lượt đầu "Lịch sử kịch bản này").
+ */
+export function buildSimulationSessions(now: Date, scenarios: readonly Scenario[]): { sessions: SimulationSession[]; runs: SimulationRun[] } {
+  const s = scenarios.find((x) => x.id === 'SC-001');
+  if (!s) return { sessions: [], runs: [] };
+  const at = new Date(now.getTime() - SEED_SESSION_ELAPSED_SEC * 1000);
+  const running = createSession({ ...s, config: { ...s.config, rate: 'medium' } }, baseSnapshot(at.getTime()), at.getTime(), at, 'Nguyễn Văn A', 'SES-0001', FULL_HEALTH);
+
+  const day = plantDayKey(new Date(now.getTime() - SEED_RESULT_DAYS_AGO * 86_400_000));
+  const doneAt = parsePlantDateTime(`${day}T${SEED_RESULT_TIME}`)!;
+  const snap = {
+    ...baseSnapshot(doneAt.getTime()),
+    ...Object.fromEntries(
+      [
+        [TANK_AREA_TAGS.gas, 0.1],
+        [V101_TAGS.pressure, 9.2],
+        [V101_TAGS.temperature, 28.6],
+        [V101_TAGS.level, 76.2],
+      ].map(([tag, value]) => [tag, { value: value as number, ts: doneAt.getTime(), quality: 'good' as const }]),
+    ),
+  };
+  const created = createSession(s, snap, doneAt.getTime(), doneAt, 'Nguyễn Văn A', 'SES-0000', FULL_HEALTH);
+  const run = sessionRun(s, created, 'RUN-0007', doneAt.getTime() + created.config.durationMin * 60_000);
+  const done: SimulationSession = { ...created, runId: run.id };
+  return { sessions: [running, done], runs: [{ ...run, note: 'Phát hiện cảnh báo đúng thời điểm, ESD ảo đưa nồng độ về mức an toàn.' }] };
 }

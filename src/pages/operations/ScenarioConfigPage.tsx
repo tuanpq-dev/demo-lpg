@@ -1,11 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, Button, Card, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
 import { useAuth, useCan } from '@/app/auth';
-import { SIMULATION_PATH } from '@/app/assetRoutes';
+import { SIMULATION_PATH, simulationMonitorPath } from '@/app/assetRoutes';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
-import { SIMULATION_REFERENCE_TAGS, runSimulation, saveScenarioConfig, useSimulation } from '@/data/simulation';
+import { SIMULATION_REFERENCE_TAGS, saveScenarioConfig, startSimulation, useSimulation } from '@/data/simulation';
+import { activeSessionOf, startBlocker, type SimulationSession } from '@/features/simulation/monitor';
 import {
   checkConfig,
   configSuggestion,
@@ -20,7 +21,7 @@ import {
   suggestionApplied,
   type ScenarioConfig,
 } from '@/features/simulation/config';
-import { runBlocker, runSummary, suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
@@ -85,13 +86,14 @@ function ScenarioConfigPage({ scenarioId }: { scenarioId: string }) {
       />
     );
   }
-  return <ConfigForm scenario={scenario} scenarios={sim.scenarios} runs={sim.runs} live={sim.liveData} back={back} />;
+  return <ConfigForm scenario={scenario} scenarios={sim.scenarios} runs={sim.runs} sessions={sim.sessions} live={sim.liveData} back={back} />;
 }
 
 type ConfigFormProps = {
   scenario: Scenario;
   scenarios: readonly Scenario[];
   runs: readonly SimulationRun[];
+  sessions: readonly SimulationSession[];
   live: ReturnType<typeof useSimulation>['liveData'];
   back: ReactNode;
 };
@@ -100,16 +102,19 @@ type ConfigFormProps = {
  * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-config/`; Figma không đọc được):
  * header (Quay lại · Lưu cấu hình · Bắt đầu chạy) → banner "Chế độ mô phỏng" → [Thông tin kịch bản · Tham số đầu vào · Dữ liệu
  * PLC/SCADA tham chiếu · Kết quả mong đợi | Tóm tắt cấu hình · Trạng thái sẵn sàng · Gợi ý từ AI · Quy tắc an toàn · Lịch sử
- * kịch bản này]. Tóm tắt / trạng thái theo cấu hình ĐANG SỬA. "Bắt đầu chạy" lưu thay đổi (nếu có) rồi chạy – kết quả vào lịch sử.
+ * kịch bản này]. Tóm tắt / trạng thái theo cấu hình ĐANG SỬA. "Bắt đầu chạy" lưu thay đổi (nếu có) rồi mở lượt chạy theo thời gian
+ * thực và chuyển sang màn "Theo dõi diễn biến mô phỏng"; kịch bản đang chạy → nút thành link "Theo dõi mô phỏng đang chạy".
  */
-function ConfigForm({ scenario: s, scenarios, runs, live, back }: ConfigFormProps) {
+function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: ConfigFormProps) {
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
   const canConfigure = useCan('simulation:configure');
   const canRun = useCan('simulation:run');
   // Phút cho giờ phân tích (giờ nhà máy, ?now= dời được); giây để tag "cũ" chuyển trạng thái đúng lúc.
   const now = useNow(60_000);
-  useNow(1000);
+  const tick = useNow(1000).getTime();
+  const navigate = useNavigate();
+  const activeSession = activeSessionOf(s.id, sessions, tick);
   // Mất tín hiệu so `ts` với giờ THẬT (không dùng ?now=) – CLAUDE.md "Dữ liệu trực tiếp".
   const realNow = Date.now();
 
@@ -127,7 +132,7 @@ function ConfigForm({ scenario: s, scenarios, runs, live, back }: ConfigFormProp
   const health = tagHealth(SIMULATION_REFERENCE_TAGS, live, realNow);
   const inputHealth = tagHealth(setupTags(setup), live, realNow);
   const inputSync = dataSyncState(inputHealth);
-  const blocker = runBlocker(s, live, realNow);
+  const blocker = startBlocker(s, live, realNow);
   const ready = readinessOf(blocker, valid);
   const start = startValue(v, live, realNow);
 
@@ -188,13 +193,13 @@ function ConfigForm({ scenario: s, scenarios, runs, live, back }: ConfigFormProp
       setBusy(null);
       return;
     }
-    announce(`${dirty ? 'Đã lưu cấu hình. ' : ''}Đang mô phỏng ${s.code}…`);
+    announce(`${dirty ? 'Đã lưu cấu hình. ' : ''}Đang khởi động mô phỏng ${s.code}…`);
     try {
-      const run = await runSimulation(s.id, actor);
-      announce(`${s.code}: ${runSummary(run)}. Đã lưu vào lịch sử.`);
+      await startSimulation(s.id, actor, live);
+      announce(`Đã bắt đầu mô phỏng ${s.code}.`);
+      navigate(simulationMonitorPath(s.id));
     } catch (e) {
       announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
-    } finally {
       setBusy(null);
     }
   };
@@ -234,7 +239,12 @@ function ConfigForm({ scenario: s, scenarios, runs, live, back }: ConfigFormProp
               )}
             </>
           )}
-          {canRun && (
+          {activeSession ? (
+            <Link to={simulationMonitorPath(s.id)} className={buttonClass('primary')}>
+              Theo dõi mô phỏng đang chạy
+              <PlayCircleSolidIcon size={18} className="shrink-0" />
+            </Link>
+          ) : canRun && (
             <>
               <Button
                 variant="primary"
@@ -244,7 +254,7 @@ function ConfigForm({ scenario: s, scenarios, runs, live, back }: ConfigFormProp
                 title={runReason}
                 onClick={() => void onRun()}
               >
-                {busy === 'run' ? 'Đang mô phỏng…' : 'Bắt đầu chạy mô phỏng'}
+                {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
                 <PlayCircleSolidIcon size={18} className="shrink-0" />
               </Button>
               {runReason && (

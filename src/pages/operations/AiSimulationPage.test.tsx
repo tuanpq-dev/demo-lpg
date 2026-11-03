@@ -7,6 +7,7 @@ import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
 import { fetchAlerts } from '@/data/alertStore';
 import { liveSimulator } from '@/data/live';
+import { fetchSimulationRuns, fetchSimulationSessions } from '@/data/simulation';
 import { VAPORIZER_TAGS } from '@/features/live/tags';
 import AiSimulationPage from './AiSimulationPage';
 
@@ -33,7 +34,13 @@ function serviceFor(role: 'viewer' | 'operator'): AuthService {
 }
 
 function renderAt(url: string, role: 'viewer' | 'operator' = 'operator') {
-  const router = createMemoryRouter([{ path: '/operations/ai-simulation', element: <AiSimulationPage /> }], { initialEntries: [url] });
+  const router = createMemoryRouter(
+    [
+      { path: '/operations/ai-simulation', element: <AiSimulationPage /> },
+      { path: '/operations/ai-simulation/:scenarioId/monitor', element: <h1>Màn theo dõi</h1> },
+    ],
+    { initialEntries: [url] },
+  );
   render(
     <AuthProvider service={serviceFor(role)}>
       <RouterProvider router={router} />
@@ -49,32 +56,38 @@ function kpiValue(label: string) {
   return el!.textContent!.replace(label, '');
 }
 const card = (title: string) => screen.getByRole('article', { name: title });
-const history = () => screen.getByRole('region', { name: 'Lịch sử gần đây' });
 
 afterEach(() => liveSimulator.restore());
 
 describe('/operations/ai-simulation', () => {
-  test('chạy mô phỏng: nút bận → kết quả vào lịch sử + "Đã chạy hôm nay" +1; store cảnh báo giữ nguyên', async () => {
+  // Đổi 03/11/2026 (màn "Theo dõi diễn biến"): chạy = mở lượt theo thời gian thực rồi sang màn theo dõi; lịch sử chỉ ghi khi
+  // lượt kết thúc (trước: chạy tức thì, ghi lịch sử ngay).
+  test('chạy mô phỏng: nút bận → mở lượt đang chạy + sang màn theo dõi; lịch sử chưa đổi; store cảnh báo giữ nguyên', async () => {
     const alertsBefore = await fetchAlerts();
+    const runsBefore = (await fetchSimulationRuns()).length;
     renderAt('/operations/ai-simulation');
     await screen.findByRole('heading', { level: 1, name: 'AI mô phỏng sự cố' });
     expect(kpiValue('Kịch bản khả dụng')).toMatch(/^5/);
     expect(kpiValue('Dữ liệu PLC tham chiếu')).toMatch(/^—|^21\/21/);
-    const runsBefore = Number(/^(\d+)/.exec(kpiValue('Đã chạy hôm nay'))![1]);
+    // Lượt mẫu SC-001 đang chạy → link theo dõi thay cho nút chạy.
+    expect(within(card('Rò rỉ LPG tại khu vực bồn')).getByRole('link', { name: 'Đang chạy – Theo dõi SC-001' })).toHaveAttribute(
+      'href',
+      '/operations/ai-simulation/SC-001/monitor',
+    );
 
-    const run = within(card('Máy hóa hơi E-101A bất thường')).getByRole('button', { name: 'Chạy mô phỏng SC-003' });
+    // SC-004 (test sau dùng nút chạy SC-003 – store lượt chạy dùng chung giữa các test).
+    const run = within(card('Mất kết nối PLC/SCADA')).getByRole('button', { name: 'Chạy mô phỏng SC-004' });
     // Chờ ảnh chụp số liệu đầu tiên (trước đó nút khoá "Đang tải dữ liệu…").
     await waitFor(() => expect(run).not.toHaveAttribute('aria-disabled'), { timeout: 5000 });
     expect(kpiValue('Dữ liệu PLC tham chiếu')).toMatch(/^21\/21Đã đồng bộ/);
     await userEvent.click(run);
-    expect(await screen.findByRole('button', { name: 'Đang mô phỏng… SC-003' })).toHaveAttribute('aria-busy', 'true');
-    await screen.findByRole('button', { name: 'Chạy mô phỏng SC-003' }, { timeout: 3000 });
+    expect(await screen.findByRole('button', { name: 'Đang khởi động… SC-004' })).toHaveAttribute('aria-busy', 'true');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Màn theo dõi' }, { timeout: 3000 })).toBeInTheDocument();
 
-    const first = within(history()).getAllByRole('listitem')[0]!;
-    expect(first).toHaveTextContent('SC-003 (Hóa hơi)');
-    expect(first).toHaveTextContent('Đạt');
-    expect(within(card('Máy hóa hơi E-101A bất thường')).getByText(/Đạt \(45 s \/ mục tiêu 90 s\)/)).toBeInTheDocument();
-    expect(Number(/^(\d+)/.exec(kpiValue('Đã chạy hôm nay'))![1])).toBe(runsBefore + 1);
+    const session = (await fetchSimulationSessions()).find((x) => x.scenarioId === 'SC-004')!;
+    expect(session).toMatchObject({ by: 'Kỹ sư A', config: { target: 30, durationMin: 10, endCondition: 'manual-stop' } });
+    expect(session.runId).toBeUndefined();
+    expect(await fetchSimulationRuns()).toHaveLength(runsBefore);
     expect(await fetchAlerts()).toEqual(alertsBefore);
   });
 
@@ -101,7 +114,7 @@ describe('/operations/ai-simulation', () => {
     expect(screen.getByRole('heading', { name: 'Dữ liệu PLC/SCADA: Thiếu dữ liệu' })).toBeInTheDocument();
     expect(kpiValue('Dữ liệu PLC tham chiếu')).toMatch(/^20\/21Thiếu 1 thông số/);
     // Kịch bản không dùng tag đó vẫn chạy được.
-    expect(screen.getByRole('button', { name: 'Chạy mô phỏng SC-004' })).not.toHaveAttribute('aria-disabled');
+    expect(screen.getByRole('button', { name: 'Chạy mô phỏng SC-002' })).not.toHaveAttribute('aria-disabled');
   });
 
   test('Người xem: không có nút chạy; "Chi tiết kịch bản" mở/đóng lưới thông tin', async () => {

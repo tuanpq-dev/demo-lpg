@@ -1,0 +1,219 @@
+/*
+ * Kết quả mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-result/`) – logic THUẦN tổng kết một lượt đã
+ * kết thúc: KPI, đánh giá tổng quan + 4 ô, bảng tiêu chí, gợi ý AI sau lượt, điểm biểu đồ, nội dung báo cáo (CSV).
+ * Mọi số suy từ lượt (`SimulationSession`) + bản ghi lịch sử (`SimulationRun`) + mô hình diễn biến (`monitor.ts`).
+ */
+import { formatQty, formatVariable, lowerFirst } from './config';
+import {
+  clockText,
+  elapsedSec,
+  monitorMarks,
+  profileOf,
+  sessionPhase,
+  simTimeline,
+  valueAt,
+  type SimAlert,
+  type SimEvent,
+  type SimulationSession,
+} from './monitor';
+import { RUN_RESULT_LABEL, type RunResult, type Scenario, type SimulationRun } from './scenarios';
+
+export type CheckResult = 'pass' | 'fail';
+export const CHECK_LABEL: Record<CheckResult, string> = { pass: 'Đạt', fail: 'Chưa đạt' };
+
+export type ResultTile = { id: 'detect' | 'trend' | 'ai' | 'safety'; label: string; result: CheckResult };
+export type Criterion = { id: string; label: string; result: CheckResult; comment: string };
+export type ResultKpi = { id: string; label: string; value: string; sub: string; tone: 'success' | 'warning' | 'primary' | 'danger' | 'neutral' };
+
+export type SimulationResult = {
+  result: RunResult;
+  stopped: boolean;
+  elapsed: number;
+  /** Giá trị "cao nhất" (biến tăng) / "thấp nhất" (biến giảm) trong lượt. */
+  peak: number;
+  peakReached: boolean;
+  alerts: SimAlert[];
+  events: SimEvent[];
+  kpis: ResultKpi[];
+  summary: string;
+  tiles: ResultTile[];
+  criteria: Criterion[];
+  /** Gợi ý AI sau lượt (thêm vào báo cáo). */
+  advice: string;
+  /** Điểm biểu đồ: 11 mốc chia đều thời lượng (0m…10m). */
+  points: { sec: number; value: number }[];
+};
+
+/** Điểm biểu đồ kết quả – `count` khoảng đều (ảnh: mỗi phút một chấm, 0m → 10m). Dừng sớm → chỉ tới lúc dừng. */
+export function resultPoints(session: SimulationSession, elapsed: number, count = 10): { sec: number; value: number }[] {
+  const p = profileOf(session);
+  const out: { sec: number; value: number }[] = [];
+  for (let i = 0; i <= count; i++) {
+    const sec = Math.round((p.durationSec * i) / count);
+    if (sec > elapsed) break;
+    out.push({ sec, value: valueAt(p, sec) });
+  }
+  if (out[out.length - 1]?.sec !== elapsed) out.push({ sec: elapsed, value: valueAt(p, elapsed) });
+  return out;
+}
+
+/** "5m" · "1.5m" – nhãn trục X màn kết quả. */
+export const minuteLabel = (sec: number) => `${Math.round((sec / 60) * 10) / 10}m`;
+
+export function simulationResult(s: Scenario, session: SimulationSession, run: SimulationRun | undefined, now: number): SimulationResult {
+  const v = s.setup.variable;
+  const m = s.setup.monitor;
+  const p = profileOf(session);
+  const elapsed = elapsedSec(session, now);
+  const stopped = sessionPhase(session, now) === 'stopped';
+  const above = v.direction === 'above';
+  const { alerts, events } = simTimeline(s, m, session, now);
+  const marks = monitorMarks(s, p);
+  const seen = (x: number | undefined): x is number => x !== undefined && x <= elapsed;
+  const fmt = (x: number) => formatVariable(x, v);
+
+  let peak = p.start;
+  for (let t = 0; t <= elapsed; t++) {
+    const x = valueAt(p, t);
+    if (above ? x > peak : x < peak) peak = x;
+  }
+  const peakReached = seen(marks.peak);
+  const result: RunResult = run?.result ?? 'pass';
+  const detected = seen(marks.alert);
+  const aiDone = seen(marks.ai);
+  const watched = seen(marks.watch);
+
+  const tiles: ResultTile[] = [
+    { id: 'detect', label: 'Phát hiện', result: detected ? 'pass' : 'fail' },
+    { id: 'trend', label: 'Diễn biến', result: peakReached ? 'pass' : 'fail' },
+    { id: 'ai', label: 'AI', result: aiDone ? 'pass' : 'fail' },
+    // Mô phỏng không gửi lệnh PLC / không tạo cảnh báo thật (lớp dữ liệu bảo đảm – test khoá) → luôn Đạt.
+    { id: 'safety', label: 'An toàn', result: 'pass' },
+  ];
+
+  const trendWord = above ? 'tăng' : 'giảm';
+  const criteria: Criterion[] = [
+    {
+      id: 'detect',
+      label: 'Khả năng phát hiện',
+      result: watched ? 'pass' : 'fail',
+      comment: watched
+        ? `Nhận diện chính xác xu hướng ${trendWord} ${fmt(marks.watchLevel)} từ phút thứ ${Math.floor(marks.watch! / 60)}.`
+        : `Chưa ghi nhận xu hướng ${trendWord} tới mức ${fmt(marks.watchLevel)} trong lượt.`,
+    },
+    {
+      id: 'alert',
+      label: 'Tạo cảnh báo mô phỏng',
+      result: detected ? 'pass' : 'fail',
+      comment: detected
+        ? `Sinh cảnh báo giả lập ${alerts[0]!.id} đúng tại mốc ${above ? '>' : '<'}${fmt(v.threshold)}, không lẫn lộn với cảnh báo thật.`
+        : `Chưa sinh cảnh báo giả lập – ${v.noun} chưa ${above ? 'vượt' : 'xuống dưới'} ${fmt(v.threshold)}.`,
+    },
+    {
+      id: 'ai',
+      label: m.result.aiCriterion,
+      result: aiDone ? 'pass' : 'fail',
+      comment: aiDone ? `AI ${lowerFirst(m.peakAdvice)}` : 'Lượt kết thúc trước khi AI đưa gợi ý xử lý.',
+    },
+    { id: 'flag', label: 'Phân biệt Mô phỏng/Thật', result: 'pass', comment: 'Cờ (flag) mô phỏng hoạt động tốt 100%. PLC thực tế vẫn vận hành bình thường.' },
+    {
+      id: 'history',
+      label: 'Ghi nhận lịch sử',
+      result: run ? 'pass' : 'fail',
+      comment: run ? 'Chuẩn bị sẵn sàng log dữ liệu để lưu trữ và xuất báo cáo PDF.' : 'Chưa ghi lượt vào lịch sử mô phỏng.',
+    },
+  ];
+
+  const crossText = `${above ? 'vượt' : 'xuống dưới'} ${lowerFirst(v.thresholdLabel)} tại ${fmt(v.threshold)}`;
+  const summary = [
+    `Kịch bản mô phỏng ${lowerFirst(s.title)} đã ${stopped ? `dừng thủ công lúc ${clockText(elapsed)}` : 'hoàn thành'}.`,
+    detected
+      ? `Hệ thống phát hiện ${v.noun} ${crossText}, tạo cảnh báo mô phỏng đúng thời điểm${aiDone ? ' và đưa ra gợi ý xử lý phù hợp' : ''}.`
+      : `${v.noun.charAt(0).toUpperCase()}${v.noun.slice(1)} chưa ${above ? 'vượt' : 'xuống dưới'} ${lowerFirst(v.thresholdLabel)} trong lượt.`,
+    run && run.result === 'improve' ? `Thời gian phản ứng ${run.responseSeconds} s vượt mục tiêu ${run.targetSeconds} s.` : '',
+    'Không có tác động đến thiết bị thật trong quá trình mô phỏng.',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const advice =
+    result === 'pass'
+      ? `Kết quả mô phỏng đạt yêu cầu. Hệ thống phản ứng ổn định với các ngưỡng cảnh báo thiết lập. ${m.result.next}`
+      : `Kết quả mô phỏng cần cải thiện: phản ứng ${run!.responseSeconds} s vượt mục tiêu ${run!.targetSeconds} s. Nên rà soát các bước phản ứng của kịch bản và chạy lại với cùng tham số để so sánh.`;
+
+  const fullDuration = !stopped;
+  const kpis: ResultKpi[] = [
+    {
+      id: 'result',
+      label: 'Kết quả',
+      value: RUN_RESULT_LABEL[result],
+      sub: result === 'pass' ? 'Hệ thống phản ứng đúng kịch bản' : `Phản ứng ${run?.responseSeconds} s > mục tiêu ${run?.targetSeconds} s`,
+      tone: result === 'pass' ? 'success' : 'warning',
+    },
+    { id: 'time', label: 'Thời gian chạy', value: clockText(elapsed), sub: fullDuration ? 'Hoàn thành đủ thời lượng' : 'Dừng trước thời lượng', tone: 'primary' },
+    {
+      id: 'peak',
+      label: m.result.peakLabel,
+      value: fmt(peak),
+      sub: peakReached ? 'Đạt giá trị mục tiêu mô phỏng' : 'Chưa chạm giá trị mục tiêu',
+      tone: 'primary',
+    },
+    { id: 'alerts', label: 'Cảnh báo mô phỏng', value: String(alerts.length), sub: alerts.length ? 'Đã tạo đúng ngưỡng' : 'Không phát sinh', tone: 'warning' },
+    { id: 'ai', label: 'Gợi ý AI', value: String(aiDone ? m.recommendations.length : 0), sub: aiDone ? 'Đã ghi nhận' : 'Chưa có gợi ý', tone: 'primary' },
+  ];
+
+  return { result, stopped, elapsed, peak, peakReached, alerts, events, kpis, summary, tiles, criteria, advice, points: resultPoints(session, elapsed) };
+}
+
+/** Nhãn "Khu vực / Tài sản chính": "Khu bồn LPG / Bồn V-101". */
+export const areaAssetText = (s: Pick<Scenario, 'setup'>, session: Pick<SimulationSession, 'config'>) =>
+  `${session.config.areas[0] ?? '—'} / ${s.setup.equipment}`;
+
+/** Trạng thái tệp báo cáo: "Nháp • Chưa xuất" / "Nháp • Đã thêm gợi ý AI • Đã xuất Excel 18:30". */
+export function reportStatusText(session: Pick<SimulationSession, 'report'>, timeText?: (iso: string) => string): string {
+  const r = session.report ?? {};
+  const parts = ['Nháp'];
+  if (r.aiIncluded) parts.push('Đã thêm gợi ý AI');
+  parts.push(r.excelAt ? `Đã xuất Excel${timeText ? ` ${timeText(r.excelAt)}` : ''}` : 'Chưa xuất');
+  return parts.join(' • ');
+}
+
+const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+
+/** Báo cáo dạng CSV (Excel mở được, BOM do nơi gọi thêm): thông tin lượt · KPI · tiêu chí · sự kiện · cảnh báo · gợi ý AI (nếu thêm). */
+export function resultCsv(
+  s: Scenario,
+  session: SimulationSession,
+  code: string,
+  r: SimulationResult,
+): string {
+  const rows: string[][] = [
+    ['Báo cáo mô phỏng', code],
+    ['Kịch bản', `${s.code} – ${s.title}`],
+    ['Khu vực / Tài sản chính', areaAssetText(s, session)],
+    ['Người chạy', session.by],
+    ['Thời lượng / Mục tiêu', `${session.config.durationMin} phút / ${formatVariable(session.config.target, s.setup.variable)}`],
+    ['Tổng kết', r.summary],
+    [],
+    ['Chỉ số', 'Giá trị', 'Ghi chú'],
+    ...r.kpis.map((k) => [k.label, k.value, k.sub]),
+    [],
+    ['Tiêu chí', 'Kết quả', 'Nhận xét'],
+    ...r.criteria.map((c) => [c.label, CHECK_LABEL[c.result], c.comment]),
+    [],
+    ['Giờ', 'Sự kiện', 'Mô tả'],
+    ...r.events.map((e) => [e.time, e.title, e.detail]),
+    [],
+    ['Cảnh báo mô phỏng', 'Giờ', 'Mô tả'],
+    ...r.alerts.map((a) => [a.id, a.time, a.description]),
+  ];
+  if (session.report?.aiIncluded) rows.push([], ['Gợi ý AI', r.advice]);
+  rows.push([], ['Ghi chú', 'Kết quả từ dữ liệu mô phỏng – không phải sự cố vận hành thật.']);
+  return rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+}
+
+/** "sim-run-24062026-001.csv" */
+export const resultFileName = (code: string, ext: 'pdf' | 'csv') => (ext === 'pdf' ? `${code}.pdf` : `${code.toLowerCase()}.csv`);
+
+/** Giá trị theo đơn vị không qualifier – trục biểu đồ ("35%"). */
+export const qtyText = (x: number, s: Pick<Scenario, 'setup'>) => formatQty(x, s.setup.variable.unit, s.setup.variable.digits);

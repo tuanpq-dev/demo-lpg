@@ -315,3 +315,135 @@ export function DualTrendChart({ data, series, xTicks }: DualTrendChartProps) {
     </ResponsiveContainer>
   );
 }
+
+// ============================================================================
+// Một chỉ số tiến tới mục tiêu – "Diễn biến nồng độ gas mô phỏng" (ảnh `ai-sim-monitor/2.png`)
+// ============================================================================
+
+export type TargetTrendPoint = { x: number; value: number };
+
+export type TargetTrendLine = { id: string; value: number; color: ColorToken };
+
+export type TargetTrendChartProps = {
+  /** Điểm đã có (x tăng dần) – điểm cuối = hiện tại, có chấm tròn. */
+  data: readonly TargetTrendPoint[];
+  /** Miền trục X cố định (vd 0 → thời lượng giây) – đường chỉ phủ phần đã chạy. */
+  xDomain: [number, number];
+  xTicks: readonly number[];
+  formatX: (x: number) => string;
+  domain: [number, number];
+  yTicks: readonly number[];
+  formatY: (v: number) => string;
+  /** Vạch ngang nét đứt (ngưỡng, mục tiêu). Chú thích đặt ở header thẻ. */
+  lines?: readonly TargetTrendLine[];
+  color?: ColorToken;
+  /** Tên series trong tooltip. */
+  name: string;
+  /** Định dạng giá trị trong tooltip ("28% LEL"). */
+  format?: (v: number) => string;
+  /** Lưới ngang + dọc (ảnh Kết quả mô phỏng). */
+  grid?: boolean;
+  /** Chấm rỗng ở mọi điểm dữ liệu (ảnh Kết quả: mỗi phút một chấm). */
+  dots?: boolean;
+  /** Chấm tròn đặc ở điểm cuối = hiện tại (mặc định bật – màn Theo dõi). */
+  endDot?: boolean;
+  /** Độ đậm gradient vùng dưới đường (0–1, mặc định 0.3). */
+  areaOpacity?: number;
+  /** Khung hẹp tự bỏ bớt nhãn trục X (giữ đầu/cuối) thay vì chồng chữ – nhiều mốc (ảnh Kết quả: 0m…10m). */
+  thinTicks?: boolean;
+};
+
+/**
+ * Đường + vùng gradient của MỘT chỉ số trên trục X cố định (phần chưa chạy để trống), trục Y hiện nhãn, vạch ngưỡng / mục
+ * tiêu nét đứt, chấm tròn ở điểm hiện tại. Màu qua token; không animation (số chạy theo giây + giảm chuyển động).
+ */
+export function TargetTrendChart({
+  data,
+  xDomain,
+  xTicks,
+  formatX,
+  domain,
+  yTicks,
+  formatY,
+  lines = [],
+  color = 'danger-strong',
+  name,
+  format,
+  grid = false,
+  dots = false,
+  endDot = true,
+  areaOpacity = 0.3,
+  thinTicks = false,
+}: TargetTrendChartProps) {
+  const c = useTokenColors();
+  const gid = useId().replace(/:/g, '');
+  const last = data[data.length - 1];
+  const n = xTicks.length;
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart data={[...data]} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id={`target-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c(color, areaOpacity)} />
+            <stop offset="100%" stopColor={c(color, 0)} />
+          </linearGradient>
+        </defs>
+        {grid && <CartesianGrid stroke={c('line', 0.5)} />}
+        <XAxis
+          dataKey="x"
+          type="number"
+          domain={xDomain}
+          ticks={[...xTicks]}
+          interval={thinTicks ? 'preserveStartEnd' : 0}
+          minTickGap={thinTicks ? 12 : undefined}
+          axisLine={{ stroke: c('line', 0.6) }}
+          tickLine={false}
+          tickMargin={10}
+          tick={(p: { x: number; y: number; payload: { value: number }; index: number }) => (
+            // Nhãn đầu căn trái, nhãn cuối căn phải (ảnh: "00:00" sát trục, "10:00" sát mép phải).
+            // thinTicks: căn giữa mọi nhãn để phép bỏ bớt nhãn của recharts (tính theo tâm) không làm chồng chữ.
+            <text
+              x={p.x}
+              y={p.y}
+              dy={10}
+              fontSize={12}
+              fill={c('text-muted')}
+              textAnchor={thinTicks ? 'middle' : p.index === 0 ? 'start' : p.index === n - 1 ? 'end' : 'middle'}
+            >
+              {formatX(p.payload.value)}
+            </text>
+          )}
+        />
+        <YAxis
+          domain={domain}
+          ticks={[...yTicks]}
+          allowDataOverflow
+          axisLine={{ stroke: c('line', 0.6) }}
+          tickLine={false}
+          width={44}
+          tick={{ fontSize: 12, fill: c('text-muted') }}
+          tickFormatter={formatY}
+        />
+        <Tooltip
+          cursor={{ stroke: c('line'), strokeDasharray: '3 3' }}
+          content={<ChartTooltip format={format} labelFormat={(x) => formatX(Number(x))} />}
+        />
+        {lines.map((l) => (
+          <ReferenceLine key={l.id} y={l.value} stroke={c(l.color)} strokeDasharray="4 3" ifOverflow="extendDomain" />
+        ))}
+        <Area
+          type="monotone"
+          dataKey="value"
+          name={name}
+          stroke={c(color)}
+          strokeWidth={3}
+          fill={`url(#target-${gid})`}
+          isAnimationActive={false}
+          dot={dots ? { r: 4, fill: c('surface'), stroke: c(color), strokeWidth: 2 } : false}
+          activeDot={{ r: 4, fill: c(color), stroke: c('surface') }}
+        />
+        {endDot && last && <ReferenceDot x={last.x} y={last.value} r={7} fill={c(color)} stroke={c(color, 0.35)} strokeWidth={4} ifOverflow="visible" />}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
