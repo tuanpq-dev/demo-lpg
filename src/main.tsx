@@ -23,6 +23,7 @@ const DailyReportDetailPage = lazy(() => import('./pages/reports/DailyReportDeta
 const DeviceDetailPage = lazy(() => import('./pages/operations/DeviceDetailPage'));
 const OperationLogsPage = lazy(() => import('./pages/operations/OperationLogsPage'));
 const AiSimulationPage = lazy(() => import('./pages/operations/AiSimulationPage'));
+const ScenarioConfigPage = lazy(() => import('./pages/operations/ScenarioConfigPage'));
 
 function Root() {
   return (
@@ -72,6 +73,8 @@ const router = createBrowserRouter([
           { path: '/operations/devices/:deviceId', element: <DeviceDetailPage /> },
           { path: '/operations/logs', element: <OperationLogsPage /> },
           { path: '/operations/ai-simulation', element: <AiSimulationPage /> },
+          // Cấu hình kịch bản mô phỏng (ảnh 03/11/2026).
+          { path: '/operations/ai-simulation/:scenarioId/config', element: <ScenarioConfigPage /> },
           { path: '/operations/:assetId', loader: legacyAssetRedirect },
           { path: '/alerts', element: <AlertsPage /> },
           { path: '/maintenance', element: <MaintenancePage /> },

@@ -16,6 +16,7 @@ import {
   type SimulationRun,
   type TagHealth,
 } from './scenarios';
+import { GAS_CONFIG, GAS_SETUP } from './testFixtures';
 
 const NOW = parsePlantDateTime('2026-11-02T18:13:00')!;
 const T = NOW.getTime();
@@ -43,6 +44,8 @@ function sc(p: Partial<Scenario> & { id: string }): Scenario {
     ],
     targetSeconds: 60,
     updatedAt: iso('2026-11-02T16:13:00'),
+    setup: GAS_SETUP,
+    config: GAS_CONFIG,
     ...p,
   };
 }
@@ -90,6 +93,14 @@ describe('simulateScenario', () => {
   it('tổng bước = mục tiêu → Đạt; vượt 1 s → Cần cải thiện', () => {
     expect(simulateScenario(sc({ id: 'S' }), NOW, 'A', 'r1')).toMatchObject({ result: 'pass', responseSeconds: 60, targetSeconds: 60, at: NOW.toISOString(), by: 'A' });
     expect(simulateScenario(sc({ id: 'S', targetSeconds: 59 }), NOW, 'A', 'r2').result).toBe('improve');
+  });
+
+  it('lưu ảnh chụp tham số đang dùng + ghi chú (đổi cấu hình sau đó không đổi lượt đã chạy)', () => {
+    const s = sc({ id: 'S', config: { ...GAS_CONFIG, areas: ['Khu bồn LPG'] } });
+    const r = simulateScenario(s, NOW, 'A', 'r3', 'Ghi chú');
+    expect(r).toMatchObject({ note: 'Ghi chú', config: { target: 35, durationMin: 10, areas: ['Khu bồn LPG'] } });
+    expect(r.config!.areas).not.toBe(s.config.areas);
+    expect(simulateScenario(s, NOW, 'A', 'r4')).not.toHaveProperty('note');
   });
 });
 

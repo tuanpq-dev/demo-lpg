@@ -52,6 +52,8 @@ export type SelectProps<V extends string = string> = {
    * giá trị đổi (ô "Thiết bị" ở chi tiết thiết bị Vận hành).
    */
   fullWidth?: boolean;
+  /** variant="field": md = cao 35px chữ 14px (mặc định) · lg = cao 40px chữ 16px (màn cấu hình kịch bản mô phỏng). */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -72,6 +74,7 @@ export function Select<V extends string = string>({
   align = 'start',
   side = 'bottom',
   variant = 'filter',
+  size = 'md',
   icon,
   placeholder,
   invalid,
@@ -215,7 +218,8 @@ export function Select<V extends string = string>({
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onTriggerKeyDown}
         className={cn(
-          'inline-flex items-center whitespace-nowrap border text-base text-fg transition-colors',
+          'inline-flex items-center whitespace-nowrap border text-fg transition-colors',
+          variant === 'field' && size === 'lg' ? 'text-md' : 'text-base',
           'disabled:cursor-not-allowed disabled:opacity-50',
           variant === 'filter' &&
             cn('h-[34px] gap-1 rounded-md bg-surface-sunken px-[13px]', open ? 'border-accent/60' : 'border-line hover:border-accent/40'),
@@ -224,7 +228,8 @@ export function Select<V extends string = string>({
             cn('h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-[4px]', open ? 'border-accent/60' : 'border-accent/30 hover:border-accent/60'),
           variant === 'field' &&
             cn(
-              'h-[35px] w-full justify-between gap-2 rounded-lg bg-surface-sunken pl-3 pr-2 text-left',
+              'w-full justify-between gap-2 rounded-lg bg-surface-sunken text-left',
+              size === 'lg' ? 'h-10 pl-4 pr-3' : 'h-[35px] pl-3 pr-2',
               invalid ? 'border-danger' : open ? 'border-accent/60' : 'border-line hover:border-accent/40',
             ),
         )}

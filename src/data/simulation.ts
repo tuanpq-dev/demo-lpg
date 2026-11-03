@@ -3,6 +3,7 @@
  * qua `runSimulation`. Mô phỏng KHÔNG ghi gì vào store cảnh báo / thiết bị (quy tắc an toàn) – chỉ thêm vào lịch sử chạy.
  */
 import { useCallback, useMemo } from 'react';
+import { checkConfig, configValid, defaultRunNote, orderedAreas, setupTags, type ScenarioConfig } from '@/features/simulation/config';
 import { simulateScenario, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
@@ -54,10 +55,35 @@ export async function runSimulation(scenarioId: string, by: string): Promise<Sim
   if (s.status !== 'ready') throw new Error(`Kịch bản ${s.code} cần cấu hình trước khi chạy`);
   await new Promise((r) => setTimeout(r, SIMULATION_DELAY_MS));
   runSeq += 1;
-  const run = simulateScenario(s, appNow(), by, `RUN-S${Date.now().toString(36)}-${runSeq}`);
+  const base = simulateScenario(s, appNow(), by, `RUN-S${Date.now().toString(36)}-${runSeq}`);
+  const run: SimulationRun = { ...base, note: defaultRunNote(base) };
   runsDb = [run, ...runsDb!];
   runStore.commit(runsDb.map((r) => ({ ...r })));
   return run;
+}
+
+/** Độ trễ giả lập khi lưu cấu hình (ms). */
+export const SAVE_CONFIG_DELAY_MS = 400;
+
+/**
+ * Lưu "Tham số đầu vào" của một kịch bản (chỉ lớp mô phỏng – không đổi ngưỡng/cấu hình PLC thật). Kiểm tra lại bằng
+ * `checkConfig` (UI đã chặn, đây là lớp chặn cuối). Cập nhật `updatedAt` = giờ ứng dụng.
+ * TODO(backend): PUT /simulation/scenarios/:id/config.
+ */
+export async function saveScenarioConfig(scenarioId: string, config: ScenarioConfig): Promise<Scenario> {
+  seed();
+  const s = scenariosDb!.find((x) => x.id === scenarioId);
+  if (!s) throw new Error(`Không tìm thấy kịch bản ${scenarioId}`);
+  if (!configValid(checkConfig(config, s.setup))) throw new Error(`Cấu hình ${s.code} chưa hợp lệ`);
+  await new Promise((r) => setTimeout(r, SAVE_CONFIG_DELAY_MS));
+  const next: Scenario = {
+    ...s,
+    config: { ...config, areas: orderedAreas(config.areas, s.setup.areaOptions) },
+    updatedAt: appNow().toISOString(),
+  };
+  scenariosDb = scenariosDb!.map((x) => (x.id === scenarioId ? next : x));
+  scenarioStore.commit(scenariosDb.map((x) => ({ ...x })));
+  return next;
 }
 
 type SimulationState =
@@ -70,7 +96,7 @@ export function useSimulation() {
   const scenarios = scenarioStore.useCollection();
   const runs = runStore.useCollection();
   const tags = useMemo(
-    () => [...new Set([...SIMULATION_REFERENCE_TAGS, ...(scenarios.data ?? []).flatMap((s) => s.tags)])],
+    () => [...new Set([...SIMULATION_REFERENCE_TAGS, ...(scenarios.data ?? []).flatMap((s) => [...s.tags, ...setupTags(s.setup)])])],
     [scenarios.data],
   );
   const liveData = useLiveData(tags);

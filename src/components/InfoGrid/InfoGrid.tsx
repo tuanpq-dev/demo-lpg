@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type InfoGridTone = 'default' | 'danger' | 'warning' | 'link';
+export type InfoGridTone = 'default' | 'danger' | 'warning' | 'link' | 'success';
 
 export type InfoGridItem = {
   id: string;
@@ -13,6 +13,8 @@ export type InfoGridItem = {
   hint?: string;
   /** Bắt đầu hàng mới (ảnh: "Trạng thái" đứng riêng hàng cuối). */
   newRow?: boolean;
+  /** Chiếm 2 cột ở ≥ xl (variant default) – giá trị dài ("Tên kịch bản" màn cấu hình kịch bản). */
+  span?: 2;
 };
 
 export type InfoGridProps = {
@@ -22,6 +24,8 @@ export type InfoGridProps = {
    * (không theo `xl` của trang vì nằm trong drawer 440px). pairs = luôn 2 cột, cùng cỡ chữ stats ("Thông tin báo cháy").
    */
   variant?: 'default' | 'stats' | 'pairs';
+  /** Giá trị đậm (semibold) – "Thông tin kịch bản" (màn cấu hình kịch bản). Chỉ variant default. */
+  strong?: boolean;
   className?: string;
 };
 
@@ -30,13 +34,14 @@ const toneClass: Record<InfoGridTone, string> = {
   danger: 'font-semibold text-danger-text',
   warning: 'text-warning',
   link: 'text-primary',
+  success: 'text-success',
 };
 
 /**
  * Lưới nhãn/giá trị (`<dl>`) – "Thông tin chung" ảnh MT-00128: 4 cột từ `xl`, 2 cột từ `sm`, 1 cột dưới đó.
  * Nhãn 14px chữ phụ, giá trị 14px; khoảng cách hàng ~24px (ước lượng từ ảnh).
  */
-export function InfoGrid({ items, variant = 'default', className }: InfoGridProps) {
+export function InfoGrid({ items, variant = 'default', strong, className }: InfoGridProps) {
   if (variant === 'stats') {
     return (
       <dl className={cn('grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-4', className)}>
@@ -69,9 +74,9 @@ export function InfoGrid({ items, variant = 'default', className }: InfoGridProp
   return (
     <dl className={cn('grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-4', className)}>
       {items.map((it) => (
-        <div key={it.id} className={cn('flex min-w-0 flex-col gap-1.5', it.newRow && 'sm:col-start-1')}>
+        <div key={it.id} className={cn('flex min-w-0 flex-col gap-1.5', it.newRow && 'sm:col-start-1', it.span === 2 && 'xl:col-span-2')}>
           <dt className="text-base text-fg-secondary">{it.label}</dt>
-          <dd className={cn('break-words text-base', toneClass[it.tone ?? 'default'])}>{it.value}</dd>
+          <dd className={cn('break-words text-base', strong && 'font-semibold', toneClass[it.tone ?? 'default'])}>{it.value}</dd>
         </div>
       ))}
     </dl>

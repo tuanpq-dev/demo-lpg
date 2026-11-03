@@ -13,8 +13,10 @@ export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' |
   /**
    * card = ô có viền cả dòng, nhãn 14px; được chọn → viền + nền nhạt primary ("Kết quả xác minh" – modal cập nhật xử lý
    * áp suất). Khoá dùng `aria-disabled` (vẫn focus, đọc lý do qua aria-describedby) – onChange không được gọi.
+   * list = nhãn 14px chữ chính, cách ô 10px – danh sách chọn trong form ("Khu vực ảnh hưởng" màn cấu hình kịch bản).
+   *        Luôn hiện nhãn (không cần `showLabel`).
    */
-  variant?: 'default' | 'card';
+  variant?: 'default' | 'card' | 'list';
 };
 
 const isTrue = (v: unknown) => v === true || v === 'true';
@@ -48,14 +50,14 @@ export function Checkbox({ showLabel, variant = 'default', ...props }: CheckboxP
       </label>
     );
   }
-  if (!showLabel) return <CheckboxBox {...props} />;
+  if (!showLabel && variant !== 'list') return <CheckboxBox {...props} />;
   const { label, className, disabled } = props;
   // Khoá mà vẫn focus/đọc được: aria-disabled (lý do qua aria-describedby) hoặc aria-readonly (giá trị do hệ thống quyết định).
   const locked = isTrue(props['aria-disabled']) || isTrue(props['aria-readonly']);
   return (
     <label
       className={cn(
-        'inline-flex items-center gap-2 text-sm text-fg-secondary',
+        variant === 'list' ? 'inline-flex items-center gap-2.5 text-base text-fg' : 'inline-flex items-center gap-2 text-sm text-fg-secondary',
         disabled ? 'cursor-not-allowed opacity-50' : locked ? 'cursor-default' : 'cursor-pointer',
         className,
       )}

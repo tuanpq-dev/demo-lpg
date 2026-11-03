@@ -78,13 +78,16 @@ describe('/operations/ai-simulation', () => {
     expect(await fetchAlerts()).toEqual(alertsBefore);
   });
 
-  test('thiếu mapping: "Cấu hình trước khi chạy" khoá, đọc được ánh xạ thiếu', async () => {
+  // Đổi 03/11/2026: có màn cấu hình → "Cấu hình trước khi chạy" là link sang màn đó (trước là nút khoá "chờ thiết kế").
+  test('thiếu mapping: "Cấu hình trước khi chạy" mở màn cấu hình, đọc được ánh xạ thiếu', async () => {
     renderAt('/operations/ai-simulation?status=needs-config');
     const c = await screen.findByRole('article', { name: 'Tín hiệu báo cháy bất thường' });
     expect(screen.getAllByRole('article')).toHaveLength(1);
-    const btn = within(c).getByRole('button', { name: 'Cấu hình trước khi chạy SC-005' });
-    expect(btn).toHaveAttribute('aria-disabled', 'true');
-    expect(btn).toHaveAccessibleDescription(/SD-02 chưa gán biến PLC/);
+    const link = within(c).getByRole('link', { name: 'Cấu hình trước khi chạy SC-005' });
+    expect(link).toHaveAttribute('href', '/operations/ai-simulation/SC-005/config');
+    expect(link).toHaveAccessibleDescription(/SD-02 chưa gán biến PLC/);
+    // Nút header mở cấu hình kịch bản đầu danh sách đang lọc.
+    expect(screen.getByRole('link', { name: 'Cấu hình kịch bản' })).toHaveAttribute('href', '/operations/ai-simulation/SC-005/config');
     expect(within(c).queryByRole('button', { name: /Chạy mô phỏng/ })).not.toBeInTheDocument();
   });
 

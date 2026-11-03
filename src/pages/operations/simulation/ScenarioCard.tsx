@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
-import { Badge, Button, FanBoxIcon, FlameIcon, GasCylinderIcon, GaugeIcon, Icon, InfoGrid, PlayIcon, ToolsIcon, type TagTone } from '@/components';
+import { Link } from 'react-router-dom';
+import { Badge, Button, FanBoxIcon, FlameIcon, GasCylinderIcon, GaugeIcon, Icon, InfoGrid, PlayIcon, ToolsIcon, buttonClass, type TagTone } from '@/components';
 import {
   RUN_RESULT_LABEL,
   SCENARIO_RISK_LABEL,
@@ -37,14 +38,16 @@ export type ScenarioCardProps = {
   canRun: boolean;
   running: boolean;
   onRun: () => void;
+  /** Màn "Cấu hình kịch bản" của kịch bản này. */
+  configHref: string;
 };
 
 /**
  * Một kịch bản (ảnh `scratch/figma-ref/ai-sim/scenario-list.png`): icon · tên · mã + cập nhật · badge rủi ro + trạng thái;
  * "Chi tiết kịch bản" mở/đóng lưới Khu vực / Dữ liệu PLC / Ngưỡng / Kết quả; lần chạy + kết quả gần nhất từ lịch sử;
- * "Chạy mô phỏng" (hoặc "Cấu hình trước khi chạy" khi thiếu mapping – chưa có màn cấu hình nên khoá kèm lý do).
+ * "Chạy mô phỏng" (hoặc link "Cấu hình trước khi chạy" sang màn cấu hình khi thiếu mapping).
  */
-export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, blocker, canRun, running, onRun }: ScenarioCardProps) {
+export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, blocker, canRun, running, onRun, configHref }: ScenarioCardProps) {
   const uid = useId();
   const titleId = `${uid}-title`;
   const detailId = `${uid}-detail`;
@@ -118,16 +121,11 @@ export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, bl
           </Button>
           {canRun &&
             (needsConfig ? (
-              <Button
-                variant="outline-warning"
-                icon={<ToolsIcon size={16} />}
-                aria-disabled="true"
-                aria-describedby={reasonId}
-                onClick={(e) => e.preventDefault()}
-              >
+              <Link to={configHref} aria-describedby={reasonId} className={buttonClass('outline-warning')}>
+                <ToolsIcon size={16} />
                 Cấu hình trước khi chạy
                 <span className="sr-only"> {s.code}</span>
-              </Button>
+              </Link>
             ) : (
               <Button
                 variant="primary"
@@ -145,7 +143,7 @@ export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, bl
       </div>
       {canRun && blocker && (
         <p id={reasonId} className={cn('text-sm sm:pl-12', blocker.kind === 'pending' ? 'text-fg-secondary' : 'text-warning')}>
-          {needsConfig ? `${blocker.text} Màn cấu hình đang chờ thiết kế.` : blocker.text}
+          {needsConfig ? `${blocker.text} Màn cấu hình ánh xạ đang chờ thiết kế.` : blocker.text}
         </p>
       )}
     </article>

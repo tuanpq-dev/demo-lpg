@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { AiSparklesIcon, Badge, Card, CheckIcon, HistoryIcon, ServerIcon, ShieldPlusIcon } from '@/components';
+import { AiSparklesIcon, Badge, BadgeCheckIcon, Card, CheckIcon, HistoryIcon, ServerIcon, ShieldPlusIcon } from '@/components';
 import {
   RUN_RESULT_LABEL,
   healthSynced,
@@ -112,14 +112,35 @@ const SAFETY_RULES = [
   'Lưu kết quả vào lịch sử',
 ] as const;
 
-/** "Quy tắc an toàn" – danh sách cố định (cam kết của chế độ mô phỏng; lớp dữ liệu tuân theo – test khoá). */
-export function SafetyRulesCard() {
+/** Bản đầy đủ ở màn "Cấu hình kịch bản" (ảnh `safety-rules.png`). */
+export const CONFIG_SAFETY_RULES = [
+  'Chỉ ghi dữ liệu trên lớp mô phỏng',
+  'Không gửi lệnh điều khiển xuống PLC thật',
+  'Không thay đổi trạng thái thiết bị thật',
+  'Không kích hoạt ESD thật',
+  'ESD chỉ là quy trình mô phỏng trong kịch bản',
+  'Lưu toàn bộ kết quả vào lịch sử mô phỏng',
+] as const;
+
+/**
+ * "Quy tắc an toàn" – danh sách cố định (cam kết của chế độ mô phỏng; lớp dữ liệu tuân theo – test khoá).
+ * list (màn danh sách): icon khiên ở tiêu đề + dấu tick cyan · verified (màn cấu hình): tiêu đề 18px, huy hiệu tick xanh.
+ */
+export function SafetyRulesCard({ rules = SAFETY_RULES, variant = 'list' }: { rules?: readonly string[]; variant?: 'list' | 'verified' }) {
+  const verified = variant === 'verified';
   return (
-    <Card title="Quy tắc an toàn" icon={<ShieldPlusIcon size={20} className="shrink-0 text-fg-secondary" />} headerVariant="plain" radius="lg">
-      <ul className="flex flex-col gap-2">
-        {SAFETY_RULES.map((t) => (
+    <Card
+      title="Quy tắc an toàn"
+      icon={verified ? undefined : <ShieldPlusIcon size={20} className="shrink-0 text-fg-secondary" />}
+      headerVariant="plain"
+      radius="lg"
+      titleSize={verified ? 'lg' : 'md'}
+      aria-label={verified ? 'Quy tắc an toàn' : undefined}
+    >
+      <ul className={cn('flex flex-col', verified ? '-mt-1 gap-3' : 'gap-2')}>
+        {rules.map((t) => (
           <li key={t} className="flex items-center gap-2.5 text-base text-fg-secondary">
-            <CheckIcon size={16} className="shrink-0 text-primary" />
+            {verified ? <BadgeCheckIcon size={18} className="shrink-0 text-success" /> : <CheckIcon size={16} className="shrink-0 text-primary" />}
             {t}
           </li>
         ))}

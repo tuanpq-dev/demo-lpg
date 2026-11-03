@@ -14,3 +14,9 @@ export const DEFAULT_OPERATION_DEVICE = 'E-101A';
 
 /** Đường dẫn trang chi tiết thiết bị ở màn Vận hành. */
 export const operationDevicePath = (id: string) => `/operations/devices/${encodeURIComponent(id)}`;
+
+/** Màn danh sách AI mô phỏng sự cố. */
+export const SIMULATION_PATH = '/operations/ai-simulation';
+
+/** Màn "Cấu hình kịch bản mô phỏng" của một kịch bản (ảnh 03/11/2026). */
+export const simulationConfigPath = (scenarioId: string) => `${SIMULATION_PATH}/${encodeURIComponent(scenarioId)}/config`;

@@ -69,6 +69,8 @@ export type DataTableProps<T> = {
   groupBy?: (row: T) => DataTableGroup;
   /** Kẻ dọc giữa các ô (bảng lưới số liệu – Figma 117:4609). */
   gridLines?: boolean;
+  /** Chữ tiêu đề cột: label = 11px đậm (mặc định, Figma) · plain = 14px thường (bảng tham chiếu màn cấu hình kịch bản). */
+  headerStyle?: 'label' | 'plain';
   /** Giới hạn chiều cao vùng cuộn để header dính (sticky). */
   maxHeight?: number | string;
   pagination?: DataTablePagination;
@@ -113,6 +115,7 @@ export function DataTable<T>({
   stickyActions,
   groupBy,
   gridLines,
+  headerStyle = 'label',
   className,
 }: DataTableProps<T>) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
@@ -143,7 +146,11 @@ export function DataTable<T>({
   };
 
   const grid = gridLines && 'border-r border-line/30 last:border-r-0';
-  const th = cn('sticky top-0 z-[1] bg-surface-raised px-3 py-3 text-xs font-semibold tracking-label text-fg-secondary', grid);
+  const th = cn(
+    'sticky top-0 z-[1] bg-surface-raised px-3 py-3 text-fg-secondary',
+    headerStyle === 'plain' ? 'text-base font-normal' : 'text-xs font-semibold tracking-label',
+    grid,
+  );
   /** Cột đầu cố định: nằm sau ô chọn (w-14 = 56px). */
   const firstLeft = cn('z-[3]', selectable ? 'left-14' : 'left-0');
   const rowH = density === 'comfortable' ? 'h-[76px]' : density === 'compact' ? 'h-12' : 'h-[38px]';

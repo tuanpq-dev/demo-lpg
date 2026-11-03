@@ -17,8 +17,11 @@ export type FormFieldProps = {
   error?: string;
   /** Render control với id/aria-describedby/invalid đã nối sẵn. */
   children: (p: FormFieldRenderProps) => ReactNode;
-  /** field = nhãn 12px (mặc định) · section = nhãn như tiêu đề mục 18px (modal "Cập nhật tiến độ": "Nội dung đã thực hiện"). */
-  labelVariant?: 'field' | 'section';
+  /**
+   * field = nhãn 12px đậm (mặc định) · section = nhãn như tiêu đề mục 18px (modal "Cập nhật tiến độ": "Nội dung đã thực
+   * hiện") · plain = nhãn 14px thường (màn cấu hình kịch bản mô phỏng).
+   */
+  labelVariant?: 'field' | 'section' | 'plain';
   className?: string;
 };
 
@@ -35,8 +38,15 @@ export function FormField({ label, required, hint, error, children, labelVariant
   const describedBy = [errorId, hintId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={cn('flex flex-col', labelVariant === 'section' ? 'gap-3' : 'gap-1.5', className)}>
-      <label id={labelId} htmlFor={id} className={cn('font-semibold text-fg-secondary', labelVariant === 'section' ? 'text-lg' : 'text-sm')}>
+    <div className={cn('flex flex-col', labelVariant === 'section' ? 'gap-3' : labelVariant === 'plain' ? 'gap-2' : 'gap-1.5', className)}>
+      <label
+        id={labelId}
+        htmlFor={id}
+        className={cn(
+          'text-fg-secondary',
+          labelVariant === 'section' ? 'text-lg font-semibold' : labelVariant === 'plain' ? 'text-base' : 'text-sm font-semibold',
+        )}
+      >
         {label}
         {required && (
           <span className="ml-0.5 text-danger-text" aria-hidden="true">

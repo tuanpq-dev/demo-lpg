@@ -9,6 +9,7 @@ import { STALE_MS } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import { foldSearch } from '@/lib/foldSearch';
 import { dayNumber, formatDayVi, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
+import type { ScenarioConfig, ScenarioSetup } from './config';
 
 export const SCENARIO_GROUPS = ['gas-leak', 'pressure', 'equipment', 'communication', 'fire'] as const;
 export type ScenarioGroup = (typeof SCENARIO_GROUPS)[number];
@@ -63,6 +64,10 @@ export type Scenario = {
   missingMappings?: readonly string[];
   /** ISO – lần cập nhật cấu hình. */
   updatedAt: string;
+  /** Thông tin cố định của màn "Cấu hình kịch bản" (loại sự cố, biến mô phỏng, bảng tham chiếu…). */
+  setup: ScenarioSetup;
+  /** Tham số đầu vào đang lưu (sửa ở màn cấu hình). */
+  config: ScenarioConfig;
 };
 
 export type RunResult = 'pass' | 'improve';
@@ -77,6 +82,10 @@ export type SimulationRun = {
   responseSeconds: number;
   targetSeconds: number;
   by: string;
+  /** "Ghi chú: …" (Lịch sử kịch bản này). */
+  note?: string;
+  /** Tham số dùng cho lượt chạy (lượt mẫu cũ có thể không có). */
+  config?: ScenarioConfig;
 };
 
 // ---------------------------------------------------------------------------
@@ -146,17 +155,22 @@ export function runBlocker(s: Scenario, live: LiveMap, now: number): RunBlocker 
 
 export const responseSeconds = (s: Pick<Scenario, 'steps'>) => s.steps.reduce((sum, x) => sum + x.seconds, 0);
 
-/** Kết quả một lượt: tổng thời gian các bước so với mục tiêu. */
-export function simulateScenario(s: Scenario, at: Date, by: string, id: string): SimulationRun {
+/** Đạt khi thời gian phản ứng ≤ mục tiêu. */
+export const runResult = (seconds: number, target: number): RunResult => (seconds <= target ? 'pass' : 'improve');
+
+/** Kết quả một lượt: tổng thời gian các bước so với mục tiêu. Kèm tham số đang lưu của kịch bản (nếu có). */
+export function simulateScenario(s: Scenario, at: Date, by: string, id: string, note?: string): SimulationRun {
   const total = responseSeconds(s);
   return {
     id,
     scenarioId: s.id,
     at: at.toISOString(),
-    result: total <= s.targetSeconds ? 'pass' : 'improve',
+    result: runResult(total, s.targetSeconds),
     responseSeconds: total,
     targetSeconds: s.targetSeconds,
     by,
+    ...(note ? { note } : {}),
+    ...(s.config ? { config: { ...s.config, areas: [...s.config.areas] } } : {}),
   };
 }
 
@@ -234,6 +248,14 @@ const joinVi = (xs: readonly string[]) => (xs.length <= 1 ? xs.join('') : `${xs.
 
 export type AiSuggestion = { text: string; /** 0–100 */ confidence: number };
 
+/** Độ tin cậy (GIẢ ĐỊNH, 0–100) = 60 % × tỉ lệ thông số khả dụng + 40 % × tỉ lệ kịch bản đã chạy trong 7 ngày. */
+export function suggestionConfidence(scenarios: readonly Scenario[], runs: readonly SimulationRun[], health: TagHealth, now: Date): number {
+  const availability = health.total ? health.ok / health.total : 0;
+  const covered = scenarios.filter((s) => runs.some((r) => r.scenarioId === s.id && daysAgo(r.at, now) < COVERAGE_DAYS)).length;
+  const coverage = scenarios.length ? covered / scenarios.length : 0;
+  return Math.round((0.6 * availability + 0.4 * coverage) * 100);
+}
+
 /**
  * - Dữ liệu chưa tải → null.
  * - Có tag mất tín hiệu → đề nghị kiểm tra kết nối trước.
@@ -247,10 +269,7 @@ export function aiSuggestion(
   now: Date,
 ): AiSuggestion | null {
   if (!health) return null;
-  const availability = health.total ? health.ok / health.total : 0;
-  const covered = scenarios.filter((s) => runs.some((r) => r.scenarioId === s.id && daysAgo(r.at, now) < COVERAGE_DAYS)).length;
-  const coverage = scenarios.length ? covered / scenarios.length : 0;
-  const confidence = Math.round((0.6 * availability + 0.4 * coverage) * 100);
+  const confidence = suggestionConfidence(scenarios, runs, health, now);
 
   const lost = health.total - health.ok;
   if (lost > 0) {
