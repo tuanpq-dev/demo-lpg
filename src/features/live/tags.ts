@@ -56,6 +56,14 @@ export const MAIN_LINE_TAGS = {
 export const GAS_TAGS = ['GS-01', 'GS-02', 'GS-03', 'GS-04'] as const;
 
 /**
+ * Đầu dò gas khu bồn V-101 (% LEL) – tag PLC hiển thị `Tank_Gas_Detector` (`PLC_REPORT_TAGS.tankGas`). Mã GIẢ ĐỊNH; KHÔNG
+ * thuộc 21 tag giám sát của hệ PLC/SCADA (màn AI mô phỏng – cấu hình kịch bản SC-001 đọc làm "Nồng độ bắt đầu").
+ */
+export const TANK_AREA_TAGS = {
+  gas: 'GS-06',
+} as const;
+
+/**
  * Trạm hóa hơi (FZ-02) – báo cháy (FIR-00018, ảnh `scratch/figma-ref/alert-drawer-fire-*.png`). Mã giả định như mọi tag ở đây.
  * Nhiệt độ ĐẦU BÁO (`heatTemp`) là tag riêng, KHÁC nhiệt độ máy hóa hơi (`VAPORIZER_TAGS.temperature`).
  * Tag trạng thái là chuỗi: `.ALARM` 'alarm' | 'normal' · `.STATE` đầu báo 'online' | 'fault' · nút nhấn 'idle' | 'activated' ·

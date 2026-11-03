@@ -204,6 +204,18 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - Icon: AI (sao), máy chủ, khiên +, bình gas, quạt hóa hơi, nút phát, dấu tick = icon tạm `TempIcons`; mất kết nối dùng SVG Figma `logLinkOff` của Nhật ký vận hành.
 - Dưới `xl`: cột phải xuống dưới danh sách; < 640 px badge xuống hàng dưới tên kịch bản.
 
+## Vận hành – Cấu hình kịch bản mô phỏng (/operations/ai-simulation/:id/config, ảnh 03/11/2026)
+
+- Nguồn: 12 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-config/`), không có node Figma. Đo theo ảnh full 1565 px → token gần nhất.
+- Số liệu từ mock chung, không chép ảnh: mức chất lỏng 73,0 % (LT-101 theo chiều cao; ảnh 76,0 – là % thể tích), nhiệt độ 28,5 ± 0,4 °C (ảnh 28,7), gas khu bồn 2 ± 0,2 % LEL; giờ cập nhật cuối / giờ phân tích theo giờ thật; lịch sử lùi theo ngày từ hôm nay (ảnh 24/06, 23/06, 21/06/2026).
+- Breadcrumb "SC-001" (ảnh "SC - 001" có khoảng trắng) – cùng mã như mọi chỗ khác.
+- "Áp dụng gợi ý" luôn bấm được (ảnh: cấu hình đã khớp gợi ý mà nút vẫn sáng) – khi đã khớp chỉ thông báo. "Bỏ qua": `Button ghost` (chữ đậm sáng; ảnh chữ thường xám).
+- "Xem toàn bộ lịch sử" mờ (khoá – chưa có màn); ảnh sáng.
+- Badge "Nghiêm trọng": `Badge severity chip` 14 px thường, cao 28 (ảnh ~12 px đậm, cao ~26).
+- Bảng tham chiếu: hàng 48 px (`density compact`; ảnh ~57 px), tiêu đề cột 14 px thường (`headerStyle="plain"`). Trạng thái thêm Cảnh báo / Nguy hiểm / Ngoại tuyến / Mất tín hiệu theo ngưỡng (ảnh chỉ "Bình thường", "Trực tuyến").
+- Thêm ngoài ảnh: dòng nhắc vàng khi mục tiêu chưa tới ngưỡng PLC; lỗi đỏ khi bỏ hết khu vực; trạng thái "Chưa hợp lệ" / "Thiếu dữ liệu" / "Cần cấu hình mapping"; ô icon trạng thái sẵn sàng đổi vàng + tam giác khi chưa sẵn sàng.
+- Màn danh sách: nút "Cấu hình kịch bản" (header) và "Cấu hình trước khi chạy" (thẻ thiếu mapping) nay là link sang màn này (trước khoá).
+
 ## Báo cáo (/reports)
 
 - **Modal "Ghi nhận mốc kiểm tra" (Figma bản sao 126:7966, 02/11/2026):**

@@ -1,5 +1,7 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
-import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, PageHeader, type FilterDef } from '@/components';
+import { Link } from 'react-router-dom';
+import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, PageHeader, buttonClass, type FilterDef } from '@/components';
+import { simulationConfigPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
@@ -94,6 +96,7 @@ export default function AiSimulationPage() {
   );
 
   const historyRef = useRef<HTMLHeadingElement>(null);
+  const configTarget = table.filtered[0]?.id ?? [...scenarios].sort(byScenarioCode)[0]?.id ?? 'SC-001';
   const pendingId = `${useId()}-pending`;
 
   const header = (
@@ -115,9 +118,11 @@ export default function AiSimulationPage() {
           >
             Lịch sử mô phỏng
           </Button>
-          <Button icon={<Icon name="settings" box={16} />} aria-disabled="true" aria-describedby={pendingId} title={PENDING_DESIGN}>
+          {/* Mở cấu hình kịch bản đầu danh sách đang lọc (SC-001 khi không lọc). */}
+          <Link to={simulationConfigPath(configTarget)} className={buttonClass('ghost')}>
+            <Icon name="settings" box={16} />
             Cấu hình kịch bản
-          </Button>
+          </Link>
           <Button variant="primary" icon={<Icon name="add" box={18} />} aria-disabled="true" aria-describedby={pendingId} title={PENDING_DESIGN}>
             Tạo kịch bản tùy chỉnh
           </Button>
@@ -232,6 +237,7 @@ export default function AiSimulationPage() {
                   canRun={canRun}
                   running={running.has(s.id)}
                   onRun={() => void onRun(s)}
+                  configHref={simulationConfigPath(s.id)}
                 />
               ))
             )}

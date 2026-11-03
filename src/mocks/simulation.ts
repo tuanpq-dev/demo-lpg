@@ -4,8 +4,9 @@
  * ALT-00126 50 °C, gas 20 % LEL). Các bước phản ứng + mục tiêu là GIẢ ĐỊNH (docs/questions.md 15.x).
  * TODO(backend): GET /simulation/scenarios, GET /simulation/runs, POST /simulation/scenarios/:id/runs.
  */
-import { PLC_REPORT_TAGS, PLC_SCADA_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
-import { simulateScenario, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import { PLC_REPORT_TAGS, PLC_SCADA_TAGS, TANK_AREA_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import { runResult, simulateScenario, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import { scenarioSetupOf } from './simulationSetup';
 
 const ago = (now: Date, minutes: number) => new Date(now.getTime() - minutes * 60_000);
 
@@ -23,7 +24,7 @@ export function buildScenarios(now: Date): Scenario[] {
       status: 'ready',
       icon: 'gas',
       plcVariables: [PLC_REPORT_TAGS.tankGas, PLC_REPORT_TAGS.tankPressure, PLC_REPORT_TAGS.tankLevel],
-      tags: [V101_TAGS.pressure, V101_TAGS.level, V101_TAGS.temperature],
+      tags: [TANK_AREA_TAGS.gas, V101_TAGS.pressure, V101_TAGS.level, V101_TAGS.temperature],
       threshold: 'Gas vượt 20% LEL',
       outcome: 'Gợi ý quy trình ESD mô phỏng',
       steps: [
@@ -34,6 +35,7 @@ export function buildScenarios(now: Date): Scenario[] {
       ],
       targetSeconds: 60,
       updatedAt: ago(now, 120).toISOString(),
+      ...scenarioSetupOf('SC-001'),
     },
     {
       id: 'SC-002',
@@ -58,6 +60,7 @@ export function buildScenarios(now: Date): Scenario[] {
       ],
       targetSeconds: 60,
       updatedAt: ago(now, 26 * 60).toISOString(),
+      ...scenarioSetupOf('SC-002'),
     },
     {
       id: 'SC-003',
@@ -81,6 +84,7 @@ export function buildScenarios(now: Date): Scenario[] {
       ],
       targetSeconds: 90,
       updatedAt: ago(now, 3 * 1440).toISOString(),
+      ...scenarioSetupOf('SC-003'),
     },
     {
       id: 'SC-004',
@@ -104,6 +108,7 @@ export function buildScenarios(now: Date): Scenario[] {
       ],
       targetSeconds: 60,
       updatedAt: ago(now, 5 * 1440).toISOString(),
+      ...scenarioSetupOf('SC-004'),
     },
     {
       id: 'SC-005',
@@ -128,21 +133,30 @@ export function buildScenarios(now: Date): Scenario[] {
       targetSeconds: 90,
       missingMappings: ['đầu báo khói SD-02 chưa gán biến PLC', 'nút nhấn MCP-02 chưa gán biến PLC'],
       updatedAt: ago(now, 7 * 1440).toISOString(),
+      ...scenarioSetupOf('SC-005'),
     },
   ];
 }
 
-/** Lượt chạy mẫu: 3 hôm nay (SC-001 Đạt, SC-002 Đạt, SC-004 Cần cải thiện), 1 hôm qua (SC-003). */
-const SEED_RUNS: readonly { scenarioId: string; minutesAgo: number; by: string }[] = [
-  { scenarioId: 'SC-004', minutesAgo: 150, by: 'Trần Văn B' },
-  { scenarioId: 'SC-001', minutesAgo: 470, by: 'Lê Thị C' },
-  { scenarioId: 'SC-002', minutesAgo: 545, by: 'Nguyễn Văn A' },
-  { scenarioId: 'SC-003', minutesAgo: 1440 + 200, by: 'Phạm Văn D' },
+/**
+ * Lượt chạy mẫu: 3 hôm nay (SC-001 Đạt, SC-002 Đạt, SC-004 Cần cải thiện), 1 hôm qua (SC-003); SC-001 thêm 2 lượt cũ
+ * (lùi 2 và 4 ngày – "Lịch sử kịch bản này" ảnh cấu hình: Đạt · Đạt · Cần cải thiện). `responseSeconds` = lượt chạy với
+ * cấu hình cũ chậm hơn (ghi đè tổng bước hiện tại).
+ */
+const SEED_RUNS: readonly { scenarioId: string; minutesAgo: number; by: string; note?: string; responseSeconds?: number }[] = [
+  { scenarioId: 'SC-004', minutesAgo: 150, by: 'Trần Văn B', note: 'Chuyển vận hành tại chỗ chậm hơn mục tiêu.' },
+  { scenarioId: 'SC-001', minutesAgo: 470, by: 'Lê Thị C', note: 'Phát hiện cảnh báo đúng thời điểm.' },
+  { scenarioId: 'SC-002', minutesAgo: 545, by: 'Nguyễn Văn A', note: 'Đề xuất giảm tải kịp thời.' },
+  { scenarioId: 'SC-003', minutesAgo: 1440 + 200, by: 'Phạm Văn D', note: 'Chuyển E-101B trong mục tiêu.' },
+  { scenarioId: 'SC-001', minutesAgo: 2 * 1440 + 113, by: 'Nguyễn Văn A', note: 'AI gợi ý xử lý phù hợp.' },
+  { scenarioId: 'SC-001', minutesAgo: 4 * 1440 + 478, by: 'Trần Văn B', note: 'Thiếu ghi nhận thủ công khi mất dữ liệu mô phỏng.', responseSeconds: 72 },
 ];
 
 export function buildSimulationRuns(now: Date, scenarios: readonly Scenario[] = buildScenarios(now)): SimulationRun[] {
   return SEED_RUNS.flatMap((r, i) => {
     const s = scenarios.find((x) => x.id === r.scenarioId);
-    return s ? [simulateScenario(s, ago(now, r.minutesAgo), r.by, `RUN-${String(i + 1).padStart(4, '0')}`)] : [];
+    if (!s) return [];
+    const run = simulateScenario(s, ago(now, r.minutesAgo), r.by, `RUN-${String(i + 1).padStart(4, '0')}`, r.note);
+    return [r.responseSeconds === undefined ? run : { ...run, responseSeconds: r.responseSeconds, result: runResult(r.responseSeconds, run.targetSeconds) }];
   });
 }

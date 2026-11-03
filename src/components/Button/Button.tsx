@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'outline-warning' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
+export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'outline-warning' | 'tinted' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -43,6 +43,8 @@ const variantClass: Record<ButtonVariant, string> = {
     'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
   outline: 'rounded-md border border-primary/80 bg-transparent font-semibold text-primary hover:bg-primary/10',
   'outline-warning': 'rounded-md border border-warning/80 bg-transparent font-semibold text-warning hover:bg-warning/10',
+  // Nền primary nhạt + viền primary – "Áp dụng gợi ý" (Gợi ý từ AI, màn cấu hình kịch bản).
+  tinted: 'rounded-md border border-primary/60 bg-primary/15 text-primary hover:bg-primary/25',
   subtle: 'rounded-md border border-line/30 bg-surface-chip/70 text-fg hover:bg-surface-chip',
   plain: 'rounded-md text-fg-secondary hover:bg-surface-muted/60 hover:text-fg',
   icon: 'rounded-lg border border-accent/30 text-fg backdrop-blur-[4px] hover:border-accent/60',
@@ -58,6 +60,7 @@ const sizeClass: Record<Exclude<ButtonVariant, 'link'>, Record<ButtonSize, strin
   ghost: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   outline: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   'outline-warning': { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
+  tinted: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   subtle: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-xs', lg: 'h-11 gap-2 px-5 text-md' },
   plain: { md: 'h-9 gap-2 px-4 text-base', sm: 'h-7 gap-1.5 px-3 text-sm', lg: 'h-11 gap-2 px-5 text-md' },
   // Figma 70:4045: 46×36 = padding 17 (16 + border) + icon 12

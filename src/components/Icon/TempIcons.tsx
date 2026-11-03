@@ -517,3 +517,43 @@ export const CheckIcon = ({ size = 16, ...p }: P) => (
     <path d="m5 12.5 4.5 4.5L19 7.5" />
   </svg>
 );
+
+// ---- Cấu hình kịch bản mô phỏng (ảnh 03/11/2026 – scratch/figma-ref/ai-sim-config/) ----
+
+/** Mũi tên trái – nút "Quay lại danh sách". */
+export const ArrowLeftIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+
+/** Bóng đèn – khung mô tả kịch bản. */
+export const LightbulbIcon = ({ size = 16, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2V16h5v-.1c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3Z" />
+  </svg>
+);
+
+/** Huy hiệu răng cưa có dấu tick – danh sách "Quy tắc an toàn" (màn cấu hình). */
+export const BadgeCheckIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <path d="M12 2.8 14.3 4.5 17.1 4.3 18 7 20.4 8.5 19.5 11.2 20.4 14 18 15.5 17.1 18.2 14.3 18 12 19.7 9.7 18 6.9 18.2 6 15.5 3.6 14 4.5 11.2 3.6 8.5 6 7 6.9 4.3 9.7 4.5Z" />
+    <path d="m8.6 11.4 2.3 2.3 4.5-4.6" />
+  </svg>
+);
+
+/** Ô vuông có dấu tick – danh sách "Kết quả mong đợi của mô phỏng". */
+export const CheckSquareIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
+    <path d="m8 12.2 2.8 2.8L16.2 9.5" />
+  </svg>
+);
+
+/** Vòng tròn đặc (currentColor) + tam giác khoét – sau chữ "Bắt đầu chạy mô phỏng". */
+export const PlayCircleSolidIcon = ({ size = 18, ...p }: P) => (
+  <svg {...tempIconBase(size, p)} stroke="none">
+    <path fill="currentColor" fillRule="evenodd" d="M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19ZM10 8.3v7.4l5.8-3.7Z" />
+  </svg>
+);

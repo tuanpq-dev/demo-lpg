@@ -253,6 +253,18 @@ Ký hiệu: **[D]** = hỏi designer · **[K]** = hỏi khách / PO · ~~gạch~
 | 15.5 | [K] "Cảm biến lỗi / Mất kết nối / Dữ liệu cũ" phân loại theo gì? 21 thông số là những tag nào? | Lỗi = quality bad · mất kết nối = không có tag · cũ = ≥ 10 s không cập nhật; 21 = tag giám sát của màn PLC/SCADA. |
 | 15.6 | [D] Ai được chạy mô phỏng? | Vai trò Vận hành trở lên (`simulation:run`); Người xem chỉ xem. |
 
+## 16. Vận hành – Cấu hình kịch bản mô phỏng (`/operations/ai-simulation/:id/config`, ảnh 03/11/2026)
+
+| # | Câu hỏi | Đang dùng tạm |
+|---|---|---|
+| 16.1 | [D] Ảnh chỉ có SC-001 (rò rỉ gas). Kịch bản áp suất / hóa hơi / mất kết nối / báo cháy cấu hình biến nào, thang và ngưỡng bao nhiêu? | Suy cùng mẫu: áp suất 0–16 bar (ngưỡng 10,5), nhiệt độ ra 20–70 °C (dưới 50 là bất thường), độ trễ 0–60 s (mất heartbeat 10 s), nhiệt đầu báo 20–120 °C (báo cháy 70). |
+| 16.2 | [D] Vào màn này từ đâu? Màn danh sách không có nút cấu hình trên từng thẻ. | Nút header "Cấu hình kịch bản" (kịch bản đầu danh sách đang lọc) + "Cấu hình trước khi chạy" của kịch bản thiếu mapping. |
+| 16.3 | [K] Tham số (mục tiêu, thời lượng, tốc độ, điều kiện kết thúc, khu vực) ảnh hưởng kết quả "Đạt / Cần cải thiện" thế nào? | Chỉ lưu kèm lượt chạy; kết quả vẫn theo tổng thời gian các bước phản ứng. |
+| 16.4 | [D] "Bắt đầu chạy mô phỏng" khi có thay đổi chưa lưu: tự lưu, hỏi lại hay chạy bản nháp? Rời trang khi chưa lưu có cảnh báo không? | Tự lưu rồi chạy; rời trang không hỏi. |
+| 16.5 | [D] Màn cấu hình mapping cho kịch bản "Cần cấu hình mapping" (SC-005)? "Xem toàn bộ lịch sử" mở màn nào? | Màn này hiện trạng thái + ánh xạ thiếu, khoá chạy; "Xem toàn bộ lịch sử" khoá. |
+| 16.6 | [K] "Kết quả mong đợi" chỉ để đọc hay người dùng bật/tắt được từng mục? | Chỉ đọc (icon ô tick). |
+| 16.7 | [K] Ai được lưu cấu hình? | Vai trò Vận hành trở lên (`simulation:configure`). |
+
 ## Phụ lục – nguyên văn "Cần xác nhận" từ CLAUDE.md mục 7 (chuyển 28/10/2026)
 
 Gồm cả phần chưa có ở các mục trên (modal "Phân công xử lý cảnh báo", modal "Cập nhật xử lý cảnh báo áp suất").

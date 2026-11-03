@@ -36,6 +36,8 @@ export type CardProps = Omit<HTMLAttributes<HTMLElement>, 'title'> & {
   padding?: 'none' | 'md';
   /** Ghi đè class của vùng thân (ví dụ padding dọc khác 17px). */
   bodyClassName?: string;
+  /** Cỡ tiêu đề: md = 16px (mặc định) · lg = 18px (màn cấu hình kịch bản mô phỏng). */
+  titleSize?: 'md' | 'lg';
   children?: ReactNode;
 };
 
@@ -60,6 +62,7 @@ export function Card({
   radius = 'xl',
   padding = 'md',
   bodyClassName,
+  titleSize = 'md',
   className,
   children,
   ...rest
@@ -88,7 +91,7 @@ export function Card({
   const heading = (
     <div className="flex min-w-0 items-center gap-2">
       {icon}
-      {title !== undefined && <h3 className="truncate text-md font-semibold text-fg">{title}</h3>}
+      {title !== undefined && <h3 className={cn('truncate font-semibold text-fg', titleSize === 'lg' ? 'text-lg' : 'text-md')}>{title}</h3>}
     </div>
   );
 

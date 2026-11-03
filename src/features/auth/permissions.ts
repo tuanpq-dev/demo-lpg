@@ -26,6 +26,8 @@ export const PERMISSIONS = {
   'report:record': 'operator',
   // Chạy kịch bản AI mô phỏng sự cố (chỉ tính trên dữ liệu tham chiếu, không tác động thiết bị). TODO(backend): @Roles tương ứng.
   'simulation:run': 'operator',
+  // Lưu tham số đầu vào của kịch bản mô phỏng (màn Cấu hình kịch bản – chỉ lớp mô phỏng). TODO(backend): @Roles tương ứng.
+  'simulation:configure': 'operator',
   'user:manage': 'admin',
 } as const satisfies Record<string, Role>;
 

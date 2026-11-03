@@ -25,8 +25,10 @@ export type StatusOption<T extends string = string> = {
 /**
  * - stacked: icon 20px trên nhãn 14px, cao ~76px (modal "Cập nhật tiến độ", "Gửi yêu cầu nghiệm thu")
  * - inline: chấm radio 18px + nhãn 16px một dòng, cao ~50px (modal "Nghiệm thu yêu cầu bảo trì")
+ * - plain: radio thường – chấm 18px + nhãn 14px chữ chính, KHÔNG khung (danh sách "Điều kiện kết thúc" màn cấu hình
+ *   kịch bản mô phỏng); chọn = chấm đặc theo tone, tâm trắng
  */
-export type StatusOptionLayout = 'stacked' | 'inline';
+export type StatusOptionLayout = 'stacked' | 'inline' | 'plain';
 
 export type StatusOptionCardProps = {
   label: string;
@@ -97,6 +99,41 @@ export function StatusOptionCard({
   className,
 }: StatusOptionCardProps) {
   const inline = layout === 'inline';
+  if (layout === 'plain') {
+    return (
+      <button
+        ref={buttonRef}
+        type="button"
+        role="radio"
+        aria-checked={checked}
+        aria-disabled={disabled || undefined}
+        aria-describedby={describedBy}
+        tabIndex={tabIndex}
+        title={disabled ? disabledHint : tooltip}
+        onClick={disabled ? undefined : onSelect}
+        onKeyDown={onKeyDown}
+        className={cn(
+          'flex min-h-6 min-w-0 items-center gap-3 rounded-sm text-start text-base text-fg',
+          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+          className,
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className={cn(
+            'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] transition-colors',
+            checked ? dotTone[tone] : 'border-fg-secondary/50',
+          )}
+        >
+          {checked && <span className="size-1.5 rounded-full bg-fg" />}
+        </span>
+        <span>
+          {label}
+          {disabled && disabledHint && !describedBy && <span className="sr-only"> – {disabledHint}</span>}
+        </span>
+      </button>
+    );
+  }
   return (
     <button
       ref={buttonRef}
@@ -154,9 +191,9 @@ export type StatusOptionGroupProps<T extends string> = {
   /**
    * Số cột ở ≥ md (mặc định 4; 3 = modal nghiệm thu; 2 = luôn 2 cột – modal "Cập nhật xử lý" gas; 5 = trạng thái xử lý áp
    * suất, 2 → 3 → 5 cột theo bề rộng; auto = ô co theo chữ, xuống dòng khi hết chỗ – "Theo dõi sau xử lý").
-   * Dưới md: 4 → 2 cột, 3 → 1 cột.
+   * Dưới md: 4 → 2 cột, 3 → 1 cột. 1 = danh sách dọc (layout plain – "Điều kiện kết thúc").
    */
-  columns?: 2 | 3 | 4 | 5 | 'auto';
+  columns?: 1 | 2 | 3 | 4 | 5 | 'auto';
   /** aria-describedby cho cả nhóm (cảnh báo/ghi chú dưới nhóm). */
   describedBy?: string;
   /** sm = ô nhỏ + khoảng cách 12px (3 cột trong modal md); md = mặc định (3 cột modal nghiệm thu cách 24/48px). */
@@ -177,10 +214,12 @@ export function StatusOptionGroup<T extends string>({ label, labelledBy, options
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
       className={cn(
-        columns === 'auto' ? 'flex flex-wrap gap-3' : 'grid gap-3',
+        columns === 'auto' ? 'flex flex-wrap gap-3' : columns === 1 ? 'grid' : 'grid gap-3',
         columns === 'auto'
           ? ''
-          : columns === 5
+          : columns === 1
+            ? 'grid-cols-1 gap-2.5'
+            : columns === 5
             ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
             : columns === 3
               ? cn('grid-cols-1 sm:grid-cols-3', size === 'md' && 'sm:gap-6 lg:gap-12')

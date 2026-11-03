@@ -1,4 +1,4 @@
-import { GAS_TAGS, PLC_SCADA_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import { GAS_TAGS, PLC_SCADA_TAGS, SYSTEM_TAGS, TANK_AREA_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { LiveValue } from '@/features/live/types';
 
 /**
@@ -60,6 +60,8 @@ export const liveBase: Record<string, LiveValue> = {
   [GAS_TAGS[1]]: 4,
   [GAS_TAGS[2]]: 8,
   [GAS_TAGS[3]]: 25,
+  // Gas khu bồn V-101 (ảnh cấu hình kịch bản SC-001: "2% LEL (Source: Tank_Gas_Detector)").
+  [TANK_AREA_TAGS.gas]: 2,
   // Báo cháy trạm hóa hơi (FIR-00018): đầu báo nhiệt HD-02 68 °C đang báo động; khói, gas GS-05 (6 % LEL), nút nhấn bình thường.
   [VAPORIZER_AREA_TAGS.heatTemp]: 68,
   [VAPORIZER_AREA_TAGS.heatAlarm]: 'alarm',
@@ -127,6 +129,7 @@ export const liveJitter: Record<string, number> = {
   [GAS_TAGS[1]]: 0.3,
   [GAS_TAGS[2]]: 0.4,
   [GAS_TAGS[3]]: 0.6,
+  [TANK_AREA_TAGS.gas]: 0.2,
   [VAPORIZER_AREA_TAGS.heatTemp]: 0.5,
   [VAPORIZER_AREA_TAGS.gas]: 0.3,
   [PLC_SCADA_TAGS.latency]: 0.25,

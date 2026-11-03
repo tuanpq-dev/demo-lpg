@@ -2,6 +2,15 @@
 
 Chuyển nguyên văn từ CLAUDE.md ngày 28/10/2026: roadmap/nhật ký từng giai đoạn (kèm số test, bundle), kiến trúc 3D + Scene Editor (quyết định), TODO kỹ thuật và màu đã duyệt, hợp đồng API cần bổ sung. Ghi quyết định mới vào đây (mới nhất lên đầu mục liên quan), KHÔNG vào CLAUDE.md.
 
+## Quyết định – Cấu hình kịch bản mô phỏng (03/11/2026, chưa commit, trên `main`)
+- Dựng theo 12 ảnh người dùng gửi (`scratch/figma-ref/ai-sim-config/`), không gọi Figma. Route `/operations/ai-simulation/:scenarioId/config` (lazy), docs/guide/operations.md mục 9.
+- Một nguồn: setup + tham số nằm trong bản ghi kịch bản (`Scenario.setup` / `Scenario.config`) của store mô phỏng chung; tag từ `features/live/tags.ts` (thêm `TANK_AREA_TAGS.gas` = GS-06); 21 tag "Trạng thái sẵn sàng" = cùng nguồn màn danh sách; độ tin cậy AI dùng chung `suggestionConfidence`. Lưu cấu hình chỉ đổi lớp mô phỏng.
+- Mở rộng component (không viết mới): ProgressSlider, StatusOptionGroup, Checkbox, InfoGrid, MetricListCard, DataTable, Select, FormField, Card, Button, SafetyRulesCard (chi tiết operations.md mục 9). Quyền FE mới `simulation:configure` (operator).
+- **Đổi test có chủ đích:** `AiSimulationPage.test` – "Cấu hình trước khi chạy" là link sang màn cấu hình (trước là nút khoá "chờ thiết kế").
+- Lỗi test tìm ra: chuỗi nhắc / gợi ý dùng `toLowerCase()` làm "PLC", "LPG" thành chữ thường → `lowerFirst`.
+- **Hợp đồng API cần thêm:** `GET /simulation/scenarios/:id` kèm `setup` (loại sự cố, thiết bị, mô tả, biến mô phỏng {tag, plcTag, unit, min, max, step, threshold, direction}, referenceRows[], areaOptions[], expectedOutcomes[]) + `config`; `PUT /simulation/scenarios/:id/config` → `{ target, durationMin, rate: 'slow'|'medium'|'fast', endCondition: 'duration'|'back-to-normal'|'manual-stop'|'ai-enough-data', areas[] }` (kiểm hợp lệ + quyền); lượt chạy thêm `note`, `config`; `GET /simulation/scenarios/:id/insight` (mức + thời lượng gợi ý, độ tin cậy).
+- Kiểm tra: vitest 950/950 (Node 20, `--testTimeout=30000`; +30: logic 20 + 1, trang 9). Trình duyệt 1565/768/390: không console error, axe chỉ `heading-order` (moderate – h1 → h3 tiêu đề Card, như các trang khác); 390 chỉ tràn header chung (659 px). Bundle chính 131,73 KB gzip (trước 131,19), chunk `ScenarioConfigPage` 7,2 KB gzip, `AiSimulationPage` 4,3 KB; `dist/` không có đường dẫn ảnh figma.
+
 ## Quyết định – AI mô phỏng sự cố (02/11/2026, chưa commit, trên `main`)
 - Figma: bản sao hết lượt MCP (thử lại 1 lần), file "Kết quả mô phỏng" `ZujbhwBC75D6vGRMBmiNax` báo không có quyền edit → dựng theo 6 ảnh người dùng gửi (`scratch/figma-ref/ai-sim/`).
 - Route `/operations/ai-simulation` (thay `SimplePage` – file `SimplePage.tsx` giữ lại cho trang tạm sau này, không còn route nào dùng). docs/guide/operations.md mục 8.
