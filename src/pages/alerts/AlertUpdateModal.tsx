@@ -74,9 +74,9 @@ import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { parsePlantDateTime, plantDateTimeKey, plantTimeOfDay } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
-import { areaLabel } from '@/mocks/areas';
-import { assetMocks } from '@/mocks/assets';
-import { STAFF } from '@/mocks/maintenance';
+import { areaLabel } from '@/features/plant/areas';
+import { assetName } from '@/data/assetDetail';
+import { STAFF } from '@/data/staff';
 import { downloadSampleAttachment } from '../maintenance/attachments';
 import { supportStaffItems } from './SupportRequestModal';
 
@@ -351,7 +351,6 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
     disabled: !resolved,
     describedBy: !resolved ? ids.followHint : undefined,
   }));
-  const asset = assetMocks[a.device];
   const assigneeShown = a.assignee ?? '–';
   const sample = (a.attachments ?? []).find((f) => f.name === preview);
 
@@ -408,7 +407,7 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
           items={[
             { id: 'code', label: 'Mã cảnh báo', value: a.code },
             { id: 'message', label: 'Nội dung', value: a.message, tone: 'danger' },
-            { id: 'device', label: 'Thiết bị', value: asset ? asset.name : a.device, newRow: true },
+            { id: 'device', label: 'Thiết bị', value: assetName(a.device) ?? a.device, newRow: true },
             { id: 'area', label: 'Khu vực', value: areaLabel(a.area) },
             { id: 'severity', label: 'Mức độ', value: <Badge variant="severity" value={a.severity} size="chip" /> },
             { id: 'assignee', label: 'Người xử lý', value: assigneeShown },

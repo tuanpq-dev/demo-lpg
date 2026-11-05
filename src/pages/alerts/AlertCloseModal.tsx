@@ -18,7 +18,7 @@ import { followUpDurationLabel } from '@/features/alerts/update';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
-import { areaLabel } from '@/mocks/areas';
+import { areaLabel } from '@/features/plant/areas';
 
 export type AlertCloseModalProps = {
   alert: AlertRecord;

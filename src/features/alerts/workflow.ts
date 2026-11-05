@@ -5,7 +5,7 @@
  * cảnh báo"). "Tiếp tục theo dõi" giữ Đã xử lý. Không có đường nhảy cóc (kể cả hàng loạt), không lùi bước. Phân công KHÔNG tự xác nhận (drawer và hàng loạt dùng chung `assignAlert`).
  * Hàm gặp thao tác không hợp lệ trả lại CHÍNH bản ghi cũ (so tham chiếu được) hoặc `{ ok: false }`.
  */
-import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord, AlertStatus } from '@/mocks/alerts';
+import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord, AlertStatus } from '@/features/alerts/types';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { inspectionEntry, toggledInspection, writeInspection } from './inspection';
 

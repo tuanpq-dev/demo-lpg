@@ -8,7 +8,8 @@ import {
   WorkflowStepper,
   type StaffPickerItem,
 } from '@/components';
-import { alertRecords, type AlertRecord } from '@/mocks/alerts';
+import { alertRecords } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { gaugeScale, gaugeValueText } from '@/features/alerts/gauge';
 import { applyAlertAssignment } from '@/features/alerts/assign';
 import { alertUpdate } from '@/features/alerts/update';

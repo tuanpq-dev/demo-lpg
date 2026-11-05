@@ -29,7 +29,7 @@ sequenceDiagram
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
 | 1 | `src/mocks/alerts.ts` | `AlertRecord` (hợp đồng `Alert` + trường CHỈ FE: `kind`, `direction`, `tag`, `notifiedTime`, `acknowledgedAt`, `resolvedAt`, `guide`, `notes`, `history` – `ALERT_FE_ONLY_FIELDS`), `alertRecords` |
-| 2 | `src/mocks/alertKinds.ts` · `src/mocks/sensors.ts` · `src/mocks/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
+| 2 | `src/mocks/alertKinds.ts` (kiểu: `features/alerts/kinds.ts`) · `src/mocks/sensors.ts` · `src/features/plant/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
 | 3 | `src/data/alertStore.ts` | Store danh sách (nhẹ; `LiveAnnouncer` ở bundle chính chỉ dùng `useAlertList`) |
 | 4 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
 | 5 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (đóng hàng loạt – 4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` |
@@ -96,7 +96,7 @@ Cấu hình một loại (`AlertKindConfig` trong `src/mocks/alertKinds.ts`):
 - Xác nhận chéo (`crossConfirm`, `features/alerts/fire.ts`): khói báo động, gas ≥ cấp 1 (`GAS_BANDS`) hoặc nút nhấn kích hoạt → `EmergencyBanner` "Nhiều tín hiệu cùng báo, nguy cơ cháy cao"; nút nhấn → câu "Nút nhấn khẩn cấp đã được kích hoạt" đứng đầu; `role="alert"` chỉ khi mới hiện / tập nguồn đổi.
 - Chân: Chưa xác nhận → "Xác nhận cảnh báo" + "Phân công xử lý" + "Xem quy trình khẩn cấp" (đúng ảnh, KHÔNG có Tạo yêu cầu bảo trì) · Đang xử lý → "Cập nhật xử lý" (khung chung `AlertUpdateModal`, 4o – thay `FireUpdateModal` từ 28/10/2026): 6 ô gồm Đã xử lý sự cố / Báo động giả; 2 ô này khoá (aria-disabled + lý do) khi đầu báo còn báo động; mất tín hiệu → mục xác minh "Đã xác minh qua camera/tại chỗ" bắt buộc (`canCloseFire`) · Đã xử lý (chờ đóng, 4p) → lưu `resolution { kind: handled | false-alarm, closedBy: live | field }` (thống kê); báo động giả → "Tạo yêu cầu bảo trì" điền sẵn "Kiểm tra đầu báo HD-02" (không trùng → "Xem MT-…").
 - `EmergencyProcedureModal`: bước ứng phó + danh bạ từ `ALERT_KINDS.fire.emergency` (BẢN NHÁP – nhãn "Bản nháp, cần bộ phận An toàn duyệt"; Cứu hỏa 114 là link `tel:`, số nội bộ "Chờ khách cung cấp"). Mở trên drawer, Esc/Đóng trả focus.
-- Header mọi loại: khu có mã (`AREA_CODES` ở `mocks/areas.ts`) hiện "Trạm hóa hơi (FZ-02)".
+- Header mọi loại: khu có mã (`AREA_CODES` ở `features/plant/areas.ts`) hiện "Trạm hóa hơi (FZ-02)".
 
 **Phân công cảnh báo gas**: chân drawer gas KHÔNG có nút Phân công (theo ảnh) – phân công qua thao tác hàng loạt ở bảng (tick dòng → "Phân công…", mục 4n). Người phụ trách vẫn hiện ở header.
 
@@ -176,7 +176,7 @@ Ghi (features/alerts/assign.ts → data/alerts.ts):
 | Cảnh báo KHÔNG chặn: Ngoài ca · Bận · đang phụ trách cảnh báo Nghiêm trọng khác (chỉ khi chọn người MỚI) | `alertAssignWarnings` (`features/alerts/assignStaff.ts`) |
 | Tải việc = người phụ trách chính, đã giao chưa xác nhận + đang xử lý; Bận từ `BUSY_THRESHOLD` (3) | `computeAlertLoads` |
 | Ngoài ca = giờ nhà máy `now` ngoài ca mặc định (`STAFF.defaultShift`; chưa có lịch ca thật); Ngoài ca THẮNG Bận | `isOnShift`, `staffAvailability` (`features/staff/availability.ts`) |
-| Khu / chuyên môn của nhân sự · chuyên môn theo loại cảnh báo | `STAFF[].areas/skills` (`mocks/maintenance.ts`), `STAFF_SKILLS` (`mocks/skills.ts`), `ALERT_KINDS[kind].skills` |
+| Khu / chuyên môn của nhân sự · chuyên môn theo loại cảnh báo | `STAFF[].areas/skills` (`mocks/maintenance.ts`), `STAFF_SKILLS` (`features/staff/skills.ts`), `ALERT_KINDS[kind].skills` |
 | Ẩn "Lúc cảnh báo" | `ALERT_KINDS[kind].numericValue: false` (sensor-signal-lost, pump-standby) |
 
 `features/alerts/assign.ts` không import mock nhân sự (dùng được ở `data/alerts` – bundle chính); phần cần danh mục ca/nhân sự nằm ở `assignStaff.ts` (chỉ chunk trang Cảnh báo). Nhãn `Availability` ở `components/StaffPicker/availability.ts` (component không import mock).

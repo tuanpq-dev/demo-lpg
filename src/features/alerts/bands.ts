@@ -2,7 +2,7 @@
  * Mức theo giá trị (bands) cho cảnh báo nhiều mức – khí gas (% LEL), sau này hóa khí. Thuần, có test (bands.test.ts).
  * Bands + banner + điều kiện đóng lấy từ cấu hình loại (`ALERT_KINDS` ở mocks/alertKinds.ts) – không viết cứng ở UI.
  */
-import type { AlertBand, AlertKindConfig, AlertLevel } from '@/mocks/alertKinds';
+import type { AlertBand, AlertKindConfig, AlertLevel } from '@/features/alerts/kinds';
 import { formatMeasure } from './gauge';
 
 export const LEVEL_ORDER: readonly AlertLevel[] = ['normal', 'level-1', 'level-2', 'esd'];

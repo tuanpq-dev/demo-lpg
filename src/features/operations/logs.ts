@@ -2,7 +2,7 @@
  * Nhật ký vận hành (Figma bản sao A88YJ2BRhICDDdeu2rtRg1 node 64:418) – logic THUẦN: kiểu sự kiện, nhãn, gộp cảnh báo vào
  * nhật ký, KPI suy dẫn, lọc/sắp xếp, CSV. Mọi hàm nhận `now` qua tham số; "hôm nay" theo giờ nhà máy.
  */
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { foldSearch } from '@/lib/foldSearch';
 import { dayNumber, formatDayVi, parsePlantDateTime, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
 

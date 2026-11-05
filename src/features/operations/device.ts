@@ -1,7 +1,7 @@
 import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { LiveSourceStatus, TagValue } from '@/features/live/types';
 import { plantDayKey, plantTimeOfDay, formatDayVi, dayNumber } from '@/lib/plantTime';
-import type { DeviceParam, OperationLogEntry, ParamLimits } from '@/mocks/operations';
+import type { DeviceParam, OperationLogEntry, ParamLimits } from '@/features/operations/types';
 
 /*
  * Logic thuần màn Vận hành – chi tiết thiết bị (ảnh `scratch/figma-ref/op-device-*.png`). `now` luôn truyền vào.

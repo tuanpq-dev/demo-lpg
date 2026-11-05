@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, SearchInput, StaffFilters, StaffList, type StaffPickerItem } from '@/components';
-import { alertRecords, type AlertRecord } from '@/mocks/alerts';
+import { alertRecords } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { AlertAssignModal } from '../alerts/AlertAssignModal';
 import { AlertAssignSummary } from '../alerts/AlertAssignSummary';
 import { Demo } from './Demo';

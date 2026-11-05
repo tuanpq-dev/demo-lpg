@@ -105,7 +105,7 @@ describe('kiểm tra (chặn) + cảnh báo (không chặn)', () => {
     for (const s of ['review', 'done', 'cancelled'] as const) {
       const r = rec({ status: s, assignee: 'A' });
       expect(validateAssign(r, form(r, { assignee: 'B', reason: 'x' })).map((x) => x.id)).toContain('status');
-      expect(applyAssignment(r, form(r, { assignee: 'B', reason: 'x' }), ctx)).toBe(r);
+      expect(applyAssignment(r, form(r, { assignee: 'B', reason: 'x' }), ctx, staffByName)).toBe(r);
     }
   });
 
@@ -113,13 +113,13 @@ describe('kiểm tra (chặn) + cảnh báo (không chặn)', () => {
     const rows = Array.from({ length: 3 }, (_, i) => rec({ id: `x${i}`, status: 'in-progress', assignee: 'Trần Bình', dueAt: i ? '2099-01-01T08:00' : '2026-10-25T08:00' }));
     const map = computeWorkloads(rows, NOW);
     const r = rec();
-    const ids = (f: AssignForm) => assignWarnings(f, map, NOW).map((w) => w.id);
+    const ids = (f: AssignForm) => assignWarnings(f, map, NOW, staffByName).map((w) => w.id);
     expect(ids(form(r, { assignee: 'Trần Bình' }))).toEqual(['busy', 'overdue']);
     expect(ids(form(r, { assignee: 'Lê Thị C', shift: 'shift-1', startAt: '2026-10-26T15:00' }))).toEqual(['shift']);
     // gợi ý đổi sang ca mặc định của người được chọn (Lê Thị C: Ca 2); trùng ca hoặc chưa chọn người → không gợi ý
-    expect(assignWarnings(form(r, { assignee: 'Lê Thị C', shift: 'shift-1', startAt: '2026-10-26T15:00' }), map, NOW)[0]).toMatchObject({ suggestShift: 'shift-2' });
-    expect(assignWarnings(form(r, { assignee: 'Lê Thị C', shift: 'shift-2', startAt: '2026-10-26T23:00' }), map, NOW)[0]!.suggestShift).toBeUndefined();
-    expect(assignWarnings(form(r, { assignee: null, shift: 'shift-1', startAt: '2026-10-26T15:00' }), map, NOW)[0]!.suggestShift).toBeUndefined();
+    expect(assignWarnings(form(r, { assignee: 'Lê Thị C', shift: 'shift-1', startAt: '2026-10-26T15:00' }), map, NOW, staffByName)[0]).toMatchObject({ suggestShift: 'shift-2' });
+    expect(assignWarnings(form(r, { assignee: 'Lê Thị C', shift: 'shift-2', startAt: '2026-10-26T23:00' }), map, NOW, staffByName)[0]!.suggestShift).toBeUndefined();
+    expect(assignWarnings(form(r, { assignee: null, shift: 'shift-1', startAt: '2026-10-26T15:00' }), map, NOW, staffByName)[0]!.suggestShift).toBeUndefined();
     expect(ids(form(r, { assignee: 'Lê Thị C', shift: 'shift-2', startAt: '2026-10-26T15:00' }))).toEqual([]);
     expect(ids(form(r, { assignee: 'Lê Thị C', dueAt: '2026-10-26T11:00' }))).toEqual(['past-due']);
     // cảnh báo không chặn
@@ -142,6 +142,7 @@ describe('applyAssignment', () => {
       r0,
       form(r0, { assignee: 'Nguyễn Văn A', collaborators: ['Lê Thị C', 'Nguyễn Văn A', 'Lê Thị C'], startAt: '2026-10-26T14:00', dueAt: '2026-10-26T16:00', shift: 'shift-2', note: ' Ưu tiên kiểm tra rò ' }),
       ctx,
+      staffByName,
     );
     expect(r).toMatchObject({ status: 'assigned', assignee: 'Nguyễn Văn A', department: 'Bảo trì Cơ khí', shift: 'shift-2', startAt: '2026-10-26T14:00', dueAt: '2026-10-26T16:00', dueHasTime: true, collaborators: ['Lê Thị C'] });
     expect(r.history).toHaveLength(2);
@@ -151,7 +152,7 @@ describe('applyAssignment', () => {
 
   test('đổi hạn ghi vào lịch sử; không ghi chú → không thêm ghi chú; hạn chỉ ngày → có giờ', () => {
     const r0 = rec({ dueAt: '2026-10-28T23:59', dueHasTime: false });
-    const r = applyAssignment(r0, form(r0, { assignee: 'Trần Bình', dueAt: '2026-10-27T10:00' }), ctx);
+    const r = applyAssignment(r0, form(r0, { assignee: 'Trần Bình', dueAt: '2026-10-27T10:00' }), ctx, staffByName);
     expect(r.history!.at(-1)!.text).toBe('Phân công: Trần Bình · hạn 10:00 27/10');
     expect(r.notes).toBeUndefined();
     expect(r.dueHasTime).toBe(true);
@@ -161,14 +162,14 @@ describe('applyAssignment', () => {
   test('đổi người khi Đang thực hiện: giữ trạng thái, tiến độ, cờ; lịch sử reassign có lý do', () => {
     const hold = { kind: 'paused' as const, reason: 'Chờ vật tư', at: '2026-10-26T09:00' };
     const r0 = rec({ status: 'in-progress', assignee: 'Trần Bình', reportedProgress: 45, progress: 33, hold, department: 'Bảo trì Cơ khí' });
-    const r = applyAssignment(r0, form(r0, { assignee: 'Lê Thị C', reason: ' Trần Bình nghỉ phép ' }), ctx);
+    const r = applyAssignment(r0, form(r0, { assignee: 'Lê Thị C', reason: ' Trần Bình nghỉ phép ' }), ctx, staffByName);
     expect(r).toMatchObject({ status: 'in-progress', assignee: 'Lê Thị C', reportedProgress: 45, progress: 33, hold, department: 'Đo lường – Tự động hóa' });
     expect(r.history!.at(-1)).toMatchObject({ kind: 'reassign', text: 'Đổi người xử lý: Trần Bình → Lê Thị C – lý do: Trần Bình nghỉ phép' });
   });
 
   test('chạy lại khi thiếu điều kiện → không đổi (cùng tham chiếu)', () => {
     const r = rec();
-    expect(applyAssignment(r, form(r), ctx)).toBe(r);
+    expect(applyAssignment(r, form(r), ctx, staffByName)).toBe(r);
   });
 });
 

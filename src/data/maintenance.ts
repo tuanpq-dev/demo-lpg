@@ -10,31 +10,10 @@ import { linkedMaintenance } from '@/features/alerts/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
-import {
-  CHECKLIST_TEMPLATES,
-  DEPARTMENTS,
-  MAINTENANCE_ASSIGNEES,
-  PEOPLE,
-  ASSIGNABLE_STAFF,
-  REVIEWERS,
-  SHIFTS,
-  SOURCE_OPTIONS,
-  STAFF,
-  isoDay,
-  staffByName,
-  maintenanceRecords,
-  type MaintenanceAttachment,
-  type MaintenanceChecklistItem,
-  type MaintenanceHistoryEntry,
-  type MaintenanceHold,
-  type MaintenanceNote,
-  type MaintenanceRecord,
-  type MaintenanceSource,
-  type MaintenanceStatus,
-  type MaintenanceType,
-  type ShiftId,
-} from '@/mocks/maintenance';
+import type { AlertRecord } from '@/features/alerts/types';
+import { CHECKLIST_TEMPLATES, MAINTENANCE_ASSIGNEES, PEOPLE, ASSIGNABLE_STAFF, REVIEWERS, SOURCE_OPTIONS, STAFF, isoDay, staffByName, maintenanceRecords } from '@/mocks/maintenance';
+import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
+import type { MaintenanceAttachment, MaintenanceChecklistItem, MaintenanceHistoryEntry, MaintenanceHold, MaintenanceNote, MaintenanceRecord, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId } from '@/features/maintenance/types';
 import type { KpiMock } from '@/mocks/types';
 
 export type {
@@ -387,7 +366,7 @@ const ctx = (actor?: string) => ({ actor: actor || DEFAULT_ACTOR, now: appNow() 
  * Modal "Phân công người xử lý": phân công (Chờ tiếp nhận → Đã phân công) hoặc đổi người (Đã phân công / Đang thực hiện,
  * lý do bắt buộc) – `applyAssignment` (features/maintenance/assign.ts).
  */
-export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor)));
+export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor), staffByName));
 
 /**
  * Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt), mỗi dòng qua `validateAssign` với hạn sẵn có.
@@ -401,7 +380,7 @@ export async function bulkAssignMaintenance(ids: readonly string[], assignee: st
     assignee,
     computeWorkloads(db, c.now),
   );
-  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c));
+  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c, staffByName));
   return { assigned: plan.ids.length, skipped: plan.skipped, skippedBy: plan.skippedBy, busyAfter: plan.busyAfter, activeAfter: plan.activeAfter };
 }
 

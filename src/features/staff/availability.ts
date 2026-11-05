@@ -8,7 +8,8 @@
  */
 import { plantTimeOfDay } from '@/lib/plantTime';
 import type { Availability } from '@/components/StaffPicker/availability';
-import { SHIFTS, type ShiftId } from '@/mocks/maintenance';
+import { SHIFTS } from '@/features/staff/org';
+import type { ShiftId } from '@/features/maintenance/types';
 
 /** Bận khi đang có ≥ 3 việc (bảo trì) / cảnh báo (cảnh báo) với vai trò người phụ trách chính. */
 export const BUSY_THRESHOLD = 3;

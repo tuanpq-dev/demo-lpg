@@ -15,8 +15,10 @@ import { shiftShortLabel } from '@/features/staff/availability';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
-import { DEPARTMENTS, SHIFTS, staffByName, type ShiftId } from '@/mocks/maintenance';
-import type { StaffSkill } from '@/mocks/skills';
+import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
+import { staffByName } from '@/data/staff';
+import type { ShiftId } from '@/features/maintenance/types';
+import type { StaffSkill } from '@/features/staff/skills';
 import { AlertAssignSummary } from './AlertAssignSummary';
 
 export type AlertAssignModalProps = {

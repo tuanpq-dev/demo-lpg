@@ -6,12 +6,11 @@ import { actionErrorText, runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { resolveAssetId } from '@/data/assetDetail';
-import { alertDateTimeLabel, alertKind, alertPlaybook } from '@/data/alertDetail';
+import { alertDateTimeLabel, alertKind, alertPlaybook, fillPlaybookText } from '@/data/alertDetail';
 import { INSPECTION_STATUS_LABEL, inspectedCount, inspectionItems } from '@/features/alerts/inspection';
 import { ALERT_HOLD_LABEL, FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel, isResolvedState, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
 import type { CloseCondition, CloseInput, CloseResult, MonitorResult } from '@/features/alerts/close';
-import { fillPlaybookText } from '@/mocks/alertKinds';
-import { areaLabel } from '@/mocks/areas';
+import { areaLabel } from '@/features/plant/areas';
 import { alertBadgeStatus, type AlertRecord } from '@/data/alerts';
 import {
   alertSteps,

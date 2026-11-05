@@ -5,6 +5,7 @@ import { DEFAULT_ASSET_ID, assetPath } from '@/app/assetRoutes';
 import { assetMocks, type AssetEvent } from '@/mocks/assets';
 import type { MaintenanceRecord } from '@/mocks/maintenance';
 import {
+  assetName,
   dayTimeLabel,
   deriveAssetLive,
   deriveMaintenanceSummary,
@@ -192,5 +193,13 @@ describe('resolveAssetId / assetPath', () => {
     expect(assetPath('V-101')).toBe('/map/V-101');
     expect(assetPath('A/B')).toBe('/map/A%2FB');
     expect(resolveAssetId(DEFAULT_ASSET_ID)).toBe(DEFAULT_ASSET_ID);
+  });
+});
+
+describe('assetName', () => {
+  it('mã đúng kiểu chữ → tên tài sản; mã lạ / sai kiểu chữ → undefined', () => {
+    expect(assetName('V-101')).toBe(assetMocks['V-101']!.name);
+    expect(assetName('v-101')).toBeUndefined();
+    expect(assetName('XYZ')).toBeUndefined();
   });
 });

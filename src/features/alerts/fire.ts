@@ -6,7 +6,7 @@
  * - thiết bị: Trực tuyến · Mất kết nối · Lỗi (tag `.STATE` = 'fault') – kết nối theo tag báo động.
  * - báo động: Đang báo động · Đã phục hồi · không rõ (mất tín hiệu).
  */
-import type { AlertBand } from '@/mocks/alertKinds';
+import type { AlertBand } from '@/features/alerts/kinds';
 import { bandOf, levelStart } from './bands';
 import { formatMeasure } from './gauge';
 

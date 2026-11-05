@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button, Modal, StaffList, Textarea, type StaffPickerItem } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
 import { runAction } from '@/lib/actionError';
-import { STAFF } from '@/mocks/maintenance';
+import { STAFF } from '@/data/staff';
 
 /**
  * Người nhận "Yêu cầu hỗ trợ" (cảnh báo gas): trưởng ca / quản lý (role manager) + bộ phận An toàn – HSE, lấy từ `STAFF`.

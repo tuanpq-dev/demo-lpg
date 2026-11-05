@@ -5,7 +5,7 @@ import { fieldStatus } from '@/features/scene/fields';
 import type { Thresholds } from '@/features/scene/types';
 import { tankLayers, upperLimitStatus, type LimitStatus, type TankLayers } from '@/features/tank/layers';
 import { daysFromToday } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { assetEvents, assetMocks, type AssetEvent, type AssetEventStatus, type AssetEventType, type AssetMock } from '@/mocks/assets';
 import { isoDay } from '@/mocks/maintenance';
 import { systemStatus } from '@/mocks/overview';
@@ -24,6 +24,9 @@ export type AssetDetail = AssetMock & {
 
 /** Mã tài sản có trang chi tiết. */
 export const ASSET_IDS = Object.keys(assetMocks);
+
+/** Tên tài sản ("Bồn LPG V-101") theo mã đúng kiểu chữ; không có cấu hình → undefined. */
+export const assetName = (id: string): string | undefined => assetMocks[id]?.name;
 
 /**
  * Mã chuẩn của tài sản từ URL / id khác kiểu chữ ("v-101", " V-101 " → "V-101"); không có trang → null.

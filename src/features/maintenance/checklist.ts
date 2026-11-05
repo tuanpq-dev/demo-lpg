@@ -2,7 +2,7 @@
  * Checklist yêu cầu bảo trì – thuần (không React, không gọi Date.now()).
  */
 import { plantDateTimeKey } from '@/lib/plantTime';
-import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/mocks/maintenance';
+import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/features/maintenance/types';
 
 export type ChecklistProgress = { done: number; total: number; percent: number };
 

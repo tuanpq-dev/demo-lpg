@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { WORK_STATUS_LABEL } from '@/components/Badge';
 import { mockHistory, tagSeed, trendLabel, type ViewTone } from '@/features/operations/device';
 import { formatDayVi } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
-import { operationDevices, plcScadaDevices, type OperationDeviceMock, type PlcScadaDeviceMock } from '@/mocks/operations';
+import type { AlertRecord } from '@/features/alerts/types';
+import { operationDevices, plcScadaDevices } from '@/mocks/operations';
+import type { OperationDeviceMock, PlcScadaDeviceMock } from '@/features/operations/types';
 import { liveBase } from '@/mocks/scenes/live';
 import { alertBadgeStatus } from './alerts';
 import { useAlertList } from './alertStore';
@@ -11,7 +12,7 @@ import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
 import type { QueryState } from './overview';
 
-export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/mocks/operations';
+export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/features/operations/types';
 
 /** Mọi loại thiết bị có trang chi tiết (`kind` quyết định KPI / cột trái của trang). */
 export type AnyOperationDevice = OperationDeviceMock | PlcScadaDeviceMock;

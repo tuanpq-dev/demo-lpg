@@ -106,7 +106,7 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
 
   const workloads = useMemo(() => computeWorkloads(records, now), [records, now]);
   const issues = validateAssign(r, f);
-  const warnings = assignWarnings(f, workloads, now);
+  const warnings = assignWarnings(f, workloads, now, staffByName);
   const blocked = issues.length > 0;
   const dirty = JSON.stringify({ ...f, notify: true }) !== JSON.stringify({ ...initial.base, notify: true });
 

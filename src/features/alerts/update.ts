@@ -10,8 +10,8 @@
  *   Đã xử lý (cháy: Đã xử lý sự cố / Báo động giả) = resolved (chờ xác nhận đóng) – CHỈ khi đủ điều kiện của loại
  *   (`updateCloseCheck`: áp suất / gas / cháy giữ nguyên như modal cũ). Hoàn thành chỉ qua `close.ts`.
  */
-import type { AlertFollowUp, AlertPhase, AlertRecord, VerificationSource } from '@/mocks/alerts';
-import type { AlertUpdateConfig, UpdateStateId } from '@/mocks/alertKinds';
+import type { AlertFollowUp, AlertPhase, AlertRecord, VerificationSource } from '@/features/alerts/types';
+import type { AlertUpdateConfig, UpdateStateId } from '@/features/alerts/kinds';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { canCloseGas } from './bands';
 import { canCloseFire, type DetectorAlarm, type DetectorDevice } from './fire';
