@@ -26,10 +26,10 @@ import {
   type ManualValues,
   type ReportRecord,
 } from '@/features/reports';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { prefersReducedMotion } from '@/lib/reducedMotion';
+import { useFormModal } from '@/lib/useFormModal';
 import {
   FireTable,
   FlowLineCards,
@@ -80,7 +80,6 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
   const uid = useId();
   const blockersId = `${uid}-blockers`;
   const bodyRef = useRef<HTMLDivElement>(null);
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
   const sectionRefs = useRef<Partial<Record<NavId, HTMLElement | null>>>({});
 
   const snapshot = useMemo(() => fetchCheckpointSnapshot(r, checkpoint), [r, checkpoint]);
@@ -89,9 +88,6 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
   const [manual, setManual] = useState<ManualValues>(initialDraft?.manual ?? {});
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [editingGauge, setEditingGauge] = useState(false);
-  const [hasDraft, setHasDraft] = useState(!!initialDraft);
-  const [confirmingClose, setConfirmingClose] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [active, setActive] = useState<NavId>('overview');
 
@@ -102,7 +98,24 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
   const blockers = recordBlockers(groups, remark);
   const ready = blockers.length === 0;
   const remarkMissing = !remark.trim();
-  const dirty = !!remark.trim() || Object.keys(manual).length > 0 || files.length > 0;
+  const modal = useFormModal({
+    initial: { remark: '', manual: {} as ManualValues, files: 0 },
+    values: { remark, manual, files: files.length },
+    // Nhận xét chỉ có khoảng trắng = chưa sửa; có nhập tay hoặc tệp = đã sửa (kể cả sau khi lưu nháp).
+    isDirty: (v) => !!v.remark.trim() || Object.keys(v.manual).length > 0 || v.files > 0,
+    draft: {
+      exists: !!initialDraft,
+      save: (v) => saveRecordDraft(r.code, checkpoint, { remark: v.remark, manual: { ...v.manual }, savedAt: new Date().toISOString() }),
+      clear: () => clearRecordDraft(r.code, checkpoint),
+    },
+    onSubmit: (input: { remark: string; manual: ManualValues; files: string[] }) => recordCheckpoint(r.id, checkpoint, input),
+    onClose,
+    onSubmitError: setError,
+    // Hai nút nháp: "Lưu bản nháp" ở lại, "Lưu và tiếp tục sau" đóng (gọi onClose sau khi lưu được). Hỏi khi đóng chỉ theo "đã sửa".
+    stayOpenAfterDraft: true,
+    confirmIfDraft: false,
+  });
+  const { confirming: confirmingClose, submitting, hasDraft, requestClose, discard } = modal;
 
   const onManual = (id: string, value: number | null) => {
     setManual((cur) => {
@@ -113,10 +126,6 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
     });
     setError('');
   };
-
-  useEffect(() => {
-    if (confirmingClose) keepEditingRef.current?.focus();
-  }, [confirmingClose]);
 
   // Tab theo mục đang xem: mục cuối có đầu mục đã cuộn qua mép trên thân modal (cuộn hết → mục cuối).
   useEffect(() => {
@@ -145,38 +154,20 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
   };
 
   const saveDraft = (thenClose: boolean) => {
-    if (!saveRecordDraft(r.code, checkpoint, { remark, manual: { ...manual }, savedAt: new Date().toISOString() })) {
+    if (!modal.saveDraft()) {
       setError('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
       return;
     }
-    setHasDraft(true);
     announce(`Đã lưu nháp mốc ${checkpoint} – ${r.code}${files.length ? ' (tệp đính kèm không lưu trong nháp)' : ''}.`);
     if (thenClose) onClose();
   };
 
   const submit = async () => {
     if (!ready || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await recordCheckpoint(r.id, checkpoint, { remark, manual, files: files.map((f) => f.name) });
-      if (!res.ok) return setError(res.error);
-      announce(`Đã xác nhận mốc ${checkpoint} – báo cáo ${r.code}.`);
-      onClose();
-    } catch (e) {
-      setError(actionErrorText(e));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const requestClose = () => {
-    if (confirmingClose) return setConfirmingClose(false);
-    if (dirty) setConfirmingClose(true);
-    else onClose();
-  };
-
-  const discard = () => {
-    clearRecordDraft(r.code, checkpoint);
+    const res = await modal.submit({ remark, manual, files: files.map((f) => f.name) });
+    if (!res) return; // lỗi mạng / máy chủ – đã hiện qua onSubmitError
+    if (!res.ok) return setError(res.error);
+    announce(`Đã xác nhận mốc ${checkpoint} – báo cáo ${r.code}.`);
     onClose();
   };
 
@@ -221,7 +212,7 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
 
   const footer = confirmingClose ? (
     <>
-      <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirmingClose(false)}>
+      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
         Tiếp tục nhập
       </Button>
       <Button variant="primary" onClick={discard}>

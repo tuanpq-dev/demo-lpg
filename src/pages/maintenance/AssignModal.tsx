@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import {
   AssignNotices,
   Badge,
@@ -29,8 +29,8 @@ import {
   workloadOf,
   type AssignForm,
 } from '@/features/maintenance/assign';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
+import { useFormModal } from '@/lib/useFormModal';
 import { useNow } from '@/lib/useNow';
 
 const SHIFT_SHORT = Object.fromEntries(SHIFTS.map((s) => [s.value, s.label.split(' (')[0]])) as Record<ShiftId, string>;
@@ -64,7 +64,6 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
   const reassign = mode === 'reassign';
   const blockId = `${uid}-block`;
   const listLabelId = `${uid}-list`;
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
 
   const [initial] = useState(() => {
     const base = initialAssignForm(r);
@@ -76,14 +75,7 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
   const [query, setQuery] = useState('');
   const [dept, setDept] = useState<string | null>(null);
   const [shiftFilter, setShiftFilter] = useState<ShiftId | null>(null);
-  const [hasDraft, setHasDraft] = useState(!!initial.draft);
-  const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
 
   const set = <K extends keyof AssignForm>(k: K, v: AssignForm[K]) => {
     setF((cur) => ({ ...cur, [k]: v }));
@@ -108,7 +100,22 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
   const issues = validateAssign(r, f);
   const warnings = assignWarnings(f, workloads, now, staffByName);
   const blocked = issues.length > 0;
-  const dirty = JSON.stringify({ ...f, notify: true }) !== JSON.stringify({ ...initial.base, notify: true });
+  const form = useFormModal({
+    initial: initial.base,
+    values: f,
+    // Công tắc "Gửi thông báo" không tính là thay đổi (chỉ giao diện, không lưu vào nháp).
+    isDirty: (v, i) => JSON.stringify({ ...v, notify: true }) !== JSON.stringify({ ...i, notify: true }),
+    draft: {
+      exists: !!initial.draft,
+      save: (v) =>
+        saveAssignDraft(r.id, { assignee: v.assignee, collaborators: [...v.collaborators], startAt: v.startAt, dueAt: v.dueAt, shift: v.shift, note: v.note, reason: v.reason, savedAt: new Date().toISOString() }),
+      clear: () => clearAssignDraft(r.id),
+    },
+    onSubmit,
+    onClose,
+    onSubmitError: setError,
+  });
+  const { confirming, submitting, hasDraft, requestClose, discard } = form;
 
   // Người đang được giao nhưng không còn trong danh sách chọn (vd trưởng ca) → vẫn hiện đúng tên trong ô chọn.
   const extra = [r.assignee, ...(r.collaborators ?? [])].filter((n): n is string => !!n && !ASSIGNABLE_STAFF.some((p) => p.name === n));
@@ -140,37 +147,15 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
 
   const submit = async () => {
     if (blocked || submitting) return; // nút aria-disabled đã chặn; chặn thêm cho chắc
-    setSubmitting(true);
-    try {
-      await onSubmit(f);
-      clearAssignDraft(r.id);
-    } catch (e) {
-      setError(actionErrorText(e));
-    } finally {
-      setSubmitting(false);
-    }
+    await form.submit(f);
   };
 
   const onSaveDraft = () => {
-    const draft = { assignee: f.assignee, collaborators: [...f.collaborators], startAt: f.startAt, dueAt: f.dueAt, shift: f.shift, note: f.note, reason: f.reason };
-    if (!saveAssignDraft(r.id, { ...draft, savedAt: new Date().toISOString() })) {
+    if (!form.saveDraft()) {
       setError('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
       return;
     }
-    setHasDraft(true);
     announce(`Đã lưu tạm phân công ${r.code} – trạng thái yêu cầu không đổi.`);
-    onClose();
-  };
-
-  const requestClose = () => {
-    if (confirming) return setConfirming(false);
-    if (dirty || hasDraft) setConfirming(true);
-    else onClose();
-  };
-
-  const discard = () => {
-    clearAssignDraft(r.id);
-    onClose();
   };
 
   const confirmLabel = reassign ? 'Xác nhận đổi người' : 'Xác nhận phân công';
@@ -201,7 +186,7 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
       footer={
         confirming ? (
           <>
-            <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+            <Button ref={form.keepEditingRef} variant="subtle" onClick={form.keepEditing}>
               Tiếp tục sửa
             </Button>
             <Button variant="primary" onClick={discard}>

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import {
   AlertCircleIcon,
   Badge,
@@ -35,11 +35,11 @@ import {
   type SubmitInput,
   type ValveStatus,
 } from '@/features/maintenance/review';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
+import { useFormModal } from '@/lib/useFormModal';
 
 const CONDITION_ICON: Record<DeviceCondition, ReactNode> = {
   normal: <CheckCircleIcon size={22} />,
@@ -96,7 +96,6 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
   const missingId = `${uid}-missing`;
   const conditionId = `${uid}-condition`;
   const conditionNoteId = `${uid}-condition-note`;
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
 
   const [initial] = useState(() => {
     const draft = loadSubmitDraft(r.id);
@@ -106,27 +105,34 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
     return { base, draft, values };
   });
   const [v, setV] = useState(initial.values);
-  const [hasDraft, setHasDraft] = useState(!!initial.draft);
-  const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const set = <K extends keyof typeof v>(k: K, value: (typeof v)[K]) => {
     setV((cur) => ({ ...cur, [k]: value }));
     setError('');
   };
 
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
-
   const form: SubmitForm = { ...v, proposedAt: v.proposedAt || undefined };
   const missing = submitMissing(r, form);
   const eligible = missing.length === 0;
-  const dirty = (Object.keys(initial.base) as (keyof typeof v)[]).some((k) => v[k] !== initial.base[k]);
   const checklist = r.checklist?.length ? checklistProgress(r.checklist) : null;
   const hasTime = dueHasTime(r);
   const dueRed = isNearOrPastDue(r.dueAt, now, hasTime);
   const files = prefill?.files ?? [];
+  const modal = useFormModal({
+    initial: initial.base,
+    values: v,
+    // Có tệp mang sang từ bước cập nhật tiến độ cũng tính là đã có thay đổi (tệp không vào nháp).
+    isDirty: (cur, base) => (Object.keys(base) as (keyof typeof cur)[]).some((k) => cur[k] !== base[k]) || files.length > 0,
+    draft: {
+      exists: !!initial.draft,
+      save: (cur): boolean => saveSubmitDraft(r.id, { ...cur, savedAt: new Date().toISOString() } satisfies SubmitDraft),
+      clear: () => clearSubmitDraft(r.id),
+    },
+    onSubmit,
+    onClose,
+    onSubmitError: setError,
+  });
+  const { confirming, submitting, hasDraft, requestClose, discard } = modal;
 
   const reviewerOptions = REVIEWERS.filter((p) => p.name !== r.assignee).map((p) => ({ value: p.name, label: `${p.name} (${p.title})` }));
 
@@ -136,8 +142,6 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
     icon: CONDITION_ICON[o.id],
     tone: CONDITION_TONE[o.id],
   }));
-
-  const toDraft = (): SubmitDraft => ({ ...v, savedAt: new Date().toISOString() });
 
   const submit = async () => {
     // Nút "Gửi nghiệm thu" aria-disabled đã chặn click/Enter/gửi ngầm (Button) – chặn thêm ở đây cho chắc.
@@ -149,41 +153,20 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
       ...(live ? { temperature: snapshotReading(live.temperature, { tag: live.tags.temperature, warn: live.limits.temperature }) } : {}),
       at: plantDateTimeKey(appNow()),
     };
-    setSubmitting(true);
-    try {
-      await onSubmit({ ...form, readings, files });
-      clearSubmitDraft(r.id);
-    } catch (e) {
-      setError(actionErrorText(e));
-    } finally {
-      setSubmitting(false);
-    }
+    await modal.submit({ ...form, readings, files });
   };
 
   const onSaveDraft = () => {
-    if (!saveSubmitDraft(r.id, toDraft())) {
+    if (!modal.saveDraft()) {
       setError('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
       return;
     }
-    setHasDraft(true);
     announce(`Đã lưu nháp gửi nghiệm thu ${r.code}${files.length ? ' – tệp đính kèm không được lưu trong nháp' : ''}.`);
-    onClose();
-  };
-
-  const requestClose = () => {
-    if (confirming) return setConfirming(false);
-    if (dirty || hasDraft || files.length) setConfirming(true);
-    else onClose();
-  };
-
-  const discard = () => {
-    clearSubmitDraft(r.id);
-    onClose();
   };
 
   const footer = confirming ? (
     <>
-      <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
         Tiếp tục sửa
       </Button>
       <Button variant="primary" onClick={discard}>

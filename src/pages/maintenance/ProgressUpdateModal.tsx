@@ -39,9 +39,9 @@ import {
   type ProgressUpdateInput,
   type WorkState,
 } from '@/features/maintenance/progress';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
+import { useFormModal, type FormModalDraft } from '@/lib/useFormModal';
 import { useNow } from '@/lib/useNow';
 import { downloadSampleAttachment } from './attachments';
 
@@ -82,7 +82,6 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
   const headingId = useId();
   const checklistLineId = useId();
   const textWrapRef = useRef<HTMLDivElement>(null);
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
 
   const [initial] = useState(() => {
     const draft = loadProgressDraft(r.id);
@@ -96,21 +95,31 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
   const [errors, setErrors] = useState<ProgressUpdateErrors>({});
   const [uploadError, setUploadError] = useState('');
   const [preview, setPreview] = useState<{ kind: 'sample'; file: MaintenanceAttachment } | { kind: 'temp'; file: TempFile } | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [hasDraft, setHasDraft] = useState(!!initial.draft);
 
   // Revoke mọi URL xem trước khi đóng modal (unmount) – ref giữ danh sách mới nhất.
   const filesRef = useRef(files);
   filesRef.current = files;
   useEffect(() => () => filesRef.current.forEach((f) => URL.revokeObjectURL(f.url)), []);
 
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
-
-  const dirty =
-    state !== initial.base.state || progress !== initial.base.progress || text.trim() !== '' || files.length > 0;
+  type Values = { state: WorkState; progress: number; text: string; files: number };
+  const draft: FormModalDraft<Values> = {
+    exists: !!initial.draft,
+    // Nháp chỉ giữ lựa chọn + tiến độ + nội dung (KHÔNG giữ tệp – object URL chết khi đóng modal).
+    save: (v) => saveProgressDraft(r.id, { state: v.state, progress: v.progress, text: v.text, savedAt: new Date().toISOString() }),
+    clear: () => clearProgressDraft(r.id),
+  };
+  const values: Values = { state, progress, text, files: files.length };
+  const form = useFormModal({
+    initial: { ...initial.base, files: 0 },
+    values,
+    // Nội dung chỉ có khoảng trắng = chưa sửa; có tệp tạm = đã sửa.
+    isDirty: (v, i) => v.state !== i.state || v.progress !== i.progress || v.text.trim() !== '' || v.files > 0,
+    draft,
+    onSubmit,
+    onClose,
+    onSubmitError: (t) => setErrors({ form: t }),
+  });
+  const { dirty, confirming, submitting, hasDraft, requestClose, discard } = form;
   const checklist = r.checklist?.length ? checklistProgress(r.checklist) : null;
   const hasTime = dueHasTime(r);
   const dueRed = isNearOrPastDue(r.dueAt, now, hasTime);
@@ -136,9 +145,6 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
     if (s === 'completed') setProgress(100);
   };
 
-  const saveDraft = () =>
-    saveProgressDraft(r.id, { state, progress, text, savedAt: new Date().toISOString() });
-
   const continueToSubmit = state === 'completed';
 
   const submit = async () => {
@@ -158,36 +164,15 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
       return;
     }
     if (Object.keys(e).length) return;
-    setSubmitting(true);
-    try {
-      await onSubmit(input());
-      clearProgressDraft(r.id);
-    } catch (e) {
-      setErrors({ form: actionErrorText(e) });
-    } finally {
-      setSubmitting(false);
-    }
+    await form.submit(input());
   };
 
   const onSaveDraft = () => {
-    if (!saveDraft()) {
+    if (!form.saveDraft()) {
       setErrors({ form: 'Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).' });
       return;
     }
-    setHasDraft(true);
     announce(`Đã lưu nháp cập nhật tiến độ ${r.code}${files.length ? ' – tệp đính kèm không được lưu trong nháp' : ''}.`);
-    onClose();
-  };
-
-  const requestClose = () => {
-    if (confirming) return setConfirming(false); // Esc lần hai = quay lại sửa
-    if (dirty || hasDraft) setConfirming(true);
-    else onClose();
-  };
-
-  const discard = () => {
-    clearProgressDraft(r.id);
-    onClose();
   };
 
   const addFiles = (list: File[]) => {
@@ -215,13 +200,13 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
   };
 
   const openChecklist = () => {
-    if (dirty && saveDraft()) announce(`Đã lưu nháp cập nhật tiến độ ${r.code}.`);
+    if (dirty && draft.save(values)) announce(`Đã lưu nháp cập nhật tiến độ ${r.code}.`);
     onOpenChecklist?.();
   };
 
   const footer = confirming ? (
     <>
-      <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+      <Button ref={form.keepEditingRef} variant="subtle" onClick={form.keepEditing}>
         Tiếp tục sửa
       </Button>
       <Button variant="primary" onClick={discard}>

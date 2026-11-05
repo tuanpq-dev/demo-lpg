@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { AssignNotices, Badge, Button, Checkbox, Combobox, FormField, Modal, SearchInput, StaffFilters, StaffList, Textarea, type StaffPickerItem } from '@/components';
 import { ALERT_STAFF, alertKind, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
@@ -12,9 +12,9 @@ import {
 } from '@/features/alerts/assign';
 import { ALERT_LOAD_HINT, MATCH_LABEL, alertAssignWarnings, alertLoadLabel, computeAlertLoads, rankAlertStaff } from '@/features/alerts/assignStaff';
 import { shiftShortLabel } from '@/features/staff/availability';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
+import { useFormModal } from '@/lib/useFormModal';
 import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
 import { staffByName } from '@/data/staff';
 import type { ShiftId } from '@/features/maintenance/types';
@@ -49,7 +49,6 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
   const uid = useId();
   const blockId = `${uid}-block`;
   const listLabelId = `${uid}-list`;
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
   const bulk = alerts.length !== 1;
   const single = bulk ? null : alerts[0]!;
 
@@ -63,14 +62,23 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
   const [dept, setDept] = useState<string | null>(null);
   const [shiftFilter, setShiftFilter] = useState<ShiftId | null>(null);
   const [onShiftOnly, setOnShiftOnly] = useState(false);
-  const [hasDraft, setHasDraft] = useState(!!initial.draft);
-  const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
+  const modal = useFormModal({
+    initial: initial.base,
+    values: f,
+    // Nháp chỉ khi phân công MỘT cảnh báo (hàng loạt không có nháp). Công tắc thông báo không lưu vào nháp.
+    draft: single
+      ? {
+          exists: !!initial.draft,
+          save: ({ notify: _notify, ...rest }) => saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() }),
+          clear: () => clearAlertAssignDraft(single.id),
+        }
+      : undefined,
+    onSubmit: onConfirm,
+    onClose,
+    onSubmitError: setError,
+  });
+  const { confirming, submitting, hasDraft, requestClose, discard } = modal;
 
   const set = <K extends keyof AlertAssignForm>(k: K, v: AlertAssignForm[K]) => {
     setF((cur) => ({ ...cur, [k]: v }));
@@ -102,7 +110,6 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     f.assignee && (bulk || f.assignee !== single!.assignee)
       ? alertAssignWarnings(f, { staff: staffByName(f.assignee), loads, now, alertIds: ids })
       : [];
-  const dirty = JSON.stringify(f) !== JSON.stringify(initial.base);
   const reassignMode = !!single?.assignee;
 
   const q = query.trim().toLowerCase();
@@ -132,37 +139,16 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
 
   const submit = async () => {
     if (blocked || submitting) return;
-    setSubmitting(true);
-    try {
-      await onConfirm(f);
-      if (single) clearAlertAssignDraft(single.id);
-    } catch (e) {
-      setError(actionErrorText(e));
-    } finally {
-      setSubmitting(false);
-    }
+    await modal.submit(f);
   };
 
   const onSaveDraft = () => {
     if (!single) return;
-    const { notify: _notify, ...rest } = f;
-    if (!saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() })) {
+    if (!modal.saveDraft()) {
       setError('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
       return;
     }
-    setHasDraft(true);
     announce(`Đã lưu nháp phân công ${single.code} – cảnh báo chưa thay đổi.`);
-    onClose();
-  };
-
-  const requestClose = () => {
-    if (confirming) return setConfirming(false);
-    if (dirty || hasDraft) setConfirming(true);
-    else onClose();
-  };
-  const discard = () => {
-    if (single) clearAlertAssignDraft(single.id);
-    onClose();
   };
 
   const confirmLabel = change === 'reassign' ? 'Xác nhận đổi người' : change === 'update' ? 'Cập nhật phân công' : 'Xác nhận phân công';
@@ -196,7 +182,7 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       footer={
         confirming ? (
           <>
-            <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+            <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
               Tiếp tục sửa
             </Button>
             <Button variant="primary" onClick={discard}>

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
   AssignNotices,
   AttachmentCard,
@@ -69,10 +69,10 @@ import {
   type VerificationSource,
 } from '@/features/alerts/update';
 import { UPLOAD_ACCEPT, UPLOAD_HINT, checkUploads, uploadKind } from '@/features/maintenance/progress';
-import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { parsePlantDateTime, plantDateTimeKey, plantTimeOfDay } from '@/lib/plantTime';
+import { useFormModal } from '@/lib/useFormModal';
 import { useNow } from '@/lib/useNow';
 import { areaLabel } from '@/features/plant/areas';
 import { assetName } from '@/data/assetDetail';
@@ -147,7 +147,6 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
     block: `${uid}-block`,
     supportHint: `${uid}-support-hint`,
   };
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
 
   const [initial] = useState(() => {
     const base: FormValues = {
@@ -186,16 +185,10 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
   /** Lỗi khi lưu thất bại (mạng / máy chủ) – khác lỗi kiểm tra form. */
   const [submitError, setSubmitError] = useState('');
   const [triedSubmit, setTriedSubmit] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [hasDraft, setHasDraft] = useState(initial.draft);
   // "Đã sửa" = khác bản đã lưu gần nhất (nháp khôi phục / vừa lưu nháp) – đóng sau khi lưu nháp không hỏi lại.
-  const [savedSnap, setSavedSnap] = useState(() => JSON.stringify(initial.values));
+  const [saved, setSaved] = useState<FormValues>(initial.values);
   const [preview, setPreview] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
   // Lỗi trả về lúc lưu chỉ đúng với giá trị lúc đó → sửa form là bỏ (lỗi theo giá trị hiện tại vẫn tính lại mỗi lần render).
   useEffect(() => setErrors({}), [v]);
 
@@ -271,22 +264,32 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
   const followActive = resolved && v.followUp.choice !== 0;
   const preview_ = followUpWindow(v.followUp.choice, customIso, now);
 
-  const dirty = JSON.stringify(v) !== savedSnap || files.length > 0;
-
   // ---- Thao tác ----
-  const requestClose = () => {
-    if (confirming) return setConfirming(false);
-    if (dirty) setConfirming(true);
-    else onClose();
-  };
-  // Bỏ thay đổi chưa lưu – nháp đã lưu (nếu có) GIỮ lại; nháp chỉ xoá khi "Lưu cập nhật" thành công.
-  const discard = () => onClose();
+  // Nháp: lưu KHÔNG đóng modal; "Bỏ thay đổi" GIỮ nháp đã lưu (nháp chỉ xoá khi "Lưu cập nhật" thành công);
+  // có nháp mà chưa sửa thêm → đóng không hỏi.
+  const modal = useFormModal({
+    initial: saved,
+    values: v,
+    isDirty: (cur, base) => JSON.stringify(cur) !== JSON.stringify(base) || files.length > 0,
+    draft: {
+      exists: initial.draft,
+      save: () => {
+        const { files: _f, ...rest } = input;
+        return updateDraft.save(a.id, { ...rest, savedAt: appNow().toISOString() });
+      },
+      clear: () => updateDraft.clear(a.id),
+    },
+    onSubmit: (inp: AlertUpdateInput) => onSubmit(inp, check),
+    onClose,
+    onSubmitError: setSubmitError,
+    stayOpenAfterDraft: true,
+    keepDraftOnDiscard: true,
+    confirmIfDraft: false,
+  });
+  const { dirty, confirming, submitting: busy, hasDraft, requestClose, discard } = modal;
   const saveDraft = () => {
-    const { files: _f, ...rest } = input;
-    const ok = updateDraft.save(a.id, { ...rest, savedAt: appNow().toISOString() });
-    if (ok) {
-      setHasDraft(true);
-      setSavedSnap(JSON.stringify(v));
+    if (modal.saveDraft()) {
+      setSaved(v);
       announce(`Đã lưu nháp cập nhật xử lý ${a.code}${files.length ? ' (tệp tạm không lưu vào nháp)' : ''}.`);
     } else announce('Không lưu được nháp – trình duyệt chặn bộ nhớ phiên.');
   };
@@ -310,17 +313,9 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
       announce('Chưa lưu được – xem các mục cần bổ sung.');
       return;
     }
-    setBusy(true);
     setSubmitError('');
-    try {
-      const res = await onSubmit(input, check);
-      if (res.ok) updateDraft.clear(a.id);
-      else setErrors(res.errors);
-    } catch (err) {
-      setSubmitError(actionErrorText(err));
-    } finally {
-      setBusy(false);
-    }
+    const res = await modal.submit(input);
+    if (res && !res.ok) setErrors(res.errors);
   };
 
   // Lý do chặn nút "Lưu cập nhật" (sau lần bấm đầu) – tính lại theo giá trị hiện tại (+ lỗi trả về lúc lưu, xoá khi bấm lại).
@@ -356,7 +351,7 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
 
   const footer = confirming ? (
     <>
-      <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
         Tiếp tục sửa
       </Button>
       <Button variant="primary" onClick={discard}>

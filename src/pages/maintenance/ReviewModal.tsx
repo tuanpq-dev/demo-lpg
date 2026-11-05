@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Button, FormField, KpiCard, Modal, Select, StatusOptionGroup, Textarea, inputClass, type KpiTone, type StatusOption } from '@/components';
 import type { Reading } from '@/data/assetDetail';
 import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
@@ -17,8 +17,8 @@ import {
   type ReviewInput,
   type ReviewResult,
 } from '@/features/maintenance/review';
-import { actionErrorText } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
+import { useFormModal } from '@/lib/useFormModal';
 
 const RESULT_TONE = { pass: 'primary', 'needs-info': 'warning', fail: 'danger' } as const;
 
@@ -48,25 +48,27 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
   const device = useRelatedDevice(r.device);
   const sub = r.submission;
   const commentRef = useRef<HTMLDivElement>(null);
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
 
   const [result, setResult] = useState<ReviewResult>('pass');
   const [followUp, setFollowUp] = useState(String(DEFAULT_FOLLOW_UP_HOURS));
   const [comment, setComment] = useState('');
   const [errors, setErrors] = useState<ReviewErrors>({});
-  const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (confirming) keepEditingRef.current?.focus();
-  }, [confirming]);
 
   const input: ReviewInput = { result, reviewer, comment, followUpHours: result === 'pass' ? Number(followUp) : undefined };
   const selfReview = validateReview(r, { ...input, comment: 'x' }).reviewer;
   const blockId = `${uid}-block`;
   const title = REVIEWERS.find((p) => p.name === reviewer)?.title;
   const reviewerLabel = reviewer ? `${reviewer}${title ? ` (${title})` : ''}` : '—';
-  const dirty = result !== 'pass' || comment.trim() !== '' || followUp !== String(DEFAULT_FOLLOW_UP_HOURS);
+  const form = useFormModal({
+    initial: { result: 'pass' as ReviewResult, followUp: String(DEFAULT_FOLLOW_UP_HOURS), comment: '' },
+    values: { result, followUp, comment },
+    // Ý kiến chỉ có khoảng trắng = chưa sửa.
+    isDirty: (v, i) => v.result !== i.result || v.comment.trim() !== '' || v.followUp !== i.followUp,
+    onSubmit,
+    onClose,
+    onSubmitError: (text) => setErrors({ form: text }),
+  });
+  const { confirming, submitting, requestClose } = form;
 
   const options: StatusOption<ReviewResult>[] = REVIEW_RESULT_OPTIONS.map((o) => ({ id: o.id, label: o.label, tone: RESULT_TONE[o.id], toneLabel: o.id === 'fail' }));
 
@@ -78,20 +80,7 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
       return;
     }
     if (Object.keys(e).length) return;
-    setSubmitting(true);
-    try {
-      await onSubmit(input);
-    } catch (e) {
-      setErrors({ form: actionErrorText(e) });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const requestClose = () => {
-    if (confirming) return setConfirming(false);
-    if (dirty) setConfirming(true);
-    else onClose();
+    await form.submit(input);
   };
 
   const live = device.kind === 'live' ? device : null;
@@ -118,10 +107,10 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
 
   const footer = confirming ? (
     <>
-      <Button ref={keepEditingRef} variant="subtle" onClick={() => setConfirming(false)}>
+      <Button ref={form.keepEditingRef} variant="subtle" onClick={form.keepEditing}>
         Tiếp tục nghiệm thu
       </Button>
-      <Button variant="primary" onClick={onClose}>
+      <Button variant="primary" onClick={form.discard}>
         Bỏ thay đổi
       </Button>
     </>

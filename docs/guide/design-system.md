@@ -216,7 +216,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 - **Bảng có lọc → `useTableFilters`** (`src/app/useTableFilters.ts`):
   - Khai báo tham số bằng hằng `*_PARAMS as const`; bộ lọc, trang, bản ghi đang mở và lựa chọn dòng đồng bộ URL (`replace`).
   - Modal/drawer mở qua query (`?open=`, `?alert=`, `?create=1&device=&from=`).
-- **Modal có form:** chỉ mount khi mở, khởi tạo state bằng hàm khởi tạo của `useState` (tránh nháy giá trị cũ).
+- **Modal có form:** chỉ mount khi mở, khởi tạo state bằng hàm khởi tạo của `useState` (tránh nháy giá trị cũ). Khung chung `useFormModal({ initial, values, isDirty?, draft?, onSubmit, onClose, onSubmitError? })` (`src/lib/useFormModal.ts`) → `dirty`, `confirming`, `submitting`, `hasDraft`, `requestClose` (Esc / Hủy / ×), `keepEditing` + `keepEditingRef`, `discard`, `saveDraft`, `submit` (chặn gửi lặp; kết quả `{ ok: false }` giữ nháp). Kiểm tra form vẫn ở modal. Tuỳ chọn `stayOpenAfterDraft` / `keepDraftOnDiscard` / `confirmIfDraft` cho modal cập nhật xử lý cảnh báo và ghi mốc báo cáo.
 - **Thao tác ghi thất bại** (`src/lib/actionError.ts`): modal bắt lỗi của `onSubmit`/`onConfirm` → `actionErrorText(e)` vào `<p role="alert" className="text-sm text-danger-text">` (modal giữ mở, thử lại được). Handler không chờ kết quả (onClick, callback drawer) gọi qua `runAction(task, onError?)` – không để unhandled rejection; mặc định `toastError` (toast lỗi nhìn thấy + `announce`). Chưa có hoàn tác (mock ghi cục bộ; khi có API: POST xong mới commit).
 - **Test** (chi tiết docs/guide/testing.md (7b)):
   - **Hàm logic mới phải có test trong cùng commit.** Test đặt cạnh module (`x.ts` → `x.test.ts`); `*.test.tsx` cần DOM ghi `// @vitest-environment jsdom`.
