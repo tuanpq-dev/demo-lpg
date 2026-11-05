@@ -32,7 +32,7 @@ const CONTROL_ROOM = 'Phòng điều khiển';
 /** Người thao tác (cùng danh sách nhân sự mock của Bảo trì/Cảnh báo). */
 export const LOG_ACTORS = ['Nguyễn Văn A', 'Trần Văn B', 'Lê Thị C', 'Phạm Văn D', 'Admin'] as const;
 
-/** Mẫu sự kiện – khu vực theo danh sách chung `mocks/areas.ts` (+ Phòng điều khiển cho thao tác trên HMI). */
+/** Mẫu sự kiện – khu vực theo danh sách chung `features/plant/areas.ts` (+ Phòng điều khiển cho thao tác trên HMI). */
 const TEMPLATES: readonly Template[] = [
   // ---- Vận hành (~70 %) ----
   { category: 'operation', level: 'info', title: 'Khởi động Bơm P-101A', area: 'Khu bơm', device: 'P-101A', status: 'done', weight: 6 },

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import type { MaintenanceSummary } from './assetDetail';
 import type { MaintenanceRecord } from './maintenance';
 import { deriveDeviceAlerts, deriveDeviceMaintenance, deviceHistory, deviceLiveTags, fetchOperationDevice, plcLatencyHistory, resolveOperationDeviceId, trendPoints } from './operationDevice';

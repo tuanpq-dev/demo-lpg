@@ -9,9 +9,6 @@ import { plantDayKey } from '@/lib/plantTime';
 import type { MaintenanceRecord, MaintenanceSource } from '@/features/maintenance/types';
 import { DEPARTMENTS, type StaffMember } from '@/features/staff/org';
 
-// Kiểu / ca / phòng ban nằm ở features – re-export cho test / mock cũ (code mới import thẳng từ features).
-export * from '@/features/maintenance/types';
-export * from '@/features/staff/org';
 
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },

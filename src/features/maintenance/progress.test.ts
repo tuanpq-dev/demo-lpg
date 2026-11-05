@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { MaintenanceRecord, MaintenanceStatus } from '@/mocks/maintenance';
+import type { MaintenanceRecord, MaintenanceStatus } from '@/features/maintenance/types';
 import {
   NEAR_DUE_MS,
   UPLOAD_RULES,

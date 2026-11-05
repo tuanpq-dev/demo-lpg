@@ -11,8 +11,6 @@
 import type { AlertBand, AlertKind, AlertKindConfig, AlertUpdateConfig, FollowUpConfig, UpdateStateId } from '@/features/alerts/kinds';
 import type { StaffSkill } from '@/features/staff/skills';
 
-// Kiểu nằm ở features/alerts/kinds – re-export cho test / mock cũ (code mới import thẳng từ features).
-export * from '@/features/alerts/kinds';
 
 /** Van an toàn theo bồn (ảnh ghi "van PR-101" – dữ liệu dùng PSV-101, docs/figma-diffs.md). */
 export const SAFETY_VALVES: Readonly<Record<string, string>> = { 'V-101': 'PSV-101', 'V-102': 'PSV-102' };

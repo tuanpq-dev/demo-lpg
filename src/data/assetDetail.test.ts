@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { LiveData, TagValue } from '@/features/live/types';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { DEFAULT_ASSET_ID, assetPath } from '@/app/assetRoutes';
 import { assetMocks, type AssetEvent } from '@/mocks/assets';
-import type { MaintenanceRecord } from '@/mocks/maintenance';
+import type { MaintenanceRecord } from '@/features/maintenance/types';
 import {
   assetName,
   dayTimeLabel,

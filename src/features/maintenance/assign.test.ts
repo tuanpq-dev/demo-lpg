@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { ASSIGNABLE_STAFF, REVIEWERS, STAFF, maintenanceRecords, staffByName, type MaintenanceRecord, type MaintenanceStatus } from '@/mocks/maintenance';
+import { ASSIGNABLE_STAFF, REVIEWERS, STAFF, maintenanceRecords, staffByName } from '@/mocks/maintenance';
+import type { MaintenanceRecord, MaintenanceStatus } from '@/features/maintenance/types';
 import {
   BUSY_THRESHOLD,
   applyAssignment,

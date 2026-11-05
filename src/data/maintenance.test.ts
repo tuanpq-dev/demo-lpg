@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import type { MaintenanceRecord } from '@/mocks/maintenance';
+import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { maintenanceRecords } from '@/mocks/maintenance';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { daysUntilDue, deriveMaintenanceKpis, createMaintenance, deriveDeviceDirectory, derivePriorityTasks, deriveSchedule, dueLabel, isOverdue, matchMaintenance, scheduleLabel } from './maintenance';
 
 /** Bản ghi tối thiểu cho test; ngày dạng giờ địa phương nhà máy. */

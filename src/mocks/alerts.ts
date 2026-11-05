@@ -8,8 +8,6 @@ import { GAS_TAGS } from '@/features/live/tags';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
 
-// Kiểu dữ liệu nằm ở features/alerts/types – re-export cho test / mock cũ (code mới import thẳng từ features).
-export * from '@/features/alerts/types';
 
 /** Hệ thống gửi thông báo sau khi phát hiện (mock: +3 s, như ảnh 10:45:22 → 10:45:25). */
 const NOTIFY_DELAY_S = 3;

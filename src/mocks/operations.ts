@@ -1,8 +1,6 @@
 import { GAS_TAGS, MAIN_LINE_TAGS, PLC_SCADA_TAGS, REGULATOR_TAGS, SYSTEM_TAGS, V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import type { OperationDeviceMock, PlcScadaDeviceMock, PlcSource } from '@/features/operations/types';
 
-// Kiểu nằm ở features/operations/types – re-export cho test / mock cũ (code mới import thẳng từ features).
-export * from '@/features/operations/types';
 
 /**
  * Màn Vận hành – chi tiết thiết bị (ảnh `scratch/figma-ref/op-device-*.png`, chưa có node Figma).
