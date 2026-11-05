@@ -35,6 +35,7 @@ import {
   type SubmitInput,
   type ValveStatus,
 } from '@/features/maintenance/review';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey } from '@/lib/plantTime';
@@ -152,6 +153,8 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
     try {
       await onSubmit({ ...form, readings, files });
       clearSubmitDraft(r.id);
+    } catch (e) {
+      setError(actionErrorText(e));
     } finally {
       setSubmitting(false);
     }

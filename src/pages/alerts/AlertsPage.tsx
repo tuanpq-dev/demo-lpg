@@ -21,7 +21,9 @@ import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
+import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
+import { cn } from '@/lib/cn';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { bulkMessage, linkedMaintenance } from '@/features/alerts/workflow';
@@ -96,7 +98,13 @@ export default function AlertsPage() {
   // Ẩn thao tác theo vai trò (UX) – backend kiểm tra lại quyền khi có API.
   const canAck = useCan('alert:acknowledge');
   const canCreateMaintenance = useCan('maintenance:write');
-  const [notice, setNotice] = useState('');
+  // Thông báo kết quả thao tác hàng loạt (lỗi → chữ đỏ).
+  const [notice, setNoticeState] = useState<{ text: string; error?: boolean }>({ text: '' });
+  const setNotice = (text: string) => setNoticeState({ text });
+  const failNotice = (text: string) => {
+    setNoticeState({ text, error: true });
+    announce(text);
+  };
   const all = useMemo(() => data ?? [], [data]);
 
   const table = useTableFilters({
@@ -119,8 +127,8 @@ export default function AlertsPage() {
 
   // Thông báo kết quả thao tác tự ẩn sau 4 giây.
   useEffect(() => {
-    if (!notice) return;
-    const t = window.setTimeout(() => setNotice(''), 4000);
+    if (!notice.text) return;
+    const t = window.setTimeout(() => setNoticeState({ text: '' }), 4000);
     return () => window.clearTimeout(t);
   }, [notice]);
 
@@ -138,11 +146,12 @@ export default function AlertsPage() {
   // qua modal "Phân công xử lý cảnh báo" (không tự xác nhận, bỏ qua dòng Hoàn thành / đã đúng người, dòng của người khác =
   // đổi người với một lý do chung); đóng chỉ dòng Đã xử lý đủ 3 điều kiện hệ thống + một ghi chú kết luận chung (bỏ qua dòng
   // Nghiêm trọng nếu người đóng là người xử lý). Không còn thao tác hàng loạt nhảy thẳng sang Hoàn thành.
-  const runAck = async () => {
-    const r = await acknowledge([...selected], actor);
-    setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
-    setSelected([]);
-  };
+  const runAck = () =>
+    runAction(async () => {
+      const r = await acknowledge([...selected], actor);
+      setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
+      setSelected([]);
+    }, failNotice);
   const assignableSelected = selectedRecords.filter((a) => a.status !== 'done').length;
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
@@ -321,8 +330,8 @@ export default function AlertsPage() {
             </Button>
           </div>
         )}
-        <p role="status" className={notice ? 'px-4 pt-2 text-sm text-success' : 'sr-only'}>
-          {notice}
+        <p role="status" className={notice.text ? cn('px-4 pt-2 text-sm', notice.error ? 'text-danger-text' : 'text-success') : 'sr-only'}>
+          {notice.text}
         </p>
 
         <div id="alerts-table">
@@ -358,20 +367,20 @@ export default function AlertsPage() {
         maintenance={openLinked ? { id: openLinked.id, code: openLinked.code } : null}
         canAct={canAck}
         canCreateMaintenance={canCreateMaintenance}
-        onAcknowledge={(id) => {
-          void acknowledge([id], actor);
+        onAcknowledge={async (id) => {
+          await acknowledge([id], actor);
           announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
         }}
         onAssign={(id, form) => assignOne(id, form, actor)}
         onResolve={(id, note) => resolve(id, note, actor)}
-        onToggleGuide={(id, step) => void toggleGuide(id, step, actor)}
-        onAddNote={(id, text) => void addNote(id, text, actor)}
+        onToggleGuide={(id, step) => toggleGuide(id, step, actor)}
+        onAddNote={(id, text) => addNote(id, text, actor)}
         onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
         onUpdate={(id, input, check) => update(id, input, check, actor)}
         onCloseAlert={(id, input, conditions) => close(id, input, conditions, followUpConfig(all.find((x) => x.id === id) ?? {}), actor)}
         onMonitor={(id, input) => monitor(id, input, followUpConfig(all.find((x) => x.id === id) ?? {}), actor)}
         actor={actor}
-        onRequestSupport={(id, input) => void requestSupport(id, input, actor)}
+        onRequestSupport={(id, input) => requestSupport(id, input, actor)}
       />
 
       {createFor && (

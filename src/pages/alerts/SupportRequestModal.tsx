@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Modal, StaffList, Textarea, type StaffPickerItem } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
+import { runAction } from '@/lib/actionError';
 import { STAFF } from '@/mocks/maintenance';
 
 /**
@@ -27,10 +28,20 @@ export const supportStaffItems = (collaborators: readonly string[] | undefined):
  * Người được chọn thành người phối hợp + một dòng lịch sử. Thông báo thật chưa gửi được (TODO backend) – ghi rõ, không giả vờ
  * đã gửi. Chỉ mount khi mở.
  */
-export function SupportRequestModal({ alert: a, onClose, onConfirm }: { alert: AlertRecord; onClose: () => void; onConfirm: (people: string[], reason: string) => void }) {
+export function SupportRequestModal({
+  alert: a,
+  onClose,
+  onConfirm,
+}: {
+  alert: AlertRecord;
+  onClose: () => void;
+  onConfirm: (people: string[], reason: string) => Promise<unknown> | void;
+}) {
   const [person, setPerson] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string>();
+  /** Lỗi khi gửi thất bại (mạng / máy chủ). */
+  const [submitError, setSubmitError] = useState('');
   const items = useMemo(() => supportStaffItems(a.collaborators), [a.collaborators]);
   return (
     <Modal
@@ -47,7 +58,8 @@ export function SupportRequestModal({ alert: a, onClose, onConfirm }: { alert: A
           setError('Nhập lý do cần hỗ trợ.');
           return;
         }
-        onConfirm([person], reason);
+        setSubmitError('');
+        void runAction(() => onConfirm([person], reason), setSubmitError);
       }}
       footerStart={
         <Button variant="plain" onClick={onClose}>
@@ -75,6 +87,11 @@ export function SupportRequestModal({ alert: a, onClose, onConfirm }: { alert: A
         placeholder="Vd: nồng độ tăng nhanh, cần bộ phận an toàn hỗ trợ khoanh vùng"
       />
       <p className="text-sm text-fg-secondary">Người được chọn thêm vào danh sách phối hợp của cảnh báo. Thông báo đẩy/SMS chưa gửi được – chờ backend.</p>
+      {submitError && (
+        <p role="alert" className="text-sm text-danger-text">
+          {submitError}
+        </p>
+      )}
     </Modal>
   );
 }

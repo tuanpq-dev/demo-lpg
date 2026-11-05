@@ -39,6 +39,7 @@ import {
   type ProgressUpdateInput,
   type WorkState,
 } from '@/features/maintenance/progress';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
@@ -161,6 +162,8 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
     try {
       await onSubmit(input());
       clearProgressDraft(r.id);
+    } catch (e) {
+      setErrors({ form: actionErrorText(e) });
     } finally {
       setSubmitting(false);
     }

@@ -69,6 +69,7 @@ import {
   type VerificationSource,
 } from '@/features/alerts/update';
 import { UPLOAD_ACCEPT, UPLOAD_HINT, checkUploads, uploadKind } from '@/features/maintenance/progress';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { parsePlantDateTime, plantDateTimeKey, plantTimeOfDay } from '@/lib/plantTime';
@@ -182,6 +183,8 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
   const [files, setFiles] = useState<TempFile[]>([]);
   const [uploadError, setUploadError] = useState('');
   const [errors, setErrors] = useState<UpdateErrors>({});
+  /** Lỗi khi lưu thất bại (mạng / máy chủ) – khác lỗi kiểm tra form. */
+  const [submitError, setSubmitError] = useState('');
   const [triedSubmit, setTriedSubmit] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -308,10 +311,13 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
       return;
     }
     setBusy(true);
+    setSubmitError('');
     try {
       const res = await onSubmit(input, check);
       if (res.ok) updateDraft.clear(a.id);
       else setErrors(res.errors);
+    } catch (err) {
+      setSubmitError(actionErrorText(err));
     } finally {
       setBusy(false);
     }
@@ -731,6 +737,11 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
         blockId={ids.block}
         blockTitle="Chưa lưu được – còn thiếu:"
       />
+      {submitError && (
+        <p role="alert" className="text-sm text-danger-text">
+          {submitError}
+        </p>
+      )}
 
       {sample && (
         <Modal open onClose={() => setPreview(null)} size="md" title={sample.name} description="Dữ liệu mẫu – chưa có tệp thật (chờ backend lưu trữ).">

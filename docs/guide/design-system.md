@@ -214,6 +214,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
   - Khai báo tham số bằng hằng `*_PARAMS as const`; bộ lọc, trang, bản ghi đang mở và lựa chọn dòng đồng bộ URL (`replace`).
   - Modal/drawer mở qua query (`?open=`, `?alert=`, `?create=1&device=&from=`).
 - **Modal có form:** chỉ mount khi mở, khởi tạo state bằng hàm khởi tạo của `useState` (tránh nháy giá trị cũ).
+- **Thao tác ghi thất bại** (`src/lib/actionError.ts`): modal bắt lỗi của `onSubmit`/`onConfirm` → `actionErrorText(e)` vào `<p role="alert" className="text-sm text-danger-text">` (modal giữ mở, thử lại được). Handler không chờ kết quả (onClick, callback drawer) gọi qua `runAction(task, onError?)` – không để unhandled rejection; mặc định chỉ `announce`. Chưa có hoàn tác (mock ghi cục bộ; khi có API: POST xong mới commit).
 - **Test** (chi tiết docs/guide/testing.md (7b)):
   - **Hàm logic mới phải có test trong cùng commit.** Test đặt cạnh module (`x.ts` → `x.test.ts`); `*.test.tsx` cần DOM ghi `// @vitest-environment jsdom`.
   - Hàm thuần nhận thời gian qua tham số (`now`), không gọi `Date.now()`/`new Date()` bên trong; "hôm nay" theo giờ nhà máy (`src/lib/plantTime.ts`), không theo múi giờ máy.

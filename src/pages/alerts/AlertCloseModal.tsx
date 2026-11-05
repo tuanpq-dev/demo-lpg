@@ -15,6 +15,7 @@ import {
   type MonitorResult,
 } from '@/features/alerts/close';
 import { followUpDurationLabel } from '@/features/alerts/update';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { areaLabel } from '@/mocks/areas';
@@ -74,6 +75,10 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
         if (res.reason === 'note') setNoteError(res.message);
         announce(res.message);
       }
+    } catch (e) {
+      const text = actionErrorText(e);
+      setMessage(text);
+      announce(text);
     } finally {
       setBusy(false);
     }

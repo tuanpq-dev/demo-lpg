@@ -35,6 +35,7 @@ import {
   signedSteps,
   type ReportRecord,
 } from '@/features/reports';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { useNow } from '@/lib/useNow';
@@ -100,6 +101,8 @@ export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: 
       if (!res.ok) return setError(res.error);
       announce(`Đã ký xác nhận báo cáo ${r.code}. Chuyển bước Người duyệt${r.approver ? ` (${r.approver})` : ''}.`);
       onClose();
+    } catch (e) {
+      setError(actionErrorText(e));
     } finally {
       setSubmitting(false);
     }

@@ -52,6 +52,7 @@ import {
   type NewMaintenanceInput,
   type ShiftId,
 } from '@/data/maintenance';
+import { actionErrorText } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
 
 type FormState = {
@@ -173,6 +174,8 @@ export function CreateMaintenanceModal({
   const [form, setForm] = useState<FormState>(init.form);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  /** Lỗi khi tạo thất bại (mạng / máy chủ) – khác lỗi kiểm tra trường. */
+  const [submitError, setSubmitError] = useState('');
   const [draftInfo, setDraftInfo] = useState<string | null>(init.draftAt);
   const [touched, setTouched] = useState({ department: false, shift: false });
   /** Tăng mỗi lần submit lỗi → focus trường lỗi đầu tiên sau khi render. */
@@ -226,6 +229,7 @@ export function CreateMaintenanceModal({
       return;
     }
     setSubmitting(true);
+    setSubmitError('');
     try {
       await onSubmit({
         title: form.title,
@@ -249,6 +253,8 @@ export function CreateMaintenanceModal({
         sourceAlertId: alert?.id,
       });
       clearMaintenanceDraft();
+    } catch (err) {
+      setSubmitError(actionErrorText(err));
     } finally {
       setSubmitting(false);
     }
@@ -515,6 +521,12 @@ export function CreateMaintenanceModal({
       </div>
 
       {/* Tổng quan */}
+      {submitError && (
+        <p role="alert" className="text-sm text-danger-text">
+          {submitError}
+        </p>
+      )}
+
       <dl aria-label="Tổng quan yêu cầu" className="flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-line/30 bg-surface-raised px-4 py-3">
         <div className="flex flex-col gap-0.5">
           <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Tổng quan</dt>

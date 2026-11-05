@@ -17,6 +17,7 @@ import {
   type ReviewInput,
   type ReviewResult,
 } from '@/features/maintenance/review';
+import { actionErrorText } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
 
 const RESULT_TONE = { pass: 'primary', 'needs-info': 'warning', fail: 'danger' } as const;
@@ -80,6 +81,8 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
     setSubmitting(true);
     try {
       await onSubmit(input);
+    } catch (e) {
+      setErrors({ form: actionErrorText(e) });
     } finally {
       setSubmitting(false);
     }

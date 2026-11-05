@@ -84,6 +84,21 @@ describe('AssignModal', () => {
     );
   });
 
+  test('lưu thất bại (máy chủ lỗi) → báo lỗi trong modal, nút mở lại để thử lại, không lọt lỗi ra ngoài', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onSubmit = vi.fn(async () => {
+      throw new Error('Mất kết nối máy chủ');
+    });
+    const { user } = setup({}, onSubmit);
+    await user.click(screen.getByRole('radio', { name: /Lê Thị C/ }));
+    const ok = screen.getByRole('button', { name: 'Xác nhận phân công' });
+    await user.click(ok);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Không thực hiện được thao tác: Mất kết nối máy chủ');
+    expect(screen.getByRole('dialog', { name: 'Phân công người xử lý' })).toBeInTheDocument();
+    expect(ok).not.toHaveAttribute('aria-disabled', 'true');
+    vi.restoreAllMocks();
+  });
+
   test('cảnh báo không chặn (Bận, quá hạn) đọc qua aria-live; hạn < bắt đầu thì chặn', async () => {
     const { user, onSubmit } = setup();
     await user.click(screen.getByRole('radio', { name: /Trần Bình/ }));

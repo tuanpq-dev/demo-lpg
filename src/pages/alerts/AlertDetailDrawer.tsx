@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useId, useRef, useState, type RefObject } fr
 import { Link } from 'react-router-dom';
 import { AlertTriangleIcon, Badge, Button, Checklist, Drawer, EventTimeline, Icon, Textarea, WorkflowStepper, buttonClass, type TimelineEvent } from '@/components';
 import { assetPath } from '@/app/assetRoutes';
+import { actionErrorText, runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { resolveAssetId } from '@/data/assetDetail';
@@ -35,16 +36,16 @@ const AlertUpdateModal = lazy(() => import('./AlertUpdateModal'));
 const AlertCloseModal = lazy(() => import('./AlertCloseModal'));
 
 export type AlertDrawerHandlers = {
-  onAcknowledge: (id: string) => void;
+  onAcknowledge: (id: string) => Promise<unknown> | void;
   /** Phân công / đổi người / cập nhật phân công (modal "Phân công xử lý cảnh báo") – KHÔNG đổi trạng thái. */
   onAssign: (id: string, form: AlertAssignForm) => Promise<unknown> | void;
   onResolve: (id: string, note: string) => Promise<ResolveResult> | ResolveResult;
-  onToggleGuide: (id: string, step: { id: string; text: string }) => void;
-  onAddNote: (id: string, text: string) => void;
+  onToggleGuide: (id: string, step: { id: string; text: string }) => Promise<unknown> | void;
+  onAddNote: (id: string, text: string) => Promise<unknown> | void;
   /** Mở modal "Tạo yêu cầu bảo trì" (trang giữ modal, mở TRÊN drawer). `title` = tên điền sẵn (báo động giả → "Kiểm tra đầu báo …"). */
   onCreateMaintenance: (alert: AlertRecord, opts?: { title?: string }) => void;
   /** "Yêu cầu hỗ trợ" (nút phụ `support`): thêm người phối hợp + lịch sử. */
-  onRequestSupport: (id: string, input: { people: readonly string[]; reason: string }) => void;
+  onRequestSupport: (id: string, input: { people: readonly string[]; reason: string }) => Promise<unknown> | void;
   /** "Cập nhật xử lý" (loại `update.kind = 'alert-update'` – áp suất / gas / cháy) – modal chung, lazy. */
   onUpdate: (id: string, input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
   /** "Xác nhận đóng cảnh báo" (Đã xử lý → Hoàn thành). */
@@ -227,7 +228,7 @@ function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: {
             canAct
               ? (id) => {
                   const s = playbook.steps.find((x) => x.id === id);
-                  if (s) onToggleGuide(a.id, s);
+                  if (s) void runAction(() => onToggleGuide(a.id, s));
                 }
               : undefined
           }
@@ -356,11 +357,19 @@ function NotesBody({
             size="sm"
             className="self-end"
             disabled={!note.text.trim()}
-            onClick={() => {
-              onAddNote(a.id, note.text);
-              note.clear();
-              announce('Đã lưu ghi chú.');
-            }}
+            onClick={() =>
+              void runAction(
+                async () => {
+                  await onAddNote(a.id, note.text);
+                  note.clear();
+                  announce('Đã lưu ghi chú.');
+                },
+                (text) => {
+                  note.fail(text);
+                  announce(text);
+                },
+              )
+            }
           >
             Lưu ghi chú
           </Button>
@@ -410,6 +419,10 @@ function DrawerFooter({
         note.fail('Nhập ghi chú kết quả xử lý trước khi đánh dấu đã xử lý.');
         document.getElementById(NOTE_FIELD_ID(a.id))?.querySelector('textarea')?.focus();
       }
+    } catch (e) {
+      const text = actionErrorText(e);
+      note.fail(text);
+      announce(text);
     } finally {
       setBusy(false);
     }
@@ -480,7 +493,7 @@ function DrawerFooter({
   const due = followUpDue(a, now);
   const primary =
     canAct && canAcknowledge(a) ? (
-      <Button variant="danger" size="lg" className="w-full" onClick={() => onAcknowledge(a.id)}>
+      <Button variant="danger" size="lg" className="w-full" onClick={() => void runAction(() => onAcknowledge(a.id))}>
         Xác nhận cảnh báo
       </Button>
     ) : canAct && canResolve(a) ? (
@@ -544,8 +557,8 @@ function DrawerFooter({
         <SupportRequestModal
           alert={a}
           onClose={() => setModal(null)}
-          onConfirm={(people, reason) => {
-            onRequestSupport(a.id, { people, reason });
+          onConfirm={async (people, reason) => {
+            await onRequestSupport(a.id, { people, reason });
             setModal(null);
             announce(`Đã thêm ${people.join(', ')} làm người phối hợp. Thông báo chưa gửi – chờ backend.`);
           }}

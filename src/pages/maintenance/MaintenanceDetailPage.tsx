@@ -71,6 +71,7 @@ import { HOLD_LABEL, canUpdateProgress, reportedProgressOf, type ProgressFile } 
 import { REVIEW_FAILED_LABEL, resolveReviewer } from '@/features/maintenance/review';
 import { assignMode } from '@/features/maintenance/assign';
 import { NEXT_ACTION_LABEL, WORKFLOW_STEPS, canCancel, workflowPosition } from '@/features/maintenance/workflow';
+import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { daysFromToday } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
@@ -429,8 +430,10 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
                     ? undefined
                     : (itemId) => {
                         const item = r.checklist!.find((c) => c.id === itemId)!;
-                        void toggleChecklist(r.id, itemId);
-                        announce(`${item.done ? 'Bỏ đánh dấu' : 'Đã hoàn thành'}: ${item.text}`);
+                        void runAction(async () => {
+                          await toggleChecklist(r.id, itemId);
+                          announce(`${item.done ? 'Bỏ đánh dấu' : 'Đã hoàn thành'}: ${item.text}`);
+                        });
                       }
                 }
               />
@@ -443,7 +446,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
           <Card title="Ghi chú kỹ thuật" icon={<NotesIcon size={18} className="text-fg-secondary" />} headerVariant="divided" radius="lg">
             <NotesThread
               notes={(r.notes ?? []).map((n) => ({ id: n.id, author: n.author, time: relativeDayTime(n.at, now), text: n.text }))}
-              onAdd={canWrite && r.status !== 'cancelled' ? (text) => void addNote(r.id, text, actor) : undefined}
+              onAdd={canWrite && r.status !== 'cancelled' ? (text) => void runAction(() => addNote(r.id, text, actor)) : undefined}
             />
           </Card>
 
@@ -535,7 +538,7 @@ function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; 
             </Button>
           )}
           {r.status === 'pending' && nextLabel && (
-            <Button variant="outline" onClick={() => void onAdvance()}>
+            <Button variant="outline" onClick={() => void runAction(onAdvance)}>
               {nextLabel}
               <SendIcon size={16} />
             </Button>

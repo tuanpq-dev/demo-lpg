@@ -24,6 +24,7 @@ import { AUTOSAVE_MS, clearDraft, readDraft, writeDraft, type EditorDraft } from
 import { addView, newScene, normalizeScene, uniqueId } from '@/features/scene-editor/ops';
 import { loadScene, redo, setSceneSilently, undo, useDirty, useEditorUi, useSceneDoc, type SceneSource } from '@/features/scene-editor/store';
 import { checkScene } from '@/features/scene-editor/validate';
+import { runAction } from '@/lib/actionError';
 import { isTyping } from '@/lib/isTyping';
 import { AssetLibrary } from './AssetLibrary';
 import { ConfirmDialog, ImportErrorDialog, NameDialog, OpenSceneDialog, RestoreDraftDialog, SaveAsDialog } from './dialogs';
@@ -143,7 +144,7 @@ export default function EditorPage() {
     if (draft) setDialog({ kind: 'restore', draft });
     else {
       const id = params.get('scene');
-      void (id ? openScene(id) : startNew());
+      void runAction(() => (id ? openScene(id) : startNew()), flash);
     }
     // Chỉ chạy một lần khi vào trang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,15 +168,15 @@ export default function EditorPage() {
   );
 
   const openSaveAs = useCallback(() => {
-    void sceneRepository.list().then((l) => setSavedIds(l.map((s) => s.id)));
+    void runAction(async () => setSavedIds((await sceneRepository.list()).map((s) => s.id)), flash);
     setDialog({ kind: 'save-as' });
-  }, []);
+  }, [flash]);
 
   const save = useCallback(() => {
     const cur = useSceneDoc.getState().scene;
     if (ui().source.kind === 'sample' || isSampleScene(cur.id)) return openSaveAs();
-    void doSave(cur.id, cur.name);
-  }, [doSave, openSaveAs]);
+    void runAction(() => doSave(cur.id, cur.name), flash);
+  }, [doSave, openSaveAs, flash]);
 
   // ----- Import / Export -----
   const exportJson = () => {
@@ -310,7 +311,7 @@ export default function EditorPage() {
   const fileBar = (
     <div role="toolbar" aria-label="Tệp cảnh" className="flex flex-wrap items-center gap-2">
       <h1 className="mr-2 text-lg font-semibold text-fg">Scene Editor</h1>
-      <Button variant="ghost" size="sm" icon={<FilePlusIcon />} onClick={() => guard('Tạo cảnh mới?', () => void startNew())}>
+      <Button variant="ghost" size="sm" icon={<FilePlusIcon />} onClick={() => guard('Tạo cảnh mới?', () => void runAction(startNew, flash))}>
         Cảnh mới
       </Button>
       <Button variant="ghost" size="sm" icon={<FolderIcon />} onClick={() => setDialog({ kind: 'open' })}>
@@ -335,7 +336,7 @@ export default function EditorPage() {
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
-          if (f) guard('Import cảnh?', () => void importFile(f));
+          if (f) guard('Import cảnh?', () => void runAction(() => importFile(f), flash));
         }}
       />
       <Button variant="ghost" size="sm" icon={<ExportIcon />} onClick={exportJson}>
@@ -444,12 +445,14 @@ export default function EditorPage() {
         onClose={() => setDialog(null)}
         onOpen={(id) => {
           setDialog(null);
-          void openScene(id);
+          void runAction(() => openScene(id), flash);
         }}
-        onRemove={async (id) => {
-          await sceneRepository.remove(id);
-          flash(`Đã xoá cảnh "${id}" khỏi trình duyệt`);
-        }}
+        onRemove={(id) =>
+          runAction(async () => {
+            await sceneRepository.remove(id);
+            flash(`Đã xoá cảnh "${id}" khỏi trình duyệt`);
+          }, flash)
+        }
       />
       <SaveAsDialog
         open={dialog?.kind === 'save-as'}
@@ -457,7 +460,7 @@ export default function EditorPage() {
         initialName={scene.name}
         existingIds={savedIds}
         onClose={() => setDialog(null)}
-        onSave={(id, name) => void doSave(id, name)}
+        onSave={(id, name) => void runAction(() => doSave(id, name), flash)}
       />
       <NameDialog
         open={dialog?.kind === 'view-name'}
@@ -475,7 +478,7 @@ export default function EditorPage() {
           clearDraft();
           setDialog(null);
           const id = params.get('scene');
-          void (id ? openScene(id) : startNew());
+          void runAction(() => (id ? openScene(id) : startNew()), flash);
         }}
       />
       <ImportErrorDialog

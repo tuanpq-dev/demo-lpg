@@ -12,6 +12,7 @@ import {
 } from '@/features/alerts/assign';
 import { ALERT_LOAD_HINT, MATCH_LABEL, alertAssignWarnings, alertLoadLabel, computeAlertLoads, rankAlertStaff } from '@/features/alerts/assignStaff';
 import { shiftShortLabel } from '@/features/staff/availability';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
 import { DEPARTMENTS, SHIFTS, staffByName, type ShiftId } from '@/mocks/maintenance';
@@ -133,6 +134,8 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     try {
       await onConfirm(f);
       if (single) clearAlertAssignDraft(single.id);
+    } catch (e) {
+      setError(actionErrorText(e));
     } finally {
       setSubmitting(false);
     }

@@ -115,7 +115,8 @@ export function OpenSceneDialog({
   open: boolean;
   dirty: boolean;
   onOpen: (id: string) => void;
-  onRemove: (id: string) => Promise<void>;
+  /** Luôn resolve (lỗi đã báo ở trang) → danh sách tải lại sau khi xoá. */
+  onRemove: (id: string) => Promise<unknown>;
   onClose: () => void;
 }) {
   return open ? <OpenSceneList {...{ dirty, onOpen, onRemove, onClose }} /> : null;

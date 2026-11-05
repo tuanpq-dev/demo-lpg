@@ -29,6 +29,7 @@ import {
   workloadOf,
   type AssignForm,
 } from '@/features/maintenance/assign';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
 
@@ -143,6 +144,8 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
     try {
       await onSubmit(f);
       clearAssignDraft(r.id);
+    } catch (e) {
+      setError(actionErrorText(e));
     } finally {
       setSubmitting(false);
     }

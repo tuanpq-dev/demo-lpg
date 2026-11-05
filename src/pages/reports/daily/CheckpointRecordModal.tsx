@@ -26,6 +26,7 @@ import {
   type ManualValues,
   type ReportRecord,
 } from '@/features/reports';
+import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { prefersReducedMotion } from '@/lib/reducedMotion';
@@ -161,6 +162,8 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
       if (!res.ok) return setError(res.error);
       announce(`Đã xác nhận mốc ${checkpoint} – báo cáo ${r.code}.`);
       onClose();
+    } catch (e) {
+      setError(actionErrorText(e));
     } finally {
       setSubmitting(false);
     }
