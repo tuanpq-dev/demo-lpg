@@ -149,7 +149,7 @@ export function CreateMaintenanceModal({
 }: {
   open: boolean;
   onClose: () => void;
-  /** Danh bạ thiết bị → khu vực (setDeviceDirectory). */
+  /** Danh bạ thiết bị → khu vực (`deriveDeviceDirectory`). */
   devices: readonly { device: string; area: string }[];
   defaultDevice?: string;
   /** Cảnh báo nguồn (mở từ /alerts). */

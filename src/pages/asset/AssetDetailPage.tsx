@@ -49,7 +49,7 @@ import {
   toggleHiddenType,
   useAssetDetail,
 } from '@/data/assetDetail';
-import { setDeviceDirectory, useMaintenance } from '@/data/maintenance';
+import { deriveDeviceDirectory, useMaintenance } from '@/data/maintenance';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import { announce } from '@/lib/announce';
@@ -137,7 +137,7 @@ function AssetDetailPage({ assetId }: { assetId: string }) {
 
   // Modal tạo yêu cầu mở qua URL (?create=1) như /maintenance; thiết bị điền sẵn = tài sản.
   const createOpen = canWrite && events.search.get('create') === '1';
-  const devices = useMemo(() => setDeviceDirectory(maintenance.data ?? [], alerts.data ?? []), [maintenance.data, alerts.data]);
+  const devices = useMemo(() => deriveDeviceDirectory(maintenance.data ?? [], alerts.data ?? []), [maintenance.data, alerts.data]);
 
   useEffect(() => {
     if (!created) return;

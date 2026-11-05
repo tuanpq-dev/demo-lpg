@@ -293,7 +293,8 @@ export type NewMaintenanceInput = {
   title: string;
   description?: string;
   device: string;
-  area?: string;
+  /** Khu vực của thiết bị – form tự điền từ danh bạ (`deriveDeviceDirectory`). */
+  area: string;
   type: MaintenanceType;
   priority: Severity;
   source?: MaintenanceSource;
@@ -349,7 +350,7 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
     title: input.title.trim().slice(0, 160),
     description: input.description?.trim() || undefined,
     device: input.device,
-    area: input.area ?? deviceArea(input.device) ?? 'Khác',
+    area: input.area || 'Khác',
     type: input.type,
     priority: input.priority,
     status: input.assignee ? 'assigned' : 'pending',
@@ -469,16 +470,18 @@ export const FORM_PRIORITY_OPTIONS = [
   { id: 'medium', label: 'Thường', tone: 'neutral' as const },
 ];
 
-/** Danh bạ thiết bị (thiết bị → khu vực) gộp từ bảo trì + cảnh báo. */
-let directory = new Map<string, string>();
-export function setDeviceDirectory(maint: readonly MaintenanceRecord[], alerts: readonly AlertRecord[] = []) {
-  directory = new Map();
-  [...alerts.map((a) => [a.device, a.area] as const), ...maint.map((r) => [r.device, r.area] as const)].forEach(([d, a]) =>
-    directory.set(d, a),
-  );
+export type DeviceDirectoryEntry = { device: string; area: string };
+
+/**
+ * Danh bạ thiết bị → khu vực (ô "Thiết bị" + "Khu vực" của form tạo yêu cầu), gộp từ cảnh báo + bảo trì; trùng thiết bị
+ * thì khu vực của bảo trì thắng; sắp theo mã. Thuần – trang tính bằng `useMemo` rồi truyền vào modal.
+ */
+export function deriveDeviceDirectory(maint: readonly MaintenanceRecord[], alerts: readonly AlertRecord[] = []): DeviceDirectoryEntry[] {
+  const directory = new Map<string, string>();
+  for (const a of alerts) directory.set(a.device, a.area);
+  for (const r of maint) directory.set(r.device, r.area);
   return [...directory.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([device, area]) => ({ device, area }));
 }
-export const deviceArea = (device: string) => directory.get(device);
 
 /** Phòng ban gợi ý theo tiền tố mã thiết bị. */
 export function departmentFor(device: string): (typeof DEPARTMENTS)[number] {

@@ -29,7 +29,7 @@ import { useNow } from '@/lib/useNow';
 import { bulkMessage, linkedMaintenance } from '@/features/alerts/workflow';
 import { bulkCloseMessage, planBulkClose } from '@/features/alerts/close';
 import { followUpConfig, useCloseConditions } from '@/data/alertDetail';
-import { DuplicateFromAlertError, setDeviceDirectory, useMaintenance } from '@/data/maintenance';
+import { DuplicateFromAlertError, deriveDeviceDirectory, useMaintenance } from '@/data/maintenance';
 import {
   ALERT_PARAMS,
   RANGE_OPTIONS,
@@ -160,7 +160,7 @@ export default function AlertsPage() {
   const maintRecords = maintenance.data;
   const linkedOf = (id: string) => (maintRecords ? linkedMaintenance(id, maintRecords) : undefined);
   const openLinked = openAlert ? linkedOf(openAlert.id) : undefined;
-  const devices = useMemo(() => setDeviceDirectory(maintRecords ?? [], all), [maintRecords, all]);
+  const devices = useMemo(() => deriveDeviceDirectory(maintRecords ?? [], all), [maintRecords, all]);
 
   const tabs: TabItem[] = [
     { id: 'all', label: 'Tất cả', count: tabCounts.all },

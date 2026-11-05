@@ -50,7 +50,7 @@ import {
   matchMaintenance,
   sortMaintenance,
   useMaintenance,
-  setDeviceDirectory,
+  deriveDeviceDirectory,
   type MaintenanceRecord,
   type MaintenanceTab,
   type MaintenanceType,
@@ -195,7 +195,7 @@ export default function MaintenancePage() {
   const closeAssign = () => setExtra({ assign: null });
 
   /** Danh bạ thiết bị → khu vực (bảo trì + cảnh báo) cho ô "Thiết bị"/"Khu vực" của form. */
-  const devices = useMemo(() => setDeviceDirectory(all, alerts.data ?? []), [all, alerts.data]);
+  const devices = useMemo(() => deriveDeviceDirectory(all, alerts.data ?? []), [all, alerts.data]);
 
   useEffect(() => {
     if (!notice) return;
