@@ -12,8 +12,8 @@
 ## 2. Lệnh
 - `npm run dev` · `npm run typecheck` · `npm run lint` · `npm run build` · `npm test` (watch) · `npm run test:run` (gồm `packages/shared`) · `npm run test:coverage` · `npx vite preview --port 4317`.
 - Không backend: `VITE_AUTH=off npx vite` (phiên giả admin). Backend: trong `../demo-lpg-server` (`npm run db:up` · `npm run dev`).
-- Trước commit: `npm run test:run`, `npm run lint`, `npm run typecheck`. Node 22 chạy được cả bộ; Node 26 lỗi `AbortSignal` (undici ↔ jsdom) → dùng `npx -p node@20 node node_modules/vitest/vitest.mjs run`.
-- Lỗi có sẵn (cả trên `main` sạch): 2 test `MaintenanceDetailPage` (luồng nghiệm thu) fail. `npm ci` khi dev server đang chạy hỏng giữa chừng → dừng dev server trước.
+- Trước commit: `npm run test:run`, `npm run lint`, `npm run typecheck`. Node ghim 20/22 (`.nvmrc` = 20 như Netlify, `engines`); Node 26 lỗi `AbortSignal` (undici ↔ jsdom) ở test dùng router → `npm run test:node20`.
+- 05/11/2026: cả bộ test xanh trên Node 20 và 22 (2 test `MaintenanceDetailPage` từng ghi "fail sẵn" nay pass). `npm ci` khi dev server đang chạy hỏng giữa chừng → dừng dev server trước.
 - Test trình duyệt: playwright-core cài trong scratchpad (không thêm dependency), Linux dùng `/usr/bin/brave-browser`; script ngoài repo.
 
 ## 3. Cấu trúc thư mục chính (chi tiết: `GUIDE.md` mục 2 + `docs/guide/app-structure.md` Phụ lục A)
