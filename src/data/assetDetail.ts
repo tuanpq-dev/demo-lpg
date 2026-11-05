@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
 import { tagSignal } from '@/features/live/signal';
 import type { LiveData } from '@/features/live/types';
 import { fieldStatus } from '@/features/scene/fields';
@@ -11,7 +10,7 @@ import { isoDay } from '@/mocks/maintenance';
 import { systemStatus } from '@/mocks/overview';
 import { useLiveData } from './live';
 import { dueLabel, isOverdue, type MaintenanceRecord } from './maintenance';
-import type { QueryState } from './overview';
+import { useQuery } from '@/lib/useQuery';
 
 export type { AssetEvent, AssetEventStatus, AssetEventType, AssetMock };
 export type { PlaceholderValue } from '@/mocks/assets';
@@ -235,25 +234,10 @@ export function deriveMaintenanceSummary(rows: readonly MaintenanceRecord[], dev
  * trực tiếp đã ghép (`deriveAssetLive`, tính lại mỗi lần render để "Mất tín hiệu" đúng mốc 10 s).
  */
 export function useAssetDetail(assetId: string) {
-  const [state, setState] = useState<QueryState<AssetDetail>>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setState({ status: 'loading' });
-    fetchAssetDetail(assetId)
-      .then((data) => !cancelled && setState({ status: 'success', data }))
-      .catch((error: unknown) =>
-        !cancelled && setState({ status: 'error', error: error instanceof Error ? error : new Error(String(error)) }),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, [assetId, attempt]);
+  const state = useQuery(assetId, () => fetchAssetDetail(assetId));
 
   const tags = state.data ? Object.values(state.data.tags) : [];
   const liveData = useLiveData(tags, { enabled: !!state.data });
   const live = state.data ? deriveAssetLive(state.data, liveData, Date.now()) : undefined;
-  const refetch = useCallback(() => setAttempt((n) => n + 1), []);
-  return { ...state, refetch, live, liveData };
+  return { ...state, live, liveData };
 }

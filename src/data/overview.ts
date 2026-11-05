@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
 import type {
   AlertItemData,
   AssetRowData,
@@ -14,6 +13,7 @@ import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { LiveData } from '@/features/live/types';
 import { fieldStatus, FIELD_META, formatField } from '@/features/scene/fields';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
+import { useQuery } from '@/lib/useQuery';
 import * as mock from '@/mocks/overview';
 import type { KpiMock } from '@/mocks/types';
 
@@ -102,28 +102,9 @@ export function applyLive(data: OverviewData, live: LiveData | undefined, now: n
   return { ...data, kpis, watchlist, map: { ...data.map, markers } };
 }
 
-export type QueryState<T> =
-  | { status: 'loading'; data?: undefined; error?: undefined }
-  | { status: 'error'; data?: undefined; error: Error }
-  | { status: 'success'; data: T; error?: undefined };
+export type { QueryState } from '@/lib/useQuery';
 
-/** Hook dữ liệu màn Tổng quan: `{ status, data, error, refetch }`. */
+/** Hook dữ liệu màn Tổng quan: `{ status, data, error, refetch }` (refetch → về loading). */
 export function useOverviewData() {
-  const [state, setState] = useState<QueryState<OverviewData>>({ status: 'loading' });
-
-  const load = useCallback(() => {
-    let cancelled = false;
-    fetchOverview()
-      .then((data) => !cancelled && setState({ status: 'success', data }))
-      .catch((error: unknown) =>
-        !cancelled && setState({ status: 'error', error: error instanceof Error ? error : new Error(String(error)) }),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => load(), [load]);
-
-  return { ...state, refetch: load };
+  return useQuery('overview', fetchOverview);
 }

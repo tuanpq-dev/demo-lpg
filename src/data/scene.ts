@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
 import type { SceneConfig } from '@/features/scene/types';
-import type { QueryState } from './overview';
+import { useQuery } from '@/lib/useQuery';
 import { sceneRepository, type SceneSummary } from './sceneRepository';
 
 // ---------------- Cảnh 3D ----------------
@@ -30,25 +29,19 @@ export async function fetchScene(sceneId: string): Promise<SceneConfig> {
 
 export type SceneListItem = SceneSummary & { sample: boolean };
 
-/** Cảnh mẫu + cảnh đã lưu (cho hộp thoại "Mở" của Editor); `refetch` sau khi lưu/xoá. */
+async function fetchSceneList(): Promise<SceneListItem[]> {
+  const saved = await sceneRepository.list();
+  const samples = SCENE_IDS.map((id): SceneListItem => ({ id, name: id, version: 0, objectCount: 0, updatedAt: '', sample: true }));
+  return [...saved.map((s) => ({ ...s, sample: false })), ...samples];
+}
+
+/**
+ * Cảnh mẫu + cảnh đã lưu (cho hộp thoại "Mở" của Editor); `refetch` sau khi lưu/xoá (về "Đang tải…").
+ * `items` = null khi đang tải hoặc lỗi; lỗi đọc kho (localStorage hỏng/bị chặn) → `error`.
+ */
 export function useSceneList() {
-  const [items, setItems] = useState<SceneListItem[] | null>(null);
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    void sceneRepository.list().then((saved) => {
-      if (cancelled) return;
-      const samples = SCENE_IDS.map(
-        (id): SceneListItem => ({ id, name: id, version: 0, objectCount: 0, updatedAt: '', sample: true }),
-      );
-      setItems([...saved.map((s) => ({ ...s, sample: false })), ...samples]);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
-  const refetch = useCallback(() => setAttempt((n) => n + 1), []);
-  return { items, refetch };
+  const q = useQuery('scene-list', fetchSceneList);
+  return { items: q.status === 'success' ? q.data : null, error: q.error, refetch: q.refetch };
 }
 
 /** Danh sách tag cảm biến hợp lệ (binding trong Editor + kiểm tra) – xem src/data/live. */
@@ -56,23 +49,6 @@ export { SENSOR_TAGS } from './live';
 
 /** Hook cảnh 3D: `{ status, data, error, refetch }`; đổi sceneId → tải lại. */
 export function useSceneConfig(sceneId: string) {
-  const [state, setState] = useState<QueryState<SceneConfig>>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setState({ status: 'loading' });
-    fetchScene(sceneId)
-      .then((data) => !cancelled && setState({ status: 'success', data }))
-      .catch((error: unknown) =>
-        !cancelled && setState({ status: 'error', error: error instanceof Error ? error : new Error(String(error)) }),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, [sceneId, attempt]);
-
-  const refetch = useCallback(() => setAttempt((n) => n + 1), []);
-  return { ...state, refetch };
+  return useQuery<SceneConfig>(sceneId, () => fetchScene(sceneId));
 }
 

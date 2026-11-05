@@ -123,11 +123,16 @@ export function OpenSceneDialog({
 }
 
 function OpenSceneList({ dirty, onOpen, onRemove, onClose }: Omit<Parameters<typeof OpenSceneDialog>[0], 'open'>) {
-  const { items, refetch } = useSceneList();
+  const { items, error, refetch } = useSceneList();
   return (
     <Modal open onClose={onClose} title="Mở cảnh" size="lg" description="Cảnh đã lưu trong trình duyệt và cảnh mẫu (mẫu chỉ đọc – Lưu sẽ hỏi id mới).">
       {dirty && <p className="mb-3 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">Cảnh đang sửa có thay đổi chưa lưu – mở cảnh khác sẽ bỏ các thay đổi đó.</p>}
-      {!items ? (
+      {error ? (
+        <div role="alert" className="flex flex-col items-start gap-3">
+          <p className="text-base text-danger-text">Không đọc được danh sách cảnh: {error.message}</p>
+          <Button onClick={refetch}>Thử lại</Button>
+        </div>
+      ) : !items ? (
         <p className="text-base text-fg-muted">Đang tải…</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line/30">
