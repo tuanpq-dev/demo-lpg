@@ -23,7 +23,7 @@ import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useAlerts } from '@/data/alerts';
 import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
@@ -343,12 +343,7 @@ export default function MaintenancePage() {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được danh sách bảo trì" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <Button onClick={refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được danh sách bảo trì" error={error} onRetry={refetch} />
       </Page>
     );
   }

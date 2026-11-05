@@ -1,8 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, PageHeader } from '@/components';
+import { PageHeader } from '@/components';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
 import { findDailyReport, reportDetailPath } from '@/data/dailyReport';
 import { useReports } from '@/data/reports';
@@ -87,12 +87,7 @@ export default function ReportsPage() {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được danh sách báo cáo" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <Button onClick={refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được danh sách báo cáo" error={error} onRetry={refetch} />
       </Page>
     );
   }

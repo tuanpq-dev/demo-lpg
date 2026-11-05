@@ -4,7 +4,7 @@ import { assetPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { AUTH_MODE } from '@/api/auth';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import {
   AlertCard,
   AlertTriangleIcon,
@@ -116,12 +116,7 @@ export default function MaintenanceDetailRoute() {
     return (
       <Page pageHeader={header}>
         {status === 'error' ? (
-          <Card title="Không tải được yêu cầu bảo trì" headerVariant="plain" tone="danger">
-            <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-            <Button onClick={refetch} className="self-start">
-              Thử lại
-            </Button>
-          </Card>
+          <PageError title="Không tải được yêu cầu bảo trì" error={error} onRetry={refetch} />
         ) : (
           <>
             <Placeholder label="Đang tải…" height={94} />

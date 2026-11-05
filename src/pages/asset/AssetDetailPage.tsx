@@ -5,7 +5,7 @@ import { DEFAULT_ASSET_ID, assetPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { ClockButton, LiveDataButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { assetV101Image, plantMapImage } from '@/assets/digital-twin';
 import {
@@ -174,13 +174,7 @@ function AssetDetailPage({ assetId }: { assetId: string }) {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được tài sản" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <div className="flex gap-2">
-            <Button onClick={refetch}>Thử lại</Button>
-            <Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>
-          </div>
-        </Card>
+        <PageError title="Không tải được tài sản" error={error} onRetry={refetch} actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>} />
       </Page>
     );
   }

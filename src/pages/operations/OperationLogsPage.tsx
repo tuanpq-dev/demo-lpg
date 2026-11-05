@@ -2,7 +2,6 @@ import { useCallback, useId, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Badge,
-  Button,
   Card,
   DataTable,
   FilterBar,
@@ -18,7 +17,7 @@ import {
 } from '@/components';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useOperationLogs } from '@/data/operationLogs';
 import {
@@ -115,12 +114,7 @@ export default function OperationLogsPage() {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được nhật ký vận hành" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <Button onClick={refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được nhật ký vận hành" error={error} onRetry={refetch} />
       </Page>
     );
   }

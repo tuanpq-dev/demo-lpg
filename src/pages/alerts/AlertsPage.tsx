@@ -19,7 +19,7 @@ import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
@@ -233,12 +233,7 @@ export default function AlertsPage() {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được danh sách cảnh báo" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <Button onClick={refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được danh sách cảnh báo" error={error} onRetry={refetch} />
       </Page>
     );
   }

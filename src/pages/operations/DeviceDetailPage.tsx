@@ -2,8 +2,8 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DEFAULT_OPERATION_DEVICE, operationDevicePath } from '@/app/assetRoutes';
 import { RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
-import { Button, Card, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StatusPill } from '@/components';
+import { PageError, Placeholder } from '@/app/Placeholder';
+import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StatusPill } from '@/components';
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
 import { useMaintenance } from '@/data/maintenance';
@@ -96,13 +96,7 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được thiết bị" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <div className="flex gap-2">
-            <Button onClick={refetch}>Thử lại</Button>
-            <Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>
-          </div>
-        </Card>
+        <PageError title="Không tải được thiết bị" error={error} onRetry={refetch} actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>} />
       </Page>
     );
   }
