@@ -191,7 +191,8 @@ Link tới trang chi tiết: dùng `assetPath(id)` (`src/app/assetRoutes.ts`, fi
 
 ```
 URL /map/V-101
-  → AssetDetailRoute (chuẩn hoá mã / không tìm thấy) → AssetDetailPage (src/pages/asset/AssetDetailPage.tsx)
+  → AssetDetailRoute (src/pages/asset/AssetDetailPage.tsx – chuẩn hoá mã / không tìm thấy) → AssetDetail (src/pages/asset/detail/:
+    AssetKpiSection · StorageCard · AssetAside · AssetEventsCard · assetView (hàm hiển thị, tankLayerItems) · useAssetCreateRequest)
       useAssetDetail('V-101')            src/data/assetDetail.ts
         ├─ fetchAssetDetail → mocks/assets.ts (kích thước bồn, định mức, ngưỡng, tag, số tạm) + sự kiện
         ├─ useLiveData(4 tag của V-101)  → TagValue
