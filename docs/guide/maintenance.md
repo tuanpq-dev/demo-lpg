@@ -62,7 +62,10 @@ Theo ảnh `scratch/figma-ref/mt-detail-design.png` (MT-00128, chưa có node Fi
 
 ```
 URL /maintenance/:id
-  → MaintenanceDetailRoute (src/pages/maintenance/MaintenanceDetailPage.tsx)
+  → MaintenanceDetailRoute (src/pages/maintenance/MaintenanceDetailPage.tsx – tải / không tìm thấy / chuẩn hoá mã)
+  → MaintenanceDetail (src/pages/maintenance/detail/): DetailHeader + DetailStepper · GeneralInfoCard · WorkCards
+    (nội dung, checklist, ghi chú, tệp, lịch sử, kết quả) · DetailAside · LiveCards (hạn chót, thiết bị liên quan) ·
+    DetailActionBar · DetailModals; useDetailDialog (?submit= / ?review= / ?assign= mở sẵn rồi bỏ khỏi URL) + useChecklistFocus
       useMaintenance()                    src/data/maintenance.ts  (store chung với danh sách)
         ├─ advance(id, actor)  → advanceRecord   (pending → assigned → in-progress → review → done, một bước, + lịch sử)
         ├─ cancel(id, reason)  → cancelRecord    (khi chưa xong; cancelledFrom = bước đã tới)
