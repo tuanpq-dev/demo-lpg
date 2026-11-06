@@ -79,8 +79,8 @@ export function ChecklistCard({ record: r, canWrite, focusRef, onToggle }: Check
   );
 }
 
-/** "Ghi chú kỹ thuật": luồng ghi chú; `onAdd` thiếu = chỉ đọc. */
-export function NotesCard({ record: r, now, onAdd }: { record: MaintenanceRecord; now: Date; onAdd: ((text: string) => void) | undefined }) {
+/** "Ghi chú kỹ thuật": luồng ghi chú; `onAdd` (async, lỗi = reject) thiếu = chỉ đọc. */
+export function NotesCard({ record: r, now, onAdd }: { record: MaintenanceRecord; now: Date; onAdd: ((text: string) => Promise<unknown>) | undefined }) {
   return (
     <Card title="Ghi chú kỹ thuật" icon={<NotesIcon size={18} className={ICON} />} headerVariant="divided" radius="lg">
       <NotesThread notes={(r.notes ?? []).map((n) => ({ id: n.id, author: n.author, time: relativeDayTime(n.at, now), text: n.text }))} onAdd={onAdd} />

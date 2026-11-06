@@ -22,7 +22,7 @@ import { AttachmentsCard, ChecklistCard, HistoryCard, NotesCard, ResultCard, Wor
  * Chi tiết yêu cầu bảo trì – ảnh MT-00128 (public/figma-ref/mt-detail-design.png, chưa có node Figma).
  * Header + stepper full-width · lưới 2 cột 7fr/3fr (≥ wide: cột phải `--mt-aside-width`), dưới xl xếp chồng ·
  * thanh hành động dính đáy. Mọi số liệu suy từ bản ghi (`useMaintenance`), cảnh báo (`useAlerts`), live (`useLiveData`).
- * Thao tác ghi nhanh (Tiếp nhận, tick checklist, thêm ghi chú) qua `runAction` – lỗi hiện toast.
+ * Thao tác ghi nhanh (Tiếp nhận, tick checklist; thêm ghi chú trong NotesThread) qua `runAction` – lỗi hiện toast.
  */
 export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; listUrl: string }) {
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceR
           <GeneralInfoCard record={r} now={now} overdue={overdue} />
           <WorkContentCard record={r} />
           <ChecklistCard record={r} canWrite={canWrite} focusRef={checklistRef} onToggle={onToggle} />
-          <NotesCard record={r} now={now} onAdd={canWrite && r.status !== 'cancelled' ? (text) => void runAction(() => addNote(r.id, text, actor)) : undefined} />
+          <NotesCard record={r} now={now} onAdd={canWrite && r.status !== 'cancelled' ? (text) => addNote(r.id, text, actor) : undefined} />
           <AttachmentsCard record={r} />
           <HistoryCard record={r} now={now} />
           <ResultCard record={r} />

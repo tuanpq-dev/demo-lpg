@@ -164,7 +164,7 @@ describe('chi tiết bảo trì – thao tác ghi: lỗi rồi thành công (đ�
     expect(screen.getByRole('checkbox', { name })).toBeChecked();
   });
 
-  test('thêm ghi chú: lỗi → toast lỗi, ghi chú không vào danh sách; lần sau → hiện trong luồng', async () => {
+  test('thêm ghi chú: lỗi → toast lỗi, ghi chú không vào danh sách, ô nhập giữ nội dung; lần sau → hiện trong luồng', async () => {
     const user = userEvent.setup();
     renderAt('/maintenance/MT-00128');
     await screen.findByRole('heading', { level: 1, name: TITLE });
@@ -174,6 +174,8 @@ describe('chi tiết bảo trì – thao tác ghi: lỗi rồi thành công (đ�
     await user.click(screen.getByRole('button', { name: 'Thêm ghi chú' }));
     await toastShown();
     expect(within(notes()).queryByText('Ghi chú lỗi')).toBeNull();
+    // Đổi có chủ đích (06/11/2026): lỗi → ô nhập giữ nội dung để thử lại (trước: bị xoá).
+    expect(screen.getByRole('textbox', { name: 'Ghi chú mới' })).toHaveValue('Ghi chú lỗi');
 
     await user.clear(screen.getByRole('textbox', { name: 'Ghi chú mới' }));
     await user.type(screen.getByRole('textbox', { name: 'Ghi chú mới' }), 'Đã siêu âm xong.');
