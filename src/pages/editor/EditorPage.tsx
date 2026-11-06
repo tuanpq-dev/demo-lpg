@@ -6,6 +6,7 @@ import type { SceneViewerHandle } from '@/features/scene';
 import { addView } from '@/features/scene-editor/ops';
 import { useDirty, useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { checkScene } from '@/features/scene-editor/validate';
+import { useNotice } from '@/lib/useNotice';
 import { AssetLibrary } from './AssetLibrary';
 import { EditorDialogs, type EditorDialog } from './EditorDialogs';
 import { EditorFileBar } from './EditorFileBar';
@@ -14,7 +15,7 @@ import { EditorStatusBar } from './EditorStatusBar';
 import { EditorViewport } from './EditorViewport';
 import { Outliner } from './Outliner';
 import { useEditorActions, type DeleteImpact } from './useEditorActions';
-import { useDraftAutosave, useLeaveGuard, useNotice, usePruneSelection } from './useEditorSession';
+import { useDraftAutosave, useLeaveGuard, usePruneSelection } from './useEditorSession';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { useSceneFile } from './useSceneFile';
 
