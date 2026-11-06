@@ -7,7 +7,7 @@
 - Dashboard giám sát hệ thống LPG: Tổng quan · Cảnh báo · Bảo trì · Chi tiết tài sản · Scene Editor 3D. Dựng từ Figma, dữ liệu mock (thay bằng API sau).
 - Vite 5 · React 18 · TS strict · Tailwind 3.4 · react-router 6 · recharts · three + R3F + drei (chunk lazy `SceneViewer`) · postprocessing (lazy) · zod · zustand + zundo (chỉ Editor). Alias `@/` → `src/`.
 - npm workspaces: gốc = frontend; `packages/shared` (`@demo-lpg/shared`, kiểu + zod dùng chung). **Backend ở repo riêng `../demo-lpg-server`** (NestJS + Prisma/PostgreSQL, có CLAUDE.md riêng) phụ thuộc shared qua `file:../demo-lpg/packages/shared` → không đổi tên/di chuyển `packages/shared`.
-- Deploy SPA Netlify: `netlify.toml` (một nguồn cấu hình, `/*` → `/index.html` 200, Node 20, `VITE_AUTH = "off"` cho demo tĩnh). Không thêm `public/_redirects`; giữ `base` Vite `/`.
+- Deploy SPA: Netlify `netlify.toml` · Vercel `vercel.json` (cùng thiết lập: build, `dist`, `VITE_AUTH=off` cho demo tĩnh, mọi route → `/index.html`; đổi một nơi thì đổi cả hai). Không thêm `public/_redirects`; giữ `base` Vite `/`.
 
 ## 2. Lệnh
 - `npm run dev` · `npm run typecheck` · `npm run lint` · `npm run build` · `npm test` (watch) · `npm run test:run` (gồm `packages/shared`) · `npm run test:coverage` · `npx vite preview --port 4317`.

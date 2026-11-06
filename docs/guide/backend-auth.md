@@ -13,7 +13,7 @@ Backend (NestJS + Prisma/PostgreSQL) ở **repo riêng** `../demo-lpg-server` (c
 | Biến | Ở đâu | Giá trị |
 |---|---|---|
 | `VITE_API_URL` | `.env.development` (commit sẵn) · Netlify: Site settings → Environment variables · ghi đè cục bộ: `.env.development.local` | Gốc URL backend, không "/" cuối. Dev: `http://localhost:3000` |
-| `VITE_AUTH` | `.env` / `.env.local` / `netlify.toml` | `api` (mặc định) · `off` = không đăng nhập, phiên giả admin (demo tĩnh) |
+| `VITE_AUTH` | `.env` / `.env.local` / `netlify.toml` / `vercel.json` (`buildCommand`) | `api` (mặc định) · `off` = không đăng nhập, phiên giả admin (demo tĩnh) |
 
 Mẫu: `.env.example`. Thiếu `VITE_API_URL` khi `VITE_AUTH=api` → mọi gọi API báo `CONFIG_ERROR` ("Chưa cấu hình địa chỉ máy chủ").
 
