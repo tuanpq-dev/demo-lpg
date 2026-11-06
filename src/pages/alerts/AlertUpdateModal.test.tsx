@@ -162,4 +162,19 @@ describe('AlertUpdateModal – các khối chưa phủ ở test drawer', () => {
     expect(within(m).queryByText('Không thực hiện được thao tác: mất kết nối')).toBeNull();
     expect(save(m)).toHaveAttribute('aria-disabled', 'true');
   });
+
+  test('lỗi trả về lúc lưu ({ ok: false }) chỉ đúng với giá trị lúc đó: sửa một ô → lỗi biến mất, nút lưu hết khoá', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn<Submit>(() => ({ ok: false, errors: { state: 'Trạng thái đã thay đổi ở nơi khác.' } }));
+    const { m } = open(onSubmit);
+    await user.click(save(m));
+    expect(await within(m).findByText('Trạng thái đã thay đổi ở nơi khác.')).toBeInTheDocument();
+    expect(save(m)).toHaveAttribute('aria-disabled', 'true');
+
+    await user.type(within(m).getByRole('textbox', { name: /Nguyên nhân xử lý/ }), 'x');
+    expect(within(m).queryByText('Trạng thái đã thay đổi ở nơi khác.')).toBeNull();
+    expect(within(m).queryByText('Chưa lưu được – còn thiếu:')).toBeNull();
+    expect(save(m)).not.toHaveAttribute('aria-disabled');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
 });
