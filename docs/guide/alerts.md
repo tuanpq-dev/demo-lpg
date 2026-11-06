@@ -209,7 +209,9 @@ Playground mục 16 (`#alert-assign`): modal một / đổi người / không c�
 
 ```
 Drawer (Đang xử lý) → "Cập nhật xử lý" (Button info) → AlertUpdateModal (pages/alerts, React.lazy → chunk riêng, size xl,
-header + footer cố định, thân cuộn; < lg xếp 1 cột)
+header + footer cố định, thân cuộn; < lg xếp 1 cột). Mỗi khối dưới đây là một component trong `pages/alerts/update/`
+(UpdateSummary, UpdateStateSection, UpdateInspectionSection, UpdateReadingsSection, UpdateVerificationFieldset, UpdateCauseFields,
+UpdateFilesSection, UpdateIssueSection, UpdateFollowUpSection); state + kiểm tra = `useAlertUpdateForm` (reducer + useFormModal).
   ├─ Thẻ đầu: InfoGrid (mã, nội dung, thiết bị = tên tài sản, khu vực, mức độ, người xử lý, trạng thái, thời gian, giá trị lúc cảnh báo, ngưỡng)
   ├─ Trạng thái xử lý: StatusOptionGroup inline 5 ô (columns={5}) – xem bảng map bên dưới; "Đã xử lý" khoá (aria-disabled + lý do hiện trên màn hình)
   │    Tạm dừng → Textarea lý do · Cần hỗ trợ → StaffList compact (SUPPORT_STAFF, dùng chung "Yêu cầu hỗ trợ" của gas) + lý do
