@@ -4,7 +4,8 @@
  * từ đây thì logic quy trình/bộ lọc/KPI ở `data/alerts.ts` chỉ nằm trong chunk các trang dùng nó.
  */
 import { createCollectionStore } from '@/lib/createCollectionStore';
-import { alertRecords, type AlertRecord } from '@/mocks/alerts';
+import { alertRecords } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 
 let db: AlertRecord[] = alertRecords.map((a) => ({ ...a }));
 

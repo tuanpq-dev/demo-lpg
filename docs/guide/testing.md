@@ -30,7 +30,7 @@ Tách nguyên văn từ `GUIDE.md` (28/10/2026) – số mục giữ như cũ (4
 4. Component: `render` + `userEvent` + truy vấn theo vai trò/tên (`getByRole('tab', { name: … })`) – đồng thời kiểm tra a11y.
 5. `npm run test:run` và `npm run lint` phải sạch trước khi commit; hàm logic mới có test trong cùng commit.
 
-**Node cho test:** máy dev hiện có Node 26 – 10 test dùng router (`createMemoryRouter`) lỗi `AbortSignal` (undici ↔ jsdom), không phải lỗi mã. Chạy bằng Node 20 (bản Netlify): `npx -p node@20 node node_modules/vitest/vitest.mjs run` (hoặc `nvm use 20`).
+**Node cho test:** máy dev hiện có Node 26 – 10 test dùng router (`createMemoryRouter`) lỗi `AbortSignal` (undici ↔ jsdom), không phải lỗi mã. Chạy bằng Node 20 (bản Netlify): `npm run test:node20` (= `npx -y -p node@20 node node_modules/vitest/vitest.mjs run`) hoặc `nvm use` (đọc `.nvmrc`). `package.json` `engines` = Node 20/22 (npm cảnh báo `EBADENGINE` trên Node khác).
 
 **Hiện có** (360 test FE + shared, 26/10/2026; backend 61 ở repo `../demo-lpg-server`): mức bồn → thể tích, giờ nhà máy + quá hạn bảo trì, validate cảnh (zod + luật), migration, mất tín hiệu, bộ lọc/đếm cảnh báo, `useTableFilters`, thao tác Editor (`ops`), `applyLive`, `announce`, `useReducedMotion`, `tokens`; component Tabs/SegmentedControl, Select, DataTable, modal tạo yêu cầu bảo trì.
 

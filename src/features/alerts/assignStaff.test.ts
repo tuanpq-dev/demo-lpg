@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { AlertRecord } from '@/mocks/alerts';
-import type { StaffMember } from '@/mocks/maintenance';
+import type { AlertRecord } from '@/features/alerts/types';
+import type { StaffMember } from '@/features/staff/org';
 import { alertAssignWarnings, alertLoadLabel, alertLoadOf, computeAlertLoads, rankAlertStaff } from './assignStaff';
 
 const alert = (id: string, patch: Partial<AlertRecord> = {}): AlertRecord => ({

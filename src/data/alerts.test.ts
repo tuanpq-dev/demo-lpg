@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import {
   acknowledgeAlerts,
   alertBadgeStatus,
@@ -24,7 +24,7 @@ import { alertDateTimeLabel, alertGauge, alertMetric, alertOccurredAt, alertPlay
 import { alertRecords } from '@/mocks/alerts';
 import { maintenanceRecords } from '@/mocks/maintenance';
 import { HEAT_DETECTORS, nearbySensor, sensorsInArea } from '@/mocks/sensors';
-import { areaLabel } from '@/mocks/areas';
+import { areaLabel } from '@/features/plant/areas';
 import { alertKind } from './alertDetail';
 
 const alert = (id: string, patch: Partial<AlertRecord> = {}): AlertRecord => ({

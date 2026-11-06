@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Modal, Textarea } from '@/components';
+import { runAction } from '@/lib/actionError';
 
 /**
  * Đóng hàng loạt (chưa có thiết kế – dựng theo token): MỘT ghi chú kết luận chung bắt buộc; chỉ dòng Đã xử lý ĐỦ 3 điều
@@ -15,10 +16,12 @@ export function AlertBulkCloseModal({
   /** "bỏ qua 2 (1 chưa đủ điều kiện hệ thống; 1 …)" – null khi không bỏ dòng nào. */
   skippedText: string | null;
   onClose: () => void;
-  onConfirm: (note: string) => void;
+  onConfirm: (note: string) => Promise<unknown> | void;
 }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();
+  /** Lỗi khi đóng thất bại (mạng / máy chủ). */
+  const [submitError, setSubmitError] = useState('');
   return (
     <Modal
       open
@@ -33,7 +36,8 @@ export function AlertBulkCloseModal({
           setError('Nhập ghi chú kết luận chung cho cả lô.');
           return;
         }
-        onConfirm(note);
+        setSubmitError('');
+        void runAction(() => onConfirm(note), setSubmitError);
       }}
       footerStart={
         <Button variant="plain" onClick={onClose}>
@@ -60,6 +64,11 @@ export function AlertBulkCloseModal({
         error={error}
         hint="Lưu thành ghi chú kết luận của từng cảnh báo trong lô."
       />
+      {submitError && (
+        <p role="alert" className="text-sm text-danger-text">
+          {submitError}
+        </p>
+      )}
     </Modal>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { MaintenanceChecklistItem } from '@/mocks/maintenance';
+import type { MaintenanceChecklistItem } from '@/features/maintenance/types';
 import { checklistLock, checklistProgress, toggleChecklistItem } from './checklist';
 
 const item = (id: string, patch: Partial<MaintenanceChecklistItem> = {}): MaintenanceChecklistItem => ({ id, text: id, done: false, ...patch });

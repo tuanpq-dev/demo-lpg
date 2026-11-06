@@ -2,7 +2,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { AlertAssignModal } from './AlertAssignModal';
 
 /** 10:45 giờ nhà máy – Ca 1 đang làm; Nguyễn Văn A / Lê Thị C / Hoàng Minh E (Ca 2), Võ Thị F (Ca 3) Ngoài ca. */

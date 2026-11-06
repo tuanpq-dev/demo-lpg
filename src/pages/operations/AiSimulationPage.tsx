@@ -4,7 +4,7 @@ import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, P
 import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { SIMULATION_REFERENCE_TAGS, startSimulation, useSimulation } from '@/data/simulation';
 import { activeSessionOf, startBlocker } from '@/features/simulation/monitor';
@@ -137,12 +137,7 @@ export default function AiSimulationPage() {
   if (sim.status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được kịch bản mô phỏng" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{sim.error.message}</p>
-          <Button onClick={sim.refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được kịch bản mô phỏng" error={sim.error} onRetry={sim.refetch} />
       </Page>
     );
   }

@@ -6,7 +6,8 @@ import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router-d
 import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
 import { liveSimulator } from '@/data/live';
-import { alertRecords, type AlertRecord } from '@/mocks/alerts';
+import { alertRecords } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import AlertsPage from './AlertsPage';
 import AlertCloseModal from './AlertCloseModal';
 

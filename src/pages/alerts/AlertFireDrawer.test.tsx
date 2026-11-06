@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
@@ -40,6 +40,14 @@ const TITLE = 'Phát hiện tín hiệu báo cháy tại trạm hóa hơi';
 const drawer = () => screen.findByRole('dialog', { name: TITLE });
 const LONG = { timeout: 6000 };
 const FIRE_MODAL = 'Cập nhật xử lý cảnh báo báo cháy';
+/** Chờ modal lazy (khung chung, nặng) hiện ra: chạy cả bộ song song có lúc > 6 s – vẫn dưới testTimeout 30 s. */
+const MODAL_WAIT = { timeout: 20000 };
+
+// Modal "Cập nhật xử lý" là React.lazy (chunk riêng): nạp trước để lần mở đầu trong test không tốn thời gian
+// biến đổi/tải module (chạy cả bộ song song có lúc > 6 s → findByRole hết giờ). Không đổi hành vi được kiểm.
+beforeAll(async () => {
+  await import('./AlertUpdateModal');
+});
 
 afterEach(() => {
   liveSimulator.setBase(T.heatAlarm, 'alarm');
@@ -125,7 +133,7 @@ describe('drawer báo cháy (FIR-00018)', () => {
     await user.click(within(d).getByRole('button', { name: 'Xác nhận cảnh báo' }));
     d = await drawer();
     await user.click(await within(d).findByRole('button', { name: 'Cập nhật xử lý' }));
-    let m = await screen.findByRole('dialog', { name: FIRE_MODAL }, LONG);
+    let m = await screen.findByRole('dialog', { name: FIRE_MODAL }, MODAL_WAIT);
     const group = within(m).getByRole('radiogroup', { name: 'Trạng thái xử lý' });
     expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Đang kiểm tra', 'Đang xử lý', 'Tạm dừng', 'Cần hỗ trợ', 'Đã xử lý sự cố', 'Báo động giả']);
     // Còn báo động → 2 ô đóng khoá + lý do
@@ -147,7 +155,7 @@ describe('drawer báo cháy (FIR-00018)', () => {
     // Mất tín hiệu đầu báo → chọn được khi đã tick "Đã xác minh qua camera/tại chỗ"
     liveSimulator.setBad([T.heatAlarm]);
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    m = await screen.findByRole('dialog', { name: FIRE_MODAL }, LONG);
+    m = await screen.findByRole('dialog', { name: FIRE_MODAL }, MODAL_WAIT);
     const fa = () => within(m).getByRole('radio', { name: 'Báo động giả' });
     await waitFor(() => expect(fa()).toHaveAccessibleDescription(/mất tín hiệu – xác nhận đã kiểm tra tại chỗ/), LONG);
     await user.click(within(m).getByRole('checkbox', { name: 'Đã xác minh qua camera/tại chỗ' }));

@@ -32,10 +32,10 @@ import {
   type CloseResult,
   type MonitorResult,
 } from '@/features/alerts/close';
-import type { FollowUpConfig } from '@/mocks/alertKinds';
+import type { FollowUpConfig } from '@/features/alerts/kinds';
 import { appNow } from '@/lib/demoNow';
 import { withUnit } from '@/features/alerts/gauge';
-import type { AlertRecord, AlertStatus } from '@/mocks/alerts';
+import type { AlertRecord, AlertStatus } from '@/features/alerts/types';
 import type { KpiMock } from '@/mocks/types';
 
 export type { AlertRecord, AlertStatus };

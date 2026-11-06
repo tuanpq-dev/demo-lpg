@@ -16,7 +16,7 @@ import {
 } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { dayNumber, plantDayKey } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { currentAlerts, useAlertList } from './alertStore';
 import { fetchDailyReadings } from './dailyReport';
 import { currentReports, replaceReport } from './reports';

@@ -1,5 +1,5 @@
 import { Badge, Button, Modal } from '@/components';
-import type { AlertKindConfig } from '@/mocks/alertKinds';
+import type { AlertKindConfig } from '@/features/alerts/kinds';
 
 /**
  * "Xem quy trình khẩn cấp" (chưa có thiết kế; dựng theo token, mở TRÊN drawer – Esc/Đóng trả focus nút đã mở):

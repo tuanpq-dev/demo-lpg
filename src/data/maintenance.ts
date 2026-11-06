@@ -10,31 +10,10 @@ import { linkedMaintenance } from '@/features/alerts/workflow';
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
-import {
-  CHECKLIST_TEMPLATES,
-  DEPARTMENTS,
-  MAINTENANCE_ASSIGNEES,
-  PEOPLE,
-  ASSIGNABLE_STAFF,
-  REVIEWERS,
-  SHIFTS,
-  SOURCE_OPTIONS,
-  STAFF,
-  isoDay,
-  staffByName,
-  maintenanceRecords,
-  type MaintenanceAttachment,
-  type MaintenanceChecklistItem,
-  type MaintenanceHistoryEntry,
-  type MaintenanceHold,
-  type MaintenanceNote,
-  type MaintenanceRecord,
-  type MaintenanceSource,
-  type MaintenanceStatus,
-  type MaintenanceType,
-  type ShiftId,
-} from '@/mocks/maintenance';
+import type { AlertRecord } from '@/features/alerts/types';
+import { CHECKLIST_TEMPLATES, MAINTENANCE_ASSIGNEES, PEOPLE, ASSIGNABLE_STAFF, REVIEWERS, SOURCE_OPTIONS, STAFF, isoDay, staffByName, maintenanceRecords } from '@/mocks/maintenance';
+import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
+import type { MaintenanceAttachment, MaintenanceChecklistItem, MaintenanceHistoryEntry, MaintenanceHold, MaintenanceNote, MaintenanceRecord, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId } from '@/features/maintenance/types';
 import type { KpiMock } from '@/mocks/types';
 
 export type {
@@ -293,7 +272,8 @@ export type NewMaintenanceInput = {
   title: string;
   description?: string;
   device: string;
-  area?: string;
+  /** Khu vực của thiết bị – form tự điền từ danh bạ (`deriveDeviceDirectory`). */
+  area: string;
   type: MaintenanceType;
   priority: Severity;
   source?: MaintenanceSource;
@@ -349,7 +329,7 @@ export async function createMaintenance(input: NewMaintenanceInput): Promise<Mai
     title: input.title.trim().slice(0, 160),
     description: input.description?.trim() || undefined,
     device: input.device,
-    area: input.area ?? deviceArea(input.device) ?? 'Khác',
+    area: input.area || 'Khác',
     type: input.type,
     priority: input.priority,
     status: input.assignee ? 'assigned' : 'pending',
@@ -386,7 +366,7 @@ const ctx = (actor?: string) => ({ actor: actor || DEFAULT_ACTOR, now: appNow() 
  * Modal "Phân công người xử lý": phân công (Chờ tiếp nhận → Đã phân công) hoặc đổi người (Đã phân công / Đang thực hiện,
  * lý do bắt buộc) – `applyAssignment` (features/maintenance/assign.ts).
  */
-export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor)));
+export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor), staffByName));
 
 /**
  * Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt), mỗi dòng qua `validateAssign` với hạn sẵn có.
@@ -400,7 +380,7 @@ export async function bulkAssignMaintenance(ids: readonly string[], assignee: st
     assignee,
     computeWorkloads(db, c.now),
   );
-  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c));
+  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c, staffByName));
   return { assigned: plan.ids.length, skipped: plan.skipped, skippedBy: plan.skippedBy, busyAfter: plan.busyAfter, activeAfter: plan.activeAfter };
 }
 
@@ -469,16 +449,18 @@ export const FORM_PRIORITY_OPTIONS = [
   { id: 'medium', label: 'Thường', tone: 'neutral' as const },
 ];
 
-/** Danh bạ thiết bị (thiết bị → khu vực) gộp từ bảo trì + cảnh báo. */
-let directory = new Map<string, string>();
-export function setDeviceDirectory(maint: readonly MaintenanceRecord[], alerts: readonly AlertRecord[] = []) {
-  directory = new Map();
-  [...alerts.map((a) => [a.device, a.area] as const), ...maint.map((r) => [r.device, r.area] as const)].forEach(([d, a]) =>
-    directory.set(d, a),
-  );
+export type DeviceDirectoryEntry = { device: string; area: string };
+
+/**
+ * Danh bạ thiết bị → khu vực (ô "Thiết bị" + "Khu vực" của form tạo yêu cầu), gộp từ cảnh báo + bảo trì; trùng thiết bị
+ * thì khu vực của bảo trì thắng; sắp theo mã. Thuần – trang tính bằng `useMemo` rồi truyền vào modal.
+ */
+export function deriveDeviceDirectory(maint: readonly MaintenanceRecord[], alerts: readonly AlertRecord[] = []): DeviceDirectoryEntry[] {
+  const directory = new Map<string, string>();
+  for (const a of alerts) directory.set(a.device, a.area);
+  for (const r of maint) directory.set(r.device, r.area);
   return [...directory.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([device, area]) => ({ device, area }));
 }
-export const deviceArea = (device: string) => directory.get(device);
 
 /** Phòng ban gợi ý theo tiền tố mã thiết bị. */
 export function departmentFor(device: string): (typeof DEPARTMENTS)[number] {

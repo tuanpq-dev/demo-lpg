@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { Badge, Button, FileIcon, Modal, Textarea } from '@/components';
 import type { MaintenanceAttachment, MaintenanceRecord } from '@/data/maintenance';
+import { runAction } from '@/lib/actionError';
 
 /** Xác nhận hủy yêu cầu – lý do không bắt buộc, ghi vào lịch sử xử lý. */
 export function CancelMaintenanceModal({
@@ -13,6 +14,8 @@ export function CancelMaintenanceModal({
   onConfirm: (reason: string) => Promise<void>;
 }) {
   const [reason, setReason] = useState('');
+  /** Lỗi khi hủy thất bại (mạng / máy chủ). */
+  const [submitError, setSubmitError] = useState('');
   return (
     <Modal
       open
@@ -22,7 +25,8 @@ export function CancelMaintenanceModal({
       description="Yêu cầu sẽ chuyển sang “Đã hủy”, không tính vào KPI và không thể tiếp tục xử lý. Thao tác được ghi vào lịch sử."
       onSubmit={(e) => {
         e.preventDefault();
-        void onConfirm(reason);
+        setSubmitError('');
+        void runAction(() => onConfirm(reason), setSubmitError);
       }}
       footer={
         <>
@@ -34,6 +38,11 @@ export function CancelMaintenanceModal({
       }
     >
       <Textarea label="Lý do hủy (không bắt buộc)" value={reason} onChange={setReason} maxLength={300} showCount rows={3} />
+      {submitError && (
+        <p role="alert" className="text-sm text-danger-text">
+          {submitError}
+        </p>
+      )}
     </Modal>
   );
 }

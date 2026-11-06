@@ -6,6 +6,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "engines": {
+    "node": "^20.0.0 || ^22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -13,6 +16,7 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:node20": "npx -y -p node@20 node node_modules/vitest/vitest.mjs run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "build:shared": "npm run build -w @demo-lpg/shared"

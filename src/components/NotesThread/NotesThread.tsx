@@ -1,4 +1,5 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { Button } from '../Button';
@@ -16,8 +17,11 @@ export type NoteView = {
 
 export type NotesThreadProps = {
   notes: readonly NoteView[];
-  /** Thêm ghi chú (nội dung đã trim, không rỗng). Không truyền = chỉ đọc (ẩn ô nhập). */
-  onAdd?: (text: string) => void;
+  /**
+   * Thêm ghi chú (nội dung đã trim, không rỗng) – async: resolve = đã lưu, reject / ném lỗi = không lưu được (toast lỗi,
+   * ô nhập giữ nội dung). Không truyền = chỉ đọc (ẩn ô nhập).
+   */
+  onAdd?: (text: string) => Promise<unknown> | unknown;
   /** Tên cho danh sách, vd "Ghi chú kỹ thuật". */
   label?: string;
   className?: string;
@@ -28,16 +32,24 @@ export type NotesThreadProps = {
 /**
  * Luồng ghi chú – ảnh MT-00128 (số đo ước lượng): avatar `--note-avatar-size` + bong bóng nền surface-muted/60 (pixel ảnh #232A34) viền line/30 (tên đậm,
  * giờ bên phải, nội dung chữ phụ); dưới cùng ô nhập (avatar trống + textarea ~64px) và nút "Thêm ghi chú" căn phải.
- * Thêm xong: ô nhập trống, ghi chú mới hiện cuối luồng, trình đọc màn hình nghe "Đã thêm ghi chú".
+ * Thêm: nút khoá trong lúc lưu (không gửi lặp); lưu được → ô nhập trống, ghi chú mới hiện cuối luồng, trình đọc màn hình nghe
+ * "Đã thêm ghi chú"; lỗi → toast lỗi (`runAction`), ô nhập giữ nguyên nội dung để thử lại.
  */
 export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', className }: NotesThreadProps) {
   const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
   const inputId = useId();
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent | KeyboardEvent) => {
     e.preventDefault();
     const t = text.trim();
-    if (!t || !onAdd) return;
-    onAdd(t);
+    if (!t || !onAdd || busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    const ok = await runAction(() => onAdd(t));
+    busy.current = false;
+    setSaving(false);
+    if (!ok) return;
     setText('');
     announce('Đã thêm ghi chú');
   };
@@ -64,7 +76,7 @@ export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', cla
         <p className="text-sm text-fg-secondary">Chưa có ghi chú.</p>
       )}
       {onAdd && (
-        <form onSubmit={submit} className="flex flex-col gap-3">
+        <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
           <div className="flex items-start gap-2.5">
             <span aria-hidden="true" className="grid size-[var(--note-avatar-size)] shrink-0 place-items-center rounded-md bg-surface-muted text-fg-secondary">
               <UserIcon size={14} />
@@ -77,7 +89,7 @@ export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', cla
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit(e);
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void submit(e);
               }}
               rows={3}
               maxLength={2000}
@@ -85,7 +97,7 @@ export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', cla
               className={cn(inputClass(false), 'min-h-16 flex-1 resize-y py-2 leading-5')}
             />
           </div>
-          <Button type="submit" variant="subtle" disabled={!text.trim()} className="self-end">
+          <Button type="submit" variant="subtle" disabled={!text.trim() || saving} className="self-end">
             Thêm ghi chú
           </Button>
         </form>

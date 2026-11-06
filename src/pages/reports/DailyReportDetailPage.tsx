@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, DatePicker, FilterBar, Icon, PageHeader, StatusDot, type FilterDef } from '@/components';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useDailyReport } from '@/data/dailyReport';
@@ -98,12 +98,7 @@ export default function DailyReportDetailPage() {
   if (state.status === 'error') {
     return (
       <Page pageHeader={header()}>
-        <Card title="Không tải được báo cáo" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{state.error.message}</p>
-          <Button onClick={state.refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được báo cáo" error={state.error} onRetry={state.refetch} />
       </Page>
     );
   }

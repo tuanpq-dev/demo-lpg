@@ -12,8 +12,8 @@
 ## 2. Lệnh
 - `npm run dev` · `npm run typecheck` · `npm run lint` · `npm run build` · `npm test` (watch) · `npm run test:run` (gồm `packages/shared`) · `npm run test:coverage` · `npx vite preview --port 4317`.
 - Không backend: `VITE_AUTH=off npx vite` (phiên giả admin). Backend: trong `../demo-lpg-server` (`npm run db:up` · `npm run dev`).
-- Trước commit: `npm run test:run`, `npm run lint`, `npm run typecheck`. Node 22 chạy được cả bộ; Node 26 lỗi `AbortSignal` (undici ↔ jsdom) → dùng `npx -p node@20 node node_modules/vitest/vitest.mjs run`.
-- Lỗi có sẵn (cả trên `main` sạch): 2 test `MaintenanceDetailPage` (luồng nghiệm thu) fail. `npm ci` khi dev server đang chạy hỏng giữa chừng → dừng dev server trước.
+- Trước commit: `npm run test:run`, `npm run lint`, `npm run typecheck`. Node ghim 20/22 (`.nvmrc` = 20 như Netlify, `engines`); Node 26 lỗi `AbortSignal` (undici ↔ jsdom) ở test dùng router → `npm run test:node20`.
+- 05/11/2026: cả bộ test xanh trên Node 20 và 22 (2 test `MaintenanceDetailPage` từng ghi "fail sẵn" nay pass). `npm ci` khi dev server đang chạy hỏng giữa chừng → dừng dev server trước.
 - Test trình duyệt: playwright-core cài trong scratchpad (không thêm dependency), Linux dùng `/usr/bin/brave-browser`; script ngoài repo.
 
 ## 3. Cấu trúc thư mục chính (chi tiết: `GUIDE.md` mục 2 + `docs/guide/app-structure.md` Phụ lục A)
@@ -46,7 +46,7 @@
   - Cỡ chữ `2xs` 10 · `xs` 11 · `sm` 12 · `base` 14 · `md` 16 · `lg` 18 · `xl` 24 · `2xl`/`kpi` 28 · `3xl` 32. Bo góc `xs` 2 · `sm` 4 · `md` 6 · `lg` 8 · `xl` 12.
 - **Breakpoint** (`tailwind.config.ts`, không viết `min-[…px]`): `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `wide` 1520 · `3xl` 1920. ≥ `wide` như Figma 1565; nội dung tối đa `max-w-content` 1920; bảng rộng cuộn ngang trong khung.
 - **Đặt tên**: prop thống nhất `variant`, `tone`, `size: sm|md`, `label`, `className`; giá trị domain tiếng Anh kebab-case, nhãn tiếng Việt; JSDoc ghi node Figma / ảnh.
-- **Dữ liệu**: trang chỉ đọc qua hook trong `src/data/*`, không import `src/mocks` trực tiếp; dữ liệu sửa được dùng `createCollectionStore`; số suy dẫn tính bằng `derive*` từ cùng danh sách; trang có 3 trạng thái loading · error (Card danger + "Thử lại") · success. Bảng có lọc → `useTableFilters` (tham số `*_PARAMS as const`, đồng bộ URL `replace`); modal/drawer mở qua query.
+- **Dữ liệu**: trang chỉ đọc qua hook trong `src/data/*`, không import `src/mocks` trực tiếp (ESLint chặn ở features/components/app/lib/pages, trừ playground + test); kiểu dữ liệu ở `src/features/<miền>/types.ts`; dữ liệu sửa được dùng `createCollectionStore`; số suy dẫn tính bằng `derive*` từ cùng danh sách; trang có 3 trạng thái loading · error (Card danger + "Thử lại") · success. Bảng có lọc → `useTableFilters` (tham số `*_PARAMS as const`, đồng bộ URL `replace`); modal/drawer mở qua query.
 - **Dữ liệu trực tiếp**: `TagValue`/`LiveData` qua `useLiveData`/`useLiveStatus`; **mất tín hiệu** (bad, ≥ 10 s không cập nhật, thiếu tag) → "Mất tín hiệu" xám, KHÔNG hiện số cũ (`tagSignal(tv, Date.now())` lúc render). Tên tag giả định chỉ ở `features/live/tags.ts`.
 - **Modal có form**: chỉ mount khi mở, state khởi tạo bằng hàm của `useState`; nháp form → `createSessionDraft` (sessionStorage, try/catch).
 - **Test**: hàm logic mới có test trong cùng commit, đặt cạnh module (`x.test.ts`; DOM → `*.test.tsx` + `// @vitest-environment jsdom`). Hàm thuần nhận `now` qua tham số; "hôm nay" theo giờ nhà máy (`plantTime`). Có ca biên. Component test truy vấn theo vai trò/tên. Lỗi thật test tìm ra → sửa hàm, không sửa test cho khớp lỗi; đổi test có chủ đích → ghi lý do.

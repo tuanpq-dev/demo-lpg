@@ -6,7 +6,7 @@
  * TODO(backend): danh mục thiết bị đo theo khu (GET /areas/:id/sensors).
  */
 import { GAS_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
-import type { Area } from './areas';
+import type { Area } from '@/features/plant/areas';
 
 export type AreaSensor = { tag: string; area: Area; kind: 'gas' };
 

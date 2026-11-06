@@ -4,9 +4,9 @@
  * Import danh mục ca (mocks) → chỉ dùng trong chunk modal, không import từ `data/alerts` (bundle chính).
  */
 import { AVAILABILITY_ORDER, BUSY_THRESHOLD, isOnShift, shiftLabel, staffAvailability, type Availability } from '@/features/staff/availability';
-import type { AlertRecord } from '@/mocks/alerts';
-import type { StaffMember } from '@/mocks/maintenance';
-import type { StaffSkill } from '@/mocks/skills';
+import type { AlertRecord } from '@/features/alerts/types';
+import type { StaffMember } from '@/features/staff/org';
+import type { StaffSkill } from '@/features/staff/skills';
 import type { AlertAssignForm } from './assign';
 
 /** Giải thích cách đếm – tooltip + đọc kèm chip tải việc. */

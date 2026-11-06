@@ -59,6 +59,7 @@ export * from './Tabs';
 export * from './TankCutawayDiagram';
 export * from './TankLayerList';
 export * from './ThresholdGauge';
+export * from './Toast';
 export * from './TreeView';
 export * from './TrendChart';
 export * from './UploadTile';

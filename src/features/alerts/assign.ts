@@ -9,7 +9,7 @@
  *
  * Tải việc, Ngoài ca, sắp xếp gợi ý, cảnh báo không chặn: `assignStaff.ts` (cần danh mục nhân sự).
  */
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import { canAssignAlert, newNote, withHistory, type AlertActionCtx } from './workflow';
 
 export type AlertAssignForm = {

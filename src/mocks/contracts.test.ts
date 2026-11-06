@@ -2,9 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { AlertSchema } from '@demo-lpg/shared/alerts';
 import { LiveDataSchema } from '@demo-lpg/shared/live';
 import { MaintenanceRequestSchema } from '@demo-lpg/shared/maintenance';
-import { ALERT_FE_ONLY_FIELDS, alertRecords } from './alerts';
-import { AREAS } from './areas';
-import { FE_ONLY_FIELDS, maintenanceRecords, type MaintenanceRecord } from './maintenance';
+import { ALERT_FE_ONLY_FIELDS } from '@/features/alerts/types';
+import { alertRecords } from './alerts';
+import { AREAS } from '@/features/plant/areas';
+import { FE_ONLY_FIELDS, type MaintenanceRecord } from '@/features/maintenance/types';
+import { maintenanceRecords } from './maintenance';
 
 /** Bỏ trường chỉ có ở FE (trang chi tiết – chờ đưa vào hợp đồng API, docs/decisions.md) + đổi về dạng hợp đồng. */
 function toContract(r: MaintenanceRecord) {
