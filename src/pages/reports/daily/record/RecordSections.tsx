@@ -1,19 +1,10 @@
 import { Badge, FileDropzone, FormField, InfoIcon, StatusDot, inputClass, type DotStatus } from '@/components';
 import { REMARK_SUGGESTIONS } from '@/features/reports';
 import { cn } from '@/lib/cn';
-import {
-  FireTable,
-  FlowLineCards,
-  GasTable,
-  GaugeInputToggle,
-  PlcStatusCard,
-  RecordSection,
-  RegulatorCards,
-  SensorSummaryCard,
-  TankTable,
-  VaporizerCards,
-  boxClass,
-} from '../CheckpointRecordSections';
+import { FlowLineCards, RegulatorCards, VaporizerCards } from './fields/EquipmentFields';
+import { RecordSection, boxClass } from './fields/recordParts';
+import { FireTable, GasTable, PlcStatusCard, SensorSummaryCard } from './fields/SafetySystemFields';
+import { GaugeInputToggle, TankTable } from './fields/TankFields';
 import type { CheckpointRecordForm } from './useCheckpointRecordForm';
 import type { RecordNavId } from './useSectionNav';
 

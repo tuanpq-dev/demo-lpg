@@ -87,6 +87,27 @@ describe('CheckpointRecordModal – form', () => {
     expect(summary).toHaveTextContent('Trạng thái: Đủ điều kiện xác nhận');
   });
 
+  test('nhóm trường: bồn (nguồn, tồn kho quy đổi), máy hóa hơi, điều áp, lưu lượng, gas (ngưỡng PLC), báo cháy, PLC, cảm biến', async () => {
+    const d = await open();
+    const section = (name: string | RegExp) => within(d).getByRole('region', { name });
+    const tank = section('Bồn chứa LPG – V-101');
+    expect(within(tank).getByRole('table', { name: 'Thông số bồn chứa LPG V-101' })).toBeInTheDocument();
+    expect(within(tank).getAllByText('PLC').length).toBeGreaterThan(0);
+    expect(tank).toHaveTextContent(/Tồn kho quy đổi: [\d.,]+ Nm³/);
+    const vap = section('Máy hóa hơi – E-101A / E-101B');
+    expect(within(vap).getByRole('heading', { name: 'E-101A' })).toBeInTheDocument();
+    expect(within(vap).getByRole('heading', { name: 'E-101B' })).toBeInTheDocument();
+    expect(vap).toHaveTextContent(/Đang hoạt động|Dự phòng/);
+    expect(section('Hệ thống điều áp – PR-101')).toHaveTextContent('Trạng thái cảm biến:');
+    expect(within(section('Lưu lượng và đường cấp LPG')).getAllByRole('heading', { level: 4 }).length).toBeGreaterThan(0);
+    expect(section('Cảm biến rò rỉ LPG')).toHaveTextContent(/\* Ngưỡng PLC: cảnh báo .+% LEL · nguy hiểm .+% LEL/);
+    expect(within(section('Hệ thống báo cháy')).getAllByRole('term').length).toBeGreaterThan(0);
+    const plc = section('PLC và SCADA');
+    for (const t of ['PLC Heartbeat:', 'Communication:', 'SCADA Connection:', 'System Mode:', 'E-Stop/Shutdown:', 'Update Time:']) expect(plc).toHaveTextContent(t);
+    const sensors = section('Trạng thái cảm biến');
+    for (const t of ['Tổng cảm biến:', 'Bình thường:', 'Lỗi:', 'Mất kết nối:', 'Dữ liệu cũ:']) expect(sensors).toHaveTextContent(t);
+  });
+
   test('chưa đủ điều kiện: bấm xác nhận không gửi, modal giữ nguyên', async () => {
     const user = userEvent.setup();
     const d = await open();

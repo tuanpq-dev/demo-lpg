@@ -1,7 +1,7 @@
 import { Button, ProgressBar } from '@/components';
 import { DAILY_SHIFT_HOURS, periodLabel, type ReportRecord } from '@/features/reports';
 import { cn } from '@/lib/cn';
-import { boxClass } from '../CheckpointRecordSections';
+import { boxClass } from './fields/recordParts';
 import type { CheckpointRecordForm } from './useCheckpointRecordForm';
 import { RECORD_NAV, type RecordNavId } from './useSectionNav';
 
