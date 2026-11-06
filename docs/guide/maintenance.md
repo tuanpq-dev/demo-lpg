@@ -128,7 +128,7 @@ Chi tiết: thanh dính đáy "Cập nhật tiến độ" → state dialog='prog
 |---|---|
 | Ánh xạ ô → trạng thái, bắt buộc nội dung, câu lịch sử | `applyProgressUpdate`, `validateProgressUpdate`, `historyLine` (`progress.ts`) |
 | Ngưỡng "gần hạn" / bước thanh trượt / luật tệp | `NEAR_DUE_MS`, `PROGRESS_STEP`, `UPLOAD_RULES` (`progress.ts`) |
-| Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` |
+| Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` + `progress/` (`ProgressSections` = nháp / 5 ô / trạng thái / tiến độ / nội dung, `ProgressFilesSection` = tệp + xem trước, `useProgressUpdateForm` + `progressFormReducer` = state + kiểm tra) |
 | Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenanceDetail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
 | Gửi nghiệm thu / nghiệm thu | mục 4k |
 | Phân công / đổi người | mục 4l |
