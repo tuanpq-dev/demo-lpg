@@ -127,7 +127,10 @@ Scene Editor đầy đủ (`/editor?edit=1`) dùng cùng SceneViewer:
 
 | File | Vai trò |
 |---|---|
-| `src/pages/editor/EditorPage.tsx` | Bố cục, thanh tệp, phím tắt, nạp/lưu, nháp, chặn rời trang |
+| `src/pages/editor/EditorPage.tsx` | Bố cục 3 cột, ghép các khối + hook bên dưới |
+| `src/pages/editor/EditorFileBar.tsx` · `EditorStatusBar.tsx` · `EditorSidePanel.tsx` · `EditorDialogs.tsx` | Thanh tệp · thanh trạng thái · tab Thuộc tính/Góc nhìn/Kiểm tra · mọi hộp thoại (kiểu `EditorDialog`) |
+| `src/pages/editor/useSceneFile.ts` | Mở lần đầu, cảnh mới/mở/lưu/lưu bản mới, import/export JSON, khôi phục/bỏ nháp, `?scene=` |
+| `src/pages/editor/useEditorShortcuts.ts` · `useEditorSession.ts` | Phím tắt · thông báo, tự lưu nháp, chặn rời trang, dọn selection |
 | `src/pages/editor/useEditorActions.ts` | Thêm/xoá/nhân bản/copy/dán/đổi id |
 | `src/features/scene-editor/store.ts` | `useSceneDoc` (zustand + zundo, undo/redo) và `useEditorUi` (chọn, công cụ, ẩn/khoá) |
 | `src/features/scene-editor/ops.ts` | Biến đổi thuần trên `SceneConfig`, sinh id theo `idPrefix`; `setElevation`, `alignObjects`, `cleanObject` (giữ position[1] = elevation) |
@@ -165,7 +168,7 @@ sequenceDiagram
 | `src/features/scene/SceneViewer.tsx` | Chọn ống, click đoạn = thêm điểm, Delete điểm, bắt tay nắm trong `onPointerDownCapture` |
 | `src/features/scene-editor/ops.ts` | `addPipe`, `updatePipe`, `removePipes`, `renamePipe`, `insertPipePoint`, `reversePipe`, `attachToPipe`, `detachFromPipe`, `removeObjects(…, 'keep' \| 'delete')` |
 | `src/pages/editor/PropertiesPanel.tsx` | `PipeProperties`, "Gắn lên ống" / "Tháo khỏi ống" |
-| `src/pages/editor/EditorPage.tsx` | Phím P/O, hộp "Xoá – còn ống liên quan" |
+| `src/pages/editor/useEditorShortcuts.ts` · `EditorDialogs.tsx` | Phím P/O, hộp "Xoá – còn ống liên quan" |
 
 Phím tắt Editor: xem bảng trong `docs/decisions.md` mục Scene Editor. Đặc biệt: **W** rồi kéo thẳng object (không còn gizmo trục, không có trục Y), giữ **Alt** để tắt snap, **Esc** huỷ khi đang kéo; **G** bật/tắt lưới + vạch chân và nhãn khoảng cách đáy–sàn của object đang chọn.
 
@@ -260,7 +263,7 @@ URL /map/V-101
 2. Thêm bước chuyển trong `migrateScene` (`src/features/scene/migrate.ts`, thuần, không zod) – giữ nguyên hình ảnh của cảnh cũ, tăng `version`.
 3. Sửa schema zod (`parse.ts`): `schemaVersion: z.literal(SCENE_SCHEMA_VERSION)` + trường mới.
 4. Chuyển các file `src/mocks/scenes/*.json` (version + 1); `compare.mjs` (scratchpad) so trước/sau.
-5. Mọi đường nạp đã gọi `migrateScene`: `parseSceneConfig`/`validateSceneConfig` (mock, kho, API), Import JSON (`EditorPage`), bản nháp (`draft.ts`).
+5. Mọi đường nạp đã gọi `migrateScene`: `parseSceneConfig`/`validateSceneConfig` (mock, kho, API), Import JSON (`useSceneFile`), bản nháp (`draft.ts`).
 
 **Thêm scene mới**
 1. Cách nhanh: `/editor?edit=1` → dựng → "Lưu thành bản mới" (lưu localStorage) → mở `/overview?scene=<id>`.
