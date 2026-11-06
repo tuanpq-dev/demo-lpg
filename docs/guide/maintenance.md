@@ -236,7 +236,7 @@ Hàng loạt (danh sách): chọn người → bulkAssign → planBulkAssign: CH
 | Lỗi chặn / cảnh báo | `validateAssign`, `assignWarnings`, `inShift` (`assign.ts`) |
 | Ghi bản ghi, câu lịch sử | `applyAssignment`, `planBulkAssign` (`assign.ts`) |
 | Danh mục nhân sự, vai trò | `STAFF` (`mocks/maintenance.ts`) |
-| Giao diện | `AssignModal.tsx`; thẻ/danh sách `components/StaffPicker` (+ `AssignNotices` – khối cảnh báo/lý do chặn dùng chung); `Switch`; `Avatar` |
+| Giao diện | `AssignModal.tsx` + `assign/` (`AssignSections` = dải yêu cầu / cột chọn nhân sự / chi tiết phân công, `useAssignForm` + `assignFormReducer` = state + kiểm tra); thẻ/danh sách `components/StaffPicker` (+ `AssignNotices` – khối cảnh báo/lý do chặn dùng chung); `Switch`; `Avatar` |
 | Ngưỡng Bận, `inShift`, nhãn Sẵn sàng/Bận | DÙNG CHUNG với phân công cảnh báo: `features/staff/availability.ts` (`assign.ts` export lại). Modal bảo trì KHÔNG hiện "Ngoài ca" theo giờ hiện tại (việc xếp cho ca sau) – chỉ Sẵn sàng/Bận + cảnh báo ca lệch giờ bắt đầu |
 | Nháp | `lib/sessionDraft.ts` (`createSessionDraft`) – khoá giữ `demo-lpg:mt-assign-draft:<id>` |
 
