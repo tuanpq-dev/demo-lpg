@@ -6,7 +6,7 @@ import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import { logTimeLabel, type ViewTone } from '@/features/operations/device';
 import { cn } from '@/lib/cn';
-import type { OperationLogEntry, PlcSignal } from '@/mocks/operations';
+import type { OperationLogEntry, PlcSignal } from '@/features/operations/types';
 
 /*
  * Thẻ cột phải dùng chung mọi loại thiết bị ở màn Vận hành (máy hóa hơi E-101A, hệ thống PLC/SCADA).

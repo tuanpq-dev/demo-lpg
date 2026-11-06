@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { WORK_STATUS_LABEL } from '@/components/Badge';
 import { mockHistory, tagSeed, trendLabel, type ViewTone } from '@/features/operations/device';
 import { formatDayVi } from '@/lib/plantTime';
-import type { AlertRecord } from '@/mocks/alerts';
-import { operationDevices, plcScadaDevices, type OperationDeviceMock, type PlcScadaDeviceMock } from '@/mocks/operations';
+import type { AlertRecord } from '@/features/alerts/types';
+import { operationDevices, plcScadaDevices } from '@/mocks/operations';
+import type { OperationDeviceMock, PlcScadaDeviceMock } from '@/features/operations/types';
 import { liveBase } from '@/mocks/scenes/live';
 import { alertBadgeStatus } from './alerts';
 import { useAlertList } from './alertStore';
 import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
-import type { QueryState } from './overview';
+import { useQuery } from '@/lib/useQuery';
 
-export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/mocks/operations';
+export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/features/operations/types';
 
 /** Mọi loại thiết bị có trang chi tiết (`kind` quyết định KPI / cột trái của trang). */
 export type AnyOperationDevice = OperationDeviceMock | PlcScadaDeviceMock;
@@ -168,19 +169,7 @@ export function trendPoints(
  * + tín hiệu PLC + trạng thái chạy); trang tự tính trạng thái bằng hàm thuần trong `features/operations/device.ts`.
  */
 export function useOperationDevice(id: string) {
-  const [state, setState] = useState<QueryState<AnyOperationDevice>>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setState({ status: 'loading' });
-    fetchOperationDevice(id)
-      .then((data) => !cancelled && setState({ status: 'success', data }))
-      .catch((error: unknown) => !cancelled && setState({ status: 'error', error: error instanceof Error ? error : new Error(String(error)) }));
-    return () => {
-      cancelled = true;
-    };
-  }, [id, attempt]);
+  const { refetch: refetchDevice, ...state } = useQuery(id, () => fetchOperationDevice(id));
 
   const d = state.data;
   const tags = useMemo(() => (d ? deviceLiveTags(d) : []), [d]);
@@ -188,8 +177,8 @@ export function useOperationDevice(id: string) {
   const alerts = useAlertList();
   const refetchAlerts = alerts.refetch;
   const refetch = useCallback(() => {
-    setAttempt((n) => n + 1);
+    refetchDevice();
     refetchAlerts();
-  }, [refetchAlerts]);
+  }, [refetchDevice, refetchAlerts]);
   return { ...state, refetch, liveData, tags, alerts };
 }

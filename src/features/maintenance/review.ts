@@ -10,16 +10,7 @@
  * Đây là đường DUY NHẤT sang review (gửi) và sang done (Đạt). Mỗi thao tác = MỘT dòng lịch sử.
  */
 import { plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
-import type {
-  DeviceCondition,
-  MaintenanceAttachment,
-  MaintenanceRecord,
-  ReadingSnapshot,
-  ReviewResult,
-  ReviewSubmission,
-  SensorStatus,
-  ValveStatus,
-} from '@/mocks/maintenance';
+import type { DeviceCondition, MaintenanceAttachment, MaintenanceRecord, ReadingSnapshot, ReviewResult, ReviewSubmission, SensorStatus, ValveStatus } from '@/features/maintenance/types';
 import { checklistProgress } from './checklist';
 import { reportedProgressOf } from './progress';
 import type { ActionContext } from './workflow';

@@ -4,7 +4,7 @@ import { ArrowLeftIcon, Button, Card, EmergencyBanner, PageHeader, StopCircleIco
 import { SIMULATION_PATH, simulationConfigPath, simulationResultPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { SIMULATION_REFERENCE_TAGS, stopSimulation, useSimulation } from '@/data/simulation';
 import { dataSyncState } from '@/features/simulation/config';
 import { isActivePhase, monitorSnapshot, sessionOf, type SimulationSession } from '@/features/simulation/monitor';
@@ -57,12 +57,7 @@ function SimulationMonitorPage({ scenarioId }: { scenarioId: string }) {
   if (sim.status === 'error') {
     return (
       <Page pageHeader={plainHeader}>
-        <Card title="Không tải được lượt mô phỏng" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{sim.error.message}</p>
-          <Button onClick={sim.refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được lượt mô phỏng" error={sim.error} onRetry={sim.refetch} />
       </Page>
     );
   }

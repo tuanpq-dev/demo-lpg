@@ -4,7 +4,7 @@
  *   Đã xử lý CHỈ khi áp suất LIVE < ngưỡng cảnh báo VÀ giá trị "sau xử lý" < ngưỡng; mất tín hiệu → nguồn xác minh phải có
  *   đồng hồ cơ + số đo tay < ngưỡng.
  */
-import type { VerificationSource } from '@/mocks/alerts';
+import type { VerificationSource } from '@/features/alerts/types';
 import { formatMeasure } from './gauge';
 
 export type { VerificationSource };

@@ -8,7 +8,8 @@ import { createSessionDraft } from '@/lib/sessionDraft';
 import type { WorkState } from '@/features/maintenance/progress';
 import type { DeviceCondition, SensorStatus, ValveStatus } from '@/features/maintenance/review';
 import type { AssignForm } from '@/features/maintenance/assign';
-import { SHIFTS, type MaintenanceAttachment, type MaintenanceHistoryKind, type MaintenanceRecord, type ShiftId } from '@/mocks/maintenance';
+import { SHIFTS } from '@/features/staff/org';
+import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord, ShiftId } from '@/features/maintenance/types';
 
 const SHIFT_VALUES: readonly ShiftId[] = SHIFTS.map((s) => s.value);
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';

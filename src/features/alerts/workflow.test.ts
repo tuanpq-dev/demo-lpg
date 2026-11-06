@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { AlertRecord } from '@/mocks/alerts';
+import type { AlertRecord } from '@/features/alerts/types';
 import {
   acknowledgeAlert,
   addAlertNote,

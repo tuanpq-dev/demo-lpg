@@ -1,10 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeftIcon, Button, Card, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { ArrowLeftIcon, Button, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
 import { useAuth, useCan } from '@/app/auth';
 import { SIMULATION_PATH, simulationMonitorPath } from '@/app/assetRoutes';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { SIMULATION_REFERENCE_TAGS, saveScenarioConfig, startSimulation, useSimulation } from '@/data/simulation';
 import { activeSessionOf, startBlocker, type SimulationSession } from '@/features/simulation/monitor';
 import {
@@ -59,12 +59,7 @@ function ScenarioConfigPage({ scenarioId }: { scenarioId: string }) {
   if (sim.status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được kịch bản mô phỏng" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{sim.error.message}</p>
-          <Button onClick={sim.refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được kịch bản mô phỏng" error={sim.error} onRetry={sim.refetch} />
       </Page>
     );
   }

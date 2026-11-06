@@ -3,7 +3,7 @@ import { Badge } from '@/components';
 import { alertRecordedValue, alertShortTimeLabel } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
 import { cn } from '@/lib/cn';
-import { areaLabel } from '@/mocks/areas';
+import { areaLabel } from '@/features/plant/areas';
 
 /** Hàng loạt: hiện tối đa bấy nhiêu mã, còn lại "+N". */
 const MAX_CODES = 12;

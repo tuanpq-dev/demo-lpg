@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
@@ -37,6 +37,14 @@ function renderAt(url: string) {
 const drawer = () => screen.findByRole('dialog', { name: 'Cảnh báo rò rỉ Gas nhẹ' });
 const LONG = { timeout: 6000 };
 const GAS_MODAL = 'Cập nhật xử lý cảnh báo rò rỉ khí';
+/** Chờ modal lazy (khung chung, nặng) hiện ra: chạy cả bộ song song có lúc > 6 s – vẫn dưới testTimeout 30 s. */
+const MODAL_WAIT = { timeout: 20000 };
+
+// Modal "Cập nhật xử lý" là React.lazy (chunk riêng): nạp trước để lần mở đầu trong test không tốn thời gian
+// biến đổi/tải module (chạy cả bộ song song có lúc > 6 s → findByRole hết giờ). Không đổi hành vi được kiểm.
+beforeAll(async () => {
+  await import('./AlertUpdateModal');
+});
 
 afterEach(() => {
   liveSimulator.setBase('GS-04', 25);
@@ -105,7 +113,7 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     const d = await drawer();
     await within(d).findByText(/Online/);
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, LONG);
+    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, MODAL_WAIT);
     const done = within(m).getByRole('radio', { name: /^Đã xử lý/ });
     // Vừa mở (chưa có số liệu) cũng khoá; số về → lý do nêu nồng độ hiện tại.
     expect(done).toHaveAttribute('aria-disabled', 'true');
@@ -167,7 +175,7 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     expect(row).not.toHaveTextContent('% LEL');
 
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, LONG);
+    const m = await screen.findByRole('dialog', { name: GAS_MODAL }, MODAL_WAIT);
     const done = () => within(m).getByRole('radio', { name: /^Đã xử lý/ });
     // Mất tín hiệu → bắt buộc số đo lại (nguồn mặc định "Cả hai" có máy đo cầm tay).
     await waitFor(() => expect(done()).toHaveAccessibleDescription(/nhập nồng độ đo lại tại chỗ \(phải dưới 10% LEL\)/), LONG);

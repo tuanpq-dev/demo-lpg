@@ -5,7 +5,7 @@
  * CÓ vẽ thang hay không do cấu hình theo LOẠI cảnh báo (`ALERT_KINDS[kind].gauge`, false = cảnh báo tốc độ thay đổi) –
  * không đoán theo dấu của số. Ở đây chỉ còn chốt an toàn: số không hợp lệ hoặc thang suy biến (max ≤ 0) → null.
  */
-import type { AlertDirection } from '@/mocks/alerts';
+import type { AlertDirection } from '@/features/alerts/types';
 
 export const GAUGE_HEADROOM = 1.2;
 

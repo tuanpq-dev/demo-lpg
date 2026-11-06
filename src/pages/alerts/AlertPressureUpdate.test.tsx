@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import type { AuthService, AuthState } from '@/api/auth';
 import { AuthProvider } from '@/app/auth';
@@ -41,6 +41,8 @@ function renderAt(url: string) {
 const MODAL = 'Cập nhật xử lý cảnh báo áp suất';
 const drawer = () => screen.findByRole('dialog', { name: 'Áp suất bồn V-101 vượt ngưỡng' });
 const LONG = { timeout: 6000 };
+/** Chờ modal lazy (khung chung, nặng) hiện ra: chạy cả bộ song song có lúc > 6 s – vẫn dưới testTimeout 30 s. */
+const MODAL_WAIT = { timeout: 20000 };
 
 async function openModal(user: ReturnType<typeof userEvent.setup>) {
   const d = await drawer();
@@ -48,7 +50,7 @@ async function openModal(user: ReturnType<typeof userEvent.setup>) {
   if (ack) await user.click(ack);
   const btn = await within(d).findByRole('button', { name: 'Cập nhật xử lý' });
   await user.click(btn);
-  const m = await screen.findByRole('dialog', { name: MODAL }, LONG);
+  const m = await screen.findByRole('dialog', { name: MODAL }, MODAL_WAIT);
   return { d, m, btn };
 }
 async function pick(user: ReturnType<typeof userEvent.setup>, m: HTMLElement, trigger: RegExp, option: string) {
@@ -56,6 +58,12 @@ async function pick(user: ReturnType<typeof userEvent.setup>, m: HTMLElement, tr
   await user.click(screen.getByRole('option', { name: option }));
 }
 const radio = (m: HTMLElement, name: string) => within(m).getByRole('radio', { name: new RegExp(`^${name}`) });
+
+// Modal "Cập nhật xử lý" là React.lazy (chunk riêng): nạp trước để lần mở đầu trong test không tốn thời gian
+// biến đổi/tải module (chạy cả bộ song song có lúc > 6 s → findByRole hết giờ). Không đổi hành vi được kiểm.
+beforeAll(async () => {
+  await import('./AlertUpdateModal');
+});
 
 afterEach(() => {
   liveSimulator.setBase('PT-101', 9.2);
@@ -108,7 +116,7 @@ describe('modal cập nhật xử lý cảnh báo áp suất (ALT-00128)', () =>
     // Tick ở drawer → modal đọc lại là Đạt
     await user.click(within(d).getByRole('checkbox', { name: 'Đối chiếu PT-101 với đồng hồ cơ' }));
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    const m2 = await screen.findByRole('dialog', { name: MODAL }, LONG);
+    const m2 = await screen.findByRole('dialog', { name: MODAL }, MODAL_WAIT);
     expect(within(m2).getByRole('button', { name: /^Trạng thái: Đối chiếu PT-101 với đồng hồ cơ Đạt$/ })).toBeInTheDocument();
     expect(within(m2).getByRole('button', { name: /^Trạng thái: Kiểm tra bộ điều áp PR-101 Có vấn đề$/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
@@ -207,7 +215,7 @@ describe('nháp + loại khác', () => {
     renderAt('/alerts?alert=ALT-00127');
     const d = await screen.findByRole('dialog', { name: 'Cảnh báo rò rỉ Gas nhẹ' });
     await user.click(within(d).getByRole('button', { name: 'Cập nhật xử lý' }));
-    expect(await screen.findByRole('dialog', { name: 'Cập nhật xử lý cảnh báo rò rỉ khí' }, LONG)).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Cập nhật xử lý cảnh báo rò rỉ khí' }, MODAL_WAIT)).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: MODAL })).toBeNull();
   });
 });

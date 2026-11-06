@@ -25,7 +25,7 @@ import { checklistProgress, toggleChecklistItem } from '@/features/maintenance/c
 import { deadlineCountdown } from '@/features/maintenance/deadline';
 import { WORKFLOW_STEPS, workflowPosition } from '@/features/maintenance/workflow';
 import { useNow } from '@/lib/useNow';
-import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/mocks/maintenance';
+import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/features/maintenance/types';
 import { Demo } from './Demo';
 
 const REF = (import.meta.env.DEV ? '/scratch/figma-ref/mt-detail-design.png' : undefined);

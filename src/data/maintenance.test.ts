@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import type { MaintenanceRecord } from '@/mocks/maintenance';
+import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { maintenanceRecords } from '@/mocks/maintenance';
-import { daysUntilDue, deriveMaintenanceKpis, derivePriorityTasks, deriveSchedule, dueLabel, isOverdue, matchMaintenance, scheduleLabel } from './maintenance';
+import type { AlertRecord } from '@/features/alerts/types';
+import { daysUntilDue, deriveMaintenanceKpis, createMaintenance, deriveDeviceDirectory, derivePriorityTasks, deriveSchedule, dueLabel, isOverdue, matchMaintenance, scheduleLabel } from './maintenance';
 
 /** Bản ghi tối thiểu cho test; ngày dạng giờ địa phương nhà máy. */
 const rec = (patch: Partial<MaintenanceRecord>): MaintenanceRecord =>
@@ -161,5 +162,41 @@ describe('mock MT-00128 theo ảnh chi tiết', () => {
     expect(r.attachments).toHaveLength(3);
     expect(r.notes).toHaveLength(1);
     expect(r.history!.map((h) => h.kind)).toEqual(['create', 'notify', 'priority']);
+  });
+});
+
+describe('danh bạ thiết bị → khu vực', () => {
+  const m = (device: string, area: string) => ({ device, area }) as MaintenanceRecord;
+  const a = (device: string, area: string) => ({ device, area }) as AlertRecord;
+
+  test('gộp cảnh báo + bảo trì, mỗi thiết bị một dòng, sắp theo mã', () => {
+    expect(deriveDeviceDirectory([m('V-101', 'Khu bồn LPG'), m('E-101A', 'Trạm hóa hơi')], [a('GS-03', 'Khu nạp xuất')])).toEqual([
+      { device: 'E-101A', area: 'Trạm hóa hơi' },
+      { device: 'GS-03', area: 'Khu nạp xuất' },
+      { device: 'V-101', area: 'Khu bồn LPG' },
+    ]);
+  });
+
+  test('trùng thiết bị: khu vực của bảo trì thắng cảnh báo', () => {
+    expect(deriveDeviceDirectory([m('V-101', 'Khu bồn LPG')], [a('V-101', 'Khác')])).toEqual([{ device: 'V-101', area: 'Khu bồn LPG' }]);
+  });
+
+  test('rỗng → rỗng; không truyền cảnh báo vẫn chạy', () => {
+    expect(deriveDeviceDirectory([], [])).toEqual([]);
+    expect(deriveDeviceDirectory([m('P-101A', 'Khu bơm')])).toEqual([{ device: 'P-101A', area: 'Khu bơm' }]);
+  });
+});
+
+describe('createMaintenance – khu vực', () => {
+  const base = { title: 'Kiểm tra', device: 'THIET-BI-LA', type: 'inspection', priority: 'medium', startAt: '2026-10-26T08:00', dueAt: '2099-10-26T16:00', assignee: null } as const;
+
+  test('dùng khu vực form truyền vào (không tra bảng toàn cục)', async () => {
+    const r = await createMaintenance({ ...base, area: 'Khu bơm' });
+    expect(r.area).toBe('Khu bơm');
+  });
+
+  test('khu vực rỗng → "Khác"', async () => {
+    const r = await createMaintenance({ ...base, area: '' });
+    expect(r.area).toBe('Khác');
   });
 });

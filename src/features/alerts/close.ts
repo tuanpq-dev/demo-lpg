@@ -10,8 +10,8 @@
  * Người đóng: mức Nghiêm trọng thì người đóng phải KHÁC người xử lý (`resolvedBy`, thiếu → người phụ trách). TODO(backend):
  * kiểm tra vai trò người đóng ở API (FE chỉ là UX).
  */
-import type { AlertFollowUp, AlertRecord } from '@/mocks/alerts';
-import type { FollowUpConfig } from '@/mocks/alertKinds';
+import type { AlertFollowUp, AlertRecord } from '@/features/alerts/types';
+import type { FollowUpConfig } from '@/features/alerts/kinds';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import type { DetectorAlarm, DetectorDevice } from './fire';
 import { formatMeasure } from './gauge';

@@ -6,13 +6,17 @@
 import { formatGaugeNumber, gaugeScale, isBreached, withUnit, type GaugeScale } from '@/features/alerts/gauge';
 import { tagSignal } from '@/features/live/signal';
 import { formatDayVi, parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
-import type { AlertDirection, AlertRecord } from '@/mocks/alerts';
-import { ALERT_KINDS, DEFAULT_FOLLOW_UP, GAS_BANDS, REGULATORS, fillPlaybookText, type AlertKindConfig, type AlertUpdateConfig, type FollowUpConfig } from '@/mocks/alertKinds';
+import type { AlertDirection, AlertRecord } from '@/features/alerts/types';
+import { ALERT_KINDS, DEFAULT_FOLLOW_UP, GAS_BANDS, REGULATORS, fillPlaybookText } from '@/mocks/alertKinds';
+
+/** Thay `{device}`, `{safetyValve}`… trong chữ cấu hình loại cảnh báo (bảng van / bộ điều áp là dữ liệu cấu hình). */
+export { fillPlaybookText };
+import type { AlertKindConfig, AlertUpdateConfig, FollowUpConfig } from '@/features/alerts/kinds';
 import { ASSET_TAGS, REGULATOR_TAGS } from '@/features/live/tags';
 import { parseUpdateDraft, type UpdateDraft } from '@/features/alerts/update';
 import { closeConditions, relatedOpenAlerts, type CloseCondition, type CloseConditionInput } from '@/features/alerts/close';
 import { AREA_EQUIPMENT, AREA_FIRE_SIGNALS, HEAT_DETECTORS, nearbySensor, sensorsInArea, type HeatDetector } from '@/mocks/sensors';
-import type { Area } from '@/mocks/areas';
+import type { Area } from '@/features/plant/areas';
 import {
   crossConfirm,
   detectorStatus,

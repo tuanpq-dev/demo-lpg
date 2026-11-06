@@ -148,6 +148,55 @@ describe('ProgressUpdateModal', () => {
     expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY)!)).toMatchObject({ progress: 40 });
   });
 
+  // ---- Viết trước khi tách modal thành khối + useProgressUpdateForm (06/11/2026) ----
+
+  test('lưu lỗi (máy chủ) → câu lỗi, không đóng; sửa nội dung → lỗi biến mất', async () => {
+    const { user, onClose } = setup({ onSubmit: vi.fn(async () => Promise.reject(new Error('máy chủ bận'))) });
+    await user.type(screen.getByRole('textbox', { name: /Nội dung đã thực hiện/ }), 'Đã siêu âm');
+    await user.click(screen.getByRole('button', { name: 'Cập nhật tiến độ' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Không thực hiện được thao tác: máy chủ bận');
+    expect(onClose).not.toHaveBeenCalled();
+    await user.type(screen.getByRole('textbox', { name: /Nội dung đã thực hiện/ }), 'x');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  test('lưu nháp thất bại (bộ nhớ chặn) → câu lỗi, không đóng; chọn trạng thái khác → lỗi biến mất', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const { user, onClose } = setup();
+    await user.click(screen.getByRole('button', { name: 'Lưu nháp' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
+    expect(onClose).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('radio', { name: 'Tạm dừng' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  test('xem trước: tệp mẫu → "Dữ liệu mẫu"; ảnh tạm → <img>; bỏ tệp đang xem → đóng xem trước; "Đóng xem trước"', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:mock/1') as typeof URL.createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Xem bao-cao.pdf' }));
+    expect(screen.getByText('Dữ liệu mẫu')).toBeInTheDocument();
+    expect(screen.getByText(/Chưa có tệp thật – bản demo chưa nối kho lưu trữ/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Đóng xem trước' }));
+    expect(screen.queryByText('Dữ liệu mẫu')).toBeNull();
+
+    fireEvent.change(document.querySelector<HTMLInputElement>('input[type="file"]')!, { target: { files: [new File(['x'], 'anh.png', { type: 'image/png' })] } });
+    await user.click(screen.getByRole('button', { name: 'Xem anh.png' }));
+    expect(screen.getByRole('img', { name: 'Xem trước anh.png' })).toHaveAttribute('src', 'blob:mock/1');
+    await user.click(screen.getByRole('button', { name: 'Bỏ tệp anh.png' }));
+    expect(screen.queryByRole('img', { name: 'Xem trước anh.png' })).toBeNull();
+  });
+
+  test('Đã phân công: "Hoàn thành" khoá kèm lý do; hạn đã qua → ô Hạn chót đỏ, gợi ý "Đã quá hạn"', () => {
+    setup({ record: { ...record, status: 'assigned', dueAt: '2000-01-01T08:00' } });
+    const done = screen.getByRole('radio', { name: /Hoàn thành/ });
+    expect(done).toHaveAttribute('aria-disabled', 'true');
+    expect(done).toHaveAccessibleDescription(/bắt đầu thực hiện trước khi báo hoàn thành/);
+    expect(screen.getByTitle('Hạn chót – Đã quá hạn')).toBeInTheDocument();
+  });
+
   test('nháp hỏng trong sessionStorage → bỏ qua', () => {
     sessionStorage.setItem(DRAFT_KEY, '{không phải json');
     setup();

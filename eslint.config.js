@@ -48,6 +48,19 @@ export default tseslint.config(
       'no-restricted-syntax': ['error', ...DANGER_TEXT_RULES],
     },
   },
+  // Phân lớp (CLAUDE.md mục 5 "Dữ liệu"): logic, component, nối router và trang KHÔNG import dữ liệu mẫu – đọc qua
+  // `src/data/*` (lớp dữ liệu, chỗ thay API); kiểu dữ liệu ở `src/features/<miền>/types.ts`. Ngoại lệ: playground
+  // (trưng bày component với dữ liệu mẫu) và test.
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/pages/**/*.{ts,tsx}'],
+    ignores: ['src/pages/playground/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['@/mocks', '@/mocks/*'], message: 'Không import src/mocks ngoài lớp dữ liệu – đọc qua src/data/*, kiểu ở src/features/<miền>/types.ts.' }] },
+      ],
+    },
+  },
   // Test được nhắc tới các class bị cấm (kiểm tra class / mã mẫu cho chính luật này). Fixture của colorRules.test.ts
   // lint với tên file thường (không phải *.test.*) nên luật vẫn áp dụng ở đó.
   { files: ['**/*.test.{ts,tsx}'], rules: { 'no-restricted-syntax': 'off' } },

@@ -6,7 +6,7 @@
  * `guide[id]` có hai dạng: CŨ `{ at, by }` (tick trước 28/10/2026) = Đạt; MỚI có `status`. Mọi nơi đọc qua
  * `inspectionEntry` / `inspectionItems` ở đây – không tự kiểm tra dạng dữ liệu ở chỗ khác. Thuần, có test.
  */
-import type { AlertGuideEntry, AlertGuideProgress, InspectionStatus } from '@/mocks/alerts';
+import type { AlertGuideEntry, AlertGuideProgress, InspectionStatus } from '@/features/alerts/types';
 
 export type { InspectionStatus };
 

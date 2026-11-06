@@ -13,7 +13,7 @@
  * Mỗi lần cập nhật = MỘT dòng lịch sử (+ một ghi chú nếu có nội dung). `reportedProgress` tách khỏi tiến độ checklist.
  */
 import { plantDateTimeKey } from '@/lib/plantTime';
-import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord, MaintenanceStatus } from '@/mocks/maintenance';
+import type { MaintenanceAttachment, MaintenanceHistoryKind, MaintenanceRecord, MaintenanceStatus } from '@/features/maintenance/types';
 import { checklistProgress } from './checklist';
 import { isPastDue, dueInstant } from './deadline';
 import { addNoteRecord, type ActionContext } from './workflow';

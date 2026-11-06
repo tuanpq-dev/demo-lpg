@@ -3,7 +3,7 @@ import { VAPORIZER_TAGS } from '@/features/live/tags';
 import { resolveBindings } from '@/features/scene/fields';
 import { parseSceneConfig } from '@/features/scene/parse';
 import { alertRecords } from './alerts';
-import { AREAS } from './areas';
+import { AREAS } from '@/features/plant/areas';
 import { operationDevices, plcScadaDevices } from './operations';
 import { liveBase } from './scenes/live';
 import khuBon from './scenes/khu-bon-lpg.json';

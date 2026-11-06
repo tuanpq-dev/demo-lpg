@@ -7,7 +7,6 @@ import {
   AlertItem,
   AreaTrendChart,
   AssetWatchlist,
-  Button,
   Card,
   CategoryBarList,
   ChartCard,
@@ -25,7 +24,7 @@ import { ConnectedPlantMap } from '@/app/ConnectedPlantMap';
 import { ClockButton, LiveDataButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
-import { Placeholder } from '@/app/Placeholder';
+import { PageError, Placeholder } from '@/app/Placeholder';
 import { useLiveData } from '@/data/live';
 import { applyLive, useOverviewData } from '@/data/overview';
 import { resolveAssetId } from '@/data/assetDetail';
@@ -108,12 +107,7 @@ export default function OverviewPage() {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <Card title="Không tải được dữ liệu" headerVariant="plain" tone="danger">
-          <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
-          <Button onClick={refetch} className="self-start">
-            Thử lại
-          </Button>
-        </Card>
+        <PageError title="Không tải được dữ liệu" error={error} onRetry={refetch} />
       </Page>
     );
   }

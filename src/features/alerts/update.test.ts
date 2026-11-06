@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { ALERT_KINDS, type AlertUpdateConfig } from '@/mocks/alertKinds';
-import type { AlertRecord } from '@/mocks/alerts';
+import { ALERT_KINDS } from '@/mocks/alertKinds';
+import type { AlertUpdateConfig } from '@/features/alerts/kinds';
+import type { AlertRecord } from '@/features/alerts/types';
 import type { CloseInput } from './pressure';
 import {
   alertUpdate,

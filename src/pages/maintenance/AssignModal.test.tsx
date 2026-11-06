@@ -84,6 +84,21 @@ describe('AssignModal', () => {
     );
   });
 
+  test('lưu thất bại (máy chủ lỗi) → báo lỗi trong modal, nút mở lại để thử lại, không lọt lỗi ra ngoài', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onSubmit = vi.fn(async () => {
+      throw new Error('Mất kết nối máy chủ');
+    });
+    const { user } = setup({}, onSubmit);
+    await user.click(screen.getByRole('radio', { name: /Lê Thị C/ }));
+    const ok = screen.getByRole('button', { name: 'Xác nhận phân công' });
+    await user.click(ok);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Không thực hiện được thao tác: Mất kết nối máy chủ');
+    expect(screen.getByRole('dialog', { name: 'Phân công người xử lý' })).toBeInTheDocument();
+    expect(ok).not.toHaveAttribute('aria-disabled', 'true');
+    vi.restoreAllMocks();
+  });
+
   test('cảnh báo không chặn (Bận, quá hạn) đọc qua aria-live; hạn < bắt đầu thì chặn', async () => {
     const { user, onSubmit } = setup();
     await user.click(screen.getByRole('radio', { name: /Trần Bình/ }));
@@ -164,6 +179,62 @@ describe('AssignModal', () => {
     const third = setup();
     await third.user.keyboard('{Escape}');
     expect(third.onClose).toHaveBeenCalled();
+  });
+
+  // ---- Viết trước khi tách modal thành khối + useAssignForm (06/11/2026) ----
+
+  test('lọc phòng ban / ca thu hẹp danh sách; tìm theo chuyên môn', async () => {
+    const { user } = setup();
+    const list = () => screen.getByRole('radiogroup', { name: 'Danh sách nhân sự' });
+    const all = within(list()).getAllByRole('radio').length;
+    await user.click(screen.getByRole('button', { name: /Lọc phòng ban/ }));
+    await user.click(screen.getByRole('option', { name: 'Bảo trì Điện' }));
+    const byDept = within(list()).getAllByRole('radio');
+    expect(byDept.length).toBeLessThan(all);
+    expect(byDept.every((r) => /Điện/.test(r.textContent ?? ''))).toBe(true);
+    await user.click(screen.getByRole('button', { name: /Lọc phòng ban/ }));
+    await user.click(screen.getByRole('option', { name: 'Tất cả phòng ban' }));
+    await user.click(screen.getByRole('button', { name: /Lọc ca/ }));
+    await user.click(screen.getByRole('option', { name: 'Ca 3' }));
+    expect(within(list()).queryAllByRole('radio').every((r) => /Ca 3/.test(r.textContent ?? ''))).toBe(true);
+  });
+
+  test('lưu tạm thất bại → câu lỗi, không đóng; sửa một ô → lỗi biến mất', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const { user, onClose } = setup();
+    await user.click(screen.getByRole('radio', { name: /Lê Thị C/ }));
+    await user.click(screen.getByRole('button', { name: 'Lưu tạm' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Không lưu được nháp (bộ nhớ trình duyệt không khả dụng).');
+    expect(onClose).not.toHaveBeenCalled();
+    await user.type(screen.getByRole('textbox', { name: /Ghi chú phân công/ }), 'a');
+    expect(screen.queryByRole('alert')).toBeNull();
+    vi.restoreAllMocks();
+  });
+
+  test('chỉ bật / tắt công tắc thông báo = chưa sửa → Esc đóng ngay', async () => {
+    const { user, onClose } = setup();
+    await user.click(screen.getByRole('switch', { name: /Gửi thông báo đẩy và SMS/ }));
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('chọn ca tay rồi chọn người → giữ ca đã chọn (không điền ca mặc định của người)', async () => {
+    const { user, onSubmit } = setup();
+    await user.click(screen.getByRole('button', { name: /Ca làm việc/ }));
+    await user.click(screen.getByRole('option', { name: /Ca 3/ }));
+    await user.click(screen.getByRole('radio', { name: /Nguyễn Văn A/ }));
+    expect(screen.getByRole('button', { name: /Ca làm việc/ })).toHaveTextContent('Ca 3');
+    await user.click(screen.getByRole('button', { name: 'Xác nhận phân công' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ assignee: 'Nguyễn Văn A', shift: 'shift-3' }));
+  });
+
+  test('đổi người khi người hiện tại không còn trong danh mục (trưởng ca) → ô chọn vẫn giữ đúng tên; không vào người phối hợp', async () => {
+    const { user } = setup({ status: 'assigned', assignee: 'Hoàng Minh E' });
+    expect(screen.getByRole('button', { name: 'Bỏ chọn Hoàng Minh E' })).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Người phối hợp' }));
+    expect(screen.queryByRole('option', { name: /Hoàng Minh E/ })).toBeNull();
   });
 
   test('công tắc thông báo: role switch, chỉ giao diện (ghi rõ chưa gửi)', async () => {

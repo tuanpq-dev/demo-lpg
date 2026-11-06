@@ -9,7 +9,8 @@
  */
 import { plantDateTimeKey } from '@/lib/plantTime';
 import { BUSY_THRESHOLD, inShift, shiftShortLabel } from '@/features/staff/availability';
-import { SHIFTS, staffByName, type MaintenanceRecord, type MaintenanceStatus, type ShiftId } from '@/mocks/maintenance';
+import { SHIFTS, type StaffMember } from '@/features/staff/org';
+import type { MaintenanceRecord, MaintenanceStatus, ShiftId } from '@/features/maintenance/types';
 import { dueInstant, isPastDue } from './deadline';
 import { addNoteRecord, assignRecord, type ActionContext } from './workflow';
 
@@ -23,6 +24,9 @@ const ACTIVE: readonly MaintenanceStatus[] = ['assigned', 'in-progress'];
 export const WORKLOAD_HINT = `Đang làm = số yêu cầu Đã phân công + Đang thực hiện mà người này là người xử lý chính (không tính người phối hợp, không tính Chờ nghiệm thu). Quá hạn = trong số đó, đã qua hạn chót. Bận khi đang làm từ ${BUSY_THRESHOLD} việc.`;
 
 export type StaffWorkload = { active: number; overdue: number; busy: boolean };
+
+/** Tra nhân sự theo tên (danh mục ở lớp dữ liệu – `staffByName` của `data/staff`); logic chỉ cần ca mặc định + phòng ban. */
+export type StaffLookup = (name: string | null | undefined) => Pick<StaffMember, 'defaultShift' | 'department'> | undefined;
 
 const EMPTY: StaffWorkload = { active: 0, overdue: 0, busy: false };
 
@@ -109,7 +113,7 @@ export type AssignWarning = {
  * Cảnh báo KHÔNG chặn: người được chọn đang Bận / có việc quá hạn, ca không khớp giờ bắt đầu, hạn đã qua.
  * `workloads` tính từ danh sách hiện tại – khi đổi người, việc này đang tính cho người cũ nên không trừ/cộng gì thêm.
  */
-export function assignWarnings(f: AssignForm, workloads: ReadonlyMap<string, StaffWorkload>, now: Date): AssignWarning[] {
+export function assignWarnings(f: AssignForm, workloads: ReadonlyMap<string, StaffWorkload>, now: Date, staffOf: StaffLookup): AssignWarning[] {
   const out: AssignWarning[] = [];
   if (f.assignee) {
     const w = workloadOf(workloads, f.assignee);
@@ -118,7 +122,7 @@ export function assignWarnings(f: AssignForm, workloads: ReadonlyMap<string, Sta
   }
   if (f.shift && f.startAt && !inShift(f.startAt, f.shift)) {
     const s = SHIFTS.find((x) => x.value === f.shift);
-    const own = staffByName(f.assignee)?.defaultShift;
+    const own = staffOf(f.assignee)?.defaultShift;
     out.push({
       id: 'shift',
       label: `Giờ bắt đầu ${f.startAt.slice(11, 16)} không thuộc ${s?.label ?? 'ca đã chọn'}`,
@@ -136,11 +140,11 @@ export function assignWarnings(f: AssignForm, workloads: ReadonlyMap<string, Sta
  * - Đổi người: giữ trạng thái/tiến độ/cờ; lịch sử `reassign` "Đổi người xử lý: A → B – lý do: …".
  * - Ghi chú phân công → ghi chú kỹ thuật "Phân công: …".
  */
-export function applyAssignment(r: MaintenanceRecord, f: AssignForm, ctx: ActionContext): MaintenanceRecord {
+export function applyAssignment(r: MaintenanceRecord, f: AssignForm, ctx: ActionContext, staffOf: StaffLookup): MaintenanceRecord {
   if (validateAssign(r, f).length) return r;
   const assignee = f.assignee!.trim();
   const mode = assignMode(r.status)!;
-  const department = staffByName(assignee)?.department ?? r.department;
+  const department = staffOf(assignee)?.department ?? r.department;
   const shift = f.shift ?? r.shift;
   const collaborators = [...new Set(f.collaborators.filter((c) => c && c !== assignee))];
   const dueAt = f.dueAt.slice(0, 16);

@@ -3,6 +3,7 @@ import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
 import { ROLE_LABELS } from '@/features/auth/permissions';
 import { useAuth } from './auth';
 import { LiveAnnouncer } from './LiveAnnouncer';
+import { ToastHost } from './ToastHost';
 import { NAV_ROUTES, navIdFromPath, navPathFromId } from './navigation';
 
 /** AppHeader gắn với React Router: tab active theo URL, chọn tab → navigate. */
@@ -42,6 +43,7 @@ export function Page(props: Omit<AppLayoutProps, 'header'>) {
     <>
       <AppLayout header={<RoutedAppHeader />} {...props} />
       <LiveAnnouncer />
+      <ToastHost />
     </>
   );
 }

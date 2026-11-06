@@ -28,8 +28,8 @@ flowchart TD
 |---|---|---|
 | 1 | `src/mocks/maintenance.ts` | `MaintenanceRecord` (gồm trường của form), `maintenanceRecords`, danh mục `PEOPLE`, `DEPARTMENTS`, `SHIFTS`, `CHECKLIST_TEMPLATES` |
 | 2 | `src/data/maintenance.ts` | `daysUntilDue`, `isOverdue`, `dueLabel`; `MAINTENANCE_PARAMS`, `matchMaintenance`, `sortMaintenance`; `derive*`; `createMaintenance`, `advanceMaintenance`; `useMaintenance()`; gợi ý AI mock `suggestForRequest`; nháp form |
-| 3 | `src/pages/maintenance/MaintenancePage.tsx` | KPI, việc ưu tiên, bảng 7 tab (gồm "Quá hạn"), lịch, mở modal theo URL; mã/nút "Xem chi tiết"/dòng/thẻ ưu tiên/lịch → `/maintenance/:id` (mục 4i). `?open=<id>` cũ → chuyển hướng (drawer đã bỏ) |
-| 4 | `src/pages/maintenance/CreateMaintenanceModal.tsx` | Form tạo yêu cầu: `blank()` / `fromAlert()` khởi tạo, `validate()`, lưu nháp |
+| 3 | `src/pages/maintenance/MaintenancePage.tsx` | KPI, việc ưu tiên, bảng 7 tab (gồm "Quá hạn"), lịch, mở modal theo URL; mã/nút "Xem chi tiết"/dòng/thẻ ưu tiên/lịch → `/maintenance/:id` (mục 4i). `?open=<id>` cũ → chuyển hướng (drawer đã bỏ). Khối ở `list/`: `MaintenanceSections` (KPI, ưu tiên, lịch), `MaintenanceListSection` (tab, lọc, hàng loạt, bảng), `maintenanceColumns`, `MaintenanceModals`; modal theo URL = `useMaintenanceModals`; CSV = `exportMaintenanceCsv` |
+| 4 | `src/pages/maintenance/CreateMaintenanceModal.tsx` + `create/` | Form tạo yêu cầu: hàm thuần `create/createForm.ts` (`blankForm` / `formFromAlert` khởi tạo, `validateCreate`, `toCreateInput`, reducer), state = `useCreateMaintenanceForm`, khối `CreateBanners` / `CreateInfoColumns` / `CreateSections`; lưu nháp |
 | 5 | `src/features/maintenance/*` | Thuần, có test: `workflow.ts` (bước, không nhảy bước, hủy, phân công, ghi chú, lịch sử) · `checklist.ts` (tiến độ bỏ mục N/A, khoá theo trạng thái) · `deadline.ts` (giờ hạn, đếm ngược) · `progress.ts` (modal cập nhật tiến độ – mục 4j) · `review.ts` (gửi nghiệm thu + nghiệm thu – mục 4k) |
 
 Quá hạn **không lưu** – tính mỗi lần:
@@ -47,7 +47,7 @@ export const isOverdue = (r: MaintenanceRecord, now = new Date()) =>
 | Gửi nghiệm thu / nghiệm thu (Đạt · Cần bổ sung · Không đạt) | `src/features/maintenance/review.ts` (mục 4k) |
 | Quy tắc quá hạn / giờ hạn | `isPastDue`, `dueInstant`, `deadlineCountdown` (`src/features/maintenance/deadline.ts`); `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
 | Trường của form tạo | `MaintenanceRecord` (`src/mocks/maintenance.ts`), `NewMaintenanceInput` + `createMaintenance` (`src/data/maintenance.ts`), `CreateMaintenanceModal.tsx` |
-| Liên kết từ cảnh báo | Modal mở ở `AlertsPage.tsx` (`createFor`); liên kết = `sourceAlertId` của yêu cầu (`linkedMaintenance` – một cảnh báo chỉ một yêu cầu chưa hủy, `createMaintenance` ném `DuplicateFromAlertError`); `?create=1&from=` ở `MaintenancePage.tsx` |
+| Liên kết từ cảnh báo | Modal mở ở `AlertsPage.tsx` (`createFor`); liên kết = `sourceAlertId` của yêu cầu (`linkedMaintenance` – một cảnh báo chỉ một yêu cầu chưa hủy, `createMaintenance` ném `DuplicateFromAlertError`); `?create=1&from=` ở `list/useMaintenanceModals.ts` |
 
 ### 4i. Chi tiết yêu cầu bảo trì `/maintenance/:id`
 
@@ -62,7 +62,10 @@ Theo ảnh `scratch/figma-ref/mt-detail-design.png` (MT-00128, chưa có node Fi
 
 ```
 URL /maintenance/:id
-  → MaintenanceDetailRoute (src/pages/maintenance/MaintenanceDetailPage.tsx)
+  → MaintenanceDetailRoute (src/pages/maintenance/MaintenanceDetailPage.tsx – tải / không tìm thấy / chuẩn hoá mã)
+  → MaintenanceDetail (src/pages/maintenance/detail/): DetailHeader + DetailStepper · GeneralInfoCard · WorkCards
+    (nội dung, checklist, ghi chú, tệp, lịch sử, kết quả) · DetailAside · LiveCards (hạn chót, thiết bị liên quan) ·
+    DetailActionBar · DetailModals; useDetailDialog (?submit= / ?review= / ?assign= mở sẵn rồi bỏ khỏi URL) + useChecklistFocus
       useMaintenance()                    src/data/maintenance.ts  (store chung với danh sách)
         ├─ advance(id, actor)  → advanceRecord   (pending → assigned → in-progress → review → done, một bước, + lịch sử)
         ├─ cancel(id, reason)  → cancelRecord    (khi chưa xong; cancelledFrom = bước đã tới)
@@ -125,7 +128,7 @@ Chi tiết: thanh dính đáy "Cập nhật tiến độ" → state dialog='prog
 |---|---|
 | Ánh xạ ô → trạng thái, bắt buộc nội dung, câu lịch sử | `applyProgressUpdate`, `validateProgressUpdate`, `historyLine` (`progress.ts`) |
 | Ngưỡng "gần hạn" / bước thanh trượt / luật tệp | `NEAR_DUE_MS`, `PROGRESS_STEP`, `UPLOAD_RULES` (`progress.ts`) |
-| Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` |
+| Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` + `progress/` (`ProgressSections` = nháp / 5 ô / trạng thái / tiến độ / nội dung, `ProgressFilesSection` = tệp + xem trước, `useProgressUpdateForm` + `progressFormReducer` = state + kiểm tra) |
 | Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenanceDetail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
 | Gửi nghiệm thu / nghiệm thu | mục 4k |
 | Phân công / đổi người | mục 4l |
@@ -233,7 +236,7 @@ Hàng loạt (danh sách): chọn người → bulkAssign → planBulkAssign: CH
 | Lỗi chặn / cảnh báo | `validateAssign`, `assignWarnings`, `inShift` (`assign.ts`) |
 | Ghi bản ghi, câu lịch sử | `applyAssignment`, `planBulkAssign` (`assign.ts`) |
 | Danh mục nhân sự, vai trò | `STAFF` (`mocks/maintenance.ts`) |
-| Giao diện | `AssignModal.tsx`; thẻ/danh sách `components/StaffPicker` (+ `AssignNotices` – khối cảnh báo/lý do chặn dùng chung); `Switch`; `Avatar` |
+| Giao diện | `AssignModal.tsx` + `assign/` (`AssignSections` = dải yêu cầu / cột chọn nhân sự / chi tiết phân công, `useAssignForm` + `assignFormReducer` = state + kiểm tra); thẻ/danh sách `components/StaffPicker` (+ `AssignNotices` – khối cảnh báo/lý do chặn dùng chung); `Switch`; `Avatar` |
 | Ngưỡng Bận, `inShift`, nhãn Sẵn sàng/Bận | DÙNG CHUNG với phân công cảnh báo: `features/staff/availability.ts` (`assign.ts` export lại). Modal bảo trì KHÔNG hiện "Ngoài ca" theo giờ hiện tại (việc xếp cho ca sau) – chỉ Sẵn sàng/Bận + cảnh báo ca lệch giờ bắt đầu |
 | Nháp | `lib/sessionDraft.ts` (`createSessionDraft`) – khoá giữ `demo-lpg:mt-assign-draft:<id>` |
 
