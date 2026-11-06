@@ -177,4 +177,32 @@ describe('AlertUpdateModal – các khối chưa phủ ở test drawer', () => {
     expect(save(m)).not.toHaveAttribute('aria-disabled');
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
+
+  // Đổi có chủ đích (06/11/2026, quyết định sản phẩm): lỗi mạng / máy chủ khi lưu cũng tự xoá khi người dùng sửa một ô
+  // (trước: giữ tới lần bấm lưu kế tiếp).
+  test('lỗi mạng khi lưu: sửa một ô (ô chữ, ô chọn, hạng mục kiểm tra) → câu lỗi biến mất', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn<Submit>(() => {
+      throw new Error('mất kết nối');
+    });
+    const { m } = open(onSubmit);
+    const ERR = 'Không thực hiện được thao tác: mất kết nối';
+
+    await user.click(save(m));
+    expect(await within(m).findByText(ERR)).toBeInTheDocument();
+    await user.type(within(m).getByRole('textbox', { name: /Nguyên nhân xử lý/ }), 'x');
+    expect(within(m).queryByText(ERR)).toBeNull();
+
+    await user.click(save(m));
+    expect(await within(m).findByText(ERR)).toBeInTheDocument();
+    await user.click(radio(m, 'Khác'));
+    expect(within(m).queryByText(ERR)).toBeNull();
+
+    await user.click(save(m));
+    await user.type(within(m).getByRole('textbox', { name: /Mô tả vấn đề/ }), 'Rò');
+    await user.click(save(m));
+    expect(await within(m).findByText(ERR)).toBeInTheDocument();
+    await user.type(within(m).getByRole('textbox', { name: 'Ghi chú: Kiểm tra bộ điều áp PR-101' }), 'a');
+    expect(within(m).queryByText(ERR)).toBeNull();
+  });
 });

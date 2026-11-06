@@ -233,6 +233,7 @@ UpdateFilesSection, UpdateIssueSection, UpdateFollowUpSection); state + kiểm t
   ├─ AssignNotices: cảnh báo KHÔNG chặn (aria-live) + lý do chặn (nút "Lưu cập nhật" aria-disabled + aria-describedby)
   └─ Chân: Hủy (đã sửa so với bản đã lưu gần nhất → hỏi "Bỏ thay đổi"; nháp đã lưu giữ lại) · Lưu nháp (sessionStorage
          `demo-lpg:alert-update-draft:<id>`, try/catch; tệp tạm không vào nháp) · Lưu cập nhật (một ghi chú + một dòng lịch sử, nháp xoá)
+         Lỗi lưu (máy chủ trả `{ ok: false }` hoặc lỗi mạng) tự xoá khi sửa một ô (từ 06/11/2026).
 ```
 
 | Trạng thái (ô) | Bản ghi | Điều kiện |

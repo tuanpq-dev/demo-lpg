@@ -24,7 +24,7 @@ export type FormState = {
   uploadError: string;
   /** Lỗi trả về lúc lưu (`{ ok: false }`) – chỉ đúng với giá trị lúc đó → sửa form là bỏ. */
   errors: UpdateErrors;
-  /** Lỗi khi lưu thất bại (mạng / máy chủ) – khác lỗi kiểm tra form. */
+  /** Lỗi khi lưu thất bại (mạng / máy chủ) – khác lỗi kiểm tra form; sửa một ô là bỏ. */
   submitError: string;
   /** Đã bấm "Lưu cập nhật" ít nhất một lần → hiện mọi lỗi. */
   triedSubmit: boolean;
@@ -43,8 +43,11 @@ export type FormAction =
   | { type: 'submit-error'; text: string }
   | { type: 'draft-saved' };
 
-/** Đổi giá trị form → bỏ lỗi trả về lúc lưu (lỗi theo giá trị hiện tại vẫn tính lại mỗi lần render). */
-const edit = (s: FormState, values: UpdateFormValues): FormState => ({ ...s, values, errors: {} });
+/**
+ * Đổi giá trị form → bỏ mọi lỗi lưu: lỗi trả về (`{ ok: false }`) và lỗi mạng / máy chủ – chỉ đúng với lần lưu đó
+ * (lỗi theo giá trị hiện tại vẫn tính lại mỗi lần render).
+ */
+const edit = (s: FormState, values: UpdateFormValues): FormState => ({ ...s, values, errors: {}, submitError: '' });
 
 export function updateFormReducer(s: FormState, a: FormAction): FormState {
   switch (a.type) {

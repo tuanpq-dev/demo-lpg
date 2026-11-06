@@ -19,9 +19,10 @@ const values: UpdateFormValues = {
 const s0 = (over: Partial<FormState> = {}): FormState => ({ values, saved: values, files: [], uploadError: '', errors: {}, submitError: '', triedSubmit: false, ...over });
 
 describe('updateFormReducer', () => {
-  test('sửa giá trị (set / inspection / verification) → bỏ lỗi trả về lúc lưu', () => {
-    const withErr = s0({ errors: { state: 'x' } });
-    expect(updateFormReducer(withErr, { type: 'set', patch: { cause: 'a' } })).toMatchObject({ values: { cause: 'a' }, errors: {} });
+  test('sửa giá trị (set / inspection / verification) → bỏ lỗi trả về lúc lưu và lỗi mạng', () => {
+    const withErr = s0({ errors: { state: 'x' }, submitError: 'mạng' });
+    expect(updateFormReducer(withErr, { type: 'set', patch: { cause: 'a' } })).toMatchObject({ values: { cause: 'a' }, errors: {}, submitError: '' });
+    expect(updateFormReducer(withErr, { type: 'verification', id: 'v1', on: true }).submitError).toBe('');
     expect(updateFormReducer(withErr, { type: 'inspection', id: 'i1', entry: { status: 'pass', note: '' } }).errors).toEqual({});
     const on = updateFormReducer(withErr, { type: 'verification', id: 'v1', on: true });
     expect(on).toMatchObject({ values: { verification: ['v1'] }, errors: {} });
@@ -29,10 +30,11 @@ describe('updateFormReducer', () => {
   });
 
   test('tệp: thêm (id theo số tệp đang có) / bỏ; không đụng lỗi', () => {
-    const one = updateFormReducer(s0({ errors: { state: 'x' } }), { type: 'files-added', files: [{ name: 'a.png', size: 1, kind: 'image' }] });
+    const one = updateFormReducer(s0({ errors: { state: 'x' }, submitError: 'mạng' }), { type: 'files-added', files: [{ name: 'a.png', size: 1, kind: 'image' }] });
     const two = updateFormReducer(one, { type: 'files-added', files: [{ name: 'b.pdf', size: 2, kind: 'document' }] });
     expect(two.files.map((f) => f.id)).toEqual(['tmp-0-a.png', 'tmp-1-b.pdf']);
     expect(two.errors).toEqual({ state: 'x' });
+    expect(two.submitError).toBe('mạng');
     expect(updateFormReducer(two, { type: 'file-removed', id: 'tmp-0-a.png' }).files.map((f) => f.name)).toEqual(['b.pdf']);
   });
 
