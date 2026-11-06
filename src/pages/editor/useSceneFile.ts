@@ -78,17 +78,18 @@ export function useSceneFile({ setDialog, flash }: { setDialog: (d: EditorDialog
   const guard = (title: string, run: () => void) =>
     isDirtyNow() ? setDialog({ kind: 'confirm', title, message: 'Cảnh đang sửa có thay đổi chưa lưu. Bỏ các thay đổi đó?', confirmLabel: 'Bỏ thay đổi', run }) : run();
 
-  // Lần đầu: có bản nháp → hỏi khôi phục; không thì mở ?scene= hoặc cảnh mới.
+  // Lần đầu: có bản nháp → hỏi khôi phục; không thì mở ?scene= hoặc cảnh mới. Chạy đúng một lần khi vào trang:
+  // `started` chặn chạy lại (vẽ lại, StrictMode chạy effect 2 lần); `openFromUrl` đọc qua ref để luôn là bản mới nhất.
   const started = useRef(false);
+  const openFromUrlRef = useRef(openFromUrl);
+  openFromUrlRef.current = openFromUrl;
   useEffect(() => {
     if (started.current) return;
     started.current = true;
     const draft = readDraft();
     if (draft) setDialog({ kind: 'restore', draft });
-    else openFromUrl();
-    // Chỉ chạy một lần khi vào trang.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    else openFromUrlRef.current();
+  }, [setDialog]);
 
   // ----- Lưu -----
   const doSave = useCallback(
