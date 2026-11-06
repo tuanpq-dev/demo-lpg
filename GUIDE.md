@@ -33,6 +33,7 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 | `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
 - Deploy (Netlify): `netlify.toml` (build `npm run build`, publish `dist`, Node 20, chuyển `/*` → `/index.html` status 200) – không thêm file `_redirects` vào `public/` để tránh 2 nguồn cấu hình.
+- Deploy (Vercel): `vercel.json` – build `VITE_AUTH=off npm run build`, output `dist`, rewrite `/(.*)` → `/index.html` (vào thẳng route / F5 không 404). Node: theo Project Settings của Vercel (20.x hoặc 22.x; khi package.json có `engines` thì theo `engines`).
 - Lý do: app là SPA dùng history router (`createBrowserRouter` trong `src/main.tsx`), host tĩnh không có file `/alerts` nên gõ thẳng URL hoặc F5 sẽ 404 nếu thiếu luật trả `index.html` cho React Router xử lý; vì vậy `base` trong `vite.config.ts` phải để mặc định `/`.
 
 ---
