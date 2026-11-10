@@ -12,7 +12,7 @@ import { RUN_RESULT_LABEL, suggestionConfidence, tagHealth, type Scenario, type 
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import {
   MonitorHeaderMeta,
   MonitorKpis,
@@ -85,7 +85,11 @@ function SimulationMonitorPage({ scenarioId }: { scenarioId: string }) {
   const session = (wanted && sim.sessions.find((x) => x.id === wanted && x.scenarioId === scenario.id)) || sessionOf(scenario.id, sim.sessions, now);
   if (!session) {
     return (
-      <Page pageHeader={<PageHeader breadcrumb={crumbs(scenario.code, simulationConfigPath(scenario.id))} title={TITLE} description={DESCRIPTION} actions={back} />}>
+      <Page
+        pageHeader={
+          <PageHeader breadcrumb={crumbs(scenario.code, simulationConfigPath(scenario.id))} title={TITLE} description={DESCRIPTION} actions={back} />
+        }
+      >
         <Card title="Chưa có lượt mô phỏng" headerVariant="plain" radius="lg">
           <p className="mb-4 text-base text-fg-secondary">
             Kịch bản {scenario.code} – {scenario.title} chưa có lượt mô phỏng nào. Bắt đầu chạy từ màn cấu hình kịch bản.
@@ -207,7 +211,8 @@ function MonitorView({ scenario: s, session, scenarios, runs, live, now, back }:
       />
       {!active && run && (
         <p role="status" className="rounded-lg border border-line/30 bg-surface px-4 py-3 text-base text-fg">
-          Kết quả lượt: <strong className={run.result === 'pass' ? 'text-success' : 'text-warning'}>{RUN_RESULT_LABEL[run.result]}</strong> – {run.note}
+          Kết quả lượt: <strong className={run.result === 'pass' ? 'text-success' : 'text-warning'}>{RUN_RESULT_LABEL[run.result]}</strong> –{' '}
+          {run.note}
         </p>
       )}
 

@@ -34,7 +34,7 @@ export function useDetailDialog(r: MaintenanceRecord, canWrite: boolean) {
     if (!OPEN_KEYS.some((k) => q.has(k))) return;
     for (const k of OPEN_KEYS) q.delete(k);
     const s = q.toString();
-    navigate({ search: s ? `?${s}` : '', hash: location.hash }, { replace: true, state: location.state });
+    void navigate({ search: s ? `?${s}` : '', hash: location.hash }, { replace: true, state: location.state });
   }, [location, navigate]);
 
   return {

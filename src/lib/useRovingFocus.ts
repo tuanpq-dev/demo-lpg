@@ -18,13 +18,7 @@ type Options<T extends Item> = {
  * Roving tabindex cho nhóm tab/segment theo WAI-ARIA:
  * chỉ 1 phần tử có tabIndex=0 (mục đang chọn); ←/→ (hoặc ↑/↓), Home/End để di chuyển, bỏ qua mục disabled.
  */
-export function useRovingFocus<T extends Item>({
-  items,
-  value,
-  onChange,
-  activation = 'auto',
-  orientation = 'horizontal',
-}: Options<T>) {
+export function useRovingFocus<T extends Item>({ items, value, onChange, activation = 'auto', orientation = 'horizontal' }: Options<T>) {
   const refs = useRef(new Map<string, HTMLElement>());
 
   const setRef = useCallback(
@@ -66,15 +60,14 @@ export function useRovingFocus<T extends Item>({
       default:
         return;
     }
+    if (!target) return;
     e.preventDefault();
     refs.current.get(target.id)?.focus();
     if (activation === 'auto') onChange(target.id);
   };
 
   /** tabIndex cho từng mục: mục đang chọn = 0; nếu nó disabled/không tồn tại thì mục enabled đầu tiên = 0. */
-  const focusableId = items.some((i) => i.id === value && !i.disabled)
-    ? value
-    : items.find((i) => !i.disabled)?.id;
+  const focusableId = items.some((i) => i.id === value && !i.disabled) ? value : items.find((i) => !i.disabled)?.id;
 
   const getTabIndex = (id: string) => (id === focusableId ? 0 : -1);
 

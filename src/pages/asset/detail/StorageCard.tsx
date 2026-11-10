@@ -43,7 +43,12 @@ export function StorageCard({ data, live, liquidPct }: { data: AssetData; live: 
         {[
           { id: 'p', label: 'Áp suất bồn', value: readingText(pressure, 1, ' bar'), tone: 'text-fg' },
           { id: 't', label: 'Nhiệt độ LPG', value: readingText(temperature, 1, '°C'), tone: 'text-fg' },
-          { id: 'l', label: 'Mức bồn', value: liquidPct !== undefined ? `${fixed(liquidPct)}%` : lost(level) ? SIGNAL_LOST_LABEL : '—', tone: 'text-info' },
+          {
+            id: 'l',
+            label: 'Mức bồn',
+            value: liquidPct !== undefined ? `${fixed(liquidPct)}%` : lost(level) ? SIGNAL_LOST_LABEL : '—',
+            tone: 'text-info',
+          },
         ].map((x) => (
           <div key={x.id} className="flex flex-col gap-1">
             <dt className="text-2xs uppercase tracking-caps text-fg-secondary">{x.label}</dt>

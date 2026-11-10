@@ -32,7 +32,7 @@ const textTone: Record<AssetTone, string> = {
  * Một dòng thiết bị – nền surface-muted/20, viền line/30, cao 34px (Figma 53:500).
  * Màu lấy từ ảnh chụp Figma (node con 53:499 chưa có design context).
  */
-export function AssetRow({ id, name, statusLabel, tone, signalLost, onClick, className }: AssetRowProps) {
+function AssetRow({ id, name, statusLabel, tone, signalLost, onClick, className }: AssetRowProps) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag

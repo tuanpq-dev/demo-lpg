@@ -10,10 +10,7 @@ import { ASSET_TYPES, SCENE_SCHEMA_VERSION, type SceneConfig } from './types.js'
  */
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()]);
-const thresholds = z
-  .object({ warn: z.number(), danger: z.number(), lowWarn: z.number(), lowDanger: z.number() })
-  .partial()
-  .strict();
+const thresholds = z.object({ warn: z.number(), danger: z.number(), lowWarn: z.number(), lowDanger: z.number() }).partial().strict();
 const binding = z.union([z.string().min(1), thresholds.extend({ tag: z.string().min(1) }).strict()]);
 const camera = z.object({ position: vec3, zoom: z.number().positive(), target: vec3 }).strict();
 const marker = z
@@ -37,12 +34,15 @@ const objectSchema = z
     elevation: z.number().finite().optional(),
     rotation: vec3.optional(),
     scale: vec3.optional(),
-    attach: z.object({ pipe: z.string().min(1), t: z.number().min(0).max(1) }).strict().optional(),
+    attach: z
+      .object({ pipe: z.string().min(1), t: z.number().min(0).max(1) })
+      .strict()
+      .optional(),
     path: z.array(vec3).optional(),
-    params: z.record(z.number()).optional(),
+    params: z.record(z.string(), z.number()).optional(),
     label: z.string().optional(),
     marker: marker.optional(),
-    bindings: z.record(binding).optional(),
+    bindings: z.record(z.string(), binding).optional(),
   })
   .strict();
 
@@ -65,7 +65,7 @@ const sceneSchema = z
     schemaVersion: z.literal(SCENE_SCHEMA_VERSION),
     camera: camera.optional(),
     views: z.array(view).optional(),
-    thresholds: z.record(thresholds).optional(),
+    thresholds: z.record(z.string(), thresholds).optional(),
     objects: z.array(objectSchema),
     pipes: z.array(pipeSchema),
   })
@@ -85,7 +85,10 @@ const sceneSchema = z
       const spec = ASSET_SPECS[o.asset as keyof typeof ASSET_SPECS];
       if (!o.attach && !o.position) issue(['objects', i], `"${o.id}" cần position hoặc attach`);
       if (!o.attach && o.position && Math.abs(o.position[1] - (o.elevation ?? 0)) > 1e-6)
-        issue(['objects', i, 'position'], `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`);
+        issue(
+          ['objects', i, 'position'],
+          `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`,
+        );
       if (o.attach && !c.pipes.some((p) => p.id === o.attach!.pipe))
         issue(['objects', i, 'attach', 'pipe'], `"${o.id}" gắn vào ống "${o.attach.pipe}" không tồn tại`);
       if (o.asset === 'fence' && (o.path?.length ?? 0) < 2) issue(['objects', i, 'path'], 'hàng rào cần path ≥ 2 điểm');
@@ -167,15 +170,22 @@ export type SceneIssue = {
   message: string;
 };
 
+/** Đường dẫn lỗi zod (zod 4: PropertyKey[] – symbol đổi thành chuỗi). */
+const keyPath = (path: readonly PropertyKey[]): (string | number)[] => path.map((k) => (typeof k === 'symbol' ? String(k) : k));
+
 /** Validate không ném lỗi (Editor: bảng kiểm tra, Import JSON). Rỗng = hợp lệ. */
 export function validateSceneConfig(raw: unknown): SceneIssue[] {
   const r = sceneSchema.safeParse(migrateScene(raw));
-  return r.success ? [] : r.error.issues.map((i) => ({ path: i.path, where: fmtPath(i.path), message: i.message }));
+  return r.success ? [] : r.error.issues.map((i) => ({ path: keyPath(i.path), where: fmtPath(keyPath(i.path)), message: i.message }));
 }
 
 /** JSON (file mock hoặc API, định dạng cũ được migrate) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
 export function parseSceneConfig(raw: unknown, sceneId = (raw as { id?: string } | null)?.id ?? '?'): SceneConfig {
   const r = sceneSchema.safeParse(migrateScene(raw));
-  if (!r.success) throw new SceneConfigError(sceneId, r.error.issues.map((i) => `${fmtPath(i.path)}: ${i.message}`));
+  if (!r.success)
+    throw new SceneConfigError(
+      sceneId,
+      r.error.issues.map((i) => `${fmtPath(keyPath(i.path))}: ${i.message}`),
+    );
   return r.data as SceneConfig;
 }

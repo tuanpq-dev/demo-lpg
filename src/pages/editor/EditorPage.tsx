@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Card } from '@/components';
 import { Page } from '@/app/Page';
 import { SENSOR_TAGS } from '@/data/scene';
@@ -44,11 +44,6 @@ export default function EditorPage() {
   const { notice, flash } = useNotice();
   const file = useSceneFile({ setDialog, flash });
 
-  // Dev: test tương tác đọc state/chiếu toạ độ (playwright). Không có ở bản build.
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    Object.assign(window, { __sceneEditor: { doc: useSceneDoc, ui: useEditorUi, viewer } });
-  }, []);
   useEditorShortcuts({ actions, save: file.save, flash });
   usePruneSelection(scene);
   // Không ghi nháp khi đang hỏi khôi phục bản nháp cũ.

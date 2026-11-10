@@ -13,7 +13,7 @@ import { parsePlantDateTime } from './plantTime';
  */
 
 /** Đọc `?now=`: giờ nhà máy "yyyy-mm-ddTHH:mm[:ss]" hoặc ISO có `Z`/`±hh:mm`. Sai → null. */
-export function parseNowParam(value: string | null | undefined): Date | null {
+function parseNowParam(value: string | null | undefined): Date | null {
   if (!value) return null;
   const v = value.trim();
   if (/(Z|[+-]\d{2}:?\d{2})$/.test(v)) {
@@ -27,18 +27,14 @@ export function parseNowParam(value: string | null | undefined): Date | null {
  * Độ lệch (ms) so với giờ thật. Ưu tiên `?now=` hợp lệ khi được phép (`enabled`), rồi `fixed` (VITE_FIXED_NOW) hợp lệ;
  * không có → 0. Giá trị sai bị bỏ qua (không ném lỗi). Thuần – `realNow` truyền vào.
  */
-export function nowOffsetFrom(search: string, enabled: boolean, realNow: number, fixed?: string): number {
+function nowOffsetFrom(search: string, enabled: boolean, realNow: number, fixed?: string): number {
   const fromUrl = enabled ? parseNowParam(new URLSearchParams(search).get('now')) : null;
   const d = fromUrl ?? parseNowParam(fixed);
   return d ? d.getTime() - realNow : 0;
 }
 
 const enabled = import.meta.env.DEV || import.meta.env.VITE_DEMO === 'true';
-const offsetMs =
-  typeof window === 'undefined' ? 0 : nowOffsetFrom(window.location.search, enabled, Date.now(), import.meta.env.VITE_FIXED_NOW);
-
-/** Đang dời giờ (`?now=` hoặc `VITE_FIXED_NOW`). */
-export const isNowOverridden = offsetMs !== 0;
+const offsetMs = typeof window === 'undefined' ? 0 : nowOffsetFrom(window.location.search, enabled, Date.now(), import.meta.env.VITE_FIXED_NOW);
 
 /** Thời điểm hiện tại của app (giờ thật + độ lệch `?now=`). */
 export const appNow = () => new Date(Date.now() + offsetMs);

@@ -4,7 +4,7 @@
  */
 
 /** Múi giờ nhà máy (Việt Nam dùng chung UTC+7 với Bangkok, không đổi giờ mùa hè). */
-export const PLANT_TIME_ZONE = 'Asia/Bangkok';
+const PLANT_TIME_ZONE = 'Asia/Bangkok';
 
 const DAY_MS = 86_400_000;
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -23,12 +23,11 @@ export function plantDayKey(now: Date, timeZone: string = PLANT_TIME_ZONE): stri
 /** Số thứ tự ngày (lịch Gregory, không múi giờ) của "yyyy-mm-dd…" – hiệu hai ngày luôn là số nguyên. */
 export function dayNumber(isoDay: string): number {
   const [y, m, d] = isoDay.slice(0, 10).split('-').map(Number);
-  return Date.UTC(y!, m! - 1, d!) / DAY_MS;
+  return Date.UTC(y!, m! - 1, d) / DAY_MS;
 }
 
 /** Số ngày từ hôm nay (giờ nhà máy) tới ngày `isoDay` – âm = đã qua. */
-export const daysFromToday = (isoDay: string, now: Date, timeZone?: string) =>
-  dayNumber(isoDay) - dayNumber(plantDayKey(now, timeZone));
+export const daysFromToday = (isoDay: string, now: Date, timeZone?: string) => dayNumber(isoDay) - dayNumber(plantDayKey(now, timeZone));
 
 /** "yyyy-mm" của tháng hiện tại (giờ nhà máy) dời `offset` tháng. */
 export function plantMonthKey(now: Date, offset = 0, timeZone?: string): string {
@@ -53,7 +52,7 @@ export function parsePlantDateTime(s: string): Date | null {
   if (!m) return null;
   const [y, mo, d, h, mi, se] = m.slice(1).map((v) => Number(v ?? 0));
   if (mo! < 1 || mo! > 12 || d! < 1 || d! > 31 || h! > 23 || mi! > 59 || se! > 59) return null;
-  return new Date(Date.UTC(y!, mo! - 1, d!, h!, mi!, se!) - PLANT_UTC_OFFSET_MS);
+  return new Date(Date.UTC(y!, mo! - 1, d, h, mi, se) - PLANT_UTC_OFFSET_MS);
 }
 
 /** "HH:mm:ss" (giờ nhà máy) của thời điểm `now`. */

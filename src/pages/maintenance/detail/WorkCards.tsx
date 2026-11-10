@@ -17,7 +17,7 @@ import {
 import { formatDate, type MaintenanceAttachment, type MaintenanceRecord } from '@/data/maintenance';
 import { formatFileSize, historyEvents, relativeDayTime } from '@/data/maintenanceDetail';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
-import { downloadSampleAttachment } from '../attachments';
+import { downloadSampleAttachment } from '../../shared/attachments';
 import { ViewAttachmentModal } from '../MaintenanceDetailDialogs';
 import { MaintenanceResult } from '../MaintenanceResult';
 
@@ -28,7 +28,9 @@ export function WorkContentCard({ record: r }: { record: MaintenanceRecord }) {
   return (
     <Card title="Nội dung công việc" icon={<FileIcon size={18} className={ICON} />} headerVariant="divided" radius="lg">
       <h4 className="mb-2 text-base text-fg-secondary">Mô tả sự cố</h4>
-      <p className="rounded-md border border-line/30 bg-surface-sunken/40 px-3 py-2.5 text-base leading-6 text-fg">{r.description ?? 'Chưa có mô tả.'}</p>
+      <p className="rounded-md border border-line/30 bg-surface-sunken/40 px-3 py-2.5 text-base leading-6 text-fg">
+        {r.description ?? 'Chưa có mô tả.'}
+      </p>
       <h4 className="mb-2 mt-5 text-base text-fg-secondary">Mục tiêu xử lý</h4>
       {r.objectives?.length ? (
         <ul className="flex flex-col gap-1.5 pl-3 text-base text-fg">
@@ -80,10 +82,21 @@ export function ChecklistCard({ record: r, canWrite, focusRef, onToggle }: Check
 }
 
 /** "Ghi chú kỹ thuật": luồng ghi chú; `onAdd` (async, lỗi = reject) thiếu = chỉ đọc. */
-export function NotesCard({ record: r, now, onAdd }: { record: MaintenanceRecord; now: Date; onAdd: ((text: string) => Promise<unknown>) | undefined }) {
+export function NotesCard({
+  record: r,
+  now,
+  onAdd,
+}: {
+  record: MaintenanceRecord;
+  now: Date;
+  onAdd: ((text: string) => Promise<unknown>) | undefined;
+}) {
   return (
     <Card title="Ghi chú kỹ thuật" icon={<NotesIcon size={18} className={ICON} />} headerVariant="divided" radius="lg">
-      <NotesThread notes={(r.notes ?? []).map((n) => ({ id: n.id, author: n.author, time: relativeDayTime(n.at, now), text: n.text }))} onAdd={onAdd} />
+      <NotesThread
+        notes={(r.notes ?? []).map((n) => ({ id: n.id, author: n.author, time: relativeDayTime(n.at, now), text: n.text }))}
+        onAdd={onAdd}
+      />
     </Card>
   );
 }
@@ -112,7 +125,14 @@ export function AttachmentsCard({ record: r }: { record: MaintenanceRecord }) {
       ) : (
         <p className="text-base text-fg-secondary">Chưa có ảnh hoặc tài liệu.</p>
       )}
-      {viewing && <ViewAttachmentModal attachment={viewing} meta={formatFileSize(viewing.size)} onClose={() => setViewing(null)} onDownload={() => download(viewing)} />}
+      {viewing && (
+        <ViewAttachmentModal
+          attachment={viewing}
+          meta={formatFileSize(viewing.size)}
+          onClose={() => setViewing(null)}
+          onDownload={() => download(viewing)}
+        />
+      )}
     </Card>
   );
 }
@@ -121,7 +141,11 @@ export function AttachmentsCard({ record: r }: { record: MaintenanceRecord }) {
 export function HistoryCard({ record: r, now }: { record: MaintenanceRecord; now: Date }) {
   return (
     <Card title="Lịch sử xử lý" icon={<HistoryIcon size={18} className={ICON} />} headerVariant="divided" radius="lg">
-      {r.history?.length ? <EventTimeline variant="history" events={historyEvents(r, now)} /> : <p className="text-base text-fg-secondary">Chưa có lịch sử.</p>}
+      {r.history?.length ? (
+        <EventTimeline variant="history" events={historyEvents(r, now)} />
+      ) : (
+        <p className="text-base text-fg-secondary">Chưa có lịch sử.</p>
+      )}
     </Card>
   );
 }

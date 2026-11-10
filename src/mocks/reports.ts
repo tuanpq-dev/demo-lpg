@@ -18,8 +18,8 @@ import {
   type StoredSignature,
 } from '@/features/reports';
 
-export const REPORT_INSPECTORS = ['Nguyễn Văn A', 'Lê Thị B', 'Phạm Văn D'] as const;
-export const REPORT_APPROVERS = ['Trần Văn C', 'Hoàng Thị E'] as const;
+const REPORT_INSPECTORS = ['Nguyễn Văn A', 'Lê Thị B', 'Phạm Văn D'] as const;
+const REPORT_APPROVERS = ['Trần Văn C', 'Hoàng Thị E'] as const;
 
 /** Kịch bản theo số ngày LÙI từ hôm nay (0 = hôm nay). Ngày không có ở đây = đủ mốc + đã ký. */
 const AWAITING: Record<number, SignatureStep | 'rejected'> = {
@@ -167,7 +167,12 @@ export function buildReports(now: Date): ReportRecord[] {
     const key = `${year}-Q${q}`;
     const parts = [1, 2, 3].map((i) => {
       const m = (q - 1) * 3 + i;
-      return { key: `${year}-${pad2(m)}`, label: `Tháng ${pad2(m)}`, dueAt: `${year}-${pad2(m)}-${pad2(daysInMonth(year, m))}T23:59`, done: !!monthDone.get(m) };
+      return {
+        key: `${year}-${pad2(m)}`,
+        label: `Tháng ${pad2(m)}`,
+        dueAt: `${year}-${pad2(m)}-${pad2(daysInMonth(year, m))}T23:59`,
+        done: !!monthDone.get(m),
+      };
     });
     const r = rollupReport('quarterly', key, parts, today);
     quarterDone.set(q, r.checkpoints.every((c) => c.done) && today > periodRange('quarterly', key).end);

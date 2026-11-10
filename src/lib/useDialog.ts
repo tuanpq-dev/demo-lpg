@@ -61,14 +61,13 @@ export function useDialog({
       document.body.style.overflow = prevOverflow;
       returnFocus.current?.focus?.();
     };
-    // Chỉ chạy khi mở/đóng; focusInitial đọc ref mới nhất.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Chỉ chạy khi mở/đóng; focusInitial đọc ref mới nhất.
   }, [open]);
 
   useEffect(() => {
     // Hộp khác đang chồng lên trên → focus đang ở hộp đó, không kéo về.
     if (open && isTop(idRef.current) && !panelRef.current?.contains(document.activeElement)) focusInitial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focusInitial đọc ref mới nhất; chỉ chạy khi mở hoặc nội dung đổi
   }, [open, contentKey]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {

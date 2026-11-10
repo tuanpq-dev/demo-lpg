@@ -45,7 +45,12 @@ export function PlcDataCard({ health }: { health: TagHealth | undefined }) {
       ]
     : [];
   return (
-    <Card title={`Dữ liệu PLC/SCADA: ${state}`} icon={<ServerIcon size={20} className="shrink-0 text-fg-secondary" />} headerVariant="plain" radius="lg">
+    <Card
+      title={`Dữ liệu PLC/SCADA: ${state}`}
+      icon={<ServerIcon size={20} className="shrink-0 text-fg-secondary" />}
+      headerVariant="plain"
+      radius="lg"
+    >
       <div className="flex flex-col gap-3 rounded-lg border border-line/30 bg-app/60 p-4">
         {health ? (
           <dl className="flex flex-col gap-1.5 text-base">

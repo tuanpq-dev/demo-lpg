@@ -5,19 +5,17 @@
  * cảnh báo"). "Tiếp tục theo dõi" giữ Đã xử lý. Không có đường nhảy cóc (kể cả hàng loạt), không lùi bước. Phân công KHÔNG tự xác nhận (drawer và hàng loạt dùng chung `assignAlert`).
  * Hàm gặp thao tác không hợp lệ trả lại CHÍNH bản ghi cũ (so tham chiếu được) hoặc `{ ok: false }`.
  */
-import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord, AlertStatus } from '@/features/alerts/types';
+import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord } from '@/features/alerts/types';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { inspectionEntry, toggledInspection, writeInspection } from './inspection';
 
 export type AlertActionCtx = { by: string; at: Date };
 
-export const ALERT_STATUS_ORDER: readonly AlertStatus[] = ['unacknowledged', 'in-progress', 'resolved', 'done'];
-
 export const canAcknowledge = (a: Pick<AlertRecord, 'status'>) => a.status === 'unacknowledged';
 export const canResolve = (a: Pick<AlertRecord, 'status'>) => a.status === 'in-progress';
 export const canAssignAlert = (a: Pick<AlertRecord, 'status'>) => a.status !== 'done';
 /** Hướng dẫn xử lý tick được khi Đang xử lý (xác nhận trước; xong rồi thì chỉ xem). */
-export const canEditGuide = (a: Pick<AlertRecord, 'status'>) => a.status === 'in-progress';
+const canEditGuide = (a: Pick<AlertRecord, 'status'>) => a.status === 'in-progress';
 export const canAddAlertNote = (a: Pick<AlertRecord, 'status'>) => a.status !== 'done';
 
 /** Gợi ý khi hướng dẫn bị khoá; null = tick được. */
@@ -45,14 +43,6 @@ export function acknowledgeAlert(a: AlertRecord, ctx: AlertActionCtx): AlertReco
     acknowledgedAt: ctx.at.toISOString(),
     history: withHistory(a, 'acknowledge', a.assignee ? 'Xác nhận cảnh báo' : `Xác nhận cảnh báo – ${ctx.by} nhận xử lý`, ctx),
   };
-}
-
-/** Phân công / đổi người phụ trách – giữ nguyên trạng thái. Đã hoàn thành hoặc trùng người → không đổi. */
-export function assignAlert(a: AlertRecord, assignee: string, ctx: AlertActionCtx): AlertRecord {
-  const name = assignee.trim();
-  if (!canAssignAlert(a) || !name || name === a.assignee) return a;
-  const text = a.assignee ? `Đổi người phụ trách: ${a.assignee} → ${name}` : `Phân công xử lý cho ${name}`;
-  return { ...a, assignee: name, history: withHistory(a, 'assign', text, ctx) };
 }
 
 export type ResolveResult = { ok: true; record: AlertRecord } | { ok: false; reason: 'status' | 'note' };

@@ -29,11 +29,13 @@ export function fetchCheckpointSnapshot(report: ReportRecord, key: string): Chec
 export type RecordDraft = { remark: string; manual: Record<string, number>; savedAt: string };
 
 const isNumberRecord = (v: unknown): v is Record<string, number> =>
-  !!v && typeof v === 'object' && Object.values(v as object).every((x) => typeof x === 'number' && Number.isFinite(x));
+  !!v && typeof v === 'object' && Object.values(v).every((x) => typeof x === 'number' && Number.isFinite(x));
 
 const drafts = createSessionDraft<RecordDraft>('demo-lpg:report-record-draft:', (raw) => {
   const d = raw as Partial<RecordDraft> | null;
-  return d && typeof d.remark === 'string' && isNumberRecord(d.manual) && typeof d.savedAt === 'string' ? { remark: d.remark, manual: d.manual, savedAt: d.savedAt } : null;
+  return d && typeof d.remark === 'string' && isNumberRecord(d.manual) && typeof d.savedAt === 'string'
+    ? { remark: d.remark, manual: d.manual, savedAt: d.savedAt }
+    : null;
 });
 const draftId = (code: string, key: string) => `${code}@${key}`;
 export const loadRecordDraft = (code: string, key: string) => drafts.load(draftId(code, key));

@@ -17,8 +17,7 @@ export const LOG_CATEGORY_LABEL: Record<LogCategory, string> = {
 };
 
 /** Ba mức của nhật ký (Figma: Thông tin · Trung · Cao). */
-export const LOG_LEVELS = ['info', 'medium', 'high'] as const;
-export type LogLevel = (typeof LOG_LEVELS)[number];
+export type LogLevel = 'info' | 'medium' | 'high';
 
 export const LOG_LEVEL_LABEL: Record<LogLevel, string> = { info: 'Thông tin', medium: 'Trung bình', high: 'Cao' };
 
@@ -26,8 +25,7 @@ export const LOG_LEVEL_LABEL: Record<LogLevel, string> = { info: 'Thông tin', m
  * Trạng thái sự kiện: open = Chưa xử lý · in-progress = Đang xử lý · monitoring = Đang theo dõi · done = Hoàn thành ·
  * recorded = Ghi nhận (sự kiện chỉ để lưu vết, không cần xử lý).
  */
-export const LOG_STATUSES = ['open', 'in-progress', 'monitoring', 'done', 'recorded'] as const;
-export type LogStatus = (typeof LOG_STATUSES)[number];
+export type LogStatus = 'open' | 'in-progress' | 'monitoring' | 'done' | 'recorded';
 
 export const LOG_STATUS_LABEL: Record<LogStatus, string> = {
   open: 'Chưa xử lý',
@@ -58,7 +56,7 @@ export type OperationLogEvent = {
 // ---------------------------------------------------------------------------
 // Khoảng thời gian (cùng lựa chọn với nút "Hôm nay" của màn Cảnh báo)
 
-export const LOG_RANGES = ['today', '7d', '30d'] as const;
+const LOG_RANGES = ['today', '7d', '30d'] as const;
 export type LogRange = (typeof LOG_RANGES)[number];
 
 export const LOG_RANGE_OPTIONS: { value: LogRange; label: string }[] = [
@@ -68,14 +66,13 @@ export const LOG_RANGE_OPTIONS: { value: LogRange; label: string }[] = [
 ];
 
 /** Số ngày lùi tối đa (0 = chỉ hôm nay). */
-export const LOG_RANGE_DAYS: Record<LogRange, number> = { today: 0, '7d': 6, '30d': 29 };
+const LOG_RANGE_DAYS: Record<LogRange, number> = { today: 0, '7d': 6, '30d': 29 };
 
 /** Số ngày từ ngày của sự kiện tới hôm nay (giờ nhà máy): 0 = hôm nay, 1 = hôm qua. */
-export const eventDaysAgo = (e: Pick<OperationLogEvent, 'at'>, now: Date) =>
-  dayNumber(plantDayKey(now)) - dayNumber(plantDayKey(new Date(e.at)));
+export const eventDaysAgo = (e: Pick<OperationLogEvent, 'at'>, now: Date) => dayNumber(plantDayKey(now)) - dayNumber(plantDayKey(new Date(e.at)));
 
 /** Sự kiện nằm trong khoảng và KHÔNG ở tương lai (giờ trong mock cảnh báo cố định – có thể sau `now`). */
-export function inLogRange(e: Pick<OperationLogEvent, 'at'>, range: LogRange, now: Date) {
+function inLogRange(e: Pick<OperationLogEvent, 'at'>, range: LogRange, now: Date) {
   const d = eventDaysAgo(e, now);
   return d >= 0 && d <= LOG_RANGE_DAYS[range] && Date.parse(e.at) <= now.getTime();
 }
@@ -91,10 +88,10 @@ export function shiftDayKey(isoDay: string, days: number): string {
 type AlertLike = Pick<AlertRecord, 'id' | 'code' | 'daysAgo' | 'time' | 'severity' | 'message' | 'device' | 'area' | 'status' | 'assignee'>;
 
 /** Nghiêm trọng/Cao → Cao; Trung bình/Thấp → Trung bình (cảnh báo không bao giờ là "Thông tin"). */
-export const alertLogLevel = (s: AlertLike['severity']): LogLevel => (s === 'critical' || s === 'high' ? 'high' : 'medium');
+const alertLogLevel = (s: AlertLike['severity']): LogLevel => (s === 'critical' || s === 'high' ? 'high' : 'medium');
 
 /** Chưa xác nhận → Chưa xử lý · Đang xử lý · Đã xử lý (chờ đóng/theo dõi) → Đang theo dõi · Hoàn thành. */
-export function alertLogStatus(s: AlertLike['status']): LogStatus {
+function alertLogStatus(s: AlertLike['status']): LogStatus {
   switch (s) {
     case 'unacknowledged':
       return 'open';
@@ -167,7 +164,11 @@ export function deriveLogKpis(events: readonly OperationLogEvent[], range: LogRa
     alertsOpen: alerts.filter((e) => e.status === 'open').length,
     userActions: users.length,
     activeUsers: new Set(users.map((e) => e.actor).filter(Boolean)).size,
-    connectionIssues: new Set(of('connection').filter((e) => e.status === 'open').map((e) => e.device)).size,
+    connectionIssues: new Set(
+      of('connection')
+        .filter((e) => e.status === 'open')
+        .map((e) => e.device),
+    ).size,
   };
 }
 
@@ -231,5 +232,5 @@ export function logsToCsv(rows: readonly OperationLogEvent[]): string {
       .map(esc)
       .join(',');
   });
-  return '﻿' + [head.map(esc).join(','), ...lines].join('\r\n');
+  return '\uFEFF' + [head.map(esc).join(','), ...lines].join('\r\n');
 }

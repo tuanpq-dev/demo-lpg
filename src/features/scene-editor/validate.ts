@@ -69,7 +69,7 @@ export function checkScene(scene: SceneConfig, tags: readonly string[]): EditorI
  * - warning: cổng trùng điểm kề (điểm trùng liên tiếp), đầu hở (không nối cổng và không nằm trên ống khác – nhánh
  *   chữ T hợp lệ), ống xuyên thiết bị (đoạn cắt hộp bao thu nhỏ 0.15 m của equipment không phải 2 đầu nối – cảnh báo nhẹ).
  */
-export function pipeIssues(scene: SceneConfig): EditorIssue[] {
+function pipeIssues(scene: SceneConfig): EditorIssue[] {
   const out: EditorIssue[] = [];
   const byId = objectsById(scene);
   const paths = new Map(scene.pipes.map((p) => [p.id, pipePath(p, byId)]));
@@ -87,13 +87,16 @@ export function pipeIssues(scene: SceneConfig): EditorIssue[] {
     const a = portWorld(byId, p.from);
     const b = portWorld(byId, p.to);
     if (a && p.points[0] && same3(a, p.points[0])) out.push(at('.points[0]', `ống "${p.id}": điểm 0 trùng cổng ${p.from}`));
-    if (b && p.points.at(-1) && same3(b, p.points.at(-1)!)) out.push(at(`.points[${p.points.length - 1}]`, `ống "${p.id}": điểm cuối trùng cổng ${p.to}`));
+    if (b && p.points.at(-1) && same3(b, p.points.at(-1)!))
+      out.push(at(`.points[${p.points.length - 1}]`, `ống "${p.id}": điểm cuối trùng cổng ${p.to}`));
     // Đầu hở: không cổng, không nằm trên đường đi của ống khác (≤ bán kính lớn hơn).
     (['from', 'to'] as const).forEach((end) => {
       if (p[end]) return;
       const tip = end === 'from' ? path[0]! : path.at(-1)!;
       const onOther = scene.pipes.some(
-        (q) => q.id !== p.id && nearestOnPath(paths.get(q.id)!, tip).dist <= Math.max(p.radius ?? DEFAULT_PIPE_RADIUS, q.radius ?? DEFAULT_PIPE_RADIUS) * 1.5,
+        (q) =>
+          q.id !== p.id &&
+          nearestOnPath(paths.get(q.id)!, tip).dist <= Math.max(p.radius ?? DEFAULT_PIPE_RADIUS, q.radius ?? DEFAULT_PIPE_RADIUS) * 1.5,
       );
       if (!onOther) out.push(at(`.${end}`, `ống "${p.id}": đầu ${end === 'from' ? 'đầu' : 'cuối'} hở (không nối cổng/ống khác)`));
     });

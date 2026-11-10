@@ -7,7 +7,7 @@
  * - Request có xác thực gặp 401 → refresh MỘT lần (gộp mọi request cùng hết hạn thành một lần gọi
  *   /auth/refresh, Web Locks giữa các tab) rồi gọi lại; refresh thất bại → báo `onSessionLost` (đăng xuất).
  */
-import type { ZodType, ZodTypeDef } from 'zod';
+import type { ZodType } from 'zod';
 import { ApiErrorBodySchema, RefreshResponseSchema, type ApiErrorCode } from './types';
 
 export class ApiError extends Error {
@@ -26,9 +26,10 @@ export class ApiError extends Error {
   }
 }
 
-export const NETWORK_MESSAGE = 'Không kết nối được máy chủ';
+const NETWORK_MESSAGE = 'Không kết nối được máy chủ';
 
-type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
+/** Schema zod của response (đầu vào bất kỳ – JSON chưa kiểm). */
+type Schema<T> = ZodType<T>;
 
 export type RequestOptions<T> = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -68,7 +69,7 @@ async function readJson(res: Response): Promise<unknown> {
 }
 
 /** Lỗi HTTP → ApiError: ưu tiên {error:{code,message}}; không có thì suy theo status. */
-export async function toApiError(res: Response): Promise<ApiError> {
+async function toApiError(res: Response): Promise<ApiError> {
   const retry = Number(res.headers.get('Retry-After')) || undefined;
   const body = ApiErrorBodySchema.safeParse(await readJson(res));
   if (body.success) {
@@ -76,6 +77,8 @@ export async function toApiError(res: Response): Promise<ApiError> {
     return new ApiError(code, message, res.status, retry, details);
   }
   if (res.status === 401) return new ApiError('UNAUTHORIZED', 'Phiên đăng nhập đã hết hạn', 401);
+  if (res.status === 403) return new ApiError('FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này', 403);
+  if (res.status === 404) return new ApiError('NOT_FOUND', 'Không tìm thấy dữ liệu', 404);
   if (res.status === 429) return new ApiError('RATE_LIMITED', 'Quá nhiều yêu cầu, thử lại sau', 429, retry);
   return new ApiError('UNKNOWN', `Máy chủ trả lỗi ${res.status} (không đúng định dạng {error:{code,message}})`, res.status);
 }
@@ -84,7 +87,7 @@ function contractError(path: string, detail: string, status: number) {
   return new ApiError('CONTRACT_ERROR', `Phản hồi của ${path} không đúng hợp đồng API: ${detail}`, status);
 }
 
-export function createApiClient(deps: ApiClientDeps): ApiClient {
+function createApiClient(deps: ApiClientDeps): ApiClient {
   let accessToken: string | null = null;
   let refreshing: Promise<string | null> | null = null;
   const lostListeners = new Set<() => void>();
@@ -168,8 +171,8 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
   };
 }
 
-/** Gốc URL backend: dev = .env.development (http://localhost:3000), production = biến môi trường Netlify. */
-export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
+/** Gốc URL backend: dev = .env.development (http://localhost:3000), production = biến môi trường trên Vercel. */
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
 const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
 

@@ -4,7 +4,7 @@
  */
 import { ApiError } from '@/api/client';
 
-export const AUTH_MESSAGES = {
+const AUTH_MESSAGES = {
   INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng',
   ACCOUNT_PENDING: 'Tài khoản đang chờ quản trị viên duyệt. Bạn sẽ đăng nhập được sau khi được duyệt.',
   RATE_LIMITED: 'Bạn đã thử quá nhiều lần. Vui lòng đợi ít phút rồi thử lại.',

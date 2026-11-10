@@ -252,7 +252,10 @@ export const ASSET_SPECS: Record<AssetType, AssetSpec> = {
       const pts = path?.length ? path : [[0, 0, 0] as Vec3];
       const xs = pts.map((p) => p[0]);
       const zs = pts.map((p) => p[2]);
-      return { ports: {}, bounds: box([Math.min(...xs) - 0.05, 0, Math.min(...zs) - 0.05], [Math.max(...xs) + 0.05, h! + 0.05, Math.max(...zs) + 0.05]) };
+      return {
+        ports: {},
+        bounds: box([Math.min(...xs) - 0.05, 0, Math.min(...zs) - 0.05], [Math.max(...xs) + 0.05, h! + 0.05, Math.max(...zs) + 0.05]),
+      };
     },
   },
 };

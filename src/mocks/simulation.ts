@@ -153,7 +153,13 @@ const SEED_RUNS: readonly { scenarioId: string; minutesAgo: number; by: string; 
   { scenarioId: 'SC-002', minutesAgo: 545, by: 'Nguyễn Văn A', note: 'Đề xuất giảm tải kịp thời.' },
   { scenarioId: 'SC-003', minutesAgo: 1440 + 200, by: 'Phạm Văn D', note: 'Chuyển E-101B trong mục tiêu.' },
   { scenarioId: 'SC-001', minutesAgo: 2 * 1440 + 113, by: 'Nguyễn Văn A', note: 'AI gợi ý xử lý phù hợp.' },
-  { scenarioId: 'SC-001', minutesAgo: 4 * 1440 + 478, by: 'Trần Văn B', note: 'Thiếu ghi nhận thủ công khi mất dữ liệu mô phỏng.', responseSeconds: 72 },
+  {
+    scenarioId: 'SC-001',
+    minutesAgo: 4 * 1440 + 478,
+    by: 'Trần Văn B',
+    note: 'Thiếu ghi nhận thủ công khi mất dữ liệu mô phỏng.',
+    responseSeconds: 72,
+  },
 ];
 
 export function buildSimulationRuns(now: Date, scenarios: readonly Scenario[] = buildScenarios(now)): SimulationRun[] {
@@ -161,7 +167,9 @@ export function buildSimulationRuns(now: Date, scenarios: readonly Scenario[] = 
     const s = scenarios.find((x) => x.id === r.scenarioId);
     if (!s) return [];
     const run = simulateScenario(s, ago(now, r.minutesAgo), r.by, `RUN-${String(i + 1).padStart(4, '0')}`, r.note);
-    return [r.responseSeconds === undefined ? run : { ...run, responseSeconds: r.responseSeconds, result: runResult(r.responseSeconds, run.targetSeconds) }];
+    return [
+      r.responseSeconds === undefined ? run : { ...run, responseSeconds: r.responseSeconds, result: runResult(r.responseSeconds, run.targetSeconds) },
+    ];
   });
 }
 
@@ -171,10 +179,10 @@ function baseSnapshot(at: number): LiveData {
 }
 
 /** Lượt mẫu ĐANG CHẠY: SC-001 bắt đầu 06:32 trước `now` (như ảnh "Theo dõi diễn biến": 06:32 / 10:00, gas 28 % LEL). */
-export const SEED_SESSION_ELAPSED_SEC = 6 * 60 + 32;
+const SEED_SESSION_ELAPSED_SEC = 6 * 60 + 32;
 /** Lượt mẫu ĐÃ XONG (ảnh "Kết quả mô phỏng"): SC-001, 6 ngày trước lúc 18:14:00 giờ nhà máy. */
-export const SEED_RESULT_DAYS_AGO = 6;
-export const SEED_RESULT_TIME = '18:14:00';
+const SEED_RESULT_DAYS_AGO = 6;
+const SEED_RESULT_TIME = '18:14:00';
 
 const FULL_HEALTH = { ok: 21, total: 21 };
 
@@ -188,7 +196,15 @@ export function buildSimulationSessions(now: Date, scenarios: readonly Scenario[
   const s = scenarios.find((x) => x.id === 'SC-001');
   if (!s) return { sessions: [], runs: [] };
   const at = new Date(now.getTime() - SEED_SESSION_ELAPSED_SEC * 1000);
-  const running = createSession({ ...s, config: { ...s.config, rate: 'medium' } }, baseSnapshot(at.getTime()), at.getTime(), at, 'Nguyễn Văn A', 'SES-0001', FULL_HEALTH);
+  const running = createSession(
+    { ...s, config: { ...s.config, rate: 'medium' } },
+    baseSnapshot(at.getTime()),
+    at.getTime(),
+    at,
+    'Nguyễn Văn A',
+    'SES-0001',
+    FULL_HEALTH,
+  );
 
   const day = plantDayKey(new Date(now.getTime() - SEED_RESULT_DAYS_AGO * 86_400_000));
   const doneAt = parsePlantDateTime(`${day}T${SEED_RESULT_TIME}`)!;

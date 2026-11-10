@@ -58,7 +58,7 @@ export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceR
   };
 
   return (
-    <Page pageHeader={<DetailHeader record={r} listUrl={listUrl} overdue={overdue} onBack={() => navigate(listUrl)} />}>
+    <Page pageHeader={<DetailHeader record={r} listUrl={listUrl} overdue={overdue} onBack={() => void navigate(listUrl)} />}>
       <DetailStepper record={r} />
 
       {/*
@@ -97,7 +97,7 @@ export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceR
         reviewer={reviewer}
         onOpenChecklist={() => {
           dialogs.close();
-          navigate({ hash: 'checklist' }, { replace: true, state: location.state });
+          void navigate({ hash: 'checklist' }, { replace: true, state: location.state });
         }}
       />
     </Page>

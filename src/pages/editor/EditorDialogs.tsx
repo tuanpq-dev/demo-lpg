@@ -36,7 +36,20 @@ export type EditorDialogsProps = {
  * Mọi hộp thoại của Scene Editor: mở cảnh, lưu bản mới, đặt tên view, khôi phục nháp, lỗi import, xác nhận bỏ thay đổi,
  * xoá còn ống liên quan (giữ / xoá ống), rời trang khi chưa lưu.
  */
-export function EditorDialogs({ dialog, scene, dirty, savedIds, blocker, onClose, onOpen, onRemove, onSaveAs, onAddView, onRestore, onDiscardDraft }: EditorDialogsProps) {
+export function EditorDialogs({
+  dialog,
+  scene,
+  dirty,
+  savedIds,
+  blocker,
+  onClose,
+  onOpen,
+  onRemove,
+  onSaveAs,
+  onAddView,
+  onRestore,
+  onDiscardDraft,
+}: EditorDialogsProps) {
   return (
     <>
       <OpenSceneDialog open={dialog?.kind === 'open'} dirty={dirty} onClose={onClose} onOpen={onOpen} onRemove={onRemove} />
@@ -103,8 +116,8 @@ export function EditorDialogs({ dialog, scene, dirty, savedIds, blocker, onClose
           <div className="flex flex-col gap-2">
             {dialog.impact.connected.length > 0 && (
               <p>
-                Ống nối vào {dialog.impact.objects.join(', ')}: <b className="text-fg">{dialog.impact.connected.join(', ')}</b>. Giữ ống (đầu
-                nối thành điểm tự do, hình ống không đổi) hay xoá cả ống (kèm object gắn trên ống)?
+                Ống nối vào {dialog.impact.objects.join(', ')}: <b className="text-fg">{dialog.impact.connected.join(', ')}</b>. Giữ ống (đầu nối
+                thành điểm tự do, hình ống không đổi) hay xoá cả ống (kèm object gắn trên ống)?
               </p>
             )}
             {dialog.impact.attached.length > 0 && (

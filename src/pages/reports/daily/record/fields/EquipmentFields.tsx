@@ -1,5 +1,15 @@
 import { Badge } from '@/components';
-import { SENSOR_HEALTH_LABEL, effectiveValue, formatRecordValue, valueState, valueStateLabel, type FlowLine, type RecordReading, type SensorHealth, type VaporizerUnit } from '@/features/reports';
+import {
+  SENSOR_HEALTH_LABEL,
+  effectiveValue,
+  formatRecordValue,
+  valueState,
+  valueStateLabel,
+  type FlowLine,
+  type RecordReading,
+  type SensorHealth,
+  type VaporizerUnit,
+} from '@/features/reports';
 import { cn } from '@/lib/cn';
 import { ManualInput, ReadingRow, Row, STATE_TEXT, boxClass, sensorText, type ManualProps } from './recordParts';
 
@@ -10,7 +20,8 @@ export function VaporizerCards({ units, ...m }: { units: readonly VaporizerUnit[
       {units.map((u) => {
         const standby = u.state === 'standby';
         const sensors = u.readings.map((r) => r.sensor);
-        const worst: SensorHealth = sensors.find((s) => s === 'lost') ?? sensors.find((s) => s === 'fault') ?? sensors.find((s) => s === 'stale') ?? 'normal';
+        const worst: SensorHealth =
+          sensors.find((s) => s === 'lost') ?? sensors.find((s) => s === 'fault') ?? sensors.find((s) => s === 'stale') ?? 'normal';
         return (
           <div key={u.id} className={cn(boxClass, 'flex flex-col gap-3 p-4')}>
             <div className="flex items-center justify-between gap-2">

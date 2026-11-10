@@ -2,7 +2,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DEFAULT_ASSET_ID, assetPath } from '@/app/assetRoutes';
 import { Button } from '@/components';
 import { ASSET_IDS, resolveAssetId } from '@/data/assetDetail';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { AssetDetail } from './detail/AssetDetail';
 
 /**
@@ -25,7 +25,7 @@ export default function AssetDetailRoute() {
             Không có tài sản <code className="font-mono text-fg">{raw}</code>. Tài sản có trang chi tiết: {ASSET_IDS.join(', ')}.
           </>
         }
-        actions={<Button onClick={() => navigate(assetPath(DEFAULT_ASSET_ID))}>Mở {DEFAULT_ASSET_ID}</Button>}
+        actions={<Button onClick={() => void navigate(assetPath(DEFAULT_ASSET_ID))}>Mở {DEFAULT_ASSET_ID}</Button>}
       />
     );
   }

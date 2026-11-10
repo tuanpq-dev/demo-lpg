@@ -78,10 +78,10 @@ export function Outliner({ onRename }: { onRename: (id: string, next: string) =>
       emptyText="Cảnh trống – thêm asset từ thư viện"
       renderActions={(item) =>
         item.id.startsWith('__') || pipeIds.has(item.id) ? null : (
-        <>
-          {action(hidden.includes(item.id), `Ẩn ${item.id}`, () => toggleHidden(item.id), <EyeOffIcon />, <EyeIcon />)}
-          {action(locked.includes(item.id), `Khoá ${item.id}`, () => toggleLocked(item.id), <LockIcon />, <UnlockIcon />)}
-        </>
+          <>
+            {action(hidden.includes(item.id), `Ẩn ${item.id}`, () => toggleHidden(item.id), <EyeOffIcon />, <EyeIcon />)}
+            {action(locked.includes(item.id), `Khoá ${item.id}`, () => toggleLocked(item.id), <LockIcon />, <UnlockIcon />)}
+          </>
         )
       }
     />

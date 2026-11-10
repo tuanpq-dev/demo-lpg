@@ -35,9 +35,11 @@ export function canClosePressure(c: CloseInput): CloseCheck {
   const lost = c.liveState !== 'ok' || c.live === undefined;
   if (lost && !hasGauge(c.source))
     return { ok: false, reason: 'need-gauge', message: 'Mất tín hiệu áp suất – chọn nguồn xác minh có "Đồng hồ cơ" và nhập giá trị đo tay.' };
-  if (!lost && c.live! >= c.warn) return { ok: false, reason: 'live-high', message: `Áp suất hiện tại ${f(c.live!)} vẫn chưa dưới ngưỡng cảnh báo ${f(c.warn)}.` };
+  if (!lost && c.live! >= c.warn)
+    return { ok: false, reason: 'live-high', message: `Áp suất hiện tại ${f(c.live!)} vẫn chưa dưới ngưỡng cảnh báo ${f(c.warn)}.` };
   if (c.after === undefined)
     return { ok: false, reason: 'need-after', message: lost ? 'Nhập áp suất sau xử lý đo bằng đồng hồ cơ.' : 'Nhập áp suất sau xử lý.' };
-  if (c.after >= c.warn) return { ok: false, reason: 'after-high', message: `Áp suất sau xử lý ${f(c.after)} vẫn chưa dưới ngưỡng cảnh báo ${f(c.warn)}.` };
+  if (c.after >= c.warn)
+    return { ok: false, reason: 'after-high', message: `Áp suất sau xử lý ${f(c.after)} vẫn chưa dưới ngưỡng cảnh báo ${f(c.warn)}.` };
   return { ok: true, value: c.after };
 }

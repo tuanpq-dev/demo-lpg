@@ -10,7 +10,7 @@ import type { AlertRecord } from '@/features/alerts/types';
 let db: AlertRecord[] = alertRecords.map((a) => ({ ...a }));
 
 /** GET /alerts – thay bằng fetch thật khi có API. */
-export async function fetchAlerts(): Promise<AlertRecord[]> {
+async function fetchAlerts(): Promise<AlertRecord[]> {
   return db.map((a) => ({ ...a }));
 }
 

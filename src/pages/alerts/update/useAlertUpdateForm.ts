@@ -37,14 +37,15 @@ import { useFormModal } from '@/lib/useFormModal';
 import { initialValues, updateFormReducer, type TempFile, type UpdateFormValues } from './updateFormState';
 
 export type { TempFile, UpdateFormValues } from './updateFormState';
-const ALARM_TEXT: Record<string, { text: string; tone: 'danger' | 'normal' }> = { alarm: { text: 'Báo động', tone: 'danger' }, normal: { text: 'Bình thường', tone: 'normal' } };
+const ALARM_TEXT: Record<string, { text: string; tone: 'danger' | 'normal' }> = {
+  alarm: { text: 'Báo động', tone: 'danger' },
+  normal: { text: 'Bình thường', tone: 'normal' },
+};
 
 export type UseAlertUpdateFormOptions = {
   alert: AlertRecord;
   /** Giờ hiện tại (đồng hồ của modal hoặc giờ cố định). */
   now: Date;
-  /** Giờ cố định (playground) – dùng cho "Thời gian ghi nhận" mặc định. */
-  fixedNow?: Date;
   onSubmit: (input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
   onClose: () => void;
 };
@@ -55,7 +56,7 @@ export type UseAlertUpdateFormOptions = {
  * Vòng đời modal (hỏi khi đóng, nháp, chặn gửi lặp) qua `useFormModal`: lưu nháp KHÔNG đóng, "Bỏ thay đổi" GIỮ nháp,
  * có nháp mà chưa sửa thêm → đóng không hỏi. Quy tắc: `features/alerts/update.ts`.
  */
-export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose }: UseAlertUpdateFormOptions) {
+export function useAlertUpdateForm({ alert: a, now, onSubmit, onClose }: UseAlertUpdateFormOptions) {
   const cfg = updateConfig(a)!;
   const steps = useMemo(() => alertPlaybook(a).steps, [a]);
   const rowsCfg = useMemo(() => updateReadingRows(a, cfg), [a, cfg]);
@@ -65,7 +66,7 @@ export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose 
   const readings = useTagReadings(rowsCfg.map((r) => r.tag));
   const detector = useDetectorStatus(a.device);
 
-  const [initial] = useState(() => initialValues(a, fixedNow ?? appNow()));
+  const [initial] = useState(() => initialValues(a, appNow()));
   const [state, dispatch] = useReducer(updateFormReducer, undefined, () => ({
     values: initial.values,
     saved: initial.values,
@@ -77,7 +78,7 @@ export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose 
   }));
   const { values: v, files, errors, triedSubmit } = state;
 
-  const set = <K extends keyof UpdateFormValues>(k: K, val: UpdateFormValues[K]) => dispatch({ type: 'set', patch: { [k]: val } as Partial<UpdateFormValues> });
+  const set = <K extends keyof UpdateFormValues>(k: K, val: UpdateFormValues[K]) => dispatch({ type: 'set', patch: { [k]: val } });
   const editable = !!cfg.sources && hasGauge(v.source);
 
   // ---- Thông số trước/sau ----
@@ -114,7 +115,8 @@ export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose 
       afterTone: alarm ? alarm.tone : readingTone(after, r.warn, r.danger),
       afterText: alarm?.text,
       editable: editable && !r.alarm,
-      afterPlaceholder: reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
+      afterPlaceholder:
+        reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
     };
   });
 

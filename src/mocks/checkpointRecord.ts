@@ -46,28 +46,113 @@ export function buildCheckpointSnapshot(report: Pick<ReportRecord, 'periodKey'>,
   const fromDaily = (itemId: string) => dailyItemReading(itemId, day, index, now)?.value ?? null;
 
   const level = fromDaily('v101-level');
-  const tankDims = assetMocks['V-101']!.tank!;
+  const tankDims = assetMocks['V-101']!.tank;
   const volume = level === null ? null : (cylinderCapacity(tankDims) * levelPercentToVolumePercent(level)) / 100;
   const lpgTemp = fromDaily('v101-temp');
 
   const tank: RecordReading[] = [
-    reading({ id: 'tank-level', label: 'Mức chất lỏng', tag: PLC_REPORT_TAGS.tankLevel, unit: '%', digits: 1, limits: limitsOf('v101-level'), value: level, dailyItemId: 'v101-level' }),
+    reading({
+      id: 'tank-level',
+      label: 'Mức chất lỏng',
+      tag: PLC_REPORT_TAGS.tankLevel,
+      unit: '%',
+      digits: 1,
+      limits: limitsOf('v101-level'),
+      value: level,
+      dailyItemId: 'v101-level',
+    }),
     reading({ id: 'tank-volume', label: 'Thể tích chất lỏng', tag: PLC_REPORT_TAGS.tankVolume, unit: 'm³', digits: 1, limits: {}, value: volume }),
-    reading({ id: 'tank-pressure', label: 'Áp suất bồn', tag: PLC_REPORT_TAGS.tankPressure, unit: 'bar', digits: 1, limits: limitsOf('v101-pressure'), value: fromDaily('v101-pressure'), dailyItemId: 'v101-pressure' }),
-    reading({ id: 'tank-temp', label: 'Nhiệt độ bồn', tag: PLC_REPORT_TAGS.tankTemperature, unit: '°C', digits: 1, limits: limitsOf('v101-temp'), value: lpgTemp, dailyItemId: 'v101-temp' }),
-    reading({ id: 'tank-zone-temp', label: 'Nhiệt độ khu vực bồn', tag: PLC_REPORT_TAGS.tankZoneTemperature, unit: '°C', digits: 1, limits: { lowWarn: 0, warn: 40, danger: 50 }, value: lpgTemp === null ? null : lpgTemp + 0.4 + wobble('zone', 0.2) }),
-    reading({ id: 'tank-gas', label: 'Gas khu vực bồn', tag: PLC_REPORT_TAGS.tankGas, unit: '%LEL', digits: 0, limits: { warn: 10, danger: 20 }, value: 2 + wobble('tank-gas', 0.6), safeLabel: true }),
+    reading({
+      id: 'tank-pressure',
+      label: 'Áp suất bồn',
+      tag: PLC_REPORT_TAGS.tankPressure,
+      unit: 'bar',
+      digits: 1,
+      limits: limitsOf('v101-pressure'),
+      value: fromDaily('v101-pressure'),
+      dailyItemId: 'v101-pressure',
+    }),
+    reading({
+      id: 'tank-temp',
+      label: 'Nhiệt độ bồn',
+      tag: PLC_REPORT_TAGS.tankTemperature,
+      unit: '°C',
+      digits: 1,
+      limits: limitsOf('v101-temp'),
+      value: lpgTemp,
+      dailyItemId: 'v101-temp',
+    }),
+    reading({
+      id: 'tank-zone-temp',
+      label: 'Nhiệt độ khu vực bồn',
+      tag: PLC_REPORT_TAGS.tankZoneTemperature,
+      unit: '°C',
+      digits: 1,
+      limits: { lowWarn: 0, warn: 40, danger: 50 },
+      value: lpgTemp === null ? null : lpgTemp + 0.4 + wobble('zone', 0.2),
+    }),
+    reading({
+      id: 'tank-gas',
+      label: 'Gas khu vực bồn',
+      tag: PLC_REPORT_TAGS.tankGas,
+      unit: '%LEL',
+      digits: 0,
+      limits: { warn: 10, danger: 20 },
+      value: 2 + wobble('tank-gas', 0.6),
+      safeLabel: true,
+    }),
   ];
 
   const vapReading = (unit: 'A' | 'B', n: 1 | 2, temp: number, gas: number) => [
-    reading({ id: `vap-${unit}-temp`, label: `Nhiệt độ KV ${n}`, tag: `${VAPORIZER_AREA_TAGS.heatTemp}.KV${n}`, unit: '°C', digits: 1, limits: { warn: 60, danger: 70 }, value: temp }),
-    reading({ id: `vap-${unit}-gas`, label: `Gas KV ${n}`, tag: `${VAPORIZER_AREA_TAGS.gas}.KV${n}`, unit: '% LEL', digits: 0, limits: { warn: 10, danger: 20 }, value: gas, safeLabel: true }),
+    reading({
+      id: `vap-${unit}-temp`,
+      label: `Nhiệt độ KV ${n}`,
+      tag: `${VAPORIZER_AREA_TAGS.heatTemp}.KV${n}`,
+      unit: '°C',
+      digits: 1,
+      limits: { warn: 60, danger: 70 },
+      value: temp,
+    }),
+    reading({
+      id: `vap-${unit}-gas`,
+      label: `Gas KV ${n}`,
+      tag: `${VAPORIZER_AREA_TAGS.gas}.KV${n}`,
+      unit: '% LEL',
+      digits: 0,
+      limits: { warn: 10, danger: 20 },
+      value: gas,
+      safeLabel: true,
+    }),
   ];
 
   const regulators: RecordReading[] = [
-    reading({ id: 'reg-source', label: 'Áp suất nguồn', tag: 'PT-102', unit: 'bar', digits: 1, limits: { lowWarn: 1.5, warn: 3.5 }, value: 2.4 + wobble('reg-source', 0.08) }),
-    reading({ id: 'reg-stage1', label: 'Áp suất sau điều áp cấp 1', tag: 'PT-103', unit: 'bar', digits: 1, limits: { lowWarn: 0.5, warn: 1.2 }, value: 0.8 + wobble('reg-stage1', 0.04) }),
-    reading({ id: 'reg-stage2', label: 'Áp suất sau điều áp cấp 2', tag: 'PT-104', unit: 'mbar', digits: 0, limits: { lowWarn: 20, warn: 40 }, value: 30 + wobble('reg-stage2', 1) }),
+    reading({
+      id: 'reg-source',
+      label: 'Áp suất nguồn',
+      tag: 'PT-102',
+      unit: 'bar',
+      digits: 1,
+      limits: { lowWarn: 1.5, warn: 3.5 },
+      value: 2.4 + wobble('reg-source', 0.08),
+    }),
+    reading({
+      id: 'reg-stage1',
+      label: 'Áp suất sau điều áp cấp 1',
+      tag: 'PT-103',
+      unit: 'bar',
+      digits: 1,
+      limits: { lowWarn: 0.5, warn: 1.2 },
+      value: 0.8 + wobble('reg-stage1', 0.04),
+    }),
+    reading({
+      id: 'reg-stage2',
+      label: 'Áp suất sau điều áp cấp 2',
+      tag: 'PT-104',
+      unit: 'mbar',
+      digits: 0,
+      limits: { lowWarn: 20, warn: 40 },
+      value: 30 + wobble('reg-stage2', 1),
+    }),
   ];
 
   const lineReading = (line: string, id: string, label: string, unit: string, digits: number, value: number, limits: ReadingLimits = {}) =>

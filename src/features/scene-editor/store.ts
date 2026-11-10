@@ -103,9 +103,8 @@ export const useEditorUi = create<UiState>()((set) => ({
       return { selection: ids.reduce(flip, st.selection) };
     }),
   setTool: (tool) => set({ tool }),
-  toggle: (key) => set((st) => ({ [key]: !st[key] }) as Pick<UiState, typeof key>),
-  toggleHidden: (id) =>
-    set((st) => ({ hidden: flip(st.hidden, id), selection: st.selection.filter((x) => x !== id || st.hidden.includes(id)) })),
+  toggle: (key) => set((st) => ({ [key]: !st[key] })),
+  toggleHidden: (id) => set((st) => ({ hidden: flip(st.hidden, id), selection: st.selection.filter((x) => x !== id || st.hidden.includes(id)) })),
   toggleLocked: (id) => set((st) => ({ locked: flip(st.locked, id) })),
   set: (patch) => set(patch),
 }));

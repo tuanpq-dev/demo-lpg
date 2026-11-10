@@ -78,7 +78,7 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
       <div
         role="toolbar"
         aria-label="Công cụ canvas"
-        className="absolute left-3 right-3 top-3 z-30 flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-1 rounded-lg border border-line/30 bg-surface-raised/90 p-1 shadow-card backdrop-blur-[4px]"
+        className="absolute left-3 right-3 top-3 z-30 flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-1 rounded-lg border border-line/30 bg-surface-raised/90 p-1 shadow-card backdrop-blur-sm"
       >
         {TOOLS.map((t) => (
           <Button
@@ -138,12 +138,24 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
         )}
         <Button variant="toolbar" size="sm" aria-label="Khung hình vừa (F)" title="Khung hình vừa (F)" onClick={actions.fit} icon={<FitIcon />} />
         <span aria-hidden="true" className="mx-1 h-5 w-px bg-line/60" />
-        <Button variant="toolbar" size="sm" aria-label="Phóng to" onClick={() => viewer.current?.zoomIn()} icon={<Icon name="mapZoomIn" box={16} />} />
-        <Button variant="toolbar" size="sm" aria-label="Thu nhỏ" onClick={() => viewer.current?.zoomOut()} icon={<Icon name="mapZoomOut" box={16} />} />
+        <Button
+          variant="toolbar"
+          size="sm"
+          aria-label="Phóng to"
+          onClick={() => viewer.current?.zoomIn()}
+          icon={<Icon name="mapZoomIn" box={16} />}
+        />
+        <Button
+          variant="toolbar"
+          size="sm"
+          aria-label="Thu nhỏ"
+          onClick={() => viewer.current?.zoomOut()}
+          icon={<Icon name="mapZoomOut" box={16} />}
+        />
       </div>
 
       {view && (
-        <p className="absolute right-3 top-3 z-30 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-[3px]">
+        <p className="absolute right-3 top-3 z-30 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-xs">
           Đang xem view “{view.label}”
         </p>
       )}

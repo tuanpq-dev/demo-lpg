@@ -22,7 +22,7 @@ import { fetchDailyReadings } from './dailyReport';
 import { currentReports, replaceReport } from './reports';
 
 /** Cảnh báo mock ghi ngày tương đối (`daysAgo`) → ngày tuyệt đối theo `now` (giờ nhà máy). */
-export function sensorAlertsOf(alerts: readonly AlertRecord[], now: Date): SensorAlertLike[] {
+function sensorAlertsOf(alerts: readonly AlertRecord[], now: Date): SensorAlertLike[] {
   const today = dayNumber(plantDayKey(now));
   return alerts.map((a) => ({ code: a.code, kind: a.kind, status: a.status, day: dayFromNumber(today - a.daysAgo) }));
 }

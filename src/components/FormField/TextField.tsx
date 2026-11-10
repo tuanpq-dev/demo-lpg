@@ -26,7 +26,7 @@ export function TextField({ label, value, onChange, required, hint, error, class
           required={required}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
-          className={cn(inputClass(invalid), 'h-[35px]')}
+          className={cn(inputClass(invalid), 'h-field')}
           {...rest}
         />
       )}
@@ -103,7 +103,21 @@ export type DatePickerProps = Omit<Common, 'value' | 'onChange'> & {
  * Chọn ngày – dùng <input type="date"> gốc (bàn phím, trình đọc màn hình, lịch của hệ điều hành),
  * style theo token; `color-scheme: dark` để lịch bật lên theo nền tối.
  */
-export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date', labelVariant, hideLabel }: DatePickerProps) {
+export function DatePicker({
+  label,
+  value,
+  onChange,
+  required,
+  hint,
+  error,
+  className,
+  min,
+  max,
+  disabled,
+  type = 'date',
+  labelVariant,
+  hideLabel,
+}: DatePickerProps) {
   if (hideLabel) {
     // Bọc div: `className` (độ rộng) đặt ở khung, ô nhập luôn w-full (cn không gộp class trùng loại).
     return (
@@ -117,7 +131,7 @@ export function DatePicker({ label, value, onChange, required, hint, error, clas
           disabled={disabled}
           required={required}
           onChange={(e) => onChange(e.target.value)}
-          className={cn(inputClass(false), 'h-[35px] [color-scheme:dark]')}
+          className={cn(inputClass(false), 'h-field [color-scheme:dark]')}
         />
       </div>
     );
@@ -136,7 +150,7 @@ export function DatePicker({ label, value, onChange, required, hint, error, clas
           required={required}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
-          className={cn(inputClass(invalid), 'h-[35px] [color-scheme:dark]')}
+          className={cn(inputClass(invalid), 'h-field [color-scheme:dark]')}
         />
       )}
     </FormField>

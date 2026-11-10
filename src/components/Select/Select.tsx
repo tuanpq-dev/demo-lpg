@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { cn } from '@/lib/cn';
 import { Icon } from '../Icon';
 
@@ -59,57 +59,137 @@ export type SelectProps<V extends string = string> = {
 
 type Row<V extends string> = { value: V | null; label: string; disabled?: boolean };
 
-/**
- * Dropdown lọc – instance "Options" (Figma 65:1602/65:1603 trong 70:3023).
- * Listbox WAI-ARIA: Enter/Space/↓/↑ mở; ↑/↓/Home/End di chuyển; Enter/Space chọn; Esc/Tab đóng; click ra ngoài đóng.
- */
-export function Select<V extends string = string>({
+type Variant = NonNullable<SelectProps['variant']>;
+
+/** Chữ trên trigger theo variant (field: giá trị/placeholder · button: giá trị/nhãn · filter: "Nhãn ( giá trị )"). */
+function triggerText(
+  variant: Variant,
+  label: string,
+  selected: Row<string> | undefined,
+  opts: { placeholder?: string; allLabel?: string; hideAllInTrigger?: boolean },
+) {
+  if (variant === 'field') return selected?.label ?? opts.placeholder ?? '';
+  const chosen = selected && selected.value !== null ? selected.label : null;
+  if (variant === 'button') return chosen ?? label;
+  if (chosen) return `${label} ( ${chosen} )`;
+  return opts.allLabel && !opts.hideAllInTrigger ? `${label} ( ${opts.allLabel} )` : label;
+}
+
+function triggerClass(variant: Variant, size: 'md' | 'lg', open: boolean, invalid?: boolean, fullWidth?: boolean) {
+  const border = (idle: string) => (open ? 'border-accent/60' : idle);
+  return cn(
+    'inline-flex items-center whitespace-nowrap border text-fg transition-colors',
+    variant === 'field' && size === 'lg' ? 'text-md' : 'text-base',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+    variant === 'filter' && cn('h-[34px] gap-1 rounded-md bg-surface-sunken px-[13px]', border('border-line hover:border-accent/40')),
+    fullWidth && 'w-full justify-between',
+    variant === 'button' &&
+      cn('h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-sm', border('border-accent/30 hover:border-accent/60')),
+    variant === 'field' &&
+      cn(
+        'w-full justify-between gap-2 rounded-lg bg-surface-sunken text-left',
+        size === 'lg' ? 'h-10 pl-4 pr-3' : 'h-field pl-3 pr-2',
+        invalid ? 'border-danger' : border('border-line hover:border-accent/40'),
+      ),
+  );
+}
+
+// ---- Di chuyển trong danh sách (bỏ qua mục disabled)
+const firstEnabled = (rows: readonly Row<string>[]) => rows.findIndex((r) => !r.disabled);
+function lastEnabled(rows: readonly Row<string>[]) {
+  for (let i = rows.length - 1; i >= 0; i--) if (!rows[i]?.disabled) return i;
+  return -1;
+}
+function stepIndex(rows: readonly Row<string>[], from: number, dir: 1 | -1) {
+  for (let i = 1; i <= rows.length; i++) {
+    const next = (from + dir * i + rows.length) % rows.length;
+    if (!rows[next]?.disabled) return next;
+  }
+  return from;
+}
+
+type OptionListProps<V extends string> = {
+  uid: string;
+  listId: string;
+  label: string;
+  rows: readonly Row<V>[];
+  selectedIndex: number;
+  activeIndex: number;
+  align: 'start' | 'end';
+  side: 'bottom' | 'top';
+  listRef: RefObject<HTMLUListElement>;
+  onKeyDown: (e: KeyboardEvent<HTMLUListElement>) => void;
+  onHover: (index: number) => void;
+  onChoose: (index: number) => void;
+};
+
+function OptionList<V extends string>({
+  uid,
+  listId,
   label,
-  options,
-  value,
-  onChange,
-  allLabel,
-  hideAllInTrigger,
-  disabled,
-  align = 'start',
-  side = 'bottom',
-  variant = 'filter',
-  size = 'md',
-  icon,
-  placeholder,
-  invalid,
-  id,
-  describedBy,
-  labelledBy,
-  fullWidth,
-  className,
-}: SelectProps<V>) {
-  const uid = useId();
-  const listId = `${uid}-list`;
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  rows,
+  selectedIndex,
+  activeIndex,
+  align,
+  side,
+  listRef,
+  onKeyDown,
+  onHover,
+  onChoose,
+}: OptionListProps<V>) {
+  return (
+    <ul
+      ref={listRef}
+      id={listId}
+      role="listbox"
+      tabIndex={-1}
+      aria-label={label}
+      aria-activedescendant={`${uid}-opt-${activeIndex}`}
+      onKeyDown={onKeyDown}
+      className={cn(
+        'absolute z-20 max-h-64 min-w-full overflow-auto rounded-md border border-line bg-surface-sunken py-1 shadow-card focus:outline-none',
+        align === 'end' ? 'right-0' : 'left-0',
+        side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1',
+      )}
+    >
+      {rows.map((row, i) => {
+        const isSelected = i === selectedIndex;
+        return (
+          // Bàn phím xử lý ở phần tử cha (aria-activedescendant) – option chỉ cần click chuột.
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- bàn phím xử lý ở listbox cha (aria-activedescendant)
+          <li
+            key={row.value ?? '__all__'}
+            id={`${uid}-opt-${i}`}
+            data-index={i}
+            role="option"
+            aria-selected={isSelected}
+            aria-disabled={row.disabled || undefined}
+            onPointerEnter={() => !row.disabled && onHover(i)}
+            onClick={() => onChoose(i)}
+            className={cn(
+              'flex cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-[13px] py-1.5 text-base',
+              i === activeIndex && 'bg-surface-muted',
+              isSelected ? 'text-info' : 'text-fg',
+              row.disabled && 'cursor-not-allowed opacity-50',
+            )}
+          >
+            {row.label}
+            {isSelected && <span aria-hidden="true" className="size-1.5 rounded-full bg-info" />}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-  const rows: Row<V>[] = [...(allLabel ? [{ value: null, label: allLabel }] : []), ...options];
-  const selectedIndex = rows.findIndex((r) => r.value === value);
-  const selected = selectedIndex >= 0 ? rows[selectedIndex] : undefined;
-
-  const triggerText =
-    variant === 'field'
-      ? selected?.label ?? placeholder ?? ''
-      : variant === 'button'
-      ? selected && selected.value !== null
-        ? selected.label
-        : label
-      : selected && selected.value !== null
-      ? `${label} ( ${selected.label} )`
-      : allLabel && !hideAllInTrigger
-        ? `${label} ( ${allLabel} )`
-        : label;
-
-  // Click ra ngoài → đóng.
+/** Menu mở: click ra ngoài đóng, focus vào listbox, giữ mục active trong vùng nhìn thấy. */
+function useMenuEffects(
+  open: boolean,
+  activeIndex: number,
+  rootRef: RefObject<HTMLDivElement>,
+  listRef: RefObject<HTMLUListElement>,
+  setOpen: (v: boolean) => void,
+) {
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -117,42 +197,63 @@ export function Select<V extends string = string>({
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [open]);
+  }, [open, rootRef, setOpen]);
 
-  // Khi mở: focus listbox, active = mục đang chọn.
   useEffect(() => {
     if (open) listRef.current?.focus();
-  }, [open]);
+  }, [open, listRef]);
 
-  // Giữ mục active trong vùng nhìn thấy.
   useEffect(() => {
     if (!open) return;
     listRef.current?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`)?.scrollIntoView({ block: 'nearest' });
-  }, [activeIndex, open]);
+  }, [activeIndex, open, listRef]);
+}
 
-  const firstEnabled = () => rows.findIndex((r) => !r.disabled);
-  const lastEnabled = () => {
-    for (let i = rows.length - 1; i >= 0; i--) if (!rows[i].disabled) return i;
-    return -1;
-  };
-  const step = (from: number, dir: 1 | -1) => {
-    for (let i = 1; i <= rows.length; i++) {
-      const next = (from + dir * i + rows.length) % rows.length;
-      if (!rows[next].disabled) return next;
-    }
-    return from;
-  };
+/**
+ * Dropdown lọc – instance "Options" (Figma 65:1602/65:1603 trong 70:3023).
+ * Listbox WAI-ARIA: Enter/Space/↓/↑ mở; ↑/↓/Home/End di chuyển; Enter/Space chọn; Esc/Tab đóng; click ra ngoài đóng.
+ */
+export function Select<V extends string = string>(props: SelectProps<V>) {
+  const {
+    label,
+    options,
+    value,
+    onChange,
+    allLabel,
+    disabled,
+    align = 'start',
+    side = 'bottom',
+    variant = 'filter',
+    size = 'md',
+    icon,
+    invalid,
+    id,
+    describedBy,
+    labelledBy,
+    fullWidth,
+    className,
+  } = props;
+  const uid = useId();
+  const listId = `${uid}-list`;
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  useMenuEffects(open, activeIndex, rootRef, listRef, setOpen);
+
+  const rows: Row<V>[] = [...(allLabel ? [{ value: null, label: allLabel }] : []), ...options];
+  const selectedIndex = rows.findIndex((r) => r.value === value);
+  const selected = selectedIndex >= 0 ? rows[selectedIndex] : undefined;
 
   const openMenu = (index?: number) => {
-    setActiveIndex(index ?? (selectedIndex >= 0 ? selectedIndex : firstEnabled()));
+    setActiveIndex(index ?? (selectedIndex >= 0 ? selectedIndex : firstEnabled(rows)));
     setOpen(true);
   };
-
   const close = (focusTrigger = true) => {
     setOpen(false);
     if (focusTrigger) triggerRef.current?.focus();
   };
-
   const choose = (index: number) => {
     const row = rows[index];
     if (!row || row.disabled) return;
@@ -161,43 +262,32 @@ export function Select<V extends string = string>({
   };
 
   const onTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
-      e.preventDefault();
-      openMenu(e.key === 'ArrowUp' ? lastEnabled() : undefined);
-    }
+    if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) return;
+    e.preventDefault();
+    openMenu(e.key === 'ArrowUp' ? lastEnabled(rows) : undefined);
   };
 
+  /** Phím trong listbox → mục active mới (undefined = không đổi). */
+  const moves: Record<string, () => number> = {
+    ArrowDown: () => stepIndex(rows, activeIndex, 1),
+    ArrowUp: () => stepIndex(rows, activeIndex, -1),
+    Home: () => firstEnabled(rows),
+    End: () => lastEnabled(rows),
+  };
   const onListKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setActiveIndex((i) => step(i, 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setActiveIndex((i) => step(i, -1));
-        break;
-      case 'Home':
-        e.preventDefault();
-        setActiveIndex(firstEnabled());
-        break;
-      case 'End':
-        e.preventDefault();
-        setActiveIndex(lastEnabled());
-        break;
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        choose(activeIndex);
-        break;
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        close();
-        break;
-      case 'Tab':
-        close(false);
-        break;
+    const move = moves[e.key];
+    if (move) {
+      e.preventDefault();
+      setActiveIndex(move());
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      choose(activeIndex);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    } else if (e.key === 'Tab') {
+      close(false);
     }
   };
 
@@ -217,74 +307,30 @@ export function Select<V extends string = string>({
         disabled={disabled}
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onTriggerKeyDown}
-        className={cn(
-          'inline-flex items-center whitespace-nowrap border text-fg transition-colors',
-          variant === 'field' && size === 'lg' ? 'text-md' : 'text-base',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          variant === 'filter' &&
-            cn('h-[34px] gap-1 rounded-md bg-surface-sunken px-[13px]', open ? 'border-accent/60' : 'border-line hover:border-accent/40'),
-          fullWidth && 'w-full justify-between',
-          variant === 'button' &&
-            cn('h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-[4px]', open ? 'border-accent/60' : 'border-accent/30 hover:border-accent/60'),
-          variant === 'field' &&
-            cn(
-              'w-full justify-between gap-2 rounded-lg bg-surface-sunken text-left',
-              size === 'lg' ? 'h-10 pl-4 pr-3' : 'h-[35px] pl-3 pr-2',
-              invalid ? 'border-danger' : open ? 'border-accent/60' : 'border-line hover:border-accent/40',
-            ),
-        )}
+        className={triggerClass(variant, size, open, invalid, fullWidth)}
       >
         {icon}
         <span id={`${uid}-value`} className={cn(variant === 'field' && 'truncate', variant === 'field' && !selected && 'text-fg-secondary/60')}>
-          {triggerText}
+          {triggerText(variant, label, selected, props)}
         </span>
-        {variant !== 'button' && (
-          <Icon name="chevronDown" box={20} className={cn('transition-transform', open && 'rotate-180')} />
-        )}
+        {variant !== 'button' && <Icon name="chevronDown" box={20} className={cn('transition-transform', open && 'rotate-180')} />}
       </button>
 
       {open && (
-        <ul
-          ref={listRef}
-          id={listId}
-          role="listbox"
-          tabIndex={-1}
-          aria-label={label}
-          aria-activedescendant={`${uid}-opt-${activeIndex}`}
+        <OptionList
+          uid={uid}
+          listId={listId}
+          label={label}
+          rows={rows}
+          selectedIndex={selectedIndex}
+          activeIndex={activeIndex}
+          align={align}
+          side={side}
+          listRef={listRef}
           onKeyDown={onListKeyDown}
-          className={cn(
-            'absolute z-20 max-h-64 min-w-full overflow-auto rounded-md border border-line bg-surface-sunken py-1 shadow-card focus:outline-none',
-            align === 'end' ? 'right-0' : 'left-0',
-            side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1',
-          )}
-        >
-          {rows.map((row, i) => {
-            const isSelected = i === selectedIndex;
-            return (
-              // Bàn phím xử lý ở phần tử cha (aria-activedescendant) – option chỉ cần click chuột.
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-              <li
-                key={row.value ?? '__all__'}
-                id={`${uid}-opt-${i}`}
-                data-index={i}
-                role="option"
-                aria-selected={isSelected}
-                aria-disabled={row.disabled || undefined}
-                onPointerEnter={() => !row.disabled && setActiveIndex(i)}
-                onClick={() => choose(i)}
-                className={cn(
-                  'flex cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-[13px] py-1.5 text-base',
-                  i === activeIndex && 'bg-surface-muted',
-                  isSelected ? 'text-info' : 'text-fg',
-                  row.disabled && 'cursor-not-allowed opacity-50',
-                )}
-              >
-                {row.label}
-                {isSelected && <span aria-hidden="true" className="size-1.5 rounded-full bg-info" />}
-              </li>
-            );
-          })}
-        </ul>
+          onHover={setActiveIndex}
+          onChoose={choose}
+        />
       )}
     </div>
   );

@@ -5,9 +5,6 @@
 import type { AlertBand, AlertKindConfig, AlertLevel } from '@/features/alerts/kinds';
 import { formatMeasure } from './gauge';
 
-export const LEVEL_ORDER: readonly AlertLevel[] = ['normal', 'level-1', 'level-2', 'esd'];
-export const levelRank = (l: AlertLevel) => LEVEL_ORDER.indexOf(l);
-
 /** Đoạn chứa giá trị: đoạn cuối có `from ≤ value` (đúng bằng mốc = mức cao hơn); dưới đoạn đầu → đoạn đầu. */
 export function bandOf(value: number, bands: readonly AlertBand[]): AlertBand {
   let hit = bands[0]!;
@@ -32,7 +29,11 @@ export function bannerFor(value: number | undefined, cfg: Pick<AlertKindConfig, 
   if (from === undefined || value < from) return null;
   const esdText = esd !== undefined ? formatMeasure(esd, unit) : '';
   const after = esd !== undefined && value >= esd;
-  return { stage: after ? 'after-esd' : 'before-esd', title: banner.title, text: (after ? banner.afterEsd : banner.beforeEsd).replace('{esd}', esdText) };
+  return {
+    stage: after ? 'after-esd' : 'before-esd',
+    title: banner.title,
+    text: (after ? banner.afterEsd : banner.beforeEsd).replace('{esd}', esdText),
+  };
 }
 
 export type GaugeTick = { value: number; label: string; level?: AlertLevel };
@@ -41,7 +42,8 @@ export type GaugeTick = { value: number; label: string; level?: AlertLevel };
 export function bandTicks(bands: readonly AlertBand[], scale: { min: number; max: number }): GaugeTick[] {
   const ticks: GaugeTick[] = [{ value: scale.min, label: String(scale.min) }];
   for (const b of bands.slice(1)) {
-    if (b.from > scale.min && b.from < scale.max) ticks.push({ value: b.from, label: b.level === 'esd' ? `${b.from} (ESD)` : String(b.from), level: b.level });
+    if (b.from > scale.min && b.from < scale.max)
+      ticks.push({ value: b.from, label: b.level === 'esd' ? `${b.from} (ESD)` : String(b.from), level: b.level });
   }
   ticks.push({ value: scale.max, label: String(scale.max) });
   return ticks;
@@ -76,15 +78,29 @@ export type CloseCheck =
  * Điều kiện "Đã xử lý xong" (bổ sung an toàn ngoài Figma): số live < `limit` (đầu mức cấp 1). Mất tín hiệu → BẮT BUỘC số
  * đo lại tại chỗ < `limit`. Có nhập số đo lại thì số đó cũng phải < `limit` (dù live đã dưới).
  */
-export function canCloseGas({ live, measured, limit, unit }: { live: number | undefined; measured?: number; limit: number; unit: string }): CloseCheck {
+export function canCloseGas({
+  live,
+  measured,
+  limit,
+  unit,
+}: {
+  live: number | undefined;
+  measured?: number;
+  limit: number;
+  unit: string;
+}): CloseCheck {
   const lim = formatMeasure(limit, unit);
-  if (measured !== undefined && (!Number.isFinite(measured) || measured < 0)) return { ok: false, reason: 'invalid-measure', message: 'Nồng độ đo lại không hợp lệ.' };
+  if (measured !== undefined && (!Number.isFinite(measured) || measured < 0))
+    return { ok: false, reason: 'invalid-measure', message: 'Nồng độ đo lại không hợp lệ.' };
   if (live === undefined) {
-    if (measured === undefined) return { ok: false, reason: 'need-measure', message: `Cảm biến mất tín hiệu – nhập nồng độ đo lại tại chỗ (phải dưới ${lim}).` };
-    if (measured >= limit) return { ok: false, reason: 'measured-above', message: `Nồng độ đo lại ${formatMeasure(measured, unit)} vẫn trên ngưỡng (${lim}).` };
+    if (measured === undefined)
+      return { ok: false, reason: 'need-measure', message: `Cảm biến mất tín hiệu – nhập nồng độ đo lại tại chỗ (phải dưới ${lim}).` };
+    if (measured >= limit)
+      return { ok: false, reason: 'measured-above', message: `Nồng độ đo lại ${formatMeasure(measured, unit)} vẫn trên ngưỡng (${lim}).` };
     return { ok: true, value: measured, source: 'measured' };
   }
   if (live >= limit) return { ok: false, reason: 'above', message: `Nồng độ hiện tại ${formatMeasure(live, unit)} vẫn trên ngưỡng (${lim}).` };
-  if (measured !== undefined && measured >= limit) return { ok: false, reason: 'measured-above', message: `Nồng độ đo lại ${formatMeasure(measured, unit)} vẫn trên ngưỡng (${lim}).` };
+  if (measured !== undefined && measured >= limit)
+    return { ok: false, reason: 'measured-above', message: `Nồng độ đo lại ${formatMeasure(measured, unit)} vẫn trên ngưỡng (${lim}).` };
   return measured !== undefined ? { ok: true, value: measured, source: 'measured' } : { ok: true, value: live, source: 'live' };
 }

@@ -68,5 +68,13 @@ function stepsFor(r: MaintenanceRecord) {
 /** Thanh tiến trình 5 bước (full-width dưới tiêu đề). */
 export function DetailStepper({ record: r }: { record: MaintenanceRecord }) {
   const pos = workflowPosition(r);
-  return <WorkflowStepper steps={stepsFor(r)} completed={pos.completed} current={pos.current} label={`Tiến trình xử lý ${r.code}`} className="min-h-[var(--mt-stepper-height)]" />;
+  return (
+    <WorkflowStepper
+      steps={stepsFor(r)}
+      completed={pos.completed}
+      current={pos.current}
+      label={`Tiến trình xử lý ${r.code}`}
+      className="min-h-[var(--mt-stepper-height)]"
+    />
+  );
 }

@@ -1,4 +1,13 @@
-import { effectiveValue, findReading, formatRecordValue, valueState, valueStateLabel, type CheckpointSnapshot, type ManualValues, type SensorHealth } from '@/features/reports';
+import {
+  effectiveValue,
+  findReading,
+  formatRecordValue,
+  valueState,
+  valueStateLabel,
+  type CheckpointSnapshot,
+  type ManualValues,
+  type SensorHealth,
+} from '@/features/reports';
 import { cn } from '@/lib/cn';
 import { Row, STATE_TEXT, boxClass } from './recordParts';
 

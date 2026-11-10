@@ -1,8 +1,9 @@
 import { Suspense, lazy, useId, useRef, useState } from 'react';
-import { Button, Card, FocusIcon, SignalLostIcon } from '@/components';
+import { Button, Card, FocusIcon, ResponsiveImage, SignalLostIcon } from '@/components';
 import { useSceneConfig } from '@/data/scene';
 import type { LiveData } from '@/features/live/types';
 import { cn } from '@/lib/cn';
+import type { ImageAsset } from '@/lib/imageAsset';
 import { useFullscreen } from '@/lib/useFullscreen';
 import { Placeholder } from './Placeholder';
 
@@ -20,7 +21,7 @@ export type AssetModelPanelProps = {
   /** Mô tả văn bản thay cho canvas (tóm tắt số liệu chính). */
   description: string;
   /** Ảnh tĩnh khi WebGL lỗi / cảnh không nạp được. */
-  fallbackImage: string;
+  fallbackImage: string | ImageAsset;
   className?: string;
 };
 
@@ -65,8 +66,11 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
           </p>
           {fallback ? (
             <>
-              <img src={fallbackImage} alt={`Ảnh tĩnh mô hình ${assetName}`} className="absolute inset-0 size-full object-contain" />
-              <p role="status" className="absolute bottom-3 left-3 right-3 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-[3px]">
+              <ResponsiveImage image={fallbackImage} alt={`Ảnh tĩnh mô hình ${assetName}`} className="absolute inset-0 size-full object-contain" />
+              <p
+                role="status"
+                className="absolute bottom-3 left-3 right-3 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-xs"
+              >
                 Không chạy được mô hình 3D – đang hiển thị ảnh tĩnh.
               </p>
             </>
@@ -82,7 +86,7 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
             )
           )}
           {tag && (
-            <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-col rounded-md border border-accent/50 bg-surface-raised/85 px-2.5 py-1.5 backdrop-blur-[3px]">
+            <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-col rounded-md border border-accent/50 bg-surface-raised/85 px-2.5 py-1.5 backdrop-blur-xs">
               <span className="text-xs font-bold text-fg">{tag.title}</span>
               <span className={cn('flex items-center gap-1 text-2xs', tag.signalLost ? 'text-fg-secondary' : 'text-fg-muted')}>
                 {tag.signalLost && <SignalLostIcon size={12} />}

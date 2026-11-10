@@ -12,15 +12,43 @@ export const checklistText = (r: MaintenanceRecord) => {
 
 /** Tải CSV các dòng đang lọc (BOM UTF-8, CRLF) – tên `bao-tri-<ngày nhà máy>.csv`. */
 export function exportMaintenanceCsv(rows: readonly MaintenanceRecord[], now: Date) {
-  const head = ['Mã yêu cầu', 'Ngày tạo', 'Nội dung', 'Thiết bị', 'Khu vực', 'Loại', 'Mức độ', 'Người PT', 'Hạn xử lý', 'Trạng thái', 'Tiến độ báo cáo (%)', 'Checklist', 'Quá hạn'];
+  const head = [
+    'Mã yêu cầu',
+    'Ngày tạo',
+    'Nội dung',
+    'Thiết bị',
+    'Khu vực',
+    'Loại',
+    'Mức độ',
+    'Người PT',
+    'Hạn xử lý',
+    'Trạng thái',
+    'Tiến độ báo cáo (%)',
+    'Checklist',
+    'Quá hạn',
+  ];
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
-  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const esc = (v: string | undefined) => `"${(v ?? '').replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
-    [r.code, formatDate(r.createdAt), r.title, r.device, r.area, TYPE_LABEL[r.type], pr[r.priority], r.assignee ?? '', formatDate(r.dueAt), r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status], String(reportedProgressOf(r)), checklistText(r), isOverdue(r, now) ? 'Có' : '']
+    [
+      r.code,
+      formatDate(r.createdAt),
+      r.title,
+      r.device,
+      r.area,
+      TYPE_LABEL[r.type],
+      pr[r.priority],
+      r.assignee ?? '',
+      formatDate(r.dueAt),
+      r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status],
+      String(reportedProgressOf(r)),
+      checklistText(r),
+      isOverdue(r, now) ? 'Có' : '',
+    ]
       .map(esc)
       .join(','),
   );
-  const blob = new Blob(['﻿' + [head.map(esc).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['\uFEFF' + [head.map(esc).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

@@ -156,4 +156,17 @@ export type MaintenanceRecord = Omit<MaintenanceRequest, 'status' | 'checklist' 
 };
 
 /** Trường chỉ có ở FE – bỏ đi khi so với hợp đồng API (`contracts.test.ts`). */
-export const FE_ONLY_FIELDS = ['cancelledFrom', 'cancelReason', 'reportedProgress', 'hold', 'dueHasTime', 'createdBy', 'objectives', 'notes', 'history', 'submission', 'review', 'reviewFailed'] as const;
+export const FE_ONLY_FIELDS = [
+  'cancelledFrom',
+  'cancelReason',
+  'reportedProgress',
+  'hold',
+  'dueHasTime',
+  'createdBy',
+  'objectives',
+  'notes',
+  'history',
+  'submission',
+  'review',
+  'reviewFailed',
+] as const;

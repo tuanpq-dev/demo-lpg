@@ -47,9 +47,19 @@ export function AssetAside({ data, related, summary, onOpenAlert, onAllAlerts }:
       </Card>
 
       <MaintenanceSummaryCard
-        next={summary.next && { date: summary.next.date, note: summary.next.overdue || summary.next.daysLeft <= 7 ? summary.next.dueText : undefined, overdue: summary.next.overdue }}
+        next={
+          summary.next && {
+            date: summary.next.date,
+            note: summary.next.overdue || summary.next.daysLeft <= 7 ? summary.next.dueText : undefined,
+            overdue: summary.next.overdue,
+          }
+        }
         last={summary.last && { date: summary.last.date }}
-        records={{ value: ph.recordCompleteness.value, status: ph.recordCompleteness.value >= 100 ? 'Đầy đủ' : `${ph.recordCompleteness.value}%`, hint: `Số tạm: ${ph.recordCompleteness.note}` }}
+        records={{
+          value: ph.recordCompleteness.value,
+          status: ph.recordCompleteness.value >= 100 ? 'Đầy đủ' : `${ph.recordCompleteness.value}%`,
+          hint: `Số tạm: ${ph.recordCompleteness.note}`,
+        }}
       />
     </aside>
   );

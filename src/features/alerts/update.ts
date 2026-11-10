@@ -10,22 +10,22 @@
  *   Đã xử lý (cháy: Đã xử lý sự cố / Báo động giả) = resolved (chờ xác nhận đóng) – CHỈ khi đủ điều kiện của loại
  *   (`updateCloseCheck`: áp suất / gas / cháy giữ nguyên như modal cũ). Hoàn thành chỉ qua `close.ts`.
  */
-import type { AlertFollowUp, AlertPhase, AlertRecord, VerificationSource } from '@/features/alerts/types';
+import type { AlertFollowUp, AlertRecord, VerificationSource } from '@/features/alerts/types';
 import type { AlertUpdateConfig, UpdateStateId } from '@/features/alerts/kinds';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { canCloseGas } from './bands';
 import { canCloseFire, type DetectorAlarm, type DetectorDevice } from './fire';
 import { formatMeasure } from './gauge';
-import { INSPECTION_STATUS_LABEL, inspectionErrors, writeInspection, type InspectionEntry } from './inspection';
+import { inspectionErrors, writeInspection, type InspectionEntry } from './inspection';
 import { canClosePressure, hasGauge, type LiveState } from './pressure';
 import { canResolve, newNote, withHistory, type AlertActionCtx } from './workflow';
 
 export type { VerificationSource, LiveState };
-export { hasGauge, INSPECTION_STATUS_LABEL };
+export { hasGauge };
 
 export type UpdateState = UpdateStateId;
 
-export const UPDATE_STATES: readonly UpdateState[] = ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved', 'false-alarm'];
+const UPDATE_STATES: readonly UpdateState[] = ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved', 'false-alarm'];
 const DEFAULT_STATE_LABEL: Record<UpdateState, string> = {
   inspecting: 'Đang kiểm tra',
   resolving: 'Đang xử lý',
@@ -52,8 +52,12 @@ export function updateStateOf(a: Pick<AlertRecord, 'status' | 'phase' | 'hold' |
 }
 
 /** Trường bản ghi theo ô chọn (`phase` không có → giữ phase cũ khi tạm dừng / cần hỗ trợ). */
-export function updateStateFields(state: UpdateState, reason: string, at: string): Pick<AlertRecord, 'status' | 'phase' | 'hold'> | Pick<AlertRecord, 'status' | 'hold'> {
-  if (state === 'inspecting' || state === 'resolving') return { status: 'in-progress', phase: state as AlertPhase, hold: undefined };
+function updateStateFields(
+  state: UpdateState,
+  reason: string,
+  at: string,
+): Pick<AlertRecord, 'status' | 'phase' | 'hold'> | Pick<AlertRecord, 'status' | 'hold'> {
+  if (state === 'inspecting' || state === 'resolving') return { status: 'in-progress', phase: state, hold: undefined };
   if (state === 'paused' || state === 'needs-support') return { status: 'in-progress', hold: { kind: state, reason: reason.trim(), at } };
   return { status: 'resolved', hold: undefined };
 }
@@ -61,7 +65,9 @@ export function updateStateFields(state: UpdateState, reason: string, at: string
 // ---- Điều kiện chọn "Đã xử lý" theo loại ----
 
 export type CloseBasis = 'live' | 'measured' | 'field';
-export type UpdateClose = { ok: true; /** Số sau xử lý (áp suất / gas). */ value?: number; basis: CloseBasis } | { ok: false; reason: string; message: string };
+export type UpdateClose =
+  | { ok: true; /** Số sau xử lý (áp suất / gas). */ value?: number; basis: CloseBasis }
+  | { ok: false; reason: string; message: string };
 
 export type CloseRuleInput = {
   liveState: LiveState;
@@ -116,7 +122,7 @@ export const fieldItemId = (cfg: Pick<AlertUpdateConfig, 'verification'>) => rol
  * Mâu thuẫn bị chặn: mục role normal khi chưa đủ điều kiện · normal cùng lúc với over · chọn Đã xử lý mà chưa chọn mục normal
  * bắt buộc (`required`) · "Có cháy thật" (real-fire) cùng lúc với ô "Báo động giả".
  */
-export function verificationErrors(
+function verificationErrors(
   selected: readonly string[],
   cfg: Pick<AlertUpdateConfig, 'verification' | 'normalHint' | 'stateLabels'>,
   closeOk: boolean,
@@ -156,7 +162,8 @@ export const followUpChoiceLabel = (c: FollowUpChoice) =>
   c === 'custom' ? 'Tùy chỉnh' : c === 0 ? 'Không cần theo dõi thêm' : c < 60 ? `Theo dõi thêm ${c} phút` : `Theo dõi thêm ${c / 60} giờ`;
 
 /** Nhãn ngắn của thời gian theo dõi (select ở modal đóng): "30 phút", "2 Giờ", "Không theo dõi". */
-export const followUpDurationLabel = (m: number) => (m === 0 ? 'Không theo dõi' : m < 60 ? `${m} phút` : m % 60 === 0 ? `${m / 60} Giờ` : `${Math.floor(m / 60)} Giờ ${m % 60} phút`);
+export const followUpDurationLabel = (m: number) =>
+  m === 0 ? 'Không theo dõi' : m < 60 ? `${m} phút` : m % 60 === 0 ? `${m / 60} Giờ` : `${Math.floor(m / 60)} Giờ ${m % 60} phút`;
 
 const hhmm = (iso: string) => plantTimeOfDay(new Date(iso)).slice(0, 5);
 
@@ -203,7 +210,9 @@ export type UpdateCheck = {
   unit: string;
 };
 
-export type UpdateErrors = Partial<Record<'state' | 'holdReason' | 'supportPeople' | 'cause' | 'actionTaken' | 'issueNote' | 'verification' | 'close' | 'followUp', string>> & {
+export type UpdateErrors = Partial<
+  Record<'state' | 'holdReason' | 'supportPeople' | 'cause' | 'actionTaken' | 'issueNote' | 'verification' | 'close' | 'followUp', string>
+> & {
   inspection?: Record<string, string>;
 };
 
@@ -264,7 +273,13 @@ export function suggestsSupport(input: Pick<AlertUpdateInput, 'issue' | 'state'>
 export type AlertUpdateResult = { ok: true; record: AlertRecord } | { ok: false; errors: UpdateErrors };
 
 /** Lịch sử khi chọn Đã xử lý: số sau xử lý (áp suất / gas) hoặc căn cứ đầu báo (cháy) + theo dõi. */
-function resolvedHistory(a: AlertRecord, input: AlertUpdateInput, check: UpdateCheck, close: Extract<UpdateClose, { ok: true }>, follow: AlertFollowUp | undefined): string {
+function resolvedHistory(
+  a: AlertRecord,
+  input: AlertUpdateInput,
+  check: UpdateCheck,
+  close: Extract<UpdateClose, { ok: true }>,
+  follow: AlertFollowUp | undefined,
+): string {
   const f = (n: number) => formatMeasure(n, check.unit);
   const label = stateLabel(check.config, input.state);
   const head =
@@ -299,7 +314,13 @@ export function alertUpdate(a: AlertRecord, input: AlertUpdateInput, check: Upda
   const win = resolved ? followUpWindow(input.followUp.choice, input.followUp.customAt, ctx.at) : null;
   const target = check.config.followUp.target !== undefined ? input.followUp.target : undefined;
   const followUp: AlertFollowUp | undefined = win
-    ? { minutes: win.minutes, until: win.until.toISOString(), ...(target !== undefined ? { target } : {}), unit: check.unit, owner: input.followUp.owner }
+    ? {
+        minutes: win.minutes,
+        until: win.until.toISOString(),
+        ...(target !== undefined ? { target } : {}),
+        unit: check.unit,
+        owner: input.followUp.owner,
+      }
     : undefined;
   const label = stateLabel(check.config, s);
 
@@ -332,7 +353,8 @@ export function alertUpdate(a: AlertRecord, input: AlertUpdateInput, check: Upda
     guide,
     readings: { source: input.readings.source, at: input.readings.at, rows: input.readings.rows.map((r) => ({ ...r })) },
     verification: [...input.verification],
-    issue: input.issue.kind === 'none' ? undefined : { kind: input.issue.kind, ...(input.issue.note.trim() ? { note: input.issue.note.trim() } : {}) },
+    issue:
+      input.issue.kind === 'none' ? undefined : { kind: input.issue.kind, ...(input.issue.note.trim() ? { note: input.issue.note.trim() } : {}) },
     cause: input.cause.trim() || a.cause,
     actionTaken: input.actionTaken.trim() || a.actionTaken,
     attachments: [...(a.attachments ?? []), ...input.files.map((x) => ({ name: x.name, size: x.size, kind: x.kind, isTemp: true }))],
@@ -344,7 +366,8 @@ export function alertUpdate(a: AlertRecord, input: AlertUpdateInput, check: Upda
   if (resolved && close.ok) {
     record.resolvedAt = at;
     record.resolvedBy = ctx.by;
-    if (check.config.close.rule === 'fire') record.resolution = { kind: s === 'false-alarm' ? 'false-alarm' : 'handled', closedBy: close.basis === 'field' ? 'field' : 'live' };
+    if (check.config.close.rule === 'fire')
+      record.resolution = { kind: s === 'false-alarm' ? 'false-alarm' : 'handled', closedBy: close.basis === 'field' ? 'field' : 'live' };
     else if (close.value !== undefined) record.closingReading = { value: close.value, source: close.basis === 'live' ? 'live' : 'measured' };
   }
   return { ok: true, record };
@@ -362,7 +385,8 @@ export function parseUpdateDraft(raw: unknown): UpdateDraft | null {
   const { state, holdReason, supportPeople, inspection, readings, verification, cause, actionTaken, issue, followUp, savedAt } = raw;
   if (typeof state !== 'string' || !UPDATE_STATES.includes(state as UpdateState)) return null;
   if (typeof holdReason !== 'string' || typeof cause !== 'string' || typeof actionTaken !== 'string' || typeof savedAt !== 'string') return null;
-  if (!Array.isArray(supportPeople) || !Array.isArray(verification) || !isObj(inspection) || !isObj(readings) || !isObj(issue) || !isObj(followUp)) return null;
+  if (!Array.isArray(supportPeople) || !Array.isArray(verification) || !isObj(inspection) || !isObj(readings) || !isObj(issue) || !isObj(followUp))
+    return null;
   if (!Array.isArray(readings.rows) || typeof readings.source !== 'string' || !(readings.source in DEFAULT_SOURCES)) return null;
   if (followUp.choice !== 'custom' && typeof followUp.choice !== 'number') return null;
   return raw as unknown as UpdateDraft;

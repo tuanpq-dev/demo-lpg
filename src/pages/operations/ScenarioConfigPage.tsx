@@ -24,12 +24,16 @@ import {
 import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { ExpectedOutcomesCard, InputParamsCard, ReferenceDataCard, ScenarioInfoCard } from './simulation/ConfigCards';
 import { ConfigSuggestionCard, ConfigSummaryCard, ReadinessCard, ScenarioHistoryCard } from './simulation/ConfigSideCards';
 import { CONFIG_SAFETY_RULES, SafetyRulesCard } from './simulation/SimulationSideCards';
 
-const BREADCRUMB_BASE: readonly BreadcrumbItem[] = [{ label: 'Vận hành' }, { label: 'AI mô phỏng sự cố', to: SIMULATION_PATH }, { label: 'Cấu hình kịch bản' }];
+const BREADCRUMB_BASE: readonly BreadcrumbItem[] = [
+  { label: 'Vận hành' },
+  { label: 'AI mô phỏng sự cố', to: SIMULATION_PATH },
+  { label: 'Cấu hình kịch bản' },
+];
 const TITLE = 'Cấu hình kịch bản mô phỏng';
 const DESCRIPTION = 'Mô phỏng các tình huống bất thường trong hệ thống LPG để đánh giá phản ứng vận hành và gợi ý xử lý an toàn.';
 const PENDING_HISTORY = 'Chưa có màn lịch sử đầy đủ – chờ thiết kế.';
@@ -192,7 +196,7 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
     try {
       await startSimulation(s.id, actor, live);
       announce(`Đã bắt đầu mô phỏng ${s.code}.`);
-      navigate(simulationMonitorPath(s.id));
+      void navigate(simulationMonitorPath(s.id));
     } catch (e) {
       announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
       setBusy(null);
@@ -239,25 +243,27 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
               Theo dõi mô phỏng đang chạy
               <PlayCircleSolidIcon size={18} className="shrink-0" />
             </Link>
-          ) : canRun && (
-            <>
-              <Button
-                variant="primary"
-                aria-disabled={!!runReason || !!busy || undefined}
-                aria-describedby={runReason ? runReasonId : undefined}
-                aria-busy={busy === 'run' || undefined}
-                title={runReason}
-                onClick={() => void onRun()}
-              >
-                {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
-                <PlayCircleSolidIcon size={18} className="shrink-0" />
-              </Button>
-              {runReason && (
-                <span id={runReasonId} hidden>
-                  {runReason}
-                </span>
-              )}
-            </>
+          ) : (
+            canRun && (
+              <>
+                <Button
+                  variant="primary"
+                  aria-disabled={!!runReason || !!busy || undefined}
+                  aria-describedby={runReason ? runReasonId : undefined}
+                  aria-busy={busy === 'run' || undefined}
+                  title={runReason}
+                  onClick={() => void onRun()}
+                >
+                  {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
+                  <PlayCircleSolidIcon size={18} className="shrink-0" />
+                </Button>
+                {runReason && (
+                  <span id={runReasonId} hidden>
+                    {runReason}
+                  </span>
+                )}
+              </>
+            )
           )}
         </>
       }

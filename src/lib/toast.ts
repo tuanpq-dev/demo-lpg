@@ -12,9 +12,9 @@ export type ToastTone = 'info' | 'success' | 'error';
 export type ToastItem = { id: number; text: string; tone: ToastTone };
 
 /** Thời gian tự tắt – lỗi giữ lâu hơn để kịp đọc. */
-export const TOAST_DURATION_MS: Readonly<Record<ToastTone, number>> = { info: 5000, success: 5000, error: 8000 };
+const TOAST_DURATION_MS: Readonly<Record<ToastTone, number>> = { info: 5000, success: 5000, error: 8000 };
 /** Tối đa hiện cùng lúc; thêm mới thì bỏ cái cũ nhất. */
-export const MAX_TOASTS = 3;
+const MAX_TOASTS = 3;
 
 let items: readonly ToastItem[] = [];
 let nextId = 1;
@@ -33,7 +33,7 @@ function clearTimer(id: number) {
 }
 
 /** Hiện toast + đọc qua `announce`. Cùng câu cùng loại đang hiện → thay bằng bản mới (đặt lại giờ tắt), không chồng. */
-export function showToast(text: string, tone: ToastTone = 'info'): number {
+function showToast(text: string, tone: ToastTone = 'info'): number {
   if (!text) return 0;
   announce(text);
   const id = nextId++;
@@ -70,11 +70,4 @@ const read = () => items;
 /** Danh sách toast đang hiện. */
 export function useToasts(): readonly ToastItem[] {
   return useSyncExternalStore(subscribe, read, read);
-}
-
-/** Chỉ cho test: xoá mọi toast + hẹn giờ. */
-export function resetToasts() {
-  timers.forEach((t) => clearTimeout(t));
-  timers.clear();
-  emit([]);
 }

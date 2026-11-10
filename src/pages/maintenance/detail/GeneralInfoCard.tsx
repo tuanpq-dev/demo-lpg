@@ -2,7 +2,15 @@ import { Link } from 'react-router-dom';
 import { assetPath } from '@/app/assetRoutes';
 import { Card, ExternalLinkIcon, InfoGrid, InfoIcon, type InfoGridItem } from '@/components';
 import { resolveAssetId } from '@/data/assetDetail';
-import { FORM_TYPE_OPTIONS, PRIORITY_OPTIONS, SOURCE_OPTIONS, STATUS_LABEL, dueHasTime, formatDate, type MaintenanceRecord } from '@/data/maintenance';
+import {
+  FORM_TYPE_OPTIONS,
+  PRIORITY_OPTIONS,
+  SOURCE_OPTIONS,
+  STATUS_LABEL,
+  dueHasTime,
+  formatDate,
+  type MaintenanceRecord,
+} from '@/data/maintenance';
 import { formatPlantDateTime, relativeDayTime } from '@/data/maintenanceDetail';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineDayLabel } from '@/features/maintenance/deadline';
@@ -28,7 +36,12 @@ function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridI
       value: r.sourceAlertId ? `Cảnh báo ${r.sourceAlertId}` : (SOURCE_OPTIONS.find((o) => o.value === r.source)?.label ?? '—'),
     },
     { id: 'type', label: 'Loại công việc', value: `${FORM_TYPE_LABEL[r.type]}${r.priority === 'critical' ? ' (Khẩn cấp)' : ''}` },
-    { id: 'priority', label: 'Mức ưu tiên', value: PRIORITY_LABEL[r.priority], tone: r.priority === 'critical' ? 'danger' : r.priority === 'high' ? 'warning' : 'default' },
+    {
+      id: 'priority',
+      label: 'Mức ưu tiên',
+      value: PRIORITY_LABEL[r.priority],
+      tone: r.priority === 'critical' ? 'danger' : r.priority === 'high' ? 'warning' : 'default',
+    },
     {
       id: 'device',
       label: 'Thiết bị',
@@ -69,7 +82,13 @@ function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridI
     { id: 'reported', label: 'Tiến độ báo cáo', value: `${reportedProgressOf(r)}%` },
     { id: 'checklist', label: 'Checklist', value: r.checklist?.length ? `${progress.done}/${progress.total}` : 'Không có' },
     ...(r.hold
-      ? [{ id: 'hold', label: r.hold.kind === 'blocked' ? 'Sự cố đang gặp' : 'Lý do tạm dừng', value: `${r.hold.reason} (${relativeDayTime(r.hold.at, now)})` }]
+      ? [
+          {
+            id: 'hold',
+            label: r.hold.kind === 'blocked' ? 'Sự cố đang gặp' : 'Lý do tạm dừng',
+            value: `${r.hold.reason} (${relativeDayTime(r.hold.at, now)})`,
+          },
+        ]
       : []),
   ];
 }

@@ -1,4 +1,4 @@
-import type { LiveData, LiveDataSource, LiveSourceStatus, LiveValue, TagQuality } from '@/features/live/types';
+import type { LiveData, LiveDataSource, LiveSourceStatus, LiveValue } from '@/features/live/types';
 
 type Listener = { tags: Set<string> | null; cb: (data: LiveData) => void };
 
@@ -11,18 +11,13 @@ export type MockLiveSourceOptions = {
   intervalMs?: number;
   /** Thời gian kết nối lần đầu (ms). */
   connectMs?: number;
-  /** Sau khi mất kết nối bao lâu thì bắt đầu thử kết nối lại (ms). */
-  retryAfterMs?: number;
   now?: () => number;
 };
 
 /**
  * Nguồn giả lập (thay bằng WebSocket/SCADA cùng interface LiveDataSource):
  * - kết nối khi có người nghe đầu tiên (subscribe hoặc onStatusChange), ngắt khi hết người nghe;
- * - mỗi `intervalMs`: số dao động quanh giá trị nền (mean-reverting), ts = now, quality theo chế độ giả lập;
- * - giả lập sự cố (test/playground; `?live=` chỉ dev – `devScenarios.ts`): `simulateDisconnect` (mất kết nối → sau `retryAfterMs` chuyển
- *   "connecting" thử lại liên tục tới khi tắt giả lập), `setQuality(tags, 'bad')`, `freeze(tags)` (ngừng cập nhật
- *   → quá 10 s thành mất tín hiệu), `restore()`.
+ * - mỗi `intervalMs`: số dao động quanh giá trị nền (mean-reverting), ts = now, quality = good.
  */
 export class MockLiveSource implements LiveDataSource {
   status: LiveSourceStatus = 'disconnected';
@@ -31,12 +26,7 @@ export class MockLiveSource implements LiveDataSource {
   private readonly statusListeners = new Set<(s: LiveSourceStatus) => void>();
   private tick: number | undefined;
   private pending: number | undefined;
-  private down = false;
-  private readonly quality = new Map<string, TagQuality>();
-  private readonly frozen = new Set<string>();
   private readonly o: Required<MockLiveSourceOptions>;
-  /** Giá trị nền hiện tại (đổi được bằng `setBase` – kịch bản dev). */
-  private readonly base: Record<string, LiveValue>;
 
   constructor(options: MockLiveSourceOptions) {
     this.o = {
@@ -44,11 +34,9 @@ export class MockLiveSource implements LiveDataSource {
       unit: () => undefined,
       intervalMs: 2000,
       connectMs: 300,
-      retryAfterMs: 2500,
       now: () => Date.now(),
       ...options,
     };
-    this.base = { ...this.o.base };
     const ts = this.o.now();
     for (const [tag, value] of Object.entries(this.o.base)) this.values[tag] = { value, unit: this.o.unit(tag), ts, quality: 'good' };
   }
@@ -79,75 +67,16 @@ export class MockLiveSource implements LiveDataSource {
     };
   }
 
-  // ----- Giả lập sự cố -----
-
-  /** Bật: mất kết nối (không còn dữ liệu mới) → sau retryAfterMs "đang kết nối lại". Tắt: kết nối lại. */
-  simulateDisconnect(on: boolean) {
-    this.down = on;
-    window.clearTimeout(this.pending);
-    if (on) {
-      this.stopTicks();
-      this.setStatus('disconnected');
-      this.pending = window.setTimeout(() => this.down && this.setStatus('connecting'), this.o.retryAfterMs);
-    } else {
-      this.setStatus('connecting');
-      this.pending = window.setTimeout(() => this.connect(), this.o.connectMs);
-    }
-  }
-
-  /** Đặt chất lượng cho tag (bad = cảm biến/kênh lỗi; uncertain = không chắc chắn). Có hiệu lực ngay. */
-  setQuality(tags: readonly string[], quality: TagQuality) {
-    for (const t of tags) {
-      if (quality === 'good') this.quality.delete(t);
-      else this.quality.set(t, quality);
-      const v = this.values[t];
-      if (v) this.values[t] = { ...v, quality, ts: this.o.now() };
-    }
-    this.emit();
-  }
-
-  /** Ngừng (true) / tiếp tục cập nhật tag – ts đứng yên → quá 10 s UI báo mất tín hiệu. */
-  freeze(tags: readonly string[], frozen = true) {
-    for (const t of tags) {
-      if (frozen) this.frozen.add(t);
-      else this.frozen.delete(t);
-    }
-  }
-
-  /** Đổi giá trị nền của tag (số dao động quanh giá trị mới từ bước kế tiếp) – kịch bản dev, vd nồng độ gas tăng dần. */
-  setBase(tag: string, value: LiveValue) {
-    this.base[tag] = value;
-  }
-
-  /** Giá trị nền hiện tại. */
-  baseOf(tag: string): LiveValue | undefined {
-    return this.base[tag];
-  }
-
-  /** Bỏ mọi giả lập sự cố. */
-  restore() {
-    this.quality.clear();
-    this.frozen.clear();
-    if (this.down) this.simulateDisconnect(false);
-    else this.step(true);
-  }
-
-  /** Trạng thái giả lập hiện tại (playground hiển thị). */
-  get simulation() {
-    return { disconnected: this.down, bad: [...this.quality].filter(([, q]) => q === 'bad').map(([t]) => t), frozen: [...this.frozen] };
-  }
-
   // ----- Nội bộ -----
 
   private ensureConnection() {
-    if (this.status !== 'disconnected' || this.down || this.pending !== undefined) return;
+    if (this.status !== 'disconnected' || this.pending !== undefined) return;
     this.setStatus('connecting');
     this.pending = window.setTimeout(() => this.connect(), this.o.connectMs);
   }
 
   private connect() {
     this.pending = undefined;
-    if (this.down) return;
     this.step(true);
     this.setStatus('connected');
     this.emit();
@@ -160,7 +89,7 @@ export class MockLiveSource implements LiveDataSource {
     this.stopTicks();
     window.clearTimeout(this.pending);
     this.pending = undefined;
-    if (!this.down) this.status = 'disconnected';
+    this.status = 'disconnected';
   }
 
   private stopTicks() {
@@ -179,18 +108,14 @@ export class MockLiveSource implements LiveDataSource {
     const ts = this.o.now();
     const next: LiveData = { ...this.values };
     for (const [tag, cur] of Object.entries(this.values)) {
-      if (this.frozen.has(tag)) continue;
       let value = cur.value;
       const amp = this.o.jitter[tag];
-      const base = this.base[tag];
+      const base = this.o.base[tag];
       if (!fresh && amp && typeof base === 'number' && typeof value === 'number') {
         const v = value + (base - value) * 0.3 + (Math.random() * 2 - 1) * amp * 0.6;
         value = Math.round(Math.min(base + amp, Math.max(base - amp, v)) * 100) / 100;
-      } else if (!fresh && base !== undefined && !(amp && typeof base === 'number')) {
-        // Tag không dao động (trạng thái chuỗi 'alarm'/'normal', số cố định): theo giá trị nền (`setBase`) ở bước kế tiếp.
-        value = base;
       }
-      next[tag] = { value, unit: cur.unit, ts, quality: this.quality.get(tag) ?? 'good' };
+      next[tag] = { value, unit: cur.unit, ts, quality: 'good' };
     }
     this.values = next;
     if (!fresh) this.emit();
@@ -211,4 +136,3 @@ export class MockLiveSource implements LiveDataSource {
     return out;
   }
 }
-

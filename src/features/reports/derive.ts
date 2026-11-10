@@ -3,15 +3,7 @@
  */
 import { dayNumber, plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
 import { dayFromNumber, daysInMonth, quarterOf, weekdayIndex } from './period';
-import {
-  SIGNATURE_STEPS,
-  awaitingStep,
-  missingCheckpoints,
-  reportState,
-  type ReportRecord,
-  type ReportState,
-  type SignatureStep,
-} from './status';
+import { SIGNATURE_STEPS, awaitingStep, missingCheckpoints, reportState, type ReportRecord, type ReportState, type SignatureStep } from './status';
 
 export type ReportKpis = { total: number } & Record<ReportState, number>;
 
@@ -68,7 +60,7 @@ export type DeadlineKind = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
  * Quy tắc hạn nộp (GIẢ ĐỊNH theo ảnh "Lịch báo cáo sắp tới": tuần – thứ Sáu 17:00, tháng – ngày cuối tháng 12:00,
  * quý – ngày cuối quý 17:00; năm – 31/12 17:00). Chờ khách xác nhận (docs/questions.md).
  */
-export const DEADLINE_RULES: Record<DeadlineKind, { time: string }> = {
+const DEADLINE_RULES: Record<DeadlineKind, { time: string }> = {
   weekly: { time: '17:00' },
   monthly: { time: '12:00' },
   quarterly: { time: '17:00' },
@@ -158,7 +150,13 @@ export function deriveTodayActions(rows: readonly ReportRecord[], now: Date): Re
   for (const r of todays) {
     const miss = missingCheckpoints(r, now);
     if (miss.length) {
-      out.push({ id: `${r.id}-missing`, reportId: r.id, tone: 'danger', subject: r.code, message: `Thiếu mốc ${miss.map((c) => c.label).join(', ')}` });
+      out.push({
+        id: `${r.id}-missing`,
+        reportId: r.id,
+        tone: 'danger',
+        subject: r.code,
+        message: `Thiếu mốc ${miss.map((c) => c.label).join(', ')}`,
+      });
     }
   }
   rows
@@ -168,7 +166,9 @@ export function deriveTodayActions(rows: readonly ReportRecord[], now: Date): Re
   for (const r of todays) {
     r.checkpoints
       .filter((c) => c.done && c.needsVerify)
-      .forEach((c) => out.push({ id: `${r.id}-verify-${c.key}`, reportId: r.id, tone: 'warning', subject: `Dữ liệu ${c.label}`, message: 'Cần xác minh' }));
+      .forEach((c) =>
+        out.push({ id: `${r.id}-verify-${c.key}`, reportId: r.id, tone: 'warning', subject: `Dữ liệu ${c.label}`, message: 'Cần xác minh' }),
+      );
   }
   return out;
 }

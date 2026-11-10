@@ -12,7 +12,12 @@ import type { OperationLogEntry, PlcSignal } from '@/features/operations/types';
  * Thẻ cột phải dùng chung mọi loại thiết bị ở màn Vận hành (máy hóa hơi E-101A, hệ thống PLC/SCADA).
  */
 
-export const textTone: Record<ViewTone, string> = { success: 'text-success', warning: 'text-warning', danger: 'text-danger-text', neutral: 'text-fg-secondary' };
+export const textTone: Record<ViewTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger-text',
+  neutral: 'text-fg-secondary',
+};
 const pillTone = (t: ViewTone): StatusPillTone => t;
 
 type Loadable = { status: 'loading' | 'error' | 'success' };
@@ -39,14 +44,14 @@ export function RelatedAlertsCard({ alerts, state, query }: { alerts: DeviceAler
         <ul className="flex flex-col gap-2">
           {alerts.items.map((a) => (
             <li key={a.id}>
-              <AlertItem layout="bar" {...a} onClick={() => navigate(`/alerts?alert=${encodeURIComponent(a.id)}&range=30d`)} />
+              <AlertItem layout="bar" {...a} onClick={() => void navigate(`/alerts?alert=${encodeURIComponent(a.id)}&range=30d`)} />
             </li>
           ))}
         </ul>
       ) : (
         <p className="py-4 text-sm text-fg-secondary">Không có cảnh báo liên quan.</p>
       )}
-      <Button variant="subtle" className="mt-2 w-full" onClick={() => navigate(`/alerts?q=${encodeURIComponent(query)}&range=30d`)}>
+      <Button variant="subtle" className="mt-2 w-full" onClick={() => void navigate(`/alerts?q=${encodeURIComponent(query)}&range=30d`)}>
         Xem tất cả cảnh báo
       </Button>
     </Card>
@@ -74,7 +79,13 @@ export function DeviceMaintenanceCard({
     <Card
       title="Bảo trì"
       headerVariant="divided"
-      headerEnd={ok ? <StatusPill size="sm" tone={pillTone(mt.badge.tone)}>{mt.badge.label}</StatusPill> : undefined}
+      headerEnd={
+        ok ? (
+          <StatusPill size="sm" tone={pillTone(mt.badge.tone)}>
+            {mt.badge.label}
+          </StatusPill>
+        ) : undefined
+      }
       bodyClassName="gap-3"
     >
       <dl className="flex flex-col gap-2 text-base">
@@ -105,7 +116,7 @@ export function DeviceMaintenanceCard({
           </span>
         </p>
       )}
-      <Button variant="subtle" className="w-full" onClick={() => navigate(`/maintenance?q=${encodeURIComponent(deviceId)}`)}>
+      <Button variant="subtle" className="w-full" onClick={() => void navigate(`/maintenance?q=${encodeURIComponent(deviceId)}`)}>
         Xem lịch sử bảo trì
       </Button>
     </Card>
@@ -138,7 +149,9 @@ export function PlcSignalsCard({
                 <span className="truncate text-base text-fg">{s.label}</span>
                 {s.address && <span className="truncate font-mono text-2xs text-fg-secondary">{s.address}</span>}
               </span>
-              <span className={cn('shrink-0 text-xs font-semibold', ok ? 'text-success' : 'text-fg-secondary')}>{ok ? 'Trực tuyến' : st === 'lost' ? SIGNAL_LOST_LABEL : '—'}</span>
+              <span className={cn('shrink-0 text-xs font-semibold', ok ? 'text-success' : 'text-fg-secondary')}>
+                {ok ? 'Trực tuyến' : st === 'lost' ? SIGNAL_LOST_LABEL : '—'}
+              </span>
               <StatusDot status={ok ? 'live' : 'offline'} />
             </li>
           );

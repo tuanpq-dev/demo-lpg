@@ -226,13 +226,7 @@ export default function OperationLogsPage() {
             ) : undefined
           }
         />
-        <KpiCard
-          variant="compact"
-          label="Sự kiện vận hành"
-          value={kpis.operation}
-          tone="info"
-          valueNote={`(${kpis.operationShare}%)`}
-        />
+        <KpiCard variant="compact" label="Sự kiện vận hành" value={kpis.operation} tone="info" valueNote={`(${kpis.operationShare}%)`} />
         <KpiCard
           variant="compact"
           label="Cảnh báo phát sinh"

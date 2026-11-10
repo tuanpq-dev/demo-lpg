@@ -76,7 +76,9 @@ export function useSceneFile({ setDialog, flash }: { setDialog: (d: EditorDialog
 
   /** Hỏi trước khi bỏ thay đổi chưa lưu. */
   const guard = (title: string, run: () => void) =>
-    isDirtyNow() ? setDialog({ kind: 'confirm', title, message: 'Cảnh đang sửa có thay đổi chưa lưu. Bỏ các thay đổi đó?', confirmLabel: 'Bỏ thay đổi', run }) : run();
+    isDirtyNow()
+      ? setDialog({ kind: 'confirm', title, message: 'Cảnh đang sửa có thay đổi chưa lưu. Bỏ các thay đổi đó?', confirmLabel: 'Bỏ thay đổi', run })
+      : run();
 
   // Lần đầu: có bản nháp → hỏi khôi phục; không thì mở ?scene= hoặc cảnh mới. Chạy đúng một lần khi vào trang:
   // `started` chặn chạy lại (vẽ lại, StrictMode chạy effect 2 lần); `openFromUrl` đọc qua ref để luôn là bản mới nhất.

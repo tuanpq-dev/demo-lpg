@@ -85,7 +85,9 @@ export function MetricListCard({ title, count, progress, rows, action, headerVar
             )}
           >
             <dt className={cn('text-fg-secondary', divided ? 'shrink-0' : 'min-w-0')}>{r.label}</dt>
-            <dd className={cn('font-semibold tabular-nums', divided ? 'min-w-0 text-right' : 'shrink-0', valueTone[r.tone ?? 'default'])}>{r.value}</dd>
+            <dd className={cn('font-semibold tabular-nums', divided ? 'min-w-0 text-right' : 'shrink-0', valueTone[r.tone ?? 'default'])}>
+              {r.value}
+            </dd>
           </div>
         ))}
       </dl>

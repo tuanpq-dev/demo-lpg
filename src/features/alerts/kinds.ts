@@ -4,25 +4,23 @@
  */
 import type { StaffSkill } from '@/features/staff/skills';
 
-export const ALERT_KIND_IDS = [
-  'tank-overpressure',
-  'gas-leak',
-  'fire',
-  'temperature-low',
-  'temperature-high',
-  'filter-dp-high',
-  'flow-low',
-  'level-low',
-  'level-drop',
-  'sensor-signal-lost',
-  'vibration-high',
-  'safety-valve-open',
-  'pressure-high',
-  'battery-low',
-  'pump-standby',
-  'generic',
-] as const;
-export type AlertKind = (typeof ALERT_KIND_IDS)[number];
+export type AlertKind =
+  | 'tank-overpressure'
+  | 'gas-leak'
+  | 'fire'
+  | 'temperature-low'
+  | 'temperature-high'
+  | 'filter-dp-high'
+  | 'flow-low'
+  | 'level-low'
+  | 'level-drop'
+  | 'sensor-signal-lost'
+  | 'vibration-high'
+  | 'safety-valve-open'
+  | 'pressure-high'
+  | 'battery-low'
+  | 'pump-standby'
+  | 'generic';
 
 /** Mức theo nồng độ/giá trị (thứ tự tăng dần). */
 export type AlertLevel = 'normal' | 'level-1' | 'level-2' | 'esd';
@@ -113,7 +111,12 @@ export type AlertKindConfig = {
    * "Xem quy trình khẩn cấp": các bước ứng phó + danh bạ. `draft` = nhãn hiển thị trong modal khi nội dung chưa được duyệt.
    * `phone` thiếu → "Chờ khách cung cấp" (KHÔNG đặt số giả trông như thật).
    */
-  emergency?: { title: string; draft?: string; steps: readonly string[]; contacts: readonly { id: string; name: string; role: string; phone?: string }[] };
+  emergency?: {
+    title: string;
+    draft?: string;
+    steps: readonly string[];
+    contacts: readonly { id: string; name: string; role: string; phone?: string }[];
+  };
   /** Mục thu gọn mặc định (ảnh không có): Tiến trình, Ghi chú, Nhật ký. */
   collapsed?: readonly ('progress' | 'notes' | 'log')[];
   /**

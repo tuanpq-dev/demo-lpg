@@ -38,7 +38,13 @@ const iconTone: Record<ActionItemTone, string> = {
  * Danh sách hộp việc cần làm (icon tam giác + "Mã: nội dung" + link hành động), tô theo mức.
  * "Cần xử lý hôm nay" – màn Báo cáo (ảnh thiết kế).
  */
-export function ActionItemList({ items, actionLabel = 'Xử lý ngay', onAction, emptyState = 'Không có việc cần xử lý.', className }: ActionItemListProps) {
+export function ActionItemList({
+  items,
+  actionLabel = 'Xử lý ngay',
+  onAction,
+  emptyState = 'Không có việc cần xử lý.',
+  className,
+}: ActionItemListProps) {
   if (!items.length) return <p className={cn('text-sm text-fg-secondary', className)}>{emptyState}</p>;
   return (
     <ul className={cn('flex flex-col gap-3', className)}>

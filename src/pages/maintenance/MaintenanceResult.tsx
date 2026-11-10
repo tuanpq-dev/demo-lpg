@@ -10,7 +10,11 @@ import {
 } from '@/features/maintenance/review';
 
 const fmt = (s: ReadingSnapshot | undefined, unit: string) =>
-  !s ? '—' : s.value === null ? 'Mất tín hiệu lúc gửi' : `${s.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}${s.warn !== undefined ? ` (ngưỡng ${Number(s.warn.toFixed(2))})` : ''}`;
+  !s
+    ? '—'
+    : s.value === null
+      ? 'Mất tín hiệu lúc gửi'
+      : `${s.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}${s.warn !== undefined ? ` (ngưỡng ${Number(s.warn.toFixed(2))})` : ''}`;
 
 /**
  * Khối "Kết quả bảo trì" sau khi nghiệm thu ĐẠT: nguyên nhân, biện pháp, thông số đã chụp lúc gửi, tình trạng, kết quả, người +
@@ -27,13 +31,20 @@ export function MaintenanceResult({ record: r }: { record: MaintenanceRecord }) 
     {
       id: 'follow',
       label: 'Theo dõi thêm',
-      value: rv.followUpUntil ? `${rv.followUpHours} giờ – đến ${rv.followUpUntil.slice(11, 16)}${rv.followUpUntil.slice(0, 10) !== rv.at.slice(0, 10) ? ` ${formatPlantDateTime(rv.followUpUntil).slice(0, 5)}` : ''}` : 'Không',
+      value: rv.followUpUntil
+        ? `${rv.followUpHours} giờ – đến ${rv.followUpUntil.slice(11, 16)}${rv.followUpUntil.slice(0, 10) !== rv.at.slice(0, 10) ? ` ${formatPlantDateTime(rv.followUpUntil).slice(0, 5)}` : ''}`
+        : 'Không',
     },
     ...(sub
       ? [
           { id: 'cause', label: 'Nguyên nhân', value: sub.cause, newRow: true },
           { id: 'remedy', label: 'Biện pháp', value: sub.remedy },
-          { id: 'condition', label: 'Tình trạng sau bảo trì', value: DEVICE_CONDITION_LABEL[sub.deviceCondition], tone: sub.deviceCondition === 'unresolved' ? ('danger' as const) : undefined },
+          {
+            id: 'condition',
+            label: 'Tình trạng sau bảo trì',
+            value: DEVICE_CONDITION_LABEL[sub.deviceCondition],
+            tone: sub.deviceCondition === 'unresolved' ? ('danger' as const) : undefined,
+          },
           { id: 'by', label: 'Người thực hiện / gửi', value: `${sub.submittedBy} · ${formatPlantDateTime(sub.submittedAt)}` },
           { id: 'p', label: 'Áp suất lúc gửi', value: fmt(sub.readings.pressure, 'bar'), newRow: true },
           { id: 't', label: 'Nhiệt độ lúc gửi', value: fmt(sub.readings.temperature, '°C') },

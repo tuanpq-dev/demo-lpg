@@ -21,8 +21,6 @@ export type AlertUpdateModalProps = {
   onClose: () => void;
   /** Ghi bản ghi (data layer gọi `alertUpdate` – kiểm lại toàn bộ). Nơi gọi đóng modal khi ok. */
   onSubmit: (input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
-  /** Giờ cố định (playground). */
-  fixedNow?: Date;
 };
 
 /**
@@ -34,10 +32,9 @@ export type AlertUpdateModalProps = {
  * Thông số trước/sau · Kết quả xác minh · Nguyên nhân / Nội dung · Ảnh và tài liệu · Vấn đề phát sinh · Theo dõi sau xử lý.
  * State + kiểm tra: `useAlertUpdateForm`; quy tắc: `features/alerts/update.ts`. Nháp sessionStorage theo mã. Chỉ mount khi mở (chunk lazy riêng).
  */
-export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, fixedNow }: AlertUpdateModalProps) {
-  const liveNow = useNow(30_000);
-  const now = fixedNow ?? liveNow;
-  const f = useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose });
+export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit }: AlertUpdateModalProps) {
+  const now = useNow(30_000);
+  const f = useAlertUpdateForm({ alert: a, now, onSubmit, onClose });
   const { cfg, values: v, set, err, modal } = f;
   const { confirming, submitting: busy, hasDraft, requestClose, discard } = modal;
   const blockId = `${useId()}-block`;
@@ -57,7 +54,13 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
       <Button variant="subtle" onClick={f.saveDraft}>
         Lưu nháp
       </Button>
-      <Button type="submit" variant="primary" disabled={busy} aria-disabled={f.blocked || undefined} aria-describedby={f.blocked ? blockId : undefined}>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={busy}
+        aria-disabled={f.blocked || undefined}
+        aria-describedby={f.blocked ? blockId : undefined}
+      >
         Lưu cập nhật
       </Button>
     </>
@@ -105,7 +108,14 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
         onSupportPeopleChange={(ids) => set('supportPeople', ids)}
       />
 
-      <UpdateInspectionSection code={a.code} steps={f.steps} inspection={v.inspection} errors={err.inspection} actor={actor} onChange={f.setInspection} />
+      <UpdateInspectionSection
+        code={a.code}
+        steps={f.steps}
+        inspection={v.inspection}
+        errors={err.inspection}
+        actor={actor}
+        onChange={f.setInspection}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <UpdateReadingsSection
@@ -142,7 +152,14 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
         onActionTakenChange={(t) => set('actionTaken', t)}
       />
 
-      <UpdateFilesSection code={a.code} attachments={a.attachments} files={f.files} uploadError={f.uploadError} onAdd={f.addFiles} onRemove={f.removeFile} />
+      <UpdateFilesSection
+        code={a.code}
+        attachments={a.attachments}
+        files={f.files}
+        uploadError={f.uploadError}
+        onAdd={f.addFiles}
+        onRemove={f.removeFile}
+      />
 
       <UpdateIssueSection
         issues={cfg.issues}

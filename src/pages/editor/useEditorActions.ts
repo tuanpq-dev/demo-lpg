@@ -196,7 +196,11 @@ export function useEditorActions(
 
       selectAll() {
         const skip = new Set([...ui().hidden, ...ui().locked]);
-        ui().setSelection(doc().scene.objects.map((o) => o.id).filter((id) => !skip.has(id)));
+        ui().setSelection(
+          doc()
+            .scene.objects.map((o) => o.id)
+            .filter((id) => !skip.has(id)),
+        );
       },
 
       fit() {

@@ -1,0 +1,19 @@
+import { useSyncExternalStore } from 'react';
+
+const subscribe = (cb: () => void) => {
+  window.addEventListener('online', cb);
+  window.addEventListener('offline', cb);
+  return () => {
+    window.removeEventListener('online', cb);
+    window.removeEventListener('offline', cb);
+  };
+};
+
+/** Trình duyệt có mạng không (`navigator.onLine`, cập nhật theo sự kiện online/offline). */
+export function useOnlineStatus(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => navigator.onLine,
+    () => true,
+  );
+}

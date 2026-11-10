@@ -40,7 +40,12 @@ export function ConfigSummaryCard({
         rows={[
           { id: 'title', label: 'Kịch bản:', value: s.title },
           { id: 'code', label: 'Mã:', value: s.code },
-          { id: 'risk', label: 'Mức độ:', value: SCENARIO_RISK_LABEL[s.risk], tone: s.risk === 'critical' ? 'danger' : s.risk === 'high' ? 'warning' : 'default' },
+          {
+            id: 'risk',
+            label: 'Mức độ:',
+            value: SCENARIO_RISK_LABEL[s.risk],
+            tone: s.risk === 'critical' ? 'danger' : s.risk === 'high' ? 'warning' : 'default',
+          },
           { id: 'target', label: 'Giá trị mục tiêu:', value: formatVariable(config.target, s.setup.variable), tone: 'primary' },
           { id: 'duration', label: 'Thời lượng:', value: `${config.durationMin} phút` },
           { id: 'area', label: 'Khu vực:', value: areas.length ? areas.join(', ') : '—' },
@@ -72,13 +77,19 @@ export function ReadinessCard({ readiness, reason, health }: { readiness: Readin
           aria-hidden="true"
           className={cn(
             'flex size-12 shrink-0 items-center justify-center rounded-lg border',
-            ok ? 'border-success bg-success/10 text-success' : readiness.tone === 'warning' ? 'border-warning bg-warning/10 text-warning' : 'border-line bg-surface-raised text-fg-secondary',
+            ok
+              ? 'border-success bg-success/10 text-success'
+              : readiness.tone === 'warning'
+                ? 'border-warning bg-warning/10 text-warning'
+                : 'border-line bg-surface-raised text-fg-secondary',
           )}
         >
           {ok ? <CheckCircleIcon size={24} /> : <AlertTriangleIcon size={22} />}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={cn('text-md', ok ? 'text-success' : readiness.tone === 'warning' ? 'text-warning' : 'text-fg-secondary')}>{readiness.headline}</span>
+          <span className={cn('text-md', ok ? 'text-success' : readiness.tone === 'warning' ? 'text-warning' : 'text-fg-secondary')}>
+            {readiness.headline}
+          </span>
           {reason && <span className="text-sm text-fg-secondary">{reason}</span>}
         </span>
       </div>

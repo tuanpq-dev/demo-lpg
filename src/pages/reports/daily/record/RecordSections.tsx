@@ -50,7 +50,11 @@ export function RecordOverview({ f, uid, sectionRef }: SectionProps) {
       <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: 'Kết nối IoT', value: quality.iotStable ? 'Ổn định' : 'Gián đoạn', tone: quality.iotStable ? 'text-success' : 'text-warning' },
-          { label: 'Tiến độ xác minh', value: `${quality.verified}/${quality.total}`, tone: quality.verified === quality.total ? 'text-primary' : 'text-warning' },
+          {
+            label: 'Tiến độ xác minh',
+            value: `${quality.verified}/${quality.total}`,
+            tone: quality.verified === quality.total ? 'text-primary' : 'text-warning',
+          },
           { label: 'Bất thường', value: String(quality.anomalies), tone: quality.anomalies ? 'text-danger-text' : 'text-fg' },
           { label: 'Nhập thủ công', value: String(quality.manual), tone: quality.manual ? 'text-warning' : 'text-fg' },
         ].map((c) => (
@@ -70,7 +74,12 @@ export function RecordEquipment({ f, uid, sectionRef }: SectionProps) {
   const m = { manual, onManual };
   return (
     <>
-      <RecordSection ref={sectionRef('tank')} id={`${uid}-tank`} title="Bồn chứa LPG – V-101" end={<GaugeInputToggle active={f.editingGauge} onToggle={f.toggleGauge} />}>
+      <RecordSection
+        ref={sectionRef('tank')}
+        id={`${uid}-tank`}
+        title="Bồn chứa LPG – V-101"
+        end={<GaugeInputToggle active={f.editingGauge} onToggle={f.toggleGauge} />}
+      >
         <TankTable snapshot={snapshot} editing={f.editingGauge} {...m} />
       </RecordSection>
 
@@ -85,7 +94,9 @@ export function RecordEquipment({ f, uid, sectionRef }: SectionProps) {
 
       <RecordSection ref={sectionRef('regulator')} id={`${uid}-regulator`} title="Hệ thống điều áp – PR-101">
         <RegulatorCards readings={snapshot.regulators} {...m} />
-        <p className="text-xs font-semibold italic text-fg-secondary">* Giá trị: Theo dữ liệu PLC | Đơn vị: Theo cấu hình PLC. Đơn vị và ngưỡng hiển thị theo mapping PLC chính thức.</p>
+        <p className="text-xs font-semibold italic text-fg-secondary">
+          * Giá trị: Theo dữ liệu PLC | Đơn vị: Theo cấu hình PLC. Đơn vị và ngưỡng hiển thị theo mapping PLC chính thức.
+        </p>
       </RecordSection>
 
       <RecordSection ref={sectionRef('flow')} id={`${uid}-flow`} title="Lưu lượng và đường cấp LPG">
@@ -118,12 +129,21 @@ export function RecordRemarkAndFiles({ f, uid, sectionRef }: SectionProps) {
   return (
     <>
       <RecordSection ref={sectionRef('remark')} id={`${uid}-remark`} title="Nhận xét mốc kiểm tra">
-        <FormField label="Nhận xét của người vận hành" required error={f.remarkMissing ? 'Cần nhập nhận xét vận hành trước khi xác nhận mốc kiểm tra.' : undefined}>
+        <FormField
+          label="Nhận xét của người vận hành"
+          required
+          error={f.remarkMissing ? 'Cần nhập nhận xét vận hành trước khi xác nhận mốc kiểm tra.' : undefined}
+        >
           {({ id, describedBy, invalid }) => (
             <div className="flex flex-col gap-2">
               <div role="group" aria-label="Câu nhận xét gợi ý" className="flex flex-wrap gap-2">
                 {REMARK_SUGGESTIONS.map((s) => (
-                  <button key={s} type="button" onClick={() => f.appendRemark(s)} className="rounded-sm bg-surface-chip px-2 py-1 text-xs font-bold text-fg hover:bg-surface-chip/70">
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => f.appendRemark(s)}
+                    className="rounded-sm bg-surface-chip px-2 py-1 text-xs font-bold text-fg hover:bg-surface-chip/70"
+                  >
                     {s}
                   </button>
                 ))}
@@ -166,7 +186,9 @@ export function RecordSummary({ f }: { f: CheckpointRecordForm }) {
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-sm tracking-wide text-fg-secondary">Nhận xét vận hành</dt>
-          <dd className={cn('text-lg font-semibold', remarkMissing ? 'text-danger-text' : 'text-success')}>{remarkMissing ? 'Chưa nhập' : 'Đã nhập'}</dd>
+          <dd className={cn('text-lg font-semibold', remarkMissing ? 'text-danger-text' : 'text-success')}>
+            {remarkMissing ? 'Chưa nhập' : 'Đã nhập'}
+          </dd>
         </div>
       </dl>
       <Badge variant="tag" size="md" tone={ready ? 'success' : 'danger'} className="text-sm font-semibold">

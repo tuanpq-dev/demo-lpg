@@ -18,11 +18,6 @@ export function horizontalCylinderFillFraction(height: number, diameter: number)
   return (theta - Math.sin(theta)) / (2 * Math.PI);
 }
 
-/** % thể tích từ chiều cao chất lỏng (m) và đường kính bồn (m). */
-export function heightToVolumePercent(heightM: number, diameterM: number): number {
-  return horizontalCylinderFillFraction(heightM, diameterM) * 100;
-}
-
 /** % thể tích từ mức theo chiều cao (% đường kính – cách các tag LT-xxx đang báo). */
 export function levelPercentToVolumePercent(levelPct: number): number {
   return horizontalCylinderFillFraction(levelPct, 100) * 100;
@@ -30,18 +25,3 @@ export function levelPercentToVolumePercent(levelPct: number): number {
 
 /** Một dòng bảng dung tích: chiều cao (m) → thể tích (m³). */
 export type StrappingRow = { height: number; volume: number };
-
-/**
- * Nội suy tuyến tính trên bảng dung tích (sắp tăng dần theo chiều cao). Ngoài bảng → kẹp ở đầu/cuối.
- * Dùng khi có bảng thật từ khách (xem TODO đầu file).
- */
-export function strappingVolume(table: readonly StrappingRow[], height: number): number {
-  if (!table.length) return NaN;
-  if (height <= table[0]!.height) return table[0]!.volume;
-  for (let i = 1; i < table.length; i++) {
-    const a = table[i - 1]!;
-    const b = table[i]!;
-    if (height <= b.height) return a.volume + ((b.volume - a.volume) * (height - a.height)) / (b.height - a.height || 1);
-  }
-  return table[table.length - 1]!.volume;
-}

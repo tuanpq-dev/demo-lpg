@@ -53,7 +53,11 @@ export function PriorityTaskCard({
         // Chuẩn hóa: viền trái 3px theo mức độ + viền mảnh tone/30 (Figma: thẻ 1 chỉ viền trái 2px, thẻ 2–3 viền đủ + trái 4px).
         'flex flex-col gap-2 rounded-lg border border-l-[3px] bg-surface-raised py-4 pl-[18px] pr-4',
         accent[severity],
-        severity === 'critical' ? 'border-y-danger/30 border-r-danger/30' : severity === 'high' ? 'border-y-warning/30 border-r-warning/30' : 'border-y-line/30 border-r-line/30',
+        severity === 'critical'
+          ? 'border-y-danger/30 border-r-danger/30'
+          : severity === 'high'
+            ? 'border-y-warning/30 border-r-warning/30'
+            : 'border-y-line/30 border-r-line/30',
         className,
       )}
     >
@@ -80,7 +84,7 @@ export function PriorityTaskCard({
             type="button"
             onClick={() => onDetail(id)}
             aria-label={`Chi tiết ${code}`}
-            className="shrink-0 rounded-sm text-sm font-semibold leading-[18px] text-info underline hover:text-accent"
+            className="shrink-0 rounded-sm text-sm font-semibold leading-4.5 text-info underline hover:text-accent"
           >
             Chi tiết
           </button>

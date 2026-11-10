@@ -137,7 +137,7 @@ export default function ReportsPage() {
           key={signOpen.id}
           report={signOpen}
           onClose={closeSign}
-          onBackToEdit={() => navigate(reportDetailPath(signOpen)!)}
+          onBackToEdit={() => void navigate(reportDetailPath(signOpen)!)}
           nowParam={table.search.get('now')}
         />
       )}

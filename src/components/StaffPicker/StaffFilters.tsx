@@ -62,7 +62,10 @@ export function StaffFilters<D extends string, S extends string>({
             <>
               <FilterIcon />
               {active > 0 && (
-                <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-primary text-2xs font-semibold text-fg-inverse">
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-primary text-2xs font-semibold text-fg-inverse"
+                >
                   {active}
                 </span>
               )}
@@ -78,8 +81,26 @@ export function StaffFilters<D extends string, S extends string>({
           <span id={`${uid}-shift`} className="sr-only">
             Lọc ca
           </span>
-          <Select variant="field" labelledBy={`${uid}-dept`} label="Lọc phòng ban" placeholder="Tất cả phòng ban" allLabel="Tất cả phòng ban" options={departments} value={department} onChange={onDepartmentChange} />
-          <Select variant="field" labelledBy={`${uid}-shift`} label="Lọc ca" placeholder="Tất cả ca" allLabel="Tất cả ca" options={shifts} value={shift} onChange={onShiftChange} />
+          <Select
+            variant="field"
+            labelledBy={`${uid}-dept`}
+            label="Lọc phòng ban"
+            placeholder="Tất cả phòng ban"
+            allLabel="Tất cả phòng ban"
+            options={departments}
+            value={department}
+            onChange={onDepartmentChange}
+          />
+          <Select
+            variant="field"
+            labelledBy={`${uid}-shift`}
+            label="Lọc ca"
+            placeholder="Tất cả ca"
+            allLabel="Tất cả ca"
+            options={shifts}
+            value={shift}
+            onChange={onShiftChange}
+          />
         </div>
         <Switch className="mt-3" label="Chỉ người đang trong ca" checked={onShiftOnly} onChange={onShiftOnlyChange} />
       </div>

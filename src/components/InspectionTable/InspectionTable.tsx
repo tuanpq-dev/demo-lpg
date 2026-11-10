@@ -34,7 +34,15 @@ export type InspectionTableProps<S extends string = string> = {
  * "Ghi chú: <hạng mục>"). Ảnh có cột checkbox – bỏ (trạng thái đã đủ nghĩa). `<caption>` + `th scope`; khung tự cuộn ngang
  * dưới ~760 px (role=region có tên, Tab tới được) – trang/modal không tràn.
  */
-export function InspectionTable<S extends string = string>({ caption, rows, statusOptions, onStatusChange, onNoteChange, readOnly, className }: InspectionTableProps<S>) {
+export function InspectionTable<S extends string = string>({
+  caption,
+  rows,
+  statusOptions,
+  onStatusChange,
+  onNoteChange,
+  readOnly,
+  className,
+}: InspectionTableProps<S>) {
   const uid = useId();
   return (
     <div role="region" aria-label={caption} tabIndex={0} className={cn('overflow-x-auto rounded-lg border border-line/30', className)}>
@@ -66,11 +74,11 @@ export function InspectionTable<S extends string = string>({ caption, rows, stat
             return (
               <tr key={r.id} className="border-b border-line/30 align-top text-base last:border-b-0">
                 <th scope="row" className="px-4 py-2.5 font-normal text-fg">
-                  <span className="flex min-h-[35px] items-center">{r.text}</span>
+                  <span className="flex min-h-field items-center">{r.text}</span>
                 </th>
                 <td className="px-3 py-2.5">
                   {readOnly ? (
-                    <span className="flex min-h-[35px] items-center text-fg">{label}</span>
+                    <span className="flex min-h-field items-center text-fg">{label}</span>
                   ) : (
                     <>
                       {/* Tên ô chọn = "Trạng thái: <hạng mục>" + giá trị đang chọn (Select field ghép aria-labelledby). */}
@@ -89,14 +97,14 @@ export function InspectionTable<S extends string = string>({ caption, rows, stat
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-fg">
-                  <span className="flex min-h-[35px] items-center">{r.by ?? '–'}</span>
+                  <span className="flex min-h-field items-center">{r.by ?? '–'}</span>
                 </td>
                 <td className="px-3 py-2.5 tabular-nums text-fg-secondary">
-                  <span className="flex min-h-[35px] items-center">{r.time ?? '–'}</span>
+                  <span className="flex min-h-field items-center">{r.time ?? '–'}</span>
                 </td>
                 <td className="px-3 py-2.5">
                   {readOnly ? (
-                    <span className="flex min-h-[35px] items-center text-fg">{r.note || '–'}</span>
+                    <span className="flex min-h-field items-center text-fg">{r.note || '–'}</span>
                   ) : (
                     <>
                       <input
@@ -108,7 +116,7 @@ export function InspectionTable<S extends string = string>({ caption, rows, stat
                         aria-invalid={r.error ? true : undefined}
                         aria-describedby={r.error ? errId : undefined}
                         placeholder="Thêm ghi chú…"
-                        className={cn(inputClass(!!r.error), 'h-[35px] text-sm')}
+                        className={cn(inputClass(!!r.error), 'h-field text-sm')}
                       />
                       {r.error && (
                         <p id={errId} className="mt-1 text-sm text-danger-text">

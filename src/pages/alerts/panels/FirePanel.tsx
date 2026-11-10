@@ -7,7 +7,12 @@ import { ALARM_LABEL, DEVICE_LABEL, crossConfirmText, type SignalTone } from '@/
 import { formatMeasure } from '@/features/alerts/gauge';
 import { Section } from '../drawerParts';
 
-const TONE_TEXT: Record<SignalTone, string> = { success: 'text-success', warning: 'text-warning', danger: 'text-danger-text', neutral: 'text-fg-secondary' };
+const TONE_TEXT: Record<SignalTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger-text',
+  neutral: 'text-fg-secondary',
+};
 const DOT: Record<SignalTone, string> = { success: 'bg-success', warning: 'bg-warning', danger: 'bg-danger', neutral: 'bg-neutral/70' };
 
 function Lost({ size = 14 }: { size?: number }) {
@@ -83,13 +88,19 @@ export function FirePanel({ alert: a }: { alert: AlertRecord }) {
                 <SignalLostIcon size={12} className="shrink-0" /> {DEVICE_LABEL.lost}
               </span>
             ) : (
-              <span className={r.device === 'online' ? 'text-success' : r.device === 'fault' ? 'text-danger-text' : undefined}>{DEVICE_LABEL[r.device]}</span>
+              <span className={r.device === 'online' ? 'text-success' : r.device === 'fault' ? 'text-danger-text' : undefined}>
+                {DEVICE_LABEL[r.device]}
+              </span>
             )}
           </span>
         </span>
       ),
     },
-    { id: 'updated', label: 'Cập nhật cuối', value: <span className="text-base tabular-nums text-fg-secondary">{r.updatedAt ? plantTimeOfDay(new Date(r.updatedAt)) : '—'}</span> },
+    {
+      id: 'updated',
+      label: 'Cập nhật cuối',
+      value: <span className="text-base tabular-nums text-fg-secondary">{r.updatedAt ? plantTimeOfDay(new Date(r.updatedAt)) : '—'}</span>,
+    },
   ];
 
   return (
@@ -102,7 +113,10 @@ export function FirePanel({ alert: a }: { alert: AlertRecord }) {
       </section>
 
       {r.signals.length > 0 && (
-        <section aria-labelledby={`fire-signals-${a.id}`} className="flex flex-col gap-2.5 rounded-md border border-line/30 bg-surface-muted/40 px-5 py-4">
+        <section
+          aria-labelledby={`fire-signals-${a.id}`}
+          className="flex flex-col gap-2.5 rounded-md border border-line/30 bg-surface-muted/40 px-5 py-4"
+        >
           <h3 id={`fire-signals-${a.id}`} className="text-base font-semibold text-fg-secondary">
             Tín hiệu liên quan
           </h3>
@@ -117,7 +131,9 @@ export function FirePanel({ alert: a }: { alert: AlertRecord }) {
         </section>
       )}
 
-      {r.cross.active && <EmergencyBanner title={cfg.crossConfirmTitle ?? 'Nhiều tín hiệu cùng báo'} text={crossConfirmText(r.cross)} stage={r.cross.stage} />}
+      {r.cross.active && (
+        <EmergencyBanner title={cfg.crossConfirmTitle ?? 'Nhiều tín hiệu cùng báo'} text={crossConfirmText(r.cross)} stage={r.cross.stage} />
+      )}
 
       {r.equipment.length > 0 && (
         <Section title="Thiết bị liên quan">
@@ -136,7 +152,13 @@ export function FirePanel({ alert: a }: { alert: AlertRecord }) {
                     !st.lost && <span className={cn('shrink-0 text-md font-semibold', TONE_TEXT[st.tone])}>{st.text}</span>
                   )}
                   <span className="ml-auto shrink-0 text-sm">
-                    {st.lost ? <Lost size={12} /> : tempText !== null ? <span className={st.tone === 'success' ? 'text-primary' : TONE_TEXT[st.tone]}>{st.text}</span> : <span className="text-fg-secondary">{st.role}</span>}
+                    {st.lost ? (
+                      <Lost size={12} />
+                    ) : tempText !== null ? (
+                      <span className={st.tone === 'success' ? 'text-primary' : TONE_TEXT[st.tone]}>{st.text}</span>
+                    ) : (
+                      <span className="text-fg-secondary">{st.role}</span>
+                    )}
                   </span>
                 </li>
               );

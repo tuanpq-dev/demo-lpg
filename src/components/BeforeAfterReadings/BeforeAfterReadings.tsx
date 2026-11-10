@@ -46,12 +46,15 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
   return (
     <div role="group" aria-label={label} className={cn('flex flex-col gap-4 rounded-lg border border-line/30 bg-surface-sunken/30 p-4', className)}>
       {rows.map((r) => (
-        <div key={r.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <div
+          key={r.id}
+          className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_minmax(0,1fr)]"
+        >
           <div className="col-span-3 min-w-0 sm:col-span-1">
             <p className="text-md text-fg-secondary">{r.label}</p>
             {r.limit && <p className="text-xs text-danger-text">{r.limit}</p>}
           </div>
-          <div className="flex h-[35px] items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
+          <div className="flex h-field items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
             <span className="sr-only">{r.label} trước xử lý: </span>
             {r.before !== undefined ? (
               <span className={toneClass[r.beforeTone ?? 'normal']}>
@@ -83,7 +86,7 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
               tone={r.afterTone === 'danger' ? 'danger' : r.afterTone === 'warning' ? 'warning' : 'default'}
             />
           ) : (
-            <div className="flex h-[35px] items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
+            <div className="flex h-field items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
               <span className="sr-only">{r.label} sau xử lý: </span>
               {r.afterText !== undefined ? (
                 <span className={toneClass[r.afterTone ?? 'normal']}>{r.afterText}</span>

@@ -63,7 +63,7 @@ export const OBJECT_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
  * id kế tiếp theo quy ước của asset (`idPrefix`): equipment `V-101, V-102…`, environment `FN-01, FN-02…`.
  * Lấy số nhỏ nhất chưa dùng (bỏ qua id có hậu tố như P-101A).
  */
-export function nextObjectId(asset: AssetType, taken: ReadonlySet<string>) {
+function nextObjectId(asset: AssetType, taken: ReadonlySet<string>) {
   const spec = ASSET_SPECS[asset];
   const equipment = spec.category === 'equipment';
   for (let n = equipment ? 101 : 1; ; n++) {
@@ -176,9 +176,7 @@ export function renameObject(scene: SceneConfig, from: string, to: string): Scen
   return {
     ...scene,
     objects: scene.objects.map((o) => (o.id === from ? { ...o, id: to } : o)),
-    views: scene.views?.map((v) =>
-      v.objectIds?.includes(from) ? { ...v, objectIds: v.objectIds.map((id) => (id === from ? to : id)) } : v,
-    ),
+    views: scene.views?.map((v) => (v.objectIds?.includes(from) ? { ...v, objectIds: v.objectIds.map((id) => (id === from ? to : id)) } : v)),
     pipes: scene.pipes.map((p) => {
       const [f, t] = [ref(p.from), ref(p.to)];
       return f === p.from && t === p.to ? p : { ...p, ...(f ? { from: f } : {}), ...(t ? { to: t } : {}) };
@@ -229,7 +227,7 @@ export function applyTransforms(scene: SceneConfig, changes: readonly ObjectTran
  * Bỏ trường rỗng/mặc định: rotation toàn 0, scale toàn 1, elevation 0, params/bindings rỗng, label rỗng
  * (`marker: {}` hợp lệ = nhãn mặc định). Đồng bộ position[1] = elevation (bất biến của định dạng v2).
  */
-export function cleanObject(o: SceneObject): SceneObject {
+function cleanObject(o: SceneObject): SceneObject {
   const out: SceneObject = { ...o };
   if (out.attach) delete out.elevation;
   else if (out.position) {
@@ -284,10 +282,12 @@ export function alignObjects(scene: SceneConfig, ids: readonly string[], axis: A
   const sorted = [...objs].sort((p, q) => p.position[a] - q.position[a]);
   const lo = sorted[0]!.position[a];
   const hi = sorted[sorted.length - 1]!.position[a];
-  const width = Math.max(...objs.map((o) => {
-    const { min, max } = assetLayout(o).bounds;
-    return (max[a] - min[a]) * (o.scale?.[a] ?? 1);
-  }));
+  const width = Math.max(
+    ...objs.map((o) => {
+      const { min, max } = assetLayout(o).bounds;
+      return (max[a] - min[a]) * (o.scale?.[a] ?? 1);
+    }),
+  );
   const step = hi - lo > 1e-3 ? (hi - lo) / (sorted.length - 1) : width + 1;
   const s = (v: number) => (snap ? snapTo(v, SNAP.translate) : round(v));
   const next = new Map(

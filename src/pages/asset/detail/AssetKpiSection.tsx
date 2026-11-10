@@ -61,7 +61,16 @@ export function AssetKpiSection({ data, live, liquidPct }: { data: AssetData; li
         sub={`Dự kiến: ${ph.daysOfSupply.value} ngày`}
         subTone="muted"
       />
-      <KpiCard dense label="Sức khỏe thiết bị" hint={`Số tạm: ${ph.health.note}`} value={String(ph.health.value)} unit="%" tone="success" sub="Hoạt động ổn định" subTone="success" />
+      <KpiCard
+        dense
+        label="Sức khỏe thiết bị"
+        hint={`Số tạm: ${ph.health.note}`}
+        value={String(ph.health.value)}
+        unit="%"
+        tone="success"
+        sub="Hoạt động ổn định"
+        subTone="success"
+      />
     </section>
   );
 }

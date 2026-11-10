@@ -69,7 +69,7 @@ export default function MaintenancePage() {
   const schedule = useMemo(() => deriveSchedule(all, now), [all, now]);
   // Chi tiết = trang riêng /maintenance/:id; mang theo URL danh sách hiện tại để "Quay lại" đúng bộ lọc.
   const listUrl = `${location.pathname}${listSearchOnly(location.search)}`;
-  const openDetail = useCallback((id: string) => navigate(`/maintenance/${id}`, { state: { from: listUrl } }), [navigate, listUrl]);
+  const openDetail = useCallback((id: string) => void navigate(`/maintenance/${id}`, { state: { from: listUrl } }), [navigate, listUrl]);
   useEffect(() => rememberListSearch(location.search), [location.search]);
 
   const modals = useMaintenanceModals({ all, alerts: alerts.data, search, setExtra, canWrite, canReview });
@@ -159,8 +159,10 @@ export default function MaintenancePage() {
         actor={actor}
         userName={user?.name}
         flash={flash}
-        onOpenChecklist={(id) => navigate(`/maintenance/${id}#checklist`, { state: { from: listUrl } })}
-        onCreated={() => setExtra({ create: null, device: null, from: null, tab: null, q: null, area: null, priority: null, type: null, sort: null, page: null })}
+        onOpenChecklist={(id) => void navigate(`/maintenance/${id}#checklist`, { state: { from: listUrl } })}
+        onCreated={() =>
+          setExtra({ create: null, device: null, from: null, tab: null, q: null, area: null, priority: null, type: null, sort: null, page: null })
+        }
       />
     </Page>
   );

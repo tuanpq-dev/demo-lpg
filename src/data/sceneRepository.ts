@@ -40,7 +40,7 @@ function summary({ scene, updatedAt }: Stored): SceneSummary {
   return { id: scene.id, name: scene.name, version: scene.version, objectCount: scene.objects.length, updatedAt };
 }
 
-export class LocalStorageRepository implements SceneRepository {
+class LocalStorageRepository implements SceneRepository {
   constructor(private readonly storage: Storage = window.localStorage) {}
 
   private read(id: string): Stored | null {

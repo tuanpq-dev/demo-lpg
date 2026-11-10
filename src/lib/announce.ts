@@ -35,7 +35,6 @@ export function useAnnounceChange<T>(value: T, message: (value: T, prev: T) => s
     const before = prev.current;
     prev.current = value;
     announce(message(value, before));
-    // `message` thường là hàm inline – chỉ phản ứng theo `value`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `message` thường là hàm inline – chỉ phản ứng theo `value`.
   }, [value]);
 }

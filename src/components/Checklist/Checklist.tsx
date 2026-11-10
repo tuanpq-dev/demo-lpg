@@ -60,7 +60,7 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
             {it.done ? (
               <CheckCircleIcon size={18} className="mt-px shrink-0 text-success" />
             ) : (
-              <span aria-hidden="true" className="mt-px size-[18px] shrink-0 rounded-full border-[1.5px] border-fg-secondary/60" />
+              <span aria-hidden="true" className="mt-px size-4.5 shrink-0 rounded-full border-1.5 border-fg-secondary/60" />
             )}
             <span className="min-w-0">
               {it.text}
@@ -107,18 +107,27 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                     if (off) e.currentTarget.checked = it.done;
                     else onToggle?.(it.id);
                   }}
-                  aria-describedby={[it.done && it.time ? metaId : null, it.flag ? flagId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined}
+                  aria-describedby={
+                    [it.done && it.time ? metaId : null, it.flag ? flagId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined
+                  }
                 />
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] peer-aria-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
+                    'grid size-4.5 shrink-0 place-items-center rounded-full border-1.5 peer-aria-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
                     it.done ? 'border-primary bg-primary text-fg-inverse' : 'border-line',
                   )}
                 >
                   {it.done && (
                     <svg viewBox="0 0 16 16" className="size-3">
-                      <path d="M4 8.5l2.5 2.5L12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M4 8.5l2.5 2.5L12 5.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   )}
                 </span>

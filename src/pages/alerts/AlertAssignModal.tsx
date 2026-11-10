@@ -1,6 +1,6 @@
-import { useId, useMemo, useState } from 'react';
-import { AssignNotices, Badge, Button, Checkbox, Combobox, FormField, Modal, SearchInput, StaffFilters, StaffList, Textarea, type StaffPickerItem } from '@/components';
-import { ALERT_STAFF, alertKind, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alertDetail';
+import { useId, useState } from 'react';
+import { AssignNotices, Badge, Button, Checkbox, Combobox, FormField, Modal, Textarea } from '@/components';
+import { ALERT_STAFF, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
 import {
   alertAssignChange,
@@ -10,16 +10,14 @@ import {
   validateBulkAlertAssign,
   type AlertAssignForm,
 } from '@/features/alerts/assign';
-import { ALERT_LOAD_HINT, MATCH_LABEL, alertAssignWarnings, alertLoadLabel, computeAlertLoads, rankAlertStaff } from '@/features/alerts/assignStaff';
-import { shiftShortLabel } from '@/features/staff/availability';
+import { alertAssignWarnings } from '@/features/alerts/assignStaff';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
 import { useFormModal } from '@/lib/useFormModal';
-import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
 import { staffByName } from '@/data/staff';
-import type { ShiftId } from '@/features/maintenance/types';
-import type { StaffSkill } from '@/features/staff/skills';
 import { AlertAssignSummary } from './AlertAssignSummary';
+import { AssignFooter, BulkAssignPlan, StaffSection } from './assign/AssignParts';
+import { useAlertStaffPicker } from './assign/useAlertStaffPicker';
 
 export type AlertAssignModalProps = {
   /** Một cảnh báo (drawer) hoặc nhiều (hàng loạt ở bảng). */
@@ -29,8 +27,6 @@ export type AlertAssignModalProps = {
   onClose: () => void;
   /** Ghi – modal đã kiểm tra hợp lệ trước khi gọi. */
   onConfirm: (form: AlertAssignForm) => Promise<void> | void;
-  /** Giờ hiện tại (test/playground); thiếu → đồng hồ app (`useNow`). */
-  now?: Date;
 };
 
 /**
@@ -43,9 +39,8 @@ export type AlertAssignModalProps = {
  *   xác nhận. Không có Nháp.
  * KHÔNG tự xác nhận cảnh báo. Ô "Gửi thông báo khẩn cấp ngay": chỉ giao diện (TODO backend). Chỉ mount khi mở.
  */
-export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: nowProp }: AlertAssignModalProps) {
-  const clock = useNow(60_000);
-  const now = nowProp ?? clock;
+export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: AlertAssignModalProps) {
+  const now = useNow(60_000);
   const uid = useId();
   const blockId = `${uid}-block`;
   const listLabelId = `${uid}-list`;
@@ -58,10 +53,6 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     return { base, draft, form: draft ? { ...draft, notify: base.notify } : base };
   });
   const [f, setF] = useState<AlertAssignForm>(initial.form);
-  const [query, setQuery] = useState('');
-  const [dept, setDept] = useState<string | null>(null);
-  const [shiftFilter, setShiftFilter] = useState<ShiftId | null>(null);
-  const [onShiftOnly, setOnShiftOnly] = useState(false);
   const [error, setError] = useState('');
   const modal = useFormModal({
     initial: initial.base,
@@ -70,7 +61,8 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     draft: single
       ? {
           exists: !!initial.draft,
-          save: ({ notify: _notify, ...rest }) => saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() }),
+          save: ({ notify: _notify, ...rest }) =>
+            saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() }),
           clear: () => clearAlertAssignDraft(single.id),
         }
       : undefined,
@@ -89,15 +81,8 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     setError('');
   };
 
-  const loads = useMemo(() => computeAlertLoads(allAlerts), [allAlerts]);
-  const context = useMemo(
-    () => ({
-      areas: [...new Set(alerts.map((a) => a.area))],
-      skills: [...new Set(alerts.flatMap((a) => alertKind(a).skills ?? []))] as StaffSkill[],
-    }),
-    [alerts],
-  );
-  const ranked = useMemo(() => rankAlertStaff(ALERT_STAFF, context, loads, now), [context, loads, now]);
+  const picker = useAlertStaffPicker(alerts, allAlerts, now);
+  const { loads } = picker;
 
   const ids = alerts.map((a) => a.id);
   const plan = bulk ? planBulkAlertAssign(alerts, ids, f.assignee) : null;
@@ -112,30 +97,11 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       : [];
   const reassignMode = !!single?.assignee;
 
-  const q = query.trim().toLowerCase();
-  const items: StaffPickerItem[] = ranked
-    .filter(
-      ({ staff: p, onShift }) =>
-        (!dept || p.department === dept) &&
-        (!shiftFilter || p.defaultShift === shiftFilter) &&
-        (!onShiftOnly || onShift) &&
-        (!q || [p.name, p.title, p.specialty, p.department].some((t) => t.toLowerCase().includes(q))),
-    )
-    .map(({ staff: p, load, onShift, availability, match }) => ({
-      id: p.name,
-      name: p.name,
-      subtitle: `${p.title} • ${p.specialty}`,
-      shiftLabel: shiftShortLabel(p.defaultShift),
-      shiftMatch: onShift,
-      busy: load.busy,
-      active: load.active,
-      overdue: load.critical,
-      loadLabel: alertLoadLabel(load),
-      workloadHint: ALERT_LOAD_HINT,
-      availability,
-      suggestion: match.length ? match.map((m) => MATCH_LABEL[m]).join(' · ') : undefined,
-    }));
-  const collabOptions = ALERT_STAFF.filter((p) => p.name !== f.assignee).map((p) => ({ value: p.name, label: p.name, meta: `${p.title} · ${p.department}` }));
+  const collabOptions = ALERT_STAFF.filter((p) => p.name !== f.assignee).map((p) => ({
+    value: p.name,
+    label: p.name,
+    meta: `${p.title} · ${p.department}`,
+  }));
 
   const submit = async () => {
     if (blocked || submitting) return;
@@ -161,7 +127,9 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       open
       size="xl"
       title={reassignMode ? 'Đổi người xử lý' : 'Phân công xử lý cảnh báo'}
-      description={reassignMode ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử cảnh báo' : 'Chọn người chịu trách nhiệm xác minh và theo dõi cảnh báo'}
+      description={
+        reassignMode ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử cảnh báo' : 'Chọn người chịu trách nhiệm xác minh và theo dõi cảnh báo'
+      }
       onClose={requestClose}
       dismissOnBackdrop={false}
       onSubmit={(e) => {
@@ -180,27 +148,18 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
         )
       }
       footer={
-        confirming ? (
-          <>
-            <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
-              Tiếp tục sửa
-            </Button>
-            <Button variant="primary" onClick={discard}>
-              {hasDraft ? 'Bỏ thay đổi và xóa nháp' : 'Bỏ thay đổi'}
-            </Button>
-          </>
-        ) : (
-          <>
-            {single && (
-              <Button variant="subtle" onClick={onSaveDraft}>
-                Nháp
-              </Button>
-            )}
-            <Button type="submit" variant="primary" aria-disabled={blocked || submitting || undefined} aria-describedby={blocked ? blockId : undefined}>
-              {confirmLabel}
-            </Button>
-          </>
-        )
+        <AssignFooter
+          confirming={confirming}
+          hasDraft={hasDraft}
+          keepEditingRef={modal.keepEditingRef}
+          onKeepEditing={modal.keepEditing}
+          onDiscard={discard}
+          onSaveDraft={single ? onSaveDraft : undefined}
+          confirmLabel={confirmLabel}
+          blocked={blocked}
+          submitting={submitting}
+          blockId={blockId}
+        />
       }
     >
       <AlertAssignSummary alerts={alerts} now={now} />
@@ -213,80 +172,17 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       )}
 
       <div className="grid min-h-0 gap-6 md:grid-cols-[3fr_2fr]">
-        {/* Trái: tìm + lọc + danh sách nhân sự (radiogroup) */}
-        <section aria-labelledby={listLabelId} className="flex min-w-0 flex-col gap-3">
-          <h3 id={listLabelId} className="text-lg font-semibold text-fg">
-            Chọn nhân sự
-          </h3>
-          <StaffFilters
-            search={<SearchInput value={query} onChange={setQuery} placeholder="Tìm kiếm theo tên..." label="Tìm kiếm nhân sự theo tên" />}
-            departments={DEPARTMENTS.filter((d) => ALERT_STAFF.some((p) => p.department === d)).map((d) => ({ value: d, label: d }))}
-            department={dept}
-            onDepartmentChange={setDept}
-            shifts={SHIFTS.map((s) => ({ value: s.value, label: shiftShortLabel(s.value) }))}
-            shift={shiftFilter}
-            onShiftChange={setShiftFilter}
-            onShiftOnly={onShiftOnly}
-            onShiftOnlyChange={setOnShiftOnly}
-          />
-          <p className="text-sm text-fg-secondary">Người cùng khu hoặc đúng chuyên môn xếp trước, rồi Sẵn sàng → Bận → Ngoài ca. Người ngoài ca vẫn chọn được.</p>
-          <StaffList
-            label="Chọn nhân sự"
-            labelledBy={listLabelId}
-            items={items}
-            value={f.assignee}
-            onChange={chooseAssignee}
-            emptyState={
-              <span className="flex flex-col items-center gap-2">
-                Không có nhân sự phù hợp với bộ lọc.
-                <Button
-                  variant="link"
-                  onClick={() => {
-                    setQuery('');
-                    setDept(null);
-                    setShiftFilter(null);
-                    setOnShiftOnly(false);
-                  }}
-                >
-                  Xóa bộ lọc
-                </Button>
-              </span>
-            }
-          />
-        </section>
+        <StaffSection labelId={listLabelId} picker={picker} value={f.assignee} onChange={chooseAssignee} />
 
         {/* Phải: chi tiết phân công */}
-        <section aria-labelledby={`${uid}-detail`} className="flex min-w-0 flex-col gap-4 self-start rounded-lg border border-line/30 bg-surface-raised/40 p-5">
+        <section
+          aria-labelledby={`${uid}-detail`}
+          className="flex min-w-0 flex-col gap-4 self-start rounded-lg border border-line/30 bg-surface-raised/40 p-5"
+        >
           <h3 id={`${uid}-detail`} className="text-lg font-semibold text-fg">
             Chi tiết phân công
           </h3>
-          {plan && f.assignee && (plan.reassign.length > 0 || plan.skippedDone.length + plan.skippedSame.length > 0) && (
-            <div className="flex flex-col gap-2 text-sm">
-              {plan.reassign.length > 0 && (
-                <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-fg">
-                  <p className="font-semibold">Sẽ đổi người ({plan.reassign.length}):</p>
-                  <ul aria-label="Cảnh báo sẽ đổi người" className="mt-1 flex flex-col gap-0.5">
-                    {plan.reassign.map((a) => (
-                      <li key={a.id}>
-                        {a.code}: {a.assignee} → {f.assignee}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {plan.skippedDone.length + plan.skippedSame.length > 0 && (
-                <p className="text-fg-secondary">
-                  Bỏ qua {plan.skippedDone.length + plan.skippedSame.length}:{' '}
-                  {[
-                    plan.skippedDone.length && `${plan.skippedDone.map((a) => a.code).join(', ')} (đã hoàn thành)`,
-                    plan.skippedSame.length && `${plan.skippedSame.map((a) => a.code).join(', ')} (đã giao ${f.assignee})`,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              )}
-            </div>
-          )}
+          {plan && f.assignee && <BulkAssignPlan plan={plan} assignee={f.assignee} />}
           {needReason && (
             <Textarea
               label={plan ? 'Lý do đổi người (chung)' : 'Lý do đổi người xử lý'}

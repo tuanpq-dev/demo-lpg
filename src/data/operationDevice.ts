@@ -12,7 +12,15 @@ import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
 import { useQuery } from '@/lib/useQuery';
 
-export type { DeviceParam, DeviceParamId, OperationDeviceMock, PlcScadaDeviceMock, PlcSignal, PlcSource, PlcSourceIcon } from '@/features/operations/types';
+export type {
+  DeviceParam,
+  DeviceParamId,
+  OperationDeviceMock,
+  PlcScadaDeviceMock,
+  PlcSignal,
+  PlcSource,
+  PlcSourceIcon,
+} from '@/features/operations/types';
 
 /** Mọi loại thiết bị có trang chi tiết (`kind` quyết định KPI / cột trái của trang). */
 export type AnyOperationDevice = OperationDeviceMock | PlcScadaDeviceMock;
@@ -33,7 +41,7 @@ export function resolveOperationDeviceId(raw: string | null | undefined): string
 }
 
 /** GET /api/devices/:id – mock hôm nay. */
-export async function fetchOperationDevice(id: string): Promise<AnyOperationDevice> {
+async function fetchOperationDevice(id: string): Promise<AnyOperationDevice> {
   const d = allDevices[id];
   if (!d) throw new Error(`Không có thiết bị "${id}" (có: ${OPERATION_DEVICE_IDS.join(', ')})`);
   return d;
@@ -66,8 +74,16 @@ export type DeviceAlerts = {
 const isClosed = (a: AlertRecord) => a.status === 'done' || a.status === 'resolved';
 
 /** Cảnh báo có thiết bị thuộc `devices` (hoặc LOẠI thuộc `kinds`), mới nhất trước; `limit` mục đầu để hiển thị. */
-export function deriveDeviceAlerts(alerts: readonly AlertRecord[], devices: readonly string[], now: Date, limit = 3, kinds: readonly string[] = []): DeviceAlerts {
-  const mine = alerts.filter((a) => devices.includes(a.device) || (a.kind !== undefined && kinds.includes(a.kind))).sort((a, b) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time));
+export function deriveDeviceAlerts(
+  alerts: readonly AlertRecord[],
+  devices: readonly string[],
+  now: Date,
+  limit = 3,
+  kinds: readonly string[] = [],
+): DeviceAlerts {
+  const mine = alerts
+    .filter((a) => devices.includes(a.device) || (a.kind !== undefined && kinds.includes(a.kind)))
+    .sort((a, b) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time));
   return {
     total: mine.length,
     criticalOpen: mine.filter((a) => a.severity === 'critical' && !isClosed(a)).length,
@@ -100,7 +116,11 @@ export type DeviceMaintenanceView = {
 export function deriveDeviceMaintenance(s: MaintenanceSummary): DeviceMaintenanceView {
   const n = s.next;
   return {
-    badge: !n ? { label: 'Chưa lên lịch', tone: 'neutral' } : n.overdue ? { label: 'Quá hạn', tone: 'danger' } : { label: 'Đúng hạn', tone: 'success' },
+    badge: !n
+      ? { label: 'Chưa lên lịch', tone: 'neutral' }
+      : n.overdue
+        ? { label: 'Quá hạn', tone: 'danger' }
+        : { label: 'Đúng hạn', tone: 'success' },
     technician: n?.record.assignee ?? s.last?.record.assignee ?? 'Chưa phân công',
     lastDate: s.last?.record.completedAt ? formatDayVi(s.last.record.completedAt) : 'Chưa có',
     next: !n
@@ -141,9 +161,10 @@ export function plcLatencyHistory(device: PlcScadaDeviceMock, now: number): numb
 }
 
 /** Tag cần theo dõi trực tiếp của thiết bị (tham số / tín hiệu PLC / trạng thái chạy / tag giám sát). */
-export function deviceLiveTags(d: AnyOperationDevice): string[] {
+function deviceLiveTags(d: AnyOperationDevice): string[] {
   const common = d.plcSignals.map((s) => s.tag);
-  const own = d.kind === 'vaporizer' ? [...d.params.map((p) => p.tag), d.stateTag, d.standby.stateTag] : [...Object.values(d.tags), ...d.monitoredTags];
+  const own =
+    d.kind === 'vaporizer' ? [...d.params.map((p) => p.tag), d.stateTag, d.standby.stateTag] : [...Object.values(d.tags), ...d.monitoredTags];
   return [...new Set([...own, ...common])];
 }
 

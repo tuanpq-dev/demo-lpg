@@ -45,8 +45,22 @@ export function RelatedDeviceCard({ device }: { device: string }) {
             <StatusDot status={DOT[view.status]} label={`Trạng thái: ${DOT_LABEL[view.status]}`} />
           </p>
           <div className="grid grid-cols-2 gap-2">
-            <KpiCard size="sm" label="Áp suất" value={view.pressure.value?.toFixed(1) ?? '—'} unit="bar" tone={readingTone(view.pressure)} signalLost={view.pressure.state === 'lost'} />
-            <KpiCard size="sm" label="Nhiệt độ" value={view.temperature.value?.toFixed(1) ?? '—'} unit="°C" tone={readingTone(view.temperature)} signalLost={view.temperature.state === 'lost'} />
+            <KpiCard
+              size="sm"
+              label="Áp suất"
+              value={view.pressure.value?.toFixed(1) ?? '—'}
+              unit="bar"
+              tone={readingTone(view.pressure)}
+              signalLost={view.pressure.state === 'lost'}
+            />
+            <KpiCard
+              size="sm"
+              label="Nhiệt độ"
+              value={view.temperature.value?.toFixed(1) ?? '—'}
+              unit="°C"
+              tone={readingTone(view.temperature)}
+              signalLost={view.temperature.state === 'lost'}
+            />
             <KpiCard
               size="sm"
               className="col-span-2"

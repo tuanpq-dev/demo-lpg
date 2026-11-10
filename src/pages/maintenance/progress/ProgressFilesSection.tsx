@@ -2,7 +2,7 @@ import { AttachmentCard, Badge, Button, UploadTile } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
 import { formatFileSize } from '@/data/maintenanceDetail';
 import { UPLOAD_ACCEPT, UPLOAD_HINT } from '@/features/maintenance/progress';
-import { downloadSampleAttachment } from '../attachments';
+import { downloadSampleAttachment } from '../../shared/attachments';
 import type { ProgressUpdateForm } from './useProgressUpdateForm';
 
 /** "Ảnh và tài liệu": tệp có sẵn (xem / tải bản mẫu) + tệp tạm (xem / bỏ) + "Tải tệp lên" + lỗi tệp + khung xem trước. */
@@ -26,7 +26,15 @@ export function ProgressFilesSection({ f, record: r }: { f: ProgressUpdateForm; 
         ))}
         {f.files.map((t) => (
           <div key={t.id} className="relative flex min-w-0">
-            <AttachmentCard fluid id={t.id} name={t.name} kind={t.kind} meta={formatFileSize(t.size)} notice="Chưa tải lên máy chủ" onView={() => f.setPreview({ kind: 'temp', file: t })} />
+            <AttachmentCard
+              fluid
+              id={t.id}
+              name={t.name}
+              kind={t.kind}
+              meta={formatFileSize(t.size)}
+              notice="Chưa tải lên máy chủ"
+              onView={() => f.setPreview({ kind: 'temp', file: t })}
+            />
             <button
               type="button"
               aria-label={`Bỏ tệp ${t.name}`}

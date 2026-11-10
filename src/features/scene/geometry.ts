@@ -15,7 +15,7 @@ export type ResolvedScene = {
   curves: Map<string, CatmullRomCurve3>;
 };
 
-export function objectMatrix(obj: ResolvedObject): Matrix4 {
+function objectMatrix(obj: ResolvedObject): Matrix4 {
   const q = new Quaternion().setFromEuler(new Euler(...obj.rotation));
   return new Matrix4().compose(new Vector3(...obj.position), q, new Vector3(...(obj.scale ?? [1, 1, 1])));
 }
@@ -86,7 +86,7 @@ function sharpenCorners(points: Vector3[], bend: number): Vector3[] {
 }
 
 /** Catmull-Rom tension thấp + góc bo 2.5×bán kính. */
-export function pipeCurve(path: Vector3[], radius: number) {
+function pipeCurve(path: Vector3[], radius: number) {
   return new CatmullRomCurve3(sharpenCorners(path, radius * 2.5), false, 'catmullrom', 0.1);
 }
 
@@ -116,41 +116,48 @@ export function applyPreview(config: SceneConfig, preview: ScenePreview | null):
   return {
     ...config,
     objects: config.objects.map((o) =>
-      positions[o.id] ? { ...o, position: positions[o.id] } : attachT[o.id] !== undefined && o.attach ? { ...o, attach: { ...o.attach, t: attachT[o.id]! } } : o,
+      positions[o.id]
+        ? { ...o, position: positions[o.id] }
+        : attachT[o.id] !== undefined && o.attach
+          ? { ...o, attach: { ...o.attach, t: attachT[o.id]! } }
+          : o,
     ),
     pipes: config.pipes.map((p) => (pipePoints[p.id] ? { ...p, points: pipePoints[p.id]! } : p)),
   };
 }
 
+/** Object đặt trên sàn: độ cao lấy từ elevation (position[1] luôn bằng nó sau migrate) → đáy đúng mặt sàn khi elevation = 0. */
+function placeOnGround(o: SceneObject): ResolvedObject {
+  const [x, , z] = o.position ?? [0, 0, 0];
+  return { ...o, position: [x, objectElevation(o), z], rotation: o.rotation ?? [0, 0, 0] };
+}
+
+/** Đường cong ống, dùng lại từ cache nếu đường đi + bán kính không đổi (tránh dựng lại TubeGeometry). */
+function curveOf(p: Pipe, byId: Map<string, ResolvedObject>, cache?: CurveCache): CatmullRomCurve3 {
+  const path = pipePath(p, byId);
+  const radius = p.radius ?? DEFAULT_PIPE_RADIUS;
+  const key = `${radius}|${path.map((v) => `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`).join(';')}`;
+  const hit = cache?.get(p.id);
+  const curve = hit && hit.key === key ? hit.curve : pipeCurve(path, radius);
+  cache?.set(p.id, { key, curve });
+  return curve;
+}
+
+/** Object gắn ống: vị trí theo t trên đường cong, xoay theo tiếp tuyến; gốc asset ở tâm đáy → hạ để trục khớp tâm ống. */
+function placeOnPipe(o: SceneObject & { attach: NonNullable<SceneObject['attach']> }, curve: CatmullRomCurve3 | undefined): ResolvedObject {
+  const t = Math.min(1, Math.max(0, o.attach.t));
+  const pos = curve?.getPointAt(t) ?? new Vector3();
+  const tan = curve?.getTangentAt(t) ?? new Vector3(1, 0, 0);
+  pos.y -= ASSET_SPECS[o.asset].inline?.axisY ?? 0;
+  return { ...o, position: pos.toArray(), rotation: [0, Math.atan2(-tan.z, tan.x), 0] };
+}
+
 export function resolveScene(config: SceneConfig, cache?: CurveCache): ResolvedScene {
   const byId = new Map<string, ResolvedObject>();
-  for (const o of config.objects) {
-    if (o.attach) continue;
-    const [x, , z] = o.position ?? [0, 0, 0];
-    // Độ cao lấy từ elevation (position[1] luôn bằng nó sau migrate) → đáy object đúng mặt sàn khi elevation = 0.
-    byId.set(o.id, { ...o, position: [x, objectElevation(o), z], rotation: o.rotation ?? [0, 0, 0] });
-  }
+  for (const o of config.objects) if (!o.attach) byId.set(o.id, placeOnGround(o));
   const curves = new Map<string, CatmullRomCurve3>();
-  for (const p of config.pipes) {
-    const path = pipePath(p, byId);
-    const radius = p.radius ?? DEFAULT_PIPE_RADIUS;
-    const key = `${radius}|${path.map((v) => `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`).join(';')}`;
-    const hit = cache?.get(p.id);
-    const curve = hit && hit.key === key ? hit.curve : pipeCurve(path, radius);
-    cache?.set(p.id, { key, curve });
-    curves.set(p.id, curve);
-  }
+  for (const p of config.pipes) curves.set(p.id, curveOf(p, byId, cache));
   if (cache) for (const id of [...cache.keys()]) if (!curves.has(id)) cache.delete(id);
-
-  for (const o of config.objects) {
-    if (!o.attach) continue;
-    const curve = curves.get(o.attach.pipe);
-    const t = Math.min(1, Math.max(0, o.attach.t));
-    const pos = curve?.getPointAt(t) ?? new Vector3();
-    const tan = curve?.getTangentAt(t) ?? new Vector3(1, 0, 0);
-    // Gốc asset ở tâm đáy → hạ đáy xuống để trục ống của asset (inline.axisY) trùng tâm ống.
-    pos.y -= ASSET_SPECS[o.asset].inline?.axisY ?? 0;
-    byId.set(o.id, { ...o, position: pos.toArray(), rotation: [0, Math.atan2(-tan.z, tan.x), 0] });
-  }
+  for (const o of config.objects) if (o.attach) byId.set(o.id, placeOnPipe({ ...o, attach: o.attach }, curves.get(o.attach.pipe)));
   return { objects: config.objects.map((o) => byId.get(o.id)!), byId, curves };
 }

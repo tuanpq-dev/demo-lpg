@@ -83,7 +83,13 @@ export function DailyReadingsTable({ rows, checkpoints, label }: DailyReadingsTa
         cell: (r) => <ReadingCell row={r} cp={cp} />,
       }),
     ),
-    { id: 'standard', header: 'Ngưỡng/chuẩn', width: 140, className: 'whitespace-nowrap text-sm text-fg-secondary', cell: (r) => standardText(r.limits, r.unit) },
+    {
+      id: 'standard',
+      header: 'Ngưỡng/chuẩn',
+      width: 140,
+      className: 'whitespace-nowrap text-sm text-fg-secondary',
+      cell: (r) => standardText(r.limits, r.unit),
+    },
     {
       id: 'result',
       header: 'Kết quả',

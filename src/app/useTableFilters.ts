@@ -53,7 +53,7 @@ export function useTableFilters<Row, S extends ParamSpec>({
     for (const [key, def] of Object.entries(spec)) {
       const raw = search.get(key);
       const valid = raw !== null && (!def.values || def.values.includes(raw));
-      out[key] = valid ? raw : def.default ?? null;
+      out[key] = valid ? raw : (def.default ?? null);
     }
     return out as ParamValues<S>;
   }, [search, spec]);
@@ -76,10 +76,7 @@ export function useTableFilters<Row, S extends ParamSpec>({
   );
 
   /** Đổi một/nhiều bộ lọc → về trang 1. */
-  const setValues = useCallback(
-    (patch: Partial<ParamValues<S>>) => write({ ...(patch as Record<string, string | null>), page: 1 }),
-    [write],
-  );
+  const setValues = useCallback((patch: Partial<ParamValues<S>>) => write({ ...(patch as Record<string, string | null>), page: 1 }), [write]);
 
   /** Về mặc định cho các khoá (mặc định: tất cả trừ `keep`). */
   const reset = useCallback(
@@ -104,11 +101,9 @@ export function useTableFilters<Row, S extends ParamSpec>({
   }, [rows, values, match, sort]);
 
   const tabCounts = useMemo(() => {
-    if (!tabKey) return {} as Record<string, number>;
+    if (!tabKey) return {};
     const tabs = spec[tabKey]?.values ?? [];
-    return Object.fromEntries(
-      tabs.map((t) => [t, rows.filter((r) => match(r, { ...values, [tabKey]: t })).length]),
-    ) as Record<ValueOf<S[typeof tabKey]>, number>;
+    return Object.fromEntries(tabs.map((t) => [t, rows.filter((r) => match(r, { ...values, [tabKey]: t })).length]));
   }, [rows, values, match, spec, tabKey]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -152,4 +147,3 @@ export function useTableFilters<Row, S extends ParamSpec>({
     clearSelection,
   };
 }
-

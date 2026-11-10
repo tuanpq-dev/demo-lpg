@@ -1,5 +1,15 @@
 import { Badge, DataTable, Icon, type DataTableColumn } from '@/components';
-import { SENSOR_HEALTH_LABEL, effectiveValue, formatRecordValue, inventoryNm3, valueSource, valueState, valueStateLabel, type CheckpointSnapshot, type RecordReading } from '@/features/reports';
+import {
+  SENSOR_HEALTH_LABEL,
+  effectiveValue,
+  formatRecordValue,
+  inventoryNm3,
+  valueSource,
+  valueState,
+  valueStateLabel,
+  type CheckpointSnapshot,
+  type RecordReading,
+} from '@/features/reports';
 import { cn } from '@/lib/cn';
 import { STATE_TEXT, SourceBadge, ValueCell, boxClass, sensorText, type ManualProps } from './recordParts';
 

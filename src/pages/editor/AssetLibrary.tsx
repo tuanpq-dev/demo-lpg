@@ -18,8 +18,7 @@ const GROUPS = [
 export function AssetLibrary({ onAdd }: { onAdd: (asset: AssetType) => void }) {
   const [q, setQ] = useState('');
   const needle = slugify(q);
-  const match = (a: AssetType) =>
-    !q.trim() || [a, ASSET_SPECS[a].label, ASSET_SPECS[a].idPrefix].some((t) => slugify(t).includes(needle));
+  const match = (a: AssetType) => !q.trim() || [a, ASSET_SPECS[a].label, ASSET_SPECS[a].idPrefix].some((t) => slugify(t).includes(needle));
 
   return (
     <div className="flex min-h-0 flex-col gap-2">

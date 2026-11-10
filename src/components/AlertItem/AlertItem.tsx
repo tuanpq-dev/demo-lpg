@@ -56,79 +56,83 @@ const barTone: Record<AlertItemTone, string> = {
   success: 'border-l-success',
 };
 
-/** Một dòng cảnh báo trong danh sách "Cảnh báo ưu tiên" – cột phải Tổng quan (Figma 53:470). */
-export function AlertItem({
-  id,
-  code,
-  message,
-  time,
-  severity,
-  layout = 'stacked',
-  tone,
-  highlighted,
-  last,
-  statusLabel,
-  onClick,
-  className,
-}: AlertItemProps) {
-  const Tag = onClick ? 'button' : 'div';
-  if (layout === 'bar') {
-    const t: AlertItemTone = tone ?? (severity === 'critical' ? 'danger' : 'warning');
-    return (
-      <Tag
-        type={onClick ? 'button' : undefined}
-        onClick={onClick ? () => onClick(id) : undefined}
-        className={cn(
-          'flex w-full flex-col gap-1 rounded-md border-l-2 bg-surface-muted/20 px-3 py-2.5 text-left',
-          barTone[t],
-          onClick && 'transition-colors hover:bg-surface-muted/40',
-          className,
-        )}
-      >
-        <span className={cn('text-base', t === 'success' ? 'text-success' : 'text-fg')}>
-          <span className="sr-only">{code}: </span>
-          {message}
-        </span>
-        <span className="text-sm text-fg-secondary">
-          {time}
-          {statusLabel && ` - ${statusLabel}`}
-        </span>
-      </Tag>
-    );
-  }
-  if (layout === 'inline') {
-    const t: AlertItemTone = tone ?? (severity === 'critical' ? 'danger' : 'warning');
-    const IconC = t === 'success' ? CheckCircleIcon : AlertCircleIcon;
-    return (
-      <Tag
-        type={onClick ? 'button' : undefined}
-        onClick={onClick ? () => onClick(id) : undefined}
-        className={cn(
-          'flex w-full items-center gap-2.5 px-4 py-2.5 text-left',
-          !last && 'border-b border-line/30',
-          onClick && 'transition-colors hover:bg-surface-muted/20',
-          className,
-        )}
-      >
-        <IconC size={16} className={cn('shrink-0', inlineTone[t])} />
-        <span className="min-w-0 flex-1 truncate text-sm text-fg-muted" title={message}>
-          <span className="sr-only">{code}: </span>
-          {message}
-        </span>
-        <span className="shrink-0 text-2xs text-fg-muted/65">{time}</span>
-      </Tag>
-    );
-  }
+/** Click theo id: thẻ là `<button>` khi có `onClick`, không thì `<div>`. */
+function clickable(id: string, onClick?: (id: string) => void) {
+  return onClick ? { Tag: 'button' as const, props: { type: 'button' as const, onClick: () => onClick(id) } } : { Tag: 'div' as const, props: {} };
+}
+
+const toneOf = (tone: AlertItemTone | undefined, severity: AlertItemProps['severity']): AlertItemTone =>
+  tone ?? (severity === 'critical' ? 'danger' : 'warning');
+
+/** layout="bar": thanh màu trái + nội dung + thời gian (chi tiết thiết bị Vận hành). */
+function AlertItemBar({ id, code, message, time, severity, tone, statusLabel, onClick, className }: AlertItemProps) {
+  const t = toneOf(tone, severity);
+  const { Tag, props } = clickable(id, onClick);
   return (
     <Tag
-      type={onClick ? 'button' : undefined}
-      onClick={onClick ? () => onClick(id) : undefined}
+      {...props}
+      className={cn(
+        'flex w-full flex-col gap-1 rounded-md border-l-2 bg-surface-muted/20 px-3 py-2.5 text-left',
+        barTone[t],
+        onClick && 'transition-colors hover:bg-surface-muted/40',
+        className,
+      )}
+    >
+      <span className={cn('text-base', t === 'success' ? 'text-success' : 'text-fg')}>
+        <span className="sr-only">{code}: </span>
+        {message}
+      </span>
+      <span className="text-sm text-fg-secondary">
+        {time}
+        {statusLabel && ` - ${statusLabel}`}
+      </span>
+    </Tag>
+  );
+}
+
+/** layout="inline": một hàng icon + nội dung + thời gian. */
+function AlertItemInline({ id, code, message, time, severity, tone, last, onClick, className }: AlertItemProps) {
+  const t = toneOf(tone, severity);
+  const IconC = t === 'success' ? CheckCircleIcon : AlertCircleIcon;
+  const { Tag, props } = clickable(id, onClick);
+  return (
+    <Tag
+      {...props}
+      className={cn(
+        'flex w-full items-center gap-2.5 px-4 py-2.5 text-left',
+        !last && 'border-b border-line/30',
+        onClick && 'transition-colors hover:bg-surface-muted/20',
+        className,
+      )}
+    >
+      <IconC size={16} className={cn('shrink-0', inlineTone[t])} />
+      <span className="min-w-0 flex-1 truncate text-sm text-fg-muted" title={message}>
+        <span className="sr-only">{code}: </span>
+        {message}
+      </span>
+      <span className="shrink-0 text-2xs text-fg-muted/65">{time}</span>
+    </Tag>
+  );
+}
+
+function stackedHover(highlighted?: boolean) {
+  return cn('transition-colors', highlighted ? 'hover:bg-danger-strong/20' : 'hover:bg-surface-muted/20');
+}
+
+/** Một dòng cảnh báo trong danh sách "Cảnh báo ưu tiên" – cột phải Tổng quan (Figma 53:470). */
+export function AlertItem(props: AlertItemProps) {
+  const { id, code, message, time, severity, layout = 'stacked', highlighted, last, onClick, className } = props;
+  if (layout === 'bar') return <AlertItemBar {...props} />;
+  if (layout === 'inline') return <AlertItemInline {...props} />;
+  const { Tag, props: tagProps } = clickable(id, onClick);
+  return (
+    <Tag
+      {...tagProps}
       className={cn(
         'flex w-full flex-col gap-2.5 px-4 pb-[11px] pt-2.5 text-left',
         !last && 'border-b border-line/30',
         highlighted && 'bg-danger-strong/15',
-        onClick && 'transition-colors',
-        onClick && (highlighted ? 'hover:bg-danger-strong/20' : 'hover:bg-surface-muted/20'),
+        onClick && stackedHover(highlighted),
         className,
       )}
     >

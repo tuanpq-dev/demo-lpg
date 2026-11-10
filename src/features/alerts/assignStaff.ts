@@ -41,7 +41,7 @@ export function computeAlertLoads(alerts: readonly AlertRecord[]): Map<string, A
   return map;
 }
 
-export const alertLoadOf = (map: ReadonlyMap<string, AlertLoad>, name: string | null | undefined): AlertLoad => (name && map.get(name)) || EMPTY;
+const alertLoadOf = (map: ReadonlyMap<string, AlertLoad>, name: string | null | undefined): AlertLoad => (name && map.get(name)) || EMPTY;
 
 /** "1 cảnh báo đang xử lý" · "3 cảnh báo đang xử lý (1 nghiêm trọng)". */
 export const alertLoadLabel = (l: AlertLoad) => `${l.active} cảnh báo đang xử lý${l.critical ? ` (${l.critical} nghiêm trọng)` : ''}`;
@@ -62,7 +62,12 @@ export type AlertStaffOption = {
  * Danh sách nhân sự đã sắp xếp: người cùng khu hoặc đúng chuyên môn trước, rồi Sẵn sàng → Bận → Ngoài ca, rồi theo tên.
  * Ngoài ca thắng Bận (`staffAvailability`).
  */
-export function rankAlertStaff(staff: readonly StaffMember[], ctx: AssignContext, loads: ReadonlyMap<string, AlertLoad>, now: Date): AlertStaffOption[] {
+export function rankAlertStaff(
+  staff: readonly StaffMember[],
+  ctx: AssignContext,
+  loads: ReadonlyMap<string, AlertLoad>,
+  now: Date,
+): AlertStaffOption[] {
   return staff
     .map((s) => {
       const load = alertLoadOf(loads, s.name);
@@ -97,10 +102,14 @@ export function alertAssignWarnings(
   const out: AlertAssignWarning[] = [];
   const load = alertLoadOf(opts.loads, name);
   if (opts.staff && !isOnShift(opts.staff.defaultShift, opts.now)) {
-    out.push({ id: 'off-shift', label: `${name} đang Ngoài ca (${shiftLabel(opts.staff.defaultShift).replace(' (', ', ').replace(/\)$/, '')}) – có thể chưa xử lý ngay được` });
+    out.push({
+      id: 'off-shift',
+      label: `${name} đang Ngoài ca (${shiftLabel(opts.staff.defaultShift).replace(' (', ', ').replace(/\)$/, '')}) – có thể chưa xử lý ngay được`,
+    });
   }
   if (load.busy) out.push({ id: 'busy', label: `${name} đang Bận (${alertLoadLabel(load)})` });
   const others = load.criticalAlerts.filter((c) => !opts.alertIds.includes(c.id));
-  if (others.length) out.push({ id: 'critical-other', label: `${name} đang phụ trách cảnh báo nghiêm trọng khác: ${others.map((c) => c.code).join(', ')}` });
+  if (others.length)
+    out.push({ id: 'critical-other', label: `${name} đang phụ trách cảnh báo nghiêm trọng khác: ${others.map((c) => c.code).join(', ')}` });
   return out;
 }

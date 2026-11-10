@@ -17,7 +17,7 @@ export const DAILY_GROUPS = [
   { id: 'GS', label: 'Đầu dò khí gas – GS-01…GS-04' },
 ] as const;
 export type DailyGroupId = (typeof DAILY_GROUPS)[number]['id'];
-export const DAILY_GROUP_IDS = DAILY_GROUPS.map((g) => g.id) as readonly DailyGroupId[];
+const DAILY_GROUP_IDS = DAILY_GROUPS.map((g) => g.id) as readonly DailyGroupId[];
 
 /** Cùng dạng `ParamLimits` (mocks/operations): cảnh báo dưới/trên, nguy hiểm dưới/trên. Không có → chưa cấu hình ngưỡng. */
 export type ReadingLimits = { lowDanger?: number; lowWarn?: number; warn?: number; danger?: number };
@@ -173,7 +173,10 @@ export function deriveDailyCards(r: ReportRecord, rows: readonly DailyReadingRow
   const upcoming = states.filter((s) => s.state === 'upcoming').length;
   const confirmed = states.filter((s) => s.state === 'confirmed').length;
   const verify = states.filter((s) => s.state === 'needs-verify').map((s) => s.label);
-  const flagged = flaggedReadings(rows, r.checkpoints.map((c) => c.key));
+  const flagged = flaggedReadings(
+    rows,
+    r.checkpoints.map((c) => c.key),
+  );
   const abnormal = flagged.filter((f) => f.level === 'abnormal').length;
 
   const sig = signatureOf(r, now);

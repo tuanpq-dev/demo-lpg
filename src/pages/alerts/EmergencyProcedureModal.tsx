@@ -33,7 +33,10 @@ export function EmergencyProcedureModal({ procedure, onClose }: { procedure: Non
         <ol className="flex flex-col gap-2">
           {procedure.steps.map((s, i) => (
             <li key={s} className="flex gap-3 text-base text-fg">
-              <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line/30 text-sm text-fg-secondary">
+              <span
+                aria-hidden="true"
+                className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line/30 text-sm text-fg-secondary"
+              >
                 {i + 1}
               </span>
               <span className="pt-0.5">{s}</span>
@@ -53,7 +56,11 @@ export function EmergencyProcedureModal({ procedure, onClose }: { procedure: Non
                 <span className="text-sm text-fg-secondary">{c.role}</span>
               </span>
               {c.phone ? (
-                <a href={`tel:${c.phone}`} className="shrink-0 rounded-sm text-lg font-bold tabular-nums text-primary hover:underline" aria-label={`Gọi ${c.name} ${c.phone}`}>
+                <a
+                  href={`tel:${c.phone}`}
+                  className="shrink-0 rounded-sm text-lg font-bold tabular-nums text-primary hover:underline"
+                  aria-label={`Gọi ${c.name} ${c.phone}`}
+                >
                   {c.phone}
                 </a>
               ) : (

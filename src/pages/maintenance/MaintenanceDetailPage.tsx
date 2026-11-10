@@ -4,7 +4,7 @@ import { PageError, Placeholder } from '@/app/Placeholder';
 import { Button, PageHeader } from '@/components';
 import { useMaintenance } from '@/data/maintenance';
 import { maintenanceListUrl, resolveMaintenanceId } from '@/data/maintenanceDetail';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { MaintenanceDetail } from './detail/MaintenanceDetail';
 
 /**
@@ -20,7 +20,9 @@ export default function MaintenanceDetailRoute() {
   const listUrl = maintenanceListUrl((state as { from?: unknown } | null)?.from);
 
   if (status !== 'success') {
-    const header = <PageHeader breadcrumb={[{ label: 'Bảo trì', to: '/maintenance' }, { label: 'Quản lý bảo trì', to: listUrl }, { label: raw }]} title={raw} />;
+    const header = (
+      <PageHeader breadcrumb={[{ label: 'Bảo trì', to: '/maintenance' }, { label: 'Quản lý bảo trì', to: listUrl }, { label: raw }]} title={raw} />
+    );
     return (
       <Page pageHeader={header}>
         {status === 'error' ? (
@@ -46,7 +48,7 @@ export default function MaintenanceDetailRoute() {
             Không có yêu cầu bảo trì <code className="font-mono text-fg">{raw}</code>. Có thể mã đã sai hoặc yêu cầu đã bị xoá.
           </>
         }
-        actions={<Button onClick={() => navigate(listUrl)}>Về danh sách bảo trì</Button>}
+        actions={<Button onClick={() => void navigate(listUrl)}>Về danh sách bảo trì</Button>}
       />
     );
   }

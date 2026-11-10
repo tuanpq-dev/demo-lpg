@@ -52,6 +52,35 @@ const toneClass: Record<CardTone, string> = {
   accent: 'border-accent/30',
 };
 
+/** Phần phải của header: link/nút hành động + nội dung thêm. */
+function CardHeaderEnd({ action, headerEnd }: Pick<CardProps, 'action' | 'headerEnd'>) {
+  if (!action && !headerEnd) return null;
+  return (
+    <div className="flex min-w-0 max-w-full shrink-0 items-center gap-2">
+      {action &&
+        (action.href ? (
+          <a href={action.href} className="text-sm text-accent hover:underline">
+            {action.label}
+          </a>
+        ) : (
+          <Button variant="link" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        ))}
+      {headerEnd}
+    </div>
+  );
+}
+
+function CardHeading({ icon, title, titleSize }: Pick<CardProps, 'icon' | 'title' | 'titleSize'>) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      {icon}
+      {title !== undefined && <h3 className={cn('truncate font-semibold text-fg', titleSize === 'lg' ? 'text-lg' : 'text-md')}>{title}</h3>}
+    </div>
+  );
+}
+
 export function Card({
   title,
   icon,
@@ -68,32 +97,8 @@ export function Card({
   ...rest
 }: CardProps) {
   const hasHeader = title !== undefined || action !== undefined || headerEnd !== undefined;
-
-  const actionNode = action ? (
-    action.href ? (
-      <a href={action.href} className="text-sm text-accent hover:underline">
-        {action.label}
-      </a>
-    ) : (
-      <Button variant="link" onClick={action.onClick}>
-        {action.label}
-      </Button>
-    )
-  ) : null;
-  const endNode =
-    actionNode || headerEnd ? (
-      <div className="flex min-w-0 max-w-full shrink-0 items-center gap-2">
-        {actionNode}
-        {headerEnd}
-      </div>
-    ) : null;
-
-  const heading = (
-    <div className="flex min-w-0 items-center gap-2">
-      {icon}
-      {title !== undefined && <h3 className={cn('truncate font-semibold text-fg', titleSize === 'lg' ? 'text-lg' : 'text-md')}>{title}</h3>}
-    </div>
-  );
+  const endNode = <CardHeaderEnd action={action} headerEnd={headerEnd} />;
+  const heading = <CardHeading icon={icon} title={title} titleSize={titleSize} />;
 
   return (
     <section

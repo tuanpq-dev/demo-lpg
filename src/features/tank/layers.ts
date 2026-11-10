@@ -51,7 +51,7 @@ export const cylinderCapacity = ({ length, diameter }: TankDimensions) => Math.P
  * Làm tròn danh sách số không âm sao cho tổng sau làm tròn đúng `total` (phương pháp phần dư lớn nhất).
  * Dùng cho % hiển thị: 76.24 + 21.78 + 1.98 → 76.2 + 21.8 + 2.0 = 100.0 (làm tròn riêng lẻ có thể ra 99.9/100.1).
  */
-export function roundToTotal(values: readonly number[], digits = 1, total = 100): number[] {
+function roundToTotal(values: readonly number[], digits = 1, total = 100): number[] {
   if (!values.length) return [];
   const scale = 10 ** digits;
   const target = Math.round(total * scale);

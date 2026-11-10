@@ -41,19 +41,19 @@ function seed() {
 }
 
 /** GET /simulation/scenarios – TODO(backend). */
-export async function fetchScenarios(): Promise<Scenario[]> {
+async function fetchScenarios(): Promise<Scenario[]> {
   seed();
   return scenariosDb!.map((s) => ({ ...s }));
 }
 
 /** GET /simulation/runs – TODO(backend). */
-export async function fetchSimulationRuns(): Promise<SimulationRun[]> {
+async function fetchSimulationRuns(): Promise<SimulationRun[]> {
   seed();
   return runsDb!.map((r) => ({ ...r }));
 }
 
 /** GET /simulation/sessions – lượt đang chạy / đã kết thúc (TODO(backend)). */
-export async function fetchSimulationSessions(): Promise<SimulationSession[]> {
+async function fetchSimulationSessions(): Promise<SimulationSession[]> {
   seed();
   return sessionsDb!.map((x) => ({ ...x }));
 }
@@ -63,7 +63,7 @@ const runStore = createCollectionStore(fetchSimulationRuns);
 const sessionStore = createCollectionStore(fetchSimulationSessions);
 
 /** Độ trễ giả lập khi khởi tạo một lượt mô phỏng (ms) – nút hiện "Đang khởi động…". */
-export const SIMULATION_DELAY_MS = 600;
+const SIMULATION_DELAY_MS = 600;
 
 let sessionSeq = 0;
 let runSeq = 0;
@@ -109,7 +109,15 @@ export async function startSimulation(scenarioId: string, by: string, live: Live
   if (running) return running;
   sessionSeq += 1;
   // Kiểm + chụp số liệu TRƯỚC độ trễ: đúng lúc người dùng bấm.
-  const session = createSession(s, live, Date.now(), appNow(), by, `SES-${Date.now().toString(36)}-${sessionSeq}`, tagHealth(SIMULATION_REFERENCE_TAGS, live, Date.now()));
+  const session = createSession(
+    s,
+    live,
+    Date.now(),
+    appNow(),
+    by,
+    `SES-${Date.now().toString(36)}-${sessionSeq}`,
+    tagHealth(SIMULATION_REFERENCE_TAGS, live, Date.now()),
+  );
   await new Promise((r) => setTimeout(r, SIMULATION_DELAY_MS));
   const started: SimulationSession = { ...session, startedAt: appNow().toISOString() };
   sessionsDb = [started, ...sessionsDb!];
@@ -144,7 +152,7 @@ export async function updateSessionReport(sessionId: string, patch: ReportState)
 }
 
 /** Độ trễ giả lập khi lưu cấu hình (ms). */
-export const SAVE_CONFIG_DELAY_MS = 400;
+const SAVE_CONFIG_DELAY_MS = 400;
 
 /**
  * Lưu "Tham số đầu vào" của một kịch bản (chỉ lớp mô phỏng – không đổi ngưỡng/cấu hình PLC thật). Kiểm tra lại bằng

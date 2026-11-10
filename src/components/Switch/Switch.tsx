@@ -36,7 +36,10 @@ export function Switch({ label, description, checked, onChange, disabled, classN
       >
         <span
           aria-hidden="true"
-          className={cn('inline-block size-4 rounded-full transition-transform', checked ? 'translate-x-[17px] bg-surface' : 'translate-x-0.5 bg-fg-secondary')}
+          className={cn(
+            'inline-block size-4 rounded-full transition-transform',
+            checked ? 'translate-x-[17px] bg-surface' : 'translate-x-0.5 bg-fg-secondary',
+          )}
         />
       </button>
       <span className="flex min-w-0 flex-col gap-0.5">

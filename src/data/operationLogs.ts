@@ -11,7 +11,7 @@ import { buildOperationLogs } from '@/mocks/operationLogs';
 import { useAlertList } from './alertStore';
 
 /** GET /operation-logs – TODO(backend): `api.request('/operation-logs?from=&to=', { schema })` (docs/decisions.md). */
-export async function fetchOperationLogs(): Promise<OperationLogEvent[]> {
+async function fetchOperationLogs(): Promise<OperationLogEvent[]> {
   return buildOperationLogs(appNow());
 }
 

@@ -57,18 +57,14 @@ export default function PostEffects({
   const selectedKey = selected.join();
   const hoverSel = useMemo(
     () => meshesOf(hovered && !selected.includes(hovered) ? [hovered] : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `selectedKey` đại diện `selected` (mảng mới mỗi render)
     [meshesOf, hovered, selectedKey, shapeKey],
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `selectedKey` đại diện `selected` (mảng mới mỗi render)
   const selectedSel = useMemo(() => meshesOf([...selected]), [meshesOf, selectedKey, shapeKey]);
 
   return (
-    <EffectComposer
-      multisampling={preset.multisampling}
-      frameBufferType={preset.hdr ? HalfFloatType : UnsignedByteType}
-      enableNormalPass={false}
-    >
+    <EffectComposer multisampling={preset.multisampling} frameBufferType={preset.hdr ? HalfFloatType : UnsignedByteType} enableNormalPass={false}>
       <Bloom
         mipmapBlur
         levels={preset.bloomLevels}

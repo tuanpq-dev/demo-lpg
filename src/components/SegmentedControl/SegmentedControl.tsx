@@ -63,9 +63,9 @@ export function SegmentedControl({
       aria-labelledby={labelledBy}
       className={cn(
         field
-          ? 'flex h-[35px] w-full overflow-hidden rounded-lg border border-line bg-surface-sunken'
+          ? 'flex h-field w-full overflow-hidden rounded-lg border border-line bg-surface-sunken'
           : cn(
-              'inline-flex w-fit items-start gap-1 rounded-lg border border-line/30 bg-surface-raised/90 shadow-card backdrop-blur-[4px]',
+              'inline-flex w-fit items-start gap-1 rounded-lg border border-line/30 bg-surface-raised/90 shadow-card backdrop-blur-sm',
               size === 'sm' ? 'p-[3px]' : 'p-[5px]',
             ),
         className,
@@ -92,7 +92,11 @@ export function SegmentedControl({
                     'flex-1 border-l border-line px-2 first:border-l-0',
                     selected ? cn(fieldTone[opt.tone ?? 'neutral'], 'font-semibold') : 'text-fg-muted hover:bg-surface-muted/40 hover:text-fg',
                   )
-                : cn('rounded-md', size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1', selected ? 'bg-surface-muted text-fg' : 'text-fg-muted hover:text-fg'),
+                : cn(
+                    'rounded-md',
+                    size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1',
+                    selected ? 'bg-surface-muted text-fg' : 'text-fg-muted hover:text-fg',
+                  ),
             )}
           >
             {opt.label}

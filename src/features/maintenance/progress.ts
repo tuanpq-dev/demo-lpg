@@ -31,10 +31,10 @@ export const WORK_STATE_OPTIONS: readonly { id: WorkState; label: string }[] = [
 export const HOLD_LABEL = { paused: 'Tạm dừng', blocked: 'Gặp sự cố' } as const;
 
 /** "Gần hạn" = còn ≤ 2 giờ tới giờ hạn (ô Hạn chót trong modal tô đỏ). */
-export const NEAR_DUE_MS = 2 * 60 * 60 * 1000;
+const NEAR_DUE_MS = 2 * 60 * 60 * 1000;
 
 /** Bước của thanh trượt tiến độ (%). */
-export const PROGRESS_STEP = 5;
+const PROGRESS_STEP = 5;
 
 /** Mở modal cập nhật tiến độ được khi đã phân công / đang thực hiện. */
 export const canUpdateProgress = (s: MaintenanceStatus) => s === 'assigned' || s === 'in-progress';
@@ -49,7 +49,7 @@ export function workStateOf(r: Pick<MaintenanceRecord, 'status' | 'hold'>): Work
 export const workStateDisabled = (status: MaintenanceStatus, s: WorkState) => s === 'completed' && status === 'assigned';
 
 /** Kẹp 0..100 và làm tròn về bội số của `PROGRESS_STEP`. NaN → 0. */
-export function clampProgress(v: number): number {
+function clampProgress(v: number): number {
   if (!Number.isFinite(v)) return 0;
   return Math.min(100, Math.max(0, Math.round(v / PROGRESS_STEP) * PROGRESS_STEP));
 }
@@ -141,11 +141,7 @@ function historyLine(r: MaintenanceRecord, input: ProgressUpdateInput, progress:
  * - reportedProgress = giá trị thanh trượt (được giảm); `progress` (checklist) giữ nguyên.
  * - Nội dung → một ghi chú kỹ thuật; tệp → `attachments` với `isTemp: true` (chỉ tên/kích thước/loại).
  */
-export function applyProgressUpdate(
-  r: MaintenanceRecord,
-  input: ProgressUpdateInput,
-  ctx: ActionContext,
-): MaintenanceRecord {
+export function applyProgressUpdate(r: MaintenanceRecord, input: ProgressUpdateInput, ctx: ActionContext): MaintenanceRecord {
   if (Object.keys(validateProgressUpdate(r, input)).length) return r;
   const at = plantDateTimeKey(ctx.now);
   const progress = clampProgress(input.progress);
@@ -182,7 +178,7 @@ export function isNearOrPastDue(dueAt: string, now: Date, hasTime = true): boole
 
 // ---- Tệp tải lên trong modal (chỉ trong phiên – TODO(backend): upload thật qua API lưu trữ) ----
 
-export const UPLOAD_RULES = {
+const UPLOAD_RULES = {
   /** Đuôi tệp cho phép (chữ thường). */
   exts: ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx', 'xlsx', 'txt'] as readonly string[],
   /** Tối đa mỗi tệp. */
@@ -212,7 +208,8 @@ export function checkUploads<F extends { name: string; size: number }>(files: re
   for (const f of files) {
     if (!UPLOAD_RULES.exts.includes(ext(f.name))) rejected.push({ name: f.name, reason: 'không đúng loại tệp cho phép' });
     else if (f.size > UPLOAD_RULES.maxBytes) rejected.push({ name: f.name, reason: 'vượt quá 10 MB' });
-    else if (already + accepted.length >= UPLOAD_RULES.maxFiles) rejected.push({ name: f.name, reason: `đã đủ ${UPLOAD_RULES.maxFiles} tệp cho lần cập nhật này` });
+    else if (already + accepted.length >= UPLOAD_RULES.maxFiles)
+      rejected.push({ name: f.name, reason: `đã đủ ${UPLOAD_RULES.maxFiles} tệp cho lần cập nhật này` });
     else accepted.push(f);
   }
   return { accepted, rejected };

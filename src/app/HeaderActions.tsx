@@ -6,14 +6,6 @@ import { formatDateTime, useNow } from '@/lib/useNow';
 
 type ActionProps = { onClick?: () => void };
 
-export function TodayButton({ onClick }: ActionProps) {
-  return (
-    <Button icon={<Icon name="calendar" />} onClick={onClick}>
-      Hôm nay
-    </Button>
-  );
-}
-
 /** "Hôm nay" dạng chọn khoảng thời gian (Select variant="button", 70:2883). */
 export function DateRangeSelect<V extends string>({
   value,
@@ -60,11 +52,7 @@ export function LiveDataButton({ onClick }: ActionProps) {
   const status = useLiveStatus();
   const s = LIVE_STATUS[status];
   return (
-    <Button
-      icon={<StatusDot status={s.dot} pulse={status === 'connecting'} />}
-      onClick={onClick}
-      data-live-status={status}
-    >
+    <Button icon={<StatusDot status={s.dot} pulse={status === 'connecting'} />} onClick={onClick} data-live-status={status}>
       {/* Đổi trạng thái được đọc qua LiveAnnouncer (aria-live polite) – không đặt vùng live trong nút. */}
       <span className={s.className}>{s.label}</span>
     </Button>

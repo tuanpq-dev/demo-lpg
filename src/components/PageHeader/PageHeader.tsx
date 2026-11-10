@@ -26,16 +26,26 @@ export type PageHeaderProps = {
    * xô theo độ rộng `actions` (chip đổi theo thiết bị).
    */
   titleEnd?: ReactNode;
+  /**
+   * Tiêu đề chỉ cho trình đọc màn hình (`<h1 class="sr-only">`) khi thiết kế không có tiêu đề hiển thị (Tổng quan 53:124) –
+   * mỗi trang vẫn có đúng một h1 (WCAG 1.3.1 / 2.4.6).
+   */
+  srTitle?: string;
   className?: string;
 };
 
-export function PageHeader({ breadcrumb, title, description, actions, titleEnd, className }: PageHeaderProps) {
+export function PageHeader({ breadcrumb, title, description, actions, titleEnd, srTitle, className }: PageHeaderProps) {
   const hasHeading = !!breadcrumb?.length || title !== undefined;
 
   if (!hasHeading) {
-    return actions ? (
-      <div className={cn('flex flex-wrap items-center justify-end gap-3', className)}>{actions}</div>
-    ) : null;
+    const hidden = srTitle ? <h1 className="sr-only">{srTitle}</h1> : null;
+    if (!actions) return hidden;
+    return (
+      <div className={cn('flex flex-wrap items-center justify-end gap-3', className)}>
+        {hidden}
+        {actions}
+      </div>
+    );
   }
 
   return (

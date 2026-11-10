@@ -100,7 +100,7 @@ export const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
 export type ReportState = 'in-progress' | 'missing-data' | 'awaiting' | 'signed';
 
 /** Kỳ đã kết thúc (hôm nay theo giờ nhà máy > ngày cuối kỳ). */
-export function isPeriodClosed(r: Pick<ReportRecord, 'period' | 'periodKey'>, now: Date): boolean {
+function isPeriodClosed(r: Pick<ReportRecord, 'period' | 'periodKey'>, now: Date): boolean {
   return plantDayKey(now) > periodRange(r.period, r.periodKey).end;
 }
 
@@ -151,7 +151,10 @@ export function progressText(r: ReportRecord): string {
 export function missingText(r: ReportRecord, now: Date, max = 3): string {
   const m = missingCheckpoints(r, now);
   if (!m.length) return 'Không có';
-  const head = m.slice(0, max).map((c) => c.label).join(', ');
+  const head = m
+    .slice(0, max)
+    .map((c) => c.label)
+    .join(', ');
   return m.length > max ? `${head} +${m.length - max}` : head;
 }
 

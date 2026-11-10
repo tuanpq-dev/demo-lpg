@@ -66,7 +66,10 @@ export function AlertAssignSummary({ alerts, now }: { alerts: readonly AlertReco
   return (
     <section
       aria-label={`Cảnh báo ${a.code}`}
-      className={cn('flex flex-col gap-4 rounded-lg border px-5 py-4', critical ? 'border-danger/40 bg-danger/5' : 'border-line/30 bg-surface-raised/40')}
+      className={cn(
+        'flex flex-col gap-4 rounded-lg border px-5 py-4',
+        critical ? 'border-danger/40 bg-danger/5' : 'border-line/30 bg-surface-raised/40',
+      )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="flex min-w-0 flex-wrap items-center gap-3">

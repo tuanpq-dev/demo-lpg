@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { nextExpiry } from '@/features/live/signal';
-import type { LiveData, LiveDataSource, LiveSourceStatus, LiveValue } from '@/features/live/types';
+import type { LiveData, LiveDataSource, LiveSourceStatus } from '@/features/live/types';
 import { liveBase, liveJitter, liveUnit } from '@/mocks/scenes/live';
 import { MockLiveSource } from './MockLiveSource';
 
@@ -12,33 +12,7 @@ import { MockLiveSource } from './MockLiveSource';
 
 const mock = new MockLiveSource({ base: liveBase, jitter: liveJitter, unit: liveUnit, intervalMs: 2000 });
 
-export const liveSource: LiveDataSource = mock;
-
-/**
- * Giả lập qua URL (`?live=…`) + kịch bản tăng/giảm dần: CHỈ DEV, nạp động (`./devScenarios`) – bản build production không có
- * mã/chuỗi kịch bản và bỏ qua `?live=`. Danh sách tham số: xem đầu file devScenarios.ts.
- */
-if (import.meta.env.DEV && typeof window !== 'undefined') void import('./devScenarios').then((m) => m.applyUrlSimulation(mock));
-
-/** Điều khiển giả lập (playground, test). Chỉ có với nguồn mock. */
-export const liveSimulator = {
-  disconnect: (on: boolean) => mock.simulateDisconnect(on),
-  setBad: (tags: readonly string[], bad = true) => mock.setQuality(tags, bad ? 'bad' : 'good'),
-  freeze: (tags: readonly string[], frozen = true) => mock.freeze(tags, frozen),
-  restore: () => mock.restore(),
-  /** CHỈ DEV (production: không làm gì): dời giá trị nền dần tới `to` (playground "Mô phỏng nồng độ"). */
-  rampTo: (tag: string, to: number) => {
-    if (import.meta.env.DEV) void import('./devScenarios').then((m) => m.rampBase(mock, tag, to));
-  },
-  /** Đặt giá trị nền ngay (số live theo từ bước kế tiếp, ≤ 2 s) – test. */
-  setBase: (tag: string, value: LiveValue) => mock.setBase(tag, value),
-  get state() {
-    return mock.simulation;
-  },
-};
-
-// Dev: test tương tác điều khiển nguồn (playwright).
-if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __liveSource: mock, __liveSimulator: liveSimulator });
+const liveSource: LiveDataSource = mock;
 
 /**
  * Số liệu trực tiếp của `tags` (bỏ trống = mọi tag) dạng `LiveData` (TagValue: value, unit, ts, quality).
@@ -58,8 +32,7 @@ export function useLiveData(tags?: readonly string[], { enabled = true }: { enab
       return;
     }
     return liveSource.subscribe(tags ?? null, setData);
-    // `key` đại diện `tags`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện `tags`.
   }, [key, enabled]);
 
   useEffect(() => {

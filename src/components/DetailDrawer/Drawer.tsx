@@ -29,7 +29,19 @@ export type DrawerProps = {
  * Tab xoay vòng, Esc / click nền đóng, trả focus khi đóng (`useDialog`; có modal chồng lên trên thì Esc đóng modal trước).
  * Header cố định + thân cuộn + chân cố định. Dưới `sm` (640px) chiếm toàn màn hình.
  */
-export function Drawer({ open, onClose, labelledBy, describedBy, header, children, footer, contentKey, accent, widthClass = 'sm:w-[440px]', className }: DrawerProps) {
+export function Drawer({
+  open,
+  onClose,
+  labelledBy,
+  describedBy,
+  header,
+  children,
+  footer,
+  contentKey,
+  accent,
+  widthClass = 'sm:w-[440px]',
+  className,
+}: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const { onKeyDown } = useDialog({ open, onClose, panelRef, initialFocus: closeRef, contentKey });

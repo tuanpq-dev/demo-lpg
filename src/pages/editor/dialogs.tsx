@@ -125,8 +125,18 @@ export function OpenSceneDialog({
 function OpenSceneList({ dirty, onOpen, onRemove, onClose }: Omit<Parameters<typeof OpenSceneDialog>[0], 'open'>) {
   const { items, error, refetch } = useSceneList();
   return (
-    <Modal open onClose={onClose} title="Mở cảnh" size="lg" description="Cảnh đã lưu trong trình duyệt và cảnh mẫu (mẫu chỉ đọc – Lưu sẽ hỏi id mới).">
-      {dirty && <p className="mb-3 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">Cảnh đang sửa có thay đổi chưa lưu – mở cảnh khác sẽ bỏ các thay đổi đó.</p>}
+    <Modal
+      open
+      onClose={onClose}
+      title="Mở cảnh"
+      size="lg"
+      description="Cảnh đã lưu trong trình duyệt và cảnh mẫu (mẫu chỉ đọc – Lưu sẽ hỏi id mới)."
+    >
+      {dirty && (
+        <p className="mb-3 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
+          Cảnh đang sửa có thay đổi chưa lưu – mở cảnh khác sẽ bỏ các thay đổi đó.
+        </p>
+      )}
       {error ? (
         <div role="alert" className="flex flex-col items-start gap-3">
           <p className="text-base text-danger-text">Không đọc được danh sách cảnh: {error.message}</p>
@@ -250,15 +260,7 @@ export function ImportErrorDialog({ file, errors, onClose }: { file: string; err
 }
 
 /** Có bản nháp tự lưu từ phiên trước → khôi phục hay bỏ. */
-export function RestoreDraftDialog({
-  draft,
-  onRestore,
-  onDiscard,
-}: {
-  draft: EditorDraft | null;
-  onRestore: () => void;
-  onDiscard: () => void;
-}) {
+export function RestoreDraftDialog({ draft, onRestore, onDiscard }: { draft: EditorDraft | null; onRestore: () => void; onDiscard: () => void }) {
   return (
     <Modal
       open={!!draft}
@@ -274,8 +276,8 @@ export function RestoreDraftDialog({
     >
       {draft && (
         <p className="text-base text-fg-secondary">
-          Có thay đổi chưa lưu của cảnh <b className="text-fg">{draft.scene.name}</b> ({draft.scene.id}, {draft.scene.objects.length}{' '}
-          object), tự lưu lúc {fmtTime(draft.savedAt)}.
+          Có thay đổi chưa lưu của cảnh <b className="text-fg">{draft.scene.name}</b> ({draft.scene.id}, {draft.scene.objects.length} object), tự lưu
+          lúc {fmtTime(draft.savedAt)}.
         </p>
       )}
     </Modal>

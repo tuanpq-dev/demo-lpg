@@ -10,7 +10,7 @@ import { buildReports } from '@/mocks/reports';
  * Nguồn dữ liệu. TODO(backend): `api.request('/reports?year=…', { schema })` – hợp đồng ở docs/decisions.md
  * (mục "Báo cáo – hợp đồng API cần bổ sung").
  */
-export async function fetchReports(): Promise<ReportRecord[]> {
+async function fetchReports(): Promise<ReportRecord[]> {
   return buildReports(appNow());
 }
 

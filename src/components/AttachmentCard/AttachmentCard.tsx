@@ -20,7 +20,7 @@ export type AttachmentCardProps = {
   className?: string;
 };
 
-export const attachmentKind = (name: string, kind?: AttachmentKind): AttachmentKind =>
+const attachmentKind = (name: string, kind?: AttachmentKind): AttachmentKind =>
   kind ?? (/\.(png|jpe?g|gif|webp|avif|bmp|heic)$/i.test(name) ? 'image' : 'document');
 
 const ICONS = { image: ImageIcon, document: FileIcon, manual: BookIcon } as const;
@@ -49,7 +49,11 @@ export function AttachmentCard({ id, name, kind, meta, notice, fluid, onView, on
   return (
     <article
       aria-label={name}
-      className={cn('flex min-h-[var(--attachment-card-height)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5', fluid ? 'w-full min-w-0' : 'w-[var(--attachment-card-width)]', className)}
+      className={cn(
+        'flex min-h-[var(--attachment-card-height)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5',
+        fluid ? 'w-full min-w-0' : 'w-[var(--attachment-card-width)]',
+        className,
+      )}
     >
       <Icon size={24} className="text-fg-secondary" />
       <p className="w-full truncate text-center text-md text-fg-secondary" title={name}>

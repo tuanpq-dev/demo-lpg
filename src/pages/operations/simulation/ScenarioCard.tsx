@@ -1,6 +1,19 @@
 import { useId, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Button, FanBoxIcon, FlameIcon, GasCylinderIcon, GaugeIcon, Icon, InfoGrid, PlayIcon, ToolsIcon, buttonClass, type TagTone } from '@/components';
+import {
+  Badge,
+  Button,
+  FanBoxIcon,
+  FlameIcon,
+  GasCylinderIcon,
+  GaugeIcon,
+  Icon,
+  InfoGrid,
+  PlayIcon,
+  ToolsIcon,
+  buttonClass,
+  type TagTone,
+} from '@/components';
 import {
   RUN_RESULT_LABEL,
   SCENARIO_RISK_LABEL,
@@ -49,7 +62,19 @@ export type ScenarioCardProps = {
  * "Chi tiết kịch bản" mở/đóng lưới Khu vực / Dữ liệu PLC / Ngưỡng / Kết quả; lần chạy + kết quả gần nhất từ lịch sử;
  * "Chạy mô phỏng" (hoặc link "Cấu hình trước khi chạy" sang màn cấu hình khi thiếu mapping; đang có lượt chạy → "Theo dõi mô phỏng").
  */
-export function ScenarioCard({ scenario: s, lastRun, now, expanded, onToggle, blocker, canRun, running, onRun, configHref, monitorHref }: ScenarioCardProps) {
+export function ScenarioCard({
+  scenario: s,
+  lastRun,
+  now,
+  expanded,
+  onToggle,
+  blocker,
+  canRun,
+  running,
+  onRun,
+  configHref,
+  monitorHref,
+}: ScenarioCardProps) {
   const uid = useId();
   const titleId = `${uid}-title`;
   const detailId = `${uid}-detail`;

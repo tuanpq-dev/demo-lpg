@@ -91,13 +91,24 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
   const counts = table.tabCounts as Record<ReportTab, number>;
   const period: ReportPeriod | undefined = (REPORT_PERIODS as readonly string[]).includes(f.tab) ? (f.tab as ReportPeriod) : undefined;
 
-  const tabItems: TabItem[] = tabs.map((t) => ({ id: t, label: TAB_LABEL[t], count: counts[t], countMax: 9999, countTone: t === f.tab ? 'info' : 'neutral' }));
+  const tabItems: TabItem[] = tabs.map((t) => ({
+    id: t,
+    label: TAB_LABEL[t],
+    count: counts[t],
+    countMax: 9999,
+    countTone: t === f.tab ? 'info' : 'neutral',
+  }));
 
   const filterDefs: FilterDef[] = [
     ...(period === undefined || period === 'daily'
       ? [{ id: 'shift', label: 'Ca vận hành', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.shift)) }]
       : []),
-    { id: 'completion', label: 'Trạng thái hoàn thành', allLabel: 'Tất cả', options: COMPLETION_STATUSES.map((s) => ({ value: s, label: COMPLETION_LABEL[s] })) },
+    {
+      id: 'completion',
+      label: 'Trạng thái hoàn thành',
+      allLabel: 'Tất cả',
+      options: COMPLETION_STATUSES.map((s) => ({ value: s, label: COMPLETION_LABEL[s] })),
+    },
     { id: 'signature', label: 'Trạng thái chữ ký', allLabel: 'Tất cả', options: SIGNATURE_FILTER_OPTIONS },
     { id: 'inspector', label: 'Người kiểm tra', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.inspector)) },
     { id: 'approver', label: 'Người duyệt', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.approver)) },
@@ -130,11 +141,34 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
       cell: (r) => periodLabel(r.period, r.periodKey),
     },
     ...(period === 'daily'
-      ? [{ id: 'shift', header: 'Ca vận hành', align: 'start' as const, width: 100, className: 'text-sm text-fg', cell: (r: ReportRecord) => r.shift ?? '—' }]
+      ? [
+          {
+            id: 'shift',
+            header: 'Ca vận hành',
+            align: 'start' as const,
+            width: 100,
+            className: 'text-sm text-fg',
+            cell: (r: ReportRecord) => r.shift ?? '—',
+          },
+        ]
       : []),
-    { id: 'progress', header: 'Tiến độ kiểm tra', align: 'start', width: 130, className: 'whitespace-nowrap text-sm tabular-nums text-fg', cell: (r) => progressText(r) },
+    {
+      id: 'progress',
+      header: 'Tiến độ kiểm tra',
+      align: 'start',
+      width: 130,
+      className: 'whitespace-nowrap text-sm tabular-nums text-fg',
+      cell: (r) => progressText(r),
+    },
     { id: 'missing', header: 'Mốc còn thiếu', align: 'start', width: 120, className: 'text-sm text-fg', cell: (r) => missingText(r, now) },
-    { id: 'inspector', header: 'Người kiểm tra', align: 'start', width: 120, className: 'whitespace-nowrap text-sm text-fg', cell: (r) => r.inspector },
+    {
+      id: 'inspector',
+      header: 'Người kiểm tra',
+      align: 'start',
+      width: 120,
+      className: 'whitespace-nowrap text-sm text-fg',
+      cell: (r) => r.inspector,
+    },
     {
       id: 'approver',
       header: 'Người duyệt',
@@ -145,7 +179,14 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
     },
     { id: 'completion', header: 'Trạng thái hoàn thành', align: 'start', width: 150, cell: (r) => <CompletionBadge status={completionOf(r, now)} /> },
     { id: 'signature', header: 'Trạng thái chữ ký', align: 'start', width: 130, cell: (r) => <SignatureBadge status={signatureOf(r, now)} /> },
-    { id: 'updatedAt', header: 'Cập nhật cuối', align: 'start', width: 110, className: 'whitespace-nowrap text-sm tabular-nums text-fg', cell: (r) => formatUpdatedAt(r.updatedAt) },
+    {
+      id: 'updatedAt',
+      header: 'Cập nhật cuối',
+      align: 'start',
+      width: 110,
+      className: 'whitespace-nowrap text-sm tabular-nums text-fg',
+      cell: (r) => formatUpdatedAt(r.updatedAt),
+    },
   ];
 
   const note = tabNotes[f.tab];
@@ -154,7 +195,14 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
   return (
     <div ref={ref} className="flex scroll-mt-20 flex-col gap-4">
       <Card padding="none" radius="lg">
-        <Tabs label="Loại báo cáo" items={tabItems} value={f.tab} onChange={(t) => setValues({ tab: t as ReportTab })} panelId={panelId} className="overflow-x-auto" />
+        <Tabs
+          label="Loại báo cáo"
+          items={tabItems}
+          value={f.tab}
+          onChange={(t) => setValues({ tab: t as ReportTab })}
+          panelId={panelId}
+          className="overflow-x-auto"
+        />
         {note && (
           <p className="flex items-start gap-2 px-4 py-3 text-sm text-info">
             <InfoIcon size={16} className="mt-0.5 shrink-0" />
@@ -169,7 +217,15 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
           search={f.q}
           onSearchChange={(q) => setValues({ q })}
           searchPlaceholder="Mã báo cáo, ngày, người kiểm tra..."
-          leading={<DatePicker hideLabel label="Ngày báo cáo" value={f.date ?? ''} onChange={(date) => setValues({ date: date || null })} className="w-[150px]" />}
+          leading={
+            <DatePicker
+              hideLabel
+              label="Ngày báo cáo"
+              value={f.date ?? ''}
+              onChange={(date) => setValues({ date: date || null })}
+              className="w-[150px]"
+            />
+          }
           filters={filterDefs}
           values={{ shift: f.shift, completion: f.completion, signature: f.signature, inspector: f.inspector, approver: f.approver }}
           onValuesChange={(v) =>
@@ -213,7 +269,11 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
                 </button>
               )}
               {reportDetailPath(r) ? (
-                <Link to={reportDetailPath(r)!} aria-label={`Xem báo cáo ${r.code}`} className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100">
+                <Link
+                  to={reportDetailPath(r)!}
+                  aria-label={`Xem báo cáo ${r.code}`}
+                  className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100"
+                >
                   <Icon name="eye" box={18} />
                 </Link>
               ) : (

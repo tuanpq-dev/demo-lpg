@@ -37,7 +37,7 @@ export function resolveAssetId(raw: string | null | undefined): string | null {
   return ASSET_IDS.find((id) => id.toUpperCase() === key) ?? null;
 }
 
-export async function fetchAssetDetail(assetId: string): Promise<AssetDetail> {
+async function fetchAssetDetail(assetId: string): Promise<AssetDetail> {
   const mock = assetMocks[assetId];
   if (!mock) throw new Error(`Không có tài sản "${assetId}" (có: ${ASSET_IDS.join(', ')})`);
   return { ...mock, systemStatus, events: assetEvents.filter((e) => e.asset === assetId) };
@@ -81,7 +81,7 @@ function reading(live: LiveData | undefined, tag: string, field: string, t: Thre
  * và kích thước bồn (`tankLayers`) – không nhập cứng ba con số nên tổng luôn 100 %. Mất tín hiệu một trong hai
  * mức → không tính lớp (UI hiện "Mất tín hiệu").
  */
-export function deriveAssetLive(detail: Pick<AssetMock, 'tags' | 'alarms' | 'tank'>, live: LiveData | undefined, now: number): AssetLiveView {
+function deriveAssetLive(detail: Pick<AssetMock, 'tags' | 'alarms' | 'tank'>, live: LiveData | undefined, now: number): AssetLiveView {
   const { tags, alarms, tank } = detail;
   const level = reading(live, tags.level, 'level', alarms.level, now);
   const waterLevel = reading(live, tags.waterLevel, 'level', {}, now);
@@ -153,17 +153,18 @@ export function toggleHiddenType(raw: string | null | undefined, type: AssetEven
 /** Mới nhất trước: ngày gần hơn, rồi giờ muộn hơn. */
 export const newestEventFirst = (a: AssetEvent, b: AssetEvent) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time);
 
-/** Sự kiện của `asset`, bỏ các loại trong `hidden`, mới nhất trước (không đổi mảng gốc). */
-export function filterAssetEvents(events: readonly AssetEvent[], asset: string, hidden: readonly AssetEventType[] = []): AssetEvent[] {
-  return events.filter((e) => e.asset === asset && !hidden.includes(e.type)).sort(newestEventFirst);
-}
-
 // ============================================================================
 // Cảnh báo liên quan
 // ============================================================================
 
-export type RelatedAlert = { id: string; code: string; message: string; time: string; severity: AlertRecord['severity']; tone: 'danger' | 'warning' | 'success' };
-
+export type RelatedAlert = {
+  id: string;
+  code: string;
+  message: string;
+  time: string;
+  severity: AlertRecord['severity'];
+  tone: 'danger' | 'warning' | 'success';
+};
 
 /** "10:42" (hôm nay) · "Hôm qua" · "20/10" (ngày theo giờ nhà máy). */
 export function dayTimeLabel(daysAgo: number, time: string, now: Date): string {
@@ -194,7 +195,7 @@ export function deriveRelatedAlerts(alerts: readonly AlertRecord[], devices: rea
 // ============================================================================
 
 /** "15 Tháng 9, 2026" (ảnh thiết kế). */
-export function formatLongDate(iso: string): string {
+function formatLongDate(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
   return `${d} Tháng ${m}, ${y}`;
 }
@@ -210,9 +211,7 @@ export type MaintenanceSummary = {
 export function deriveMaintenanceSummary(rows: readonly MaintenanceRecord[], device: string, now: Date): MaintenanceSummary {
   const mine = rows.filter((r) => r.device === device);
   const next = mine.filter((r) => r.status !== 'done' && r.status !== 'cancelled').sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
-  const last = mine
-    .filter((r) => r.status === 'done' && r.completedAt)
-    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
+  const last = mine.filter((r) => r.status === 'done' && r.completedAt).sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
   return {
     next: next && {
       record: next,

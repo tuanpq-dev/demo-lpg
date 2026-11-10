@@ -10,7 +10,16 @@
  * Đây là đường DUY NHẤT sang review (gửi) và sang done (Đạt). Mỗi thao tác = MỘT dòng lịch sử.
  */
 import { plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
-import type { DeviceCondition, MaintenanceAttachment, MaintenanceRecord, ReadingSnapshot, ReviewResult, ReviewSubmission, SensorStatus, ValveStatus } from '@/features/maintenance/types';
+import type {
+  DeviceCondition,
+  MaintenanceAttachment,
+  MaintenanceRecord,
+  ReadingSnapshot,
+  ReviewResult,
+  ReviewSubmission,
+  SensorStatus,
+  ValveStatus,
+} from '@/features/maintenance/types';
 import { checklistProgress } from './checklist';
 import { reportedProgressOf } from './progress';
 import type { ActionContext } from './workflow';
@@ -110,8 +119,8 @@ export function submitMissing(r: MaintenanceRecord, form: SubmitForm): SubmitMis
 }
 
 /** Mốc làm tròn + khoảng chờ mặc định của "Thời gian đề nghị". */
-export const PROPOSED_LEAD_MS = 30 * 60_000;
-export const PROPOSED_STEP_MS = 15 * 60_000;
+const PROPOSED_LEAD_MS = 30 * 60_000;
+const PROPOSED_STEP_MS = 15 * 60_000;
 
 /**
  * "Thời gian đề nghị" mặc định = `now` + 30 phút, làm tròn LÊN mốc 15 phút ("yyyy-mm-ddTHH:mm" giờ nhà máy – UTC+7 lệch giờ
@@ -122,7 +131,7 @@ export function defaultProposedAt(now: Date): string {
   return plantDateTimeKey(new Date(t));
 }
 
-export const canSubmitForReview = (r: MaintenanceRecord, form: SubmitForm) => submitMissing(r, form).length === 0;
+const canSubmitForReview = (r: MaintenanceRecord, form: SubmitForm) => submitMissing(r, form).length === 0;
 
 /** Chụp một số liệu trực tiếp: mất tín hiệu / chưa có số → value null (KHÔNG giữ số cũ). */
 export function snapshotReading(
@@ -217,7 +226,7 @@ export function validateReview(r: MaintenanceRecord, input: ReviewInput): Review
 }
 
 /** Mốc hết theo dõi = now + giờ ("yyyy-mm-ddTHH:mm" giờ nhà máy); 0/thiếu → undefined. */
-export function followUpUntil(now: Date, hours?: number): string | undefined {
+function followUpUntil(now: Date, hours?: number): string | undefined {
   if (!hours || hours <= 0) return undefined;
   return plantDateTimeKey(new Date(now.getTime() + hours * 3_600_000));
 }
@@ -248,7 +257,13 @@ export function reviewRecord(r: MaintenanceRecord, input: ReviewInput, ctx: Pick
       review: { result: 'pass', reviewer, ...(comment ? { comment } : {}), followUpHours: hours, ...(until ? { followUpUntil: until } : {}), at },
       history: [
         ...history,
-        { id: hId, at, kind: 'review-pass', text: `Nghiệm thu đạt – hoàn thành${until ? ` · theo dõi thêm ${hours} giờ (đến ${until.slice(11, 16)})` : ''}`, actor: reviewer },
+        {
+          id: hId,
+          at,
+          kind: 'review-pass',
+          text: `Nghiệm thu đạt – hoàn thành${until ? ` · theo dõi thêm ${hours} giờ (đến ${until.slice(11, 16)})` : ''}`,
+          actor: reviewer,
+        },
       ],
     };
     delete next.reviewFailed;

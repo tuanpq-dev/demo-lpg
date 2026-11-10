@@ -43,7 +43,13 @@ export type MaintenanceColumnsOptions = {
  * Cột bảng "Danh sách yêu cầu bảo trì" (Figma 70:5642). Badge trạng thái là nút theo bước + quyền: Chờ tiếp nhận → Phân công,
  * Chờ nghiệm thu → Nghiệm thu, Đã phân công / Đang thực hiện → Cập nhật tiến độ (tên = chữ ẩn + chữ hiển thị, WCAG 2.5.3).
  */
-export function maintenanceColumns({ now, canWrite, canReview, openDetail, openModal }: MaintenanceColumnsOptions): DataTableColumn<MaintenanceRecord>[] {
+export function maintenanceColumns({
+  now,
+  canWrite,
+  canReview,
+  openDetail,
+  openModal,
+}: MaintenanceColumnsOptions): DataTableColumn<MaintenanceRecord>[] {
   return [
     {
       id: 'code',
@@ -60,7 +66,14 @@ export function maintenanceColumns({ now, canWrite, canReview, openDetail, openM
       ),
     },
     { id: 'createdAt', header: 'Ngày tạo', width: 100, className: 'text-base text-fg', cell: (r) => formatDate(r.createdAt) },
-    { id: 'title', header: 'Nội dung', align: 'start', width: 240, className: 'max-w-[240px] truncate text-fg', cell: (r) => <span title={r.title}>{r.title}</span> },
+    {
+      id: 'title',
+      header: 'Nội dung',
+      align: 'start',
+      width: 240,
+      className: 'max-w-[240px] truncate text-fg',
+      cell: (r) => <span title={r.title}>{r.title}</span>,
+    },
     { id: 'device', header: 'Thiết bị', width: 80, className: 'text-base text-fg' },
     { id: 'priority', header: 'Mức độ', width: 100, cell: (r) => <Badge variant="severity" value={r.priority} /> },
     { id: 'assignee', header: 'Người PT', width: 110, className: 'text-base text-fg-secondary', cell: (r) => r.assignee ?? '–' },
@@ -80,7 +93,12 @@ export function maintenanceColumns({ now, canWrite, canReview, openDetail, openM
       width: 120,
       cell: (r) =>
         canWrite && canAssign(r.status) ? (
-          <button type="button" onClick={() => openModal('assign', r.id)} title="Phân công người xử lý" className="rounded-md text-left hover:brightness-125">
+          <button
+            type="button"
+            onClick={() => openModal('assign', r.id)}
+            title="Phân công người xử lý"
+            className="rounded-md text-left hover:brightness-125"
+          >
             {/* Tên = chữ ẩn + chữ hiển thị ("label in name" – WCAG 2.5.3), cùng cách badge tiến độ/nghiệm thu. */}
             <span className="sr-only">Phân công {r.code} – trạng thái: </span>
             <StatusCell r={r} />
@@ -91,7 +109,12 @@ export function maintenanceColumns({ now, canWrite, canReview, openDetail, openM
             <StatusCell r={r} />
           </button>
         ) : canWrite && canUpdateProgress(r.status) ? (
-          <button type="button" onClick={() => openModal('progress', r.id)} title="Cập nhật tiến độ" className="rounded-md text-left hover:brightness-125">
+          <button
+            type="button"
+            onClick={() => openModal('progress', r.id)}
+            title="Cập nhật tiến độ"
+            className="rounded-md text-left hover:brightness-125"
+          >
             {/* Tên truy cập = chữ ẩn + chữ hiển thị (không dùng aria-label → khớp WCAG 2.5.3 "label in name"). */}
             <span className="sr-only">Cập nhật tiến độ {r.code} – trạng thái: </span>
             <StatusCell r={r} />

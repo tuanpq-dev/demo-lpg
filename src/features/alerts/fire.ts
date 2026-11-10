@@ -21,7 +21,8 @@ export const ALARM_LABEL: Readonly<Record<DetectorAlarm, string>> = { unknown: '
 
 /** Thiết bị + báo động của đầu báo từ tag `.ALARM` ('alarm' | 'normal') và `.STATE` ('online' | 'fault'). */
 export function detectorStatus(alarm: TagReading, state: TagReading): { device: DetectorDevice; alarm: DetectorAlarm } {
-  const device: DetectorDevice = alarm.state === 'pending' ? 'pending' : alarm.state === 'lost' ? 'lost' : state.state === 'ok' && state.value === 'fault' ? 'fault' : 'online';
+  const device: DetectorDevice =
+    alarm.state === 'pending' ? 'pending' : alarm.state === 'lost' ? 'lost' : state.state === 'ok' && state.value === 'fault' ? 'fault' : 'online';
   const a: DetectorAlarm = alarm.state !== 'ok' ? 'unknown' : alarm.value === 'alarm' ? 'active' : alarm.value === 'normal' ? 'cleared' : 'unknown';
   return { device, alarm: a };
 }
@@ -35,7 +36,12 @@ export type FireSignalView = { text: string; tone: SignalTone; lost: boolean; ab
  * Đánh giá một tín hiệu liên quan. Gas bất thường khi ≥ đầu mức `level-1` của bands (cấu hình gas, 10 % LEL); khói khi 'alarm';
  * nút nhấn khi 'activated'. Mất tín hiệu → không bất thường (không suy diễn), chữ "Mất tín hiệu".
  */
-export function fireSignalView(kind: FireSignalKind, label: string, r: TagReading, gas: { bands: readonly AlertBand[]; unit: string }): FireSignalView {
+export function fireSignalView(
+  kind: FireSignalKind,
+  label: string,
+  r: TagReading,
+  gas: { bands: readonly AlertBand[]; unit: string },
+): FireSignalView {
   if (r.state === 'pending') return { text: '—', tone: 'neutral', lost: false, abnormal: false };
   if (r.state === 'lost') return { text: 'Mất tín hiệu', tone: 'neutral', lost: true, abnormal: false };
   if (kind === 'gas') {
@@ -45,14 +51,32 @@ export function fireSignalView(kind: FireSignalKind, label: string, r: TagReadin
     const abnormal = r.value >= from;
     const tone: SignalTone = b.tone === 'success' ? 'success' : b.tone === 'danger' ? 'danger' : 'warning';
     const measure = formatMeasure(r.value, gas.unit);
-    return { text: `${measure} - ${b.label}`, tone, lost: false, abnormal, reason: abnormal ? `${label} ${measure} (${b.label.toLowerCase()})` : undefined };
+    return {
+      text: `${measure} - ${b.label}`,
+      tone,
+      lost: false,
+      abnormal,
+      reason: abnormal ? `${label} ${measure} (${b.label.toLowerCase()})` : undefined,
+    };
   }
   if (kind === 'smoke') {
     const on = r.value === 'alarm';
-    return { text: on ? 'Đang báo động' : 'Bình thường', tone: on ? 'danger' : 'success', lost: false, abnormal: on, reason: on ? `${label} đang báo động` : undefined };
+    return {
+      text: on ? 'Đang báo động' : 'Bình thường',
+      tone: on ? 'danger' : 'success',
+      lost: false,
+      abnormal: on,
+      reason: on ? `${label} đang báo động` : undefined,
+    };
   }
   const on = r.value === 'activated';
-  return { text: on ? 'Đã kích hoạt' : 'Chưa kích hoạt', tone: on ? 'danger' : 'neutral', lost: false, abnormal: on, reason: on ? 'Nút nhấn khẩn cấp đã được kích hoạt' : undefined };
+  return {
+    text: on ? 'Đã kích hoạt' : 'Chưa kích hoạt',
+    tone: on ? 'danger' : 'neutral',
+    lost: false,
+    abnormal: on,
+    reason: on ? 'Nút nhấn khẩn cấp đã được kích hoạt' : undefined,
+  };
 }
 
 export type CrossConfirm = { active: false } | { active: true; callPoint: boolean; reasons: string[]; stage: string };
@@ -65,7 +89,15 @@ export function crossConfirm(signals: readonly (FireSignalView & { kind: FireSig
   const hit = signals.filter((s) => s.abnormal);
   if (!hit.length) return { active: false };
   const callPoint = hit.some((s) => s.kind === 'call-point');
-  return { active: true, callPoint, reasons: hit.map((s) => s.reason!).filter(Boolean), stage: hit.map((s) => s.kind).sort().join('+') };
+  return {
+    active: true,
+    callPoint,
+    reasons: hit.map((s) => s.reason!).filter(Boolean),
+    stage: hit
+      .map((s) => s.kind)
+      .sort()
+      .join('+'),
+  };
 }
 
 /** Chữ banner: nút nhấn đứng đầu + ghi rõ "Nút nhấn khẩn cấp đã được kích hoạt". */
@@ -84,7 +116,8 @@ export type FireCloseCheck =
  */
 export function canCloseFire(input: { alarm: DetectorAlarm; device: DetectorDevice; fieldChecked?: boolean; detector: string }): FireCloseCheck {
   if (input.device === 'pending') return { ok: false, reason: 'pending', message: 'Đang đọc trạng thái đầu báo…' };
-  if (input.alarm === 'active') return { ok: false, reason: 'still-alarm', message: `Đầu báo ${input.detector} vẫn đang báo động – chỉ đóng khi đầu báo đã phục hồi.` };
+  if (input.alarm === 'active')
+    return { ok: false, reason: 'still-alarm', message: `Đầu báo ${input.detector} vẫn đang báo động – chỉ đóng khi đầu báo đã phục hồi.` };
   if (input.alarm === 'cleared') return { ok: true, source: 'live' };
   return input.fieldChecked
     ? { ok: true, source: 'field' }

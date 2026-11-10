@@ -33,8 +33,7 @@ export const ObjectStateProvider = ObjectStateContext.Provider;
  * Hover → emissive primary nhẹ; offline → tối màu. Dispose toàn bộ khi Viewer unmount.
  */
 export function MaterialsProvider({ palette, children }: { palette: ScenePalette; children: ReactNode }) {
-  // Cố ý phụ thuộc `palette`: đổi bảng màu → bỏ cache vật liệu cũ.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Cố ý phụ thuộc `palette`: đổi bảng màu → bỏ cache vật liệu cũ.
   const cache = useMemo(() => new Map<string, AssetMaterials>(), [palette]);
 
   const edges = useMemo(() => {

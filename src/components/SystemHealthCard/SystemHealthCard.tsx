@@ -21,21 +21,9 @@ export type SystemHealthCardProps = {
 };
 
 /** "Độ tin cậy hệ thống" – sidebar Tổng quan (Figma 53:429). */
-export function SystemHealthCard({
-  title = 'Độ tin cậy hệ thống',
-  value,
-  caption,
-  stats,
-  className,
-}: SystemHealthCardProps) {
+export function SystemHealthCard({ title = 'Độ tin cậy hệ thống', value, caption, stats, className }: SystemHealthCardProps) {
   return (
-    <Card
-      title={title}
-      icon={<Icon name="shield" box={12} />}
-      headerVariant="plain"
-      className={className}
-      bodyClassName="py-5"
-    >
+    <Card title={title} icon={<Icon name="shield" box={12} />} headerVariant="plain" className={className} bodyClassName="py-5">
       <div className="flex flex-col">
         <span className="text-3xl font-bold leading-[48px] text-success">{value}%</span>
         {caption && <span className="pt-1 text-sm text-fg-muted">{caption}</span>}
@@ -43,13 +31,7 @@ export function SystemHealthCard({
 
       <dl className="mt-6 flex border-t border-line/30 pt-[17px]">
         {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className={cn(
-              'flex flex-1 flex-col items-center',
-              i > 0 && i < stats.length - 1 && 'border-x border-line/30',
-            )}
-          >
+          <div key={s.label} className={cn('flex flex-1 flex-col items-center', i > 0 && i < stats.length - 1 && 'border-x border-line/30')}>
             <dt className="pb-1 text-sm text-fg-muted">{s.label}</dt>
             <dd className="text-md text-success">
               {s.ok}/{s.total}

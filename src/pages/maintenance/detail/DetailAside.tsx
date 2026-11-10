@@ -48,7 +48,9 @@ export function DetailAside({ record: r, alert, canWrite, onAssign }: DetailAsid
             }
           />
         ) : (
-          <p className="text-base text-fg-secondary">{r.sourceAlertId ? `Không tìm thấy cảnh báo ${r.sourceAlertId}.` : 'Không có cảnh báo liên quan.'}</p>
+          <p className="text-base text-fg-secondary">
+            {r.sourceAlertId ? `Không tìm thấy cảnh báo ${r.sourceAlertId}.` : 'Không có cảnh báo liên quan.'}
+          </p>
         )}
       </Card>
       <RelatedDeviceCard device={r.device} />

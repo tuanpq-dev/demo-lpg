@@ -18,14 +18,13 @@ function rotationRowY([x, y, z]: Vec3): Vec3 {
 type Placed = Pick<SceneObject, 'asset' | 'params' | 'path' | 'rotation' | 'scale'>;
 
 /** Độ lệch (m) từ gốc object tới điểm thấp nhất của hộp bao, sau xoay + scale (0 nếu chỉ xoay quanh Y, scale > 0). */
-export function baseOffset(o: Placed): number {
+function baseOffset(o: Placed): number {
   const { min, max } = assetLayout(o).bounds;
   const s = o.scale ?? [1, 1, 1];
   const row = rotationRowY(o.rotation ?? [0, 0, 0]);
   let lo = Infinity;
   for (const x of [min[0], max[0]])
-    for (const y of [min[1], max[1]])
-      for (const z of [min[2], max[2]]) lo = Math.min(lo, row[0] * x * s[0] + row[1] * y * s[1] + row[2] * z * s[2]);
+    for (const y of [min[1], max[1]]) for (const z of [min[2], max[2]]) lo = Math.min(lo, row[0] * x * s[0] + row[1] * y * s[1] + row[2] * z * s[2]);
   return lo;
 }
 

@@ -56,7 +56,15 @@ export function EditorFileBar({ source, errorCount, onNew, onOpen, onSave, onSav
         Export JSON
       </Button>
       <span aria-hidden="true" className="mx-1 h-6 w-px bg-line/60" />
-      <Button variant="toolbar" size="sm" aria-label="Hoàn tác (Ctrl+Z)" title="Hoàn tác (Ctrl+Z)" disabled={!canUndo} onClick={undo} icon={<UndoIcon />} />
+      <Button
+        variant="toolbar"
+        size="sm"
+        aria-label="Hoàn tác (Ctrl+Z)"
+        title="Hoàn tác (Ctrl+Z)"
+        disabled={!canUndo}
+        onClick={undo}
+        icon={<UndoIcon />}
+      />
       <Button
         variant="toolbar"
         size="sm"

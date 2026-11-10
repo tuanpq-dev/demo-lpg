@@ -52,22 +52,6 @@ export function dayFromNumber(n: number): string {
 /** Quý (1–4) của tháng (1–12). */
 export const quarterOf = (month: number) => Math.ceil(month / 3);
 
-/** Mã kỳ chứa ngày `day` ("yyyy-mm-dd"). */
-export function periodKeyOf(period: ReportPeriod, day: string): PeriodKey {
-  const y = day.slice(0, 4);
-  const m = Number(day.slice(5, 7));
-  switch (period) {
-    case 'daily':
-      return day.slice(0, 10);
-    case 'monthly':
-      return day.slice(0, 7);
-    case 'quarterly':
-      return `${y}-Q${quarterOf(m)}`;
-    case 'yearly':
-      return y;
-  }
-}
-
 /** Ngày đầu/cuối (bao gồm) của kỳ. Mã sai định dạng → ném lỗi (lỗi dữ liệu, không im lặng). */
 export function periodRange(period: ReportPeriod, key: PeriodKey): { start: string; end: string } {
   if (period === 'daily' && /^\d{4}-\d{2}-\d{2}$/.test(key)) return { start: key, end: key };

@@ -2,7 +2,7 @@
  * ⚠ ICON TẠM cho Scene Editor (/editor) – Figma chưa có thiết kế. Vẽ tối giản theo `currentColor` (màu theo token),
  * cùng khuôn với TempIcons. Thay bằng asset Figma khi có. Trang trí (aria-hidden); nhãn nằm ở phần tử chứa.
  */
-import { tempIconBase as base, type TempIconProps as P } from './TempIcons';
+import { tempIconBase as base, type TempIconProps as P } from './iconBase';
 
 /** Con trỏ – công cụ Chọn. */
 export const CursorIcon = ({ size = 16, ...p }: P) => (

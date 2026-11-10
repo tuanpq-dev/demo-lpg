@@ -15,7 +15,7 @@ import { dueInstant, isPastDue } from './deadline';
 import { addNoteRecord, assignRecord, type ActionContext } from './workflow';
 
 /** Bận khi đang làm ≥ 3 việc (người xử lý chính) – ngưỡng + `inShift` + nhãn ca dùng chung (`features/staff/availability`). */
-export { BUSY_THRESHOLD, inShift, shiftShortLabel };
+export { shiftShortLabel };
 
 /** "Đang làm" = Đã phân công + Đang thực hiện (chờ nghiệm thu không tính – đã xong phần thi công). */
 const ACTIVE: readonly MaintenanceStatus[] = ['assigned', 'in-progress'];
@@ -48,11 +48,11 @@ export const workloadOf = (map: ReadonlyMap<string, StaffWorkload>, name: string
   (name && map.get(name)) || EMPTY;
 
 /** "1 đang làm" · "3 đang làm (1 quá hạn)". */
-export const workloadLabel = (w: StaffWorkload) => `${w.active} đang làm${w.overdue ? ` (${w.overdue} quá hạn)` : ''}`;
+const workloadLabel = (w: StaffWorkload) => `${w.active} đang làm${w.overdue ? ` (${w.overdue} quá hạn)` : ''}`;
 
 /** Phân công mới (Chờ tiếp nhận) / đổi người (Đã phân công, Đang thực hiện). */
 export const canAssign = (s: MaintenanceStatus) => s === 'pending';
-export const canReassign = (s: MaintenanceStatus) => s === 'assigned' || s === 'in-progress';
+const canReassign = (s: MaintenanceStatus) => s === 'assigned' || s === 'in-progress';
 export const assignMode = (s: MaintenanceStatus): 'assign' | 'reassign' | null => (canAssign(s) ? 'assign' : canReassign(s) ? 'reassign' : null);
 
 export type AssignForm = {
@@ -169,7 +169,13 @@ export function applyAssignment(r: MaintenanceRecord, f: AssignForm, ctx: Action
       shift,
       history: [
         ...history,
-        { id: `h${history.length + 1}`, at: plantDateTimeKey(ctx.now), kind: 'reassign', text: [`${head} – lý do: ${f.reason.trim()}`, ...details].join(' · '), actor: ctx.actor },
+        {
+          id: `h${history.length + 1}`,
+          at: plantDateTimeKey(ctx.now),
+          kind: 'reassign',
+          text: [`${head} – lý do: ${f.reason.trim()}`, ...details].join(' · '),
+          actor: ctx.actor,
+        },
       ],
     };
   }
@@ -216,10 +222,4 @@ export function bulkAssignMessage(assigned: number, skippedBy: { status: number;
     skippedBy.other && `${skippedBy.other} hạn sớm hơn giờ bắt đầu`,
   ].filter(Boolean);
   return `Đã phân công ${assigned} · bỏ qua ${skipped} (${why.join(', ')})`;
-}
-
-/** Số bản ghi còn mở đang giao cho người KHÔNG còn chọn được để phân công (vd trưởng ca – role manager, hoặc không có trong STAFF). */
-export function countUnassignableOwners(records: readonly MaintenanceRecord[], assignable: readonly { name: string }[]): number {
-  const ok = new Set(assignable.map((p) => p.name));
-  return records.filter((r) => r.assignee && r.status !== 'done' && r.status !== 'cancelled' && !ok.has(r.assignee)).length;
 }

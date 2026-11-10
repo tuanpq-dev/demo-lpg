@@ -1,7 +1,20 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'outline-warning' | 'tinted' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
+export type ButtonVariant =
+  | 'primary'
+  | 'danger'
+  | 'info'
+  | 'ghost'
+  | 'outline'
+  | 'outline-warning'
+  | 'tinted'
+  | 'subtle'
+  | 'plain'
+  | 'icon'
+  | 'toolbar'
+  | 'overlay'
+  | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -36,20 +49,19 @@ const base =
   'aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: 'rounded-lg bg-primary font-semibold text-fg-inverse backdrop-blur-[4px] hover:bg-primary/90',
+  primary: 'rounded-lg bg-primary font-semibold text-fg-inverse backdrop-blur-sm hover:bg-primary/90',
   danger: 'rounded-lg bg-danger-solid font-semibold text-fg hover:bg-danger-solid/90',
   info: 'rounded-lg bg-info font-semibold text-fg-inverse hover:bg-info/90',
-  ghost:
-    'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
+  ghost: 'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-sm hover:border-accent/60 hover:bg-surface-raised',
   outline: 'rounded-md border border-primary/80 bg-transparent font-semibold text-primary hover:bg-primary/10',
   'outline-warning': 'rounded-md border border-warning/80 bg-transparent font-semibold text-warning hover:bg-warning/10',
   // Nền primary nhạt + viền primary – "Áp dụng gợi ý" (Gợi ý từ AI, màn cấu hình kịch bản).
   tinted: 'rounded-md border border-primary/60 bg-primary/15 text-primary hover:bg-primary/25',
   subtle: 'rounded-md border border-line/30 bg-surface-chip/70 text-fg hover:bg-surface-chip',
   plain: 'rounded-md text-fg-secondary hover:bg-surface-muted/60 hover:text-fg',
-  icon: 'rounded-lg border border-accent/30 text-fg backdrop-blur-[4px] hover:border-accent/60',
+  icon: 'rounded-lg border border-accent/30 text-fg backdrop-blur-sm hover:border-accent/60',
   toolbar: 'rounded-md border border-line bg-surface-muted text-fg hover:border-accent/60',
-  overlay: 'rounded-lg border border-line/30 bg-surface-raised/90 text-fg shadow-card backdrop-blur-[4px] hover:border-accent/60',
+  overlay: 'rounded-lg border border-line/30 bg-surface-raised/90 text-fg shadow-card backdrop-blur-sm hover:border-accent/60',
   link: 'text-accent hover:underline',
 };
 

@@ -119,10 +119,22 @@ export function TankCutawayDiagram({
 
         {/* Yên đỡ + họng trên đỉnh */}
         {saddles.map((x) => (
-          <path key={x} d={`M ${x - 16} ${bottom + 12} L ${x - 10} ${bottom - 6} L ${x + 10} ${bottom - 6} L ${x + 16} ${bottom + 12} Z`} className="fill-surface-muted stroke-line" />
+          <path
+            key={x}
+            d={`M ${x - 16} ${bottom + 12} L ${x - 10} ${bottom - 6} L ${x + 10} ${bottom - 6} L ${x + 16} ${bottom + 12} Z`}
+            className="fill-surface-muted stroke-line"
+          />
         ))}
         {nozzles.map((x, i) => (
-          <rect key={x} x={x - (i === 1 ? 9 : 5)} y={top - (i === 1 ? 9 : 12)} width={i === 1 ? 18 : 10} height={i === 1 ? 10 : 13} rx={1.5} className="fill-surface-muted stroke-line" />
+          <rect
+            key={x}
+            x={x - (i === 1 ? 9 : 5)}
+            y={top - (i === 1 ? 9 : 12)}
+            width={i === 1 ? 18 : 10}
+            height={i === 1 ? 10 : 13}
+            rx={1.5}
+            className="fill-surface-muted stroke-line"
+          />
         ))}
         {/* Mặt bích hai đầu */}
         <rect x={x0 - rx - 8} y={cy - 7} width={8} height={14} rx={1.5} className="fill-surface-muted stroke-line" />

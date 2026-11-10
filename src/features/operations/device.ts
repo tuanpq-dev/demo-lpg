@@ -33,7 +33,7 @@ export function limitText(l: ParamLimits, digits: number): string {
 }
 
 /** "1s trước" · "45s trước" · "3 phút trước" · "2 giờ trước" (ts tương lai do lệch đồng hồ → "0s trước"). */
-export function ageText(ts: number, now: number): string {
+function ageText(ts: number, now: number): string {
   const s = Math.max(0, Math.floor((now - ts) / 1000));
   if (s < 60) return `${s}s trước`;
   const m = Math.floor(s / 60);
@@ -100,7 +100,7 @@ export function runState(tv: TagValue | undefined, live: boolean, now: number): 
 
 /** "Thiết bị dự phòng": standby = "Sẵn sàng" (máy chờ chạy được), các trạng thái khác theo `runState`. */
 export function standbyReadiness(view: RunStateView, raw: TagValue | undefined): { label: string; tone: ViewTone } {
-  if (raw?.value === 'standby' && view.label === RUN_STATE.standby.label) return { label: 'Sẵn sàng', tone: 'neutral' };
+  if (raw?.value === 'standby' && view.label === RUN_STATE.standby?.label) return { label: 'Sẵn sàng', tone: 'neutral' };
   return { label: view.label, tone: view.tone };
 }
 

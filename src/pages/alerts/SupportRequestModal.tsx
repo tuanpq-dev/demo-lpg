@@ -8,7 +8,7 @@ import { STAFF } from '@/data/staff';
  * Người nhận "Yêu cầu hỗ trợ" (cảnh báo gas): trưởng ca / quản lý (role manager) + bộ phận An toàn – HSE, lấy từ `STAFF`.
  * TODO(backend): danh mục theo vai trò trực ca.
  */
-export const SUPPORT_STAFF = STAFF.filter((p) => p.role === 'manager' || p.department === 'An toàn – HSE');
+const SUPPORT_STAFF = STAFF.filter((p) => p.role === 'manager' || p.department === 'An toàn – HSE');
 
 /** Thẻ người hỗ trợ (dùng chung modal "Yêu cầu hỗ trợ" và ô "Cần hỗ trợ" của modal cập nhật xử lý áp suất). */
 export const supportStaffItems = (collaborators: readonly string[] | undefined): StaffPickerItem[] =>
@@ -86,7 +86,9 @@ export function SupportRequestModal({
         error={error}
         placeholder="Vd: nồng độ tăng nhanh, cần bộ phận an toàn hỗ trợ khoanh vùng"
       />
-      <p className="text-sm text-fg-secondary">Người được chọn thêm vào danh sách phối hợp của cảnh báo. Thông báo đẩy/SMS chưa gửi được – chờ backend.</p>
+      <p className="text-sm text-fg-secondary">
+        Người được chọn thêm vào danh sách phối hợp của cảnh báo. Thông báo đẩy/SMS chưa gửi được – chờ backend.
+      </p>
       {submitError && (
         <p role="alert" className="text-sm text-danger-text">
           {submitError}

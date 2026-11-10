@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { DatePicker, NumberField, Select, StatusOptionGroup, TextField, type StatusOption } from '@/components';
 import { STAFF } from '@/data/staff';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
-import { followUpChoiceLabel, type AlertUpdateInput, type FollowUpChoice } from '@/features/alerts/update';
+import { followUpChoiceLabel, type AlertUpdateInput } from '@/features/alerts/update';
 import { plantTimeOfDay } from '@/lib/plantTime';
 
 const OWNER_OPTIONS = STAFF.map((p) => ({ value: p.name, label: p.name }));
@@ -28,7 +28,18 @@ export type UpdateFollowUpSectionProps = {
 };
 
 /** Khối "Theo dõi sau xử lý": thời gian theo dõi, mục tiêu (số hoặc "Không có mục tiêu số"), thời điểm kiểm tra lại, người chịu trách nhiệm. */
-export function UpdateFollowUpSection({ cfg, value, customAtLocal, unit, resolved, resolvedLabel, active, window, onChange, onCustomAtChange }: UpdateFollowUpSectionProps) {
+export function UpdateFollowUpSection({
+  cfg,
+  value,
+  customAtLocal,
+  unit,
+  resolved,
+  resolvedLabel,
+  active,
+  window,
+  onChange,
+  onCustomAtChange,
+}: UpdateFollowUpSectionProps) {
   const uid = useId();
   const hintId = `${uid}-follow-hint`;
   const options: StatusOption<string>[] = [...cfg.followUp.options, 'custom' as const].map((c) => ({
@@ -47,7 +58,7 @@ export function UpdateFollowUpSection({ cfg, value, customAtLocal, unit, resolve
         label="Theo dõi sau xử lý"
         options={options}
         value={String(value.choice)}
-        onChange={(c) => onChange({ ...value, choice: (c === 'custom' ? 'custom' : Number(c)) as FollowUpChoice })}
+        onChange={(c) => onChange({ ...value, choice: c === 'custom' ? 'custom' : Number(c) })}
         layout="inline"
         size="sm"
         columns="auto"
@@ -73,7 +84,13 @@ export function UpdateFollowUpSection({ cfg, value, customAtLocal, unit, resolve
             disabled={!active}
           />
         ) : (
-          <TextField label="Giá trị mục tiêu" value="Không có mục tiêu số" onChange={() => {}} readOnly hint="Theo dõi trạng thái đầu báo và tín hiệu liên quan." />
+          <TextField
+            label="Giá trị mục tiêu"
+            value="Không có mục tiêu số"
+            onChange={() => {}}
+            readOnly
+            hint="Theo dõi trạng thái đầu báo và tín hiệu liên quan."
+          />
         )}
         {value.choice === 'custom' ? (
           <DatePicker type="datetime-local" label="Thời điểm kiểm tra lại" value={customAtLocal} onChange={onCustomAtChange} disabled={!active} />

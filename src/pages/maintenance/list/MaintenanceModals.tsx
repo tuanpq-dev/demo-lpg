@@ -2,7 +2,7 @@ import { AUTH_MODE } from '@/api/auth';
 import type { deriveDeviceDirectory, useMaintenance } from '@/data/maintenance';
 import { resolveReviewer } from '@/features/maintenance/review';
 import { AssignModal } from '../AssignModal';
-import { CreateMaintenanceModal } from '../CreateMaintenanceModal';
+import { CreateMaintenanceModal } from '../../shared/maintenance/CreateMaintenanceModal';
 import { ProgressUpdateModal } from '../ProgressUpdateModal';
 import { ReviewModal } from '../ReviewModal';
 import { SubmitReviewModal } from '../SubmitReviewModal';

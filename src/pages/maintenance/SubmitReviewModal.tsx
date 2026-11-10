@@ -1,55 +1,15 @@
-import { useId, useState, type ReactNode } from 'react';
-import {
-  AlertCircleIcon,
-  Badge,
-  Button,
-  CheckCircleIcon,
-  Checklist,
-  DatePicker,
-  EyeIcon,
-  FormField,
-  KpiCard,
-  Modal,
-  Select,
-  StatusOptionGroup,
-  Textarea,
-  type KpiTone,
-  type StatusOption,
-} from '@/components';
-import type { Reading } from '@/data/assetDetail';
-import { REVIEWERS, STATUS_LABEL, dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
+import { useId, useState } from 'react';
+import { Badge, Button, DatePicker, FormField, Modal, Select, Textarea } from '@/components';
+import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
 import { clearSubmitDraft, loadSubmitDraft, saveSubmitDraft, useRelatedDevice, type SubmitDraft } from '@/data/maintenanceDetail';
-import { checklistProgress } from '@/features/maintenance/checklist';
-import { deadlineDayLabel } from '@/features/maintenance/deadline';
-import { isNearOrPastDue, reportedProgressOf, type ProgressFile } from '@/features/maintenance/progress';
-import {
-  DEVICE_CONDITION_OPTIONS,
-  SENSOR_STATUS_OPTIONS,
-  defaultProposedAt,
-  VALVE_STATUS_OPTIONS,
-  snapshotReading,
-  submitMissing,
-  type DeviceCondition,
-  type SensorStatus,
-  type SubmitForm,
-  type SubmitInput,
-  type ValveStatus,
-} from '@/features/maintenance/review';
+import type { ProgressFile } from '@/features/maintenance/progress';
+import { defaultProposedAt, snapshotReading, submitMissing, type SubmitForm, type SubmitInput } from '@/features/maintenance/review';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
 import { useFormModal } from '@/lib/useFormModal';
-
-const CONDITION_ICON: Record<DeviceCondition, ReactNode> = {
-  normal: <CheckCircleIcon size={22} />,
-  monitor: <EyeIcon size={22} />,
-  unresolved: <AlertCircleIcon size={22} />,
-};
-const CONDITION_TONE = { normal: 'primary', monitor: 'warning', unresolved: 'danger' } as const;
-
-// Bình thường = chữ trắng (ảnh); vượt ngưỡng mới tô màu.
-const readingTone = (r: Reading): KpiTone => (r.status === 'danger' ? 'danger' : r.status === 'warning' ? 'warning' : 'neutral');
+import { ChecklistSection, DeviceConditionSection, SubmitSummaryCard } from './submit/SubmitParts';
 
 export type SubmitReviewModalProps = {
   record: MaintenanceRecord;
@@ -71,19 +31,6 @@ const EMPTY = (now: Date): Omit<SubmitDraft, 'savedAt'> => ({
   proposedAt: defaultProposedAt(now),
 });
 
-/** Ô chọn trạng thái nhỏ (Cảm biến / Van xả) – cùng khung với ô số liệu. */
-function SelectTile<V extends string>({ label, value, options, onChange }: { label: string; value: V; options: readonly { value: V; label: string }[]; onChange: (v: V) => void }) {
-  const id = useId();
-  return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-md border border-line/30 px-3.5 py-3">
-      <span id={`${id}-l`} className="text-base text-fg-secondary">
-        {label}
-      </span>
-      <Select variant="field" id={id} labelledBy={`${id}-l`} label={label} options={options} value={value} onChange={(v) => v && onChange(v)} />
-    </div>
-  );
-}
-
 /**
  * Modal "Gửi yêu cầu nghiệm thu" – ảnh thiết kế (chưa có node Figma; số đo ước lượng, lệch ghi docs/figma-diffs.md). Kỹ thuật viên,
  * in-progress → review. Điều kiện + ghi bản ghi: `features/maintenance/review.ts`. Nháp: sessionStorage theo mã (không đổi trạng thái).
@@ -94,8 +41,6 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
   const device = useRelatedDevice(r.device);
   const uid = useId();
   const missingId = `${uid}-missing`;
-  const conditionId = `${uid}-condition`;
-  const conditionNoteId = `${uid}-condition-note`;
 
   const [initial] = useState(() => {
     const draft = loadSubmitDraft(r.id);
@@ -114,9 +59,6 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
   const form: SubmitForm = { ...v, proposedAt: v.proposedAt || undefined };
   const missing = submitMissing(r, form);
   const eligible = missing.length === 0;
-  const checklist = r.checklist?.length ? checklistProgress(r.checklist) : null;
-  const hasTime = dueHasTime(r);
-  const dueRed = isNearOrPastDue(r.dueAt, now, hasTime);
   const files = prefill?.files ?? [];
   const modal = useFormModal({
     initial: initial.base,
@@ -135,13 +77,6 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
   const { confirming, submitting, hasDraft, requestClose, discard } = modal;
 
   const reviewerOptions = REVIEWERS.filter((p) => p.name !== r.assignee).map((p) => ({ value: p.name, label: `${p.name} (${p.title})` }));
-
-  const conditionOptions: StatusOption<DeviceCondition>[] = DEVICE_CONDITION_OPTIONS.map((o) => ({
-    id: o.id,
-    label: o.label,
-    icon: CONDITION_ICON[o.id],
-    tone: CONDITION_TONE[o.id],
-  }));
 
   const submit = async () => {
     // Nút "Gửi nghiệm thu" aria-disabled đã chặn click/Enter/gửi ngầm (Button) – chặn thêm ở đây cho chắc.
@@ -181,18 +116,16 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
       <Button variant="subtle" onClick={onSaveDraft}>
         Lưu nháp
       </Button>
-      <Button type="submit" variant="primary" aria-disabled={!eligible || submitting || undefined} aria-describedby={eligible ? undefined : missingId}>
+      <Button
+        type="submit"
+        variant="primary"
+        aria-disabled={!eligible || submitting || undefined}
+        aria-describedby={eligible ? undefined : missingId}
+      >
         Gửi nghiệm thu
       </Button>
     </>
   );
-
-  const reading = (label: string, unit: string, rd: Reading | undefined) =>
-    rd ? (
-      <KpiCard size="sm" emphasis label={label} value={rd.value?.toFixed(1) ?? '—'} unit={unit} tone={readingTone(rd)} signalLost={rd.state === 'lost'} />
-    ) : (
-      <KpiCard size="sm" emphasis label={label} value="—" footnote="Không có số liệu trực tiếp" />
-    );
 
   return (
     <Modal
@@ -226,121 +159,59 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
           </p>
         )}
 
-        {/* Thẻ đầu */}
-        <section aria-label={`Yêu cầu ${r.code}`} className="flex flex-col gap-4 rounded-lg border border-line-card bg-surface-raised/40 px-5 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <p className="text-lg text-fg">
-                <span className="font-semibold">{r.code}</span>
-                <span aria-hidden="true" className="mx-2 text-fg-secondary">
-                  |
-                </span>
-                <span className="sr-only"> – </span>
-                {r.title}
-              </p>
-              <p className="text-sm text-fg-secondary">
-                Thiết bị: {r.device} <span aria-hidden="true">|</span>
-                <span className="sr-only">,</span> Khu vực: {r.area}
-              </p>
-            </div>
-            <Badge variant="tag" size="md" tone={eligible ? 'success' : 'danger'}>
-              {eligible ? 'Đủ điều kiện gửi nghiệm thu' : 'Chưa đủ điều kiện'}
-            </Badge>
-          </div>
-          <dl className="grid gap-3 sm:grid-cols-3">
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-fg-secondary">Nhân sự</dt>
-              <dd className="text-md font-semibold text-fg">{r.assignee ?? 'Chưa phân công'}</dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-fg-secondary">Tiến độ</dt>
-              <dd className="text-md font-semibold text-success">
-                {reportedProgressOf(r)}% <span aria-hidden="true">|</span>
-                <span className="sr-only">,</span> {STATUS_LABEL[r.status]}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-fg-secondary">Hạn chót</dt>
-              <dd className={dueRed ? 'text-md font-semibold text-danger-text' : 'text-md font-semibold text-fg'}>{deadlineDayLabel(r.dueAt, now, hasTime)}</dd>
-            </div>
-          </dl>
-          {!eligible && (
-            <div id={missingId} className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-fg">
-              <p className="font-semibold">Chưa đủ điều kiện gửi – còn thiếu:</p>
-              <ul className="mt-1 list-disc pl-5">
-                {missing.map((m) => (
-                  <li key={m.id}>{m.label}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
+        <SubmitSummaryCard record={r} now={now} missing={missing} missingId={missingId} />
 
         <div data-field="summary">
-          <Textarea labelVariant="section" label="Tóm tắt công việc" required value={v.summary} onChange={(x) => set('summary', x)} rows={2} maxLength={1000} placeholder="Các việc đã làm, kết quả kiểm tra…" />
+          <Textarea
+            labelVariant="section"
+            label="Tóm tắt công việc"
+            required
+            value={v.summary}
+            onChange={(x) => set('summary', x)}
+            rows={2}
+            maxLength={1000}
+            placeholder="Các việc đã làm, kết quả kiểm tra…"
+          />
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <section className="flex min-w-0 flex-col gap-3" aria-labelledby={`${uid}-cl`}>
-            <div className="flex items-center justify-between gap-2">
-              <h3 id={`${uid}-cl`} className="text-lg font-semibold text-fg-secondary">
-                Checklist hoàn thành
-              </h3>
-              {checklist && (
-                <span className={checklist.done === checklist.total ? 'text-lg font-semibold tabular-nums text-success' : 'text-lg font-semibold tabular-nums text-warning'}>
-                  {checklist.done}/{checklist.total}
-                  <span className="sr-only"> mục hoàn thành</span>
-                </span>
-              )}
-            </div>
-            <div className="flex-1 rounded-md border border-line/30 px-4 py-3">
-              {checklist ? (
-                <Checklist variant="summary" items={r.checklist!} progress={checklist} />
-              ) : (
-                <p className="text-base text-fg-secondary">Yêu cầu không có checklist.</p>
-              )}
-            </div>
-          </section>
+          <ChecklistSection record={r} headingId={`${uid}-cl`} />
           <div data-field="cause" className="flex min-w-0 flex-col">
-            <Textarea labelVariant="section" label="Nguyên nhân xác định" required value={v.cause} onChange={(x) => set('cause', x)} rows={10} maxLength={1000} placeholder="Nguyên nhân gốc của sự cố / bất thường…" />
+            <Textarea
+              labelVariant="section"
+              label="Nguyên nhân xác định"
+              required
+              value={v.cause}
+              onChange={(x) => set('cause', x)}
+              rows={10}
+              maxLength={1000}
+              placeholder="Nguyên nhân gốc của sự cố / bất thường…"
+            />
           </div>
         </div>
 
         <div data-field="remedy">
-          <Textarea labelVariant="section" label="Biện pháp" required value={v.remedy} onChange={(x) => set('remedy', x)} rows={2} maxLength={1000} placeholder="Biện pháp đã thực hiện để khắc phục…" />
+          <Textarea
+            labelVariant="section"
+            label="Biện pháp"
+            required
+            value={v.remedy}
+            onChange={(x) => set('remedy', x)}
+            rows={2}
+            maxLength={1000}
+            placeholder="Biện pháp đã thực hiện để khắc phục…"
+          />
         </div>
 
-        <section className="flex flex-col gap-3">
-          <h3 id={conditionId} className="text-lg font-semibold text-fg-secondary">
-            Tình trạng thiết bị sau bảo trì
-          </h3>
-          <StatusOptionGroup
-            label="Tình trạng thiết bị sau bảo trì"
-            labelledBy={conditionId}
-            describedBy={v.deviceCondition === 'unresolved' ? conditionNoteId : undefined}
-            columns={3}
-            options={conditionOptions}
-            value={v.deviceCondition}
-            onChange={(x) => set('deviceCondition', x)}
-          />
-          {v.deviceCondition === 'unresolved' && (
-            <p id={conditionNoteId} className="flex items-center gap-2 text-sm text-warning">
-              <AlertCircleIcon size={16} className="shrink-0" />
-              Thiết bị chưa khắc phục – vẫn gửi được, người nghiệm thu sẽ xem xét. Nêu rõ phần còn tồn tại trong Biện pháp.
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
-            {reading('Áp suất', 'bar', device.kind === 'live' ? device.pressure : undefined)}
-            {reading('Nhiệt độ', '°C', device.kind === 'live' ? device.temperature : undefined)}
-            <SelectTile<SensorStatus> label="Cảm biến" value={v.sensorStatus} options={SENSOR_STATUS_OPTIONS} onChange={(x) => set('sensorStatus', x)} />
-            <SelectTile<ValveStatus> label="Van xả" value={v.valveStatus} options={VALVE_STATUS_OPTIONS} onChange={(x) => set('valveStatus', x)} />
-          </div>
-          {device.kind === 'live' && (
-            <p className="text-sm text-fg-secondary">
-              Áp suất ({device.tags.pressure}) và nhiệt độ ({device.tags.temperature}) là số liệu trực tiếp – được chụp lại lúc bấm “Gửi nghiệm thu”.
-            </p>
-          )}
-        </section>
+        <DeviceConditionSection
+          uid={uid}
+          values={v}
+          device={device}
+          onChange={(k, x) => {
+            setV((cur) => ({ ...cur, [k]: x }));
+            setError('');
+          }}
+        />
 
         <div className="grid gap-5 md:grid-cols-2">
           <div data-field="reviewer">
@@ -360,10 +231,19 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
               )}
             </FormField>
           </div>
-          <DatePicker labelVariant="section" type="datetime-local" label="Thời gian đề nghị" value={v.proposedAt} onChange={(x) => set('proposedAt', x)} hint="Mặc định: sau 30 phút (làm tròn mốc 15 phút) – sửa được, không bắt buộc." />
+          <DatePicker
+            labelVariant="section"
+            type="datetime-local"
+            label="Thời gian đề nghị"
+            value={v.proposedAt}
+            onChange={(x) => set('proposedAt', x)}
+            hint="Mặc định: sau 30 phút (làm tròn mốc 15 phút) – sửa được, không bắt buộc."
+          />
         </div>
 
-        {files.length > 0 && <p className="text-sm text-fg-secondary">Kèm {files.length} tệp đã thêm ở bước cập nhật tiến độ (chưa tải lên máy chủ).</p>}
+        {files.length > 0 && (
+          <p className="text-sm text-fg-secondary">Kèm {files.length} tệp đã thêm ở bước cập nhật tiến độ (chưa tải lên máy chủ).</p>
+        )}
 
         {error && (
           <p role="alert" className="text-sm text-danger-text">

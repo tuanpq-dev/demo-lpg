@@ -5,7 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_SCENE_EDITOR?: string;
   /** "off" → không đăng nhập (phiên giả admin, demo tĩnh); mặc định "api" (đăng nhập qua backend). */
   readonly VITE_AUTH?: string;
-  /** Gốc URL backend, vd "http://localhost:3000" (.env.development); production đặt trong Netlify. */
+  /** Gốc URL backend, vd "http://localhost:3000" (.env.development); production đặt trong Vercel (Project Settings → Environment Variables). */
   readonly VITE_API_URL?: string;
   /** "true" → bản build cũng nhận `?now=` (dời giờ app để demo hạn chót/quá hạn – src/lib/demoNow.ts). Dev luôn nhận. */
   readonly VITE_DEMO?: string;

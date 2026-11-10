@@ -43,7 +43,8 @@ export function UpdateVerificationFieldset({ cfg, items, value, normalId, closeO
       })}
       {normalId && (
         <p id={hintId} className="text-sm text-fg-secondary">
-          "{normalText}" chỉ chọn được khi {cfg.close.rule === 'fire' ? cfg.normalHint : `${cfg.normalHint ?? `${cfg.quantity} hiện tại dưới ngưỡng`} (${metricText(limit, unit)})`}.
+          "{normalText}" chỉ chọn được khi{' '}
+          {cfg.close.rule === 'fire' ? cfg.normalHint : `${cfg.normalHint ?? `${cfg.quantity} hiện tại dưới ngưỡng`} (${metricText(limit, unit)})`}.
         </p>
       )}
       {error && (

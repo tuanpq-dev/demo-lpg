@@ -78,7 +78,7 @@ export default function OverviewPage() {
   // Thiết bị có trang chi tiết (/map/:id) → click trên bản đồ 3D / "Theo dõi thiết bị" mở trang đó.
   const openAsset = (id: string) => {
     const asset = resolveAssetId(id);
-    if (asset) navigate(assetPath(asset));
+    if (asset) void navigate(assetPath(asset));
   };
   const canOpenAsset = (id: string) => resolveAssetId(id) !== null;
   // Mọi tag: KPI, danh sách theo dõi, nhãn bản đồ 2.5D và cảnh 3D dùng chung một đăng ký.
@@ -86,7 +86,9 @@ export default function OverviewPage() {
 
   const view = data ? applyLive(data, liveData) : undefined;
   const lostCount = view
-    ? view.kpis.filter((k) => k.signalLost).length + view.watchlist.filter((r) => r.signalLost).length + view.map.markers.filter((m) => m.showSignalLostIcon).length
+    ? view.kpis.filter((k) => k.signalLost).length +
+      view.watchlist.filter((r) => r.signalLost).length +
+      view.map.markers.filter((m) => m.showSignalLostIcon).length
     : 0;
   useAnnounceChange(lostCount, (n, prev) =>
     n > 0 ? `Mất tín hiệu ở ${n} điểm đo trên Tổng quan.` : prev > 0 ? 'Các điểm đo trên Tổng quan đã có tín hiệu trở lại.' : '',
@@ -94,6 +96,7 @@ export default function OverviewPage() {
 
   const header = (
     <PageHeader
+      srTitle="Tổng quan hệ thống LPG"
       actions={
         <>
           {data && <StatusPill tone={data.systemStatus.tone}>{data.systemStatus.label}</StatusPill>}
@@ -117,7 +120,9 @@ export default function OverviewPage() {
       <Page
         variant="sidebar"
         pageHeader={header}
-        sidebar={[235, 239, 234, 197].map((h) => <Placeholder key={h} label="Đang tải…" height={h} />)}
+        sidebar={[235, 239, 234, 197].map((h) => (
+          <Placeholder key={h} label="Đang tải…" height={h} />
+        ))}
       >
         <Placeholder label="Đang tải…" height={128} />
         <Placeholder label="Đang tải…" height={591} />
@@ -139,17 +144,11 @@ export default function OverviewPage() {
           <Card
             title="Cảnh báo ưu tiên"
             icon={<Icon name="danger" />}
-            action={{ label: 'Xem tất cả', onClick: () => navigate('/alerts') }}
+            action={{ label: 'Xem tất cả', onClick: () => void navigate('/alerts') }}
             padding="none"
           >
             {priorityAlarms.map((a, i) => (
-              <AlertItem
-                key={a.id}
-                {...a}
-                highlighted={i === 0}
-                last={i === priorityAlarms.length - 1}
-                onClick={() => navigate('/alerts')}
-              />
+              <AlertItem key={a.id} {...a} highlighted={i === 0} last={i === priorityAlarms.length - 1} onClick={() => void navigate('/alerts')} />
             ))}
           </Card>
           <AssetWatchlist assets={watchlist} onAssetClick={openAsset} canOpen={canOpenAsset} />
@@ -160,7 +159,7 @@ export default function OverviewPage() {
       {/* 1. KPI – 53:166 (6 cột gap 16, cao 128) */}
       <section aria-label="Chỉ số chính" className="grid auto-rows-[128px] grid-cols-2 gap-4 md:grid-cols-3 wide:grid-cols-6">
         {kpis.map((k) => (
-          <KpiFromData key={k.id} data={k} onAction={() => navigate('/alerts')} />
+          <KpiFromData key={k.id} data={k} onAction={() => void navigate('/alerts')} />
         ))}
       </section>
 

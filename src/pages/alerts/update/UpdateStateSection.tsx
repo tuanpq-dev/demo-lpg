@@ -31,7 +31,18 @@ export type UpdateStateSectionProps = {
  * Khối "Trạng thái xử lý": ô trạng thái theo loại (Đã xử lý khoá khi chưa đạt điều kiện đóng – lý do qua `aria-describedby`);
  * Tạm dừng / Cần hỗ trợ → lý do bắt buộc (+ chọn người hỗ trợ).
  */
-export function UpdateStateSection({ cfg, close, state, holdReason, supportPeople, collaborators, err, onStateChange, onHoldReasonChange, onSupportPeopleChange }: UpdateStateSectionProps) {
+export function UpdateStateSection({
+  cfg,
+  close,
+  state,
+  holdReason,
+  supportPeople,
+  collaborators,
+  err,
+  onStateChange,
+  onHoldReasonChange,
+  onSupportPeopleChange,
+}: UpdateStateSectionProps) {
   const uid = useId();
   const reasonId = `${uid}-state-reason`;
   const options: StatusOption<UpdateState>[] = cfg.states.map((s) => ({
@@ -57,7 +68,12 @@ export function UpdateStateSection({ cfg, close, state, holdReason, supportPeopl
       />
       {!close.ok && (
         <p id={reasonId} className="text-sm text-warning">
-          Chưa chọn được "{cfg.states.filter(isResolvedState).map((s) => stateLabel(cfg, s)).join('" / "')}": {close.message}
+          Chưa chọn được "
+          {cfg.states
+            .filter(isResolvedState)
+            .map((s) => stateLabel(cfg, s))
+            .join('" / "')}
+          ": {close.message}
         </p>
       )}
       {(state === 'paused' || state === 'needs-support') && (

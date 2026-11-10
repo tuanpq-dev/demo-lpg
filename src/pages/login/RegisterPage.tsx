@@ -39,7 +39,7 @@ export default function RegisterPage() {
     setError(null);
     try {
       const message = await register({ name: form.name.trim(), email: form.email.trim(), password: form.password });
-      navigate('/pending', { replace: true, state: { message, email: form.email.trim() } });
+      void navigate('/pending', { replace: true, state: { message, email: form.email.trim() } });
     } catch (err) {
       setError(authErrorMessage(err));
       setBusy(false);
@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout>
-      <form ref={formRef} onSubmit={submit} noValidate aria-labelledby="register-title" className="flex flex-col gap-4">
+      <form ref={formRef} onSubmit={(e) => void submit(e)} noValidate aria-labelledby="register-title" className="flex flex-col gap-4">
         <div>
           <h1 id="register-title" className="text-xl font-semibold text-fg">
             Đăng ký tài khoản
