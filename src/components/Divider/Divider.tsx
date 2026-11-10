@@ -22,12 +22,7 @@ export function Divider({ orientation = 'horizontal', tone = 'default', classNam
     <div
       role="separator"
       aria-orientation={orientation}
-      className={cn(
-        'shrink-0',
-        orientation === 'horizontal' ? 'h-px w-full' : 'w-px self-stretch',
-        toneClass[tone],
-        className,
-      )}
+      className={cn('shrink-0', orientation === 'horizontal' ? 'h-px w-full' : 'w-px self-stretch', toneClass[tone], className)}
     />
   );
 }

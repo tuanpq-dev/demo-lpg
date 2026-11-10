@@ -172,7 +172,9 @@ describe('dữ liệu gas (ALT-00127) + cảm biến theo khu', () => {
 
 describe('thanh đo theo cấu hình loại cảnh báo', () => {
   test('loại tốc độ thay đổi (level-drop, gauge: false) → off, kể cả khi số dương', () => {
-    expect(alertGauge(alert('x', { kind: 'level-drop', value: '-4.2', threshold: '-3.0', unit: '%/h', direction: 'below' }))).toEqual({ kind: 'off' });
+    expect(alertGauge(alert('x', { kind: 'level-drop', value: '-4.2', threshold: '-3.0', unit: '%/h', direction: 'below' }))).toEqual({
+      kind: 'off',
+    });
     expect(alertGauge(alert('x', { kind: 'level-drop', value: '5', threshold: '3' })).kind).toBe('off');
   });
   test('loại có thang: dựng thang; vượt mức nguy hiểm × 1.2 → nới × 1.05', () => {
@@ -194,7 +196,10 @@ describe('thẻ đầu modal phân công', () => {
       threshold: '10.5 bar',
       breached: true,
     });
-    expect(alertRecordedValue(alert('x', { kind: 'temperature-low', direction: 'below', value: '45', threshold: '50', unit: '°C' }))).toMatchObject({ value: '45°C', breached: true });
+    expect(alertRecordedValue(alert('x', { kind: 'temperature-low', direction: 'below', value: '45', threshold: '50', unit: '°C' }))).toMatchObject({
+      value: '45°C',
+      breached: true,
+    });
     expect(alertRecordedValue(alert('x', { kind: 'sensor-signal-lost' }))).toBeNull();
     expect(alertRecordedValue(alert('x', { kind: 'pump-standby' }))).toBeNull();
     expect(alertRecordedValue(alert('x', { value: 'abc' }))).toBeNull();
@@ -211,7 +216,11 @@ describe('thao tác trên store (mock) – cùng quy tắc với drawer', () => 
   const get = async (id: string) => (await fetchAlerts()).find((a) => a.id === id)!;
   // Đổi có chủ đích (modal phân công cảnh báo): nhận form thay tên; kết quả kèm số đổi người + câu thông báo.
   test('phân công hàng loạt KHÔNG tự xác nhận; dòng đã hoàn thành bị bỏ qua', async () => {
-    const r = await assignAlerts(['ALT-00126', 'ALT-00124'], { assignee: 'Trần Bình', collaborators: [], note: '', notify: false, reason: '' }, 'Tester');
+    const r = await assignAlerts(
+      ['ALT-00126', 'ALT-00124'],
+      { assignee: 'Trần Bình', collaborators: [], note: '', notify: false, reason: '' },
+      'Tester',
+    );
     expect(r).toEqual({ done: 1, skipped: 1, reassigned: 0, message: 'Đã phân công 1 · bỏ qua 1 (1 đã hoàn thành)' });
     expect(await get('ALT-00126')).toMatchObject({ status: 'unacknowledged', assignee: 'Trần Bình' });
     expect((await get('ALT-00124')).assignee).toBe('Lê Thị C');
@@ -230,7 +239,11 @@ describe('thao tác trên store (mock) – cùng quy tắc với drawer', () => 
   });
   // Thay "hoàn thành hàng loạt" (đã bỏ – không còn thao tác nhảy thẳng sang Hoàn thành) bằng đóng hàng loạt.
   test('đóng hàng loạt: chỉ dòng Đã xử lý đủ 3 điều kiện, ghi chú chung bắt buộc, báo bỏ qua + lý do', async () => {
-    const ok: CloseCondition[] = [{ id: 'stable', ok: true }, { id: 'in-range', ok: true }, { id: 'no-related', ok: true }];
+    const ok: CloseCondition[] = [
+      { id: 'stable', ok: true },
+      { id: 'in-range', ok: true },
+      { id: 'no-related', ok: true },
+    ];
     const bad: CloseCondition[] = [ok[0]!, ok[1]!, { id: 'no-related', ok: false, reason: 'x' }];
     const conds = { 'ALT-00120': ok, 'ALT-00116': bad };
     await expect(closeAlerts(['ALT-00120'], '  ', conds, followUpConfig, 'Tester')).rejects.toThrow();
@@ -252,7 +265,15 @@ describe('thao tác trên store (mock) – cùng quy tắc với drawer', () => 
 describe('báo cháy FIR-00018 – chung danh sách cảnh báo', () => {
   const fir = alertRecords.find((a) => a.id === 'FIR-00018')!;
   test('dữ liệu: tiền tố FIR, loại fire, HD-02 · Trạm hóa hơi (FZ-02), ngưỡng = cấu hình đầu báo, chưa phân công cá nhân', () => {
-    expect(fir).toMatchObject({ code: 'FIR-00018', kind: 'fire', device: 'HD-02', area: 'Trạm hóa hơi', severity: 'critical', status: 'unacknowledged', assignee: null });
+    expect(fir).toMatchObject({
+      code: 'FIR-00018',
+      kind: 'fire',
+      device: 'HD-02',
+      area: 'Trạm hóa hơi',
+      severity: 'critical',
+      status: 'unacknowledged',
+      assignee: null,
+    });
     expect(areaLabel(fir.area)).toBe('Trạm hóa hơi (FZ-02)');
     expect(areaLabel('Khu bồn LPG')).toBe('Khu bồn LPG');
     expect(Number(fir.threshold)).toBe(HEAT_DETECTORS['HD-02']!.alarmAt);
@@ -260,7 +281,7 @@ describe('báo cháy FIR-00018 – chung danh sách cảnh báo', () => {
     // Gửi thông báo = phát hiện + 3 s
     const [h, m, sec] = fir.time.split(':').map(Number);
     const [h2, m2, s2] = fir.notifiedTime!.split(':').map(Number);
-    expect(((h2! * 3600 + m2! * 60 + s2!) - (h! * 3600 + m! * 60 + sec!) + 86_400) % 86_400).toBe(3);
+    expect((h2! * 3600 + m2! * 60 + s2! - (h! * 3600 + m! * 60 + sec!) + 86_400) % 86_400).toBe(3);
   });
   test('tìm kiếm / lọc thiết bị / khu / tab / KPI tính cả FIR', () => {
     const today = alertRecords.filter((a) => a.daysAgo === 0);
@@ -272,7 +293,9 @@ describe('báo cháy FIR-00018 – chung danh sách cảnh báo', () => {
     const kpi = Object.fromEntries(deriveAlertKpis(alertRecords, 'today').map((k) => [k.id, Number(k.value)]));
     expect(kpi.total).toBe(today.length);
     expect(kpi.critical).toBe(today.filter((a) => a.severity === 'critical').length);
-    expect(countByStatus(filterAlerts(alertRecords, DEFAULT_FILTERS, { ignoreTab: true })).unacknowledged).toBe(today.filter((a) => a.status === 'unacknowledged').length);
+    expect(countByStatus(filterAlerts(alertRecords, DEFAULT_FILTERS, { ignoreTab: true })).unacknowledged).toBe(
+      today.filter((a) => a.status === 'unacknowledged').length,
+    );
     // Nghiêm trọng + chưa xác nhận + mới nhất → thẻ ưu tiên đầu tiên
     expect(derivePriorityCards(alertRecords)[0]!.id).toBe('FIR-00018');
   });
@@ -295,22 +318,38 @@ describe('báo cháy FIR-00018 – chung danh sách cảnh báo', () => {
       followUp: { choice: 0, owner: '' },
     };
     const check = (alarm: 'active' | 'cleared') => ({
-      close: updateCloseCheck(cfg.close, { liveState: 'ok', source: 'sensor', limit: 57, unit: '°C', detector: { alarm, device: 'online', name: 'HD-02' } }),
+      close: updateCloseCheck(cfg.close, {
+        liveState: 'ok',
+        source: 'sensor',
+        limit: 57,
+        unit: '°C',
+        detector: { alarm, device: 'online', name: 'HD-02' },
+      }),
       config: cfg,
       steps: [],
       verificationText: (id: string) => id,
       unit: '°C',
     });
-    expect(await updateAlert('FIR-00018', input, check('active'), 'Tester')).toMatchObject({ ok: false, errors: { close: expect.stringMatching(/vẫn đang báo động/) } });
+    expect(await updateAlert('FIR-00018', input, check('active'), 'Tester')).toMatchObject({
+      ok: false,
+      errors: { close: expect.stringMatching(/vẫn đang báo động/) },
+    });
     expect((await updateAlert('FIR-00018', input, check('cleared'), 'Tester')).ok).toBe(true);
     expect(await get()).toMatchObject({ status: 'resolved', resolvedBy: 'Tester', resolution: { kind: 'false-alarm', closedBy: 'live' } });
     expect(closeSummary(await get())).toMatchObject({ falseAlarm: true });
-    const ok: CloseCondition[] = [{ id: 'stable', ok: true }, { id: 'in-range', ok: true }, { id: 'no-related', ok: true }];
-    expect(await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Tester')).toMatchObject({ ok: false, reason: 'closer' });
-    expect((await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Trưởng ca')).ok).toBe(true);
+    const ok: CloseCondition[] = [
+      { id: 'stable', ok: true },
+      { id: 'in-range', ok: true },
+      { id: 'no-related', ok: true },
+    ];
+    expect(
+      await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Tester'),
+    ).toMatchObject({ ok: false, reason: 'closer' });
+    expect(
+      (await closeOneAlert('FIR-00018', { note: 'Kết luận', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(fir), 'Trưởng ca')).ok,
+    ).toBe(true);
     expect(await get()).toMatchObject({ status: 'done', closedBy: 'Trưởng ca' });
   });
-
 });
 
 describe('3 điều kiện hệ thống – đầu vào từ live (closeConditionInput)', () => {
@@ -327,7 +366,9 @@ describe('3 điều kiện hệ thống – đầu vào từ live (closeConditio
     const live = { 'PT-101': tv(9.2), 'PT-103': tv(4.2), 'TT-101': tv(31) };
     const inp = closeConditionInput(find('ALT-00128'), alertRecords, live, NOW);
     expect(inp.primary).toMatchObject({ reading: { state: 'ok', value: 9.2 }, limit: 10.5, direction: 'above' });
-    expect(closeConditionInput(find('ALT-00128'), alertRecords, { ...live, 'PT-101': { ...tv(9.2), ts: NOW - 20_000 } }, NOW).primary!.reading.state).toBe('lost');
+    expect(
+      closeConditionInput(find('ALT-00128'), alertRecords, { ...live, 'PT-101': { ...tv(9.2), ts: NOW - 20_000 } }, NOW).primary!.reading.state,
+    ).toBe('lost');
   });
   test('cháy FIR-00018: đầu báo + khói SD-02 báo động → bất thường; chưa có live → đang đọc', () => {
     const live = { 'HD-02': tv(40), 'HD-02.ALARM': tv('normal'), 'HD-02.STATE': tv('online'), 'SD-02.ALARM': tv('alarm'), 'GS-05': tv(3) };
@@ -350,7 +391,11 @@ describe('PT-201 (pressure-high) theo luồng mới – bỏ ngoại lệ', () =
     const r = resolveAlert(a, 'Chỉnh lại van điều áp', ctx);
     if (!r.ok) throw new Error('resolve');
     expect(r.record).toMatchObject({ status: 'resolved', resolvedBy: 'Trần Văn B' });
-    const ok = [{ id: 'stable' as const, ok: true }, { id: 'in-range' as const, ok: true }, { id: 'no-related' as const, ok: true }];
+    const ok = [
+      { id: 'stable' as const, ok: true },
+      { id: 'in-range' as const, ok: true },
+      { id: 'no-related' as const, ok: true },
+    ];
     // Mức Cao: người xử lý tự đóng được
     const c = closeAlert(r.record, { note: 'Ổn định', followUpMinutes: 0, manualChecks: [] }, ok, followUpConfig(a), ctx);
     expect(c).toMatchObject({ ok: true, record: { status: 'done', closedBy: 'Trần Văn B' } });

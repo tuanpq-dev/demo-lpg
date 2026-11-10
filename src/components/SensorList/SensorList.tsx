@@ -34,7 +34,10 @@ export function SensorList({ label, rows, className }: SensorListProps) {
         return (
           <li
             key={r.id}
-            className={cn('flex min-h-12 items-center gap-3 border-b border-line/30 px-4 py-2 last:border-b-0', r.highlight && cn('border-l-[3px] pl-[13px]', BAR[r.tone]))}
+            className={cn(
+              'flex min-h-12 items-center gap-3 border-b border-line/30 px-4 py-2 last:border-b-0',
+              r.highlight && cn('border-l-[3px] pl-[13px]', BAR[r.tone]),
+            )}
           >
             <span aria-hidden="true" className={cn('size-2 shrink-0 rounded-full', lost ? DOT.neutral : DOT[r.tone])} />
             <span className={cn('min-w-0 flex-1 text-md', r.highlight ? cn('font-semibold', TEXT[r.tone]) : 'text-fg')}>
@@ -46,7 +49,9 @@ export function SensorList({ label, rows, className }: SensorListProps) {
                 <SignalLostIcon size={14} className="shrink-0" /> Mất tín hiệu
               </span>
             ) : (
-              <span className={cn('shrink-0 text-md tabular-nums', r.highlight ? cn('font-semibold', TEXT[r.tone]) : 'text-fg')}>{r.valueText ?? '—'}</span>
+              <span className={cn('shrink-0 text-md tabular-nums', r.highlight ? cn('font-semibold', TEXT[r.tone]) : 'text-fg')}>
+                {r.valueText ?? '—'}
+              </span>
             )}
             {r.levelLabel && !lost && (
               // Lót nền đặc: badge trong mờ trên nền thẻ sáng hơn → chữ đỏ ESD < 4.5:1 (cùng cách chip "quá hạn" ở 5H).

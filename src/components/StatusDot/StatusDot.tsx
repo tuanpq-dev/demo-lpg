@@ -48,9 +48,7 @@ export function StatusDot({ status, size = 'md', shape = 'circle', pulse, label,
         className,
       )}
     >
-      {pulse && (
-        <span className={cn('absolute inset-0 animate-ping rounded-[inherit] opacity-60', statusClass[status])} />
-      )}
+      {pulse && <span className={cn('absolute inset-0 animate-ping rounded-[inherit] opacity-60', statusClass[status])} />}
     </span>
   );
 }

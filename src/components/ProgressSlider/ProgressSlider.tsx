@@ -113,10 +113,7 @@ export function ProgressSlider({
         <span id={labelId} className={threshold ? 'text-base text-fg-secondary' : 'text-lg font-semibold text-fg-secondary'}>
           {label}
         </span>
-        <span
-          aria-hidden="true"
-          className={cn('leading-none tabular-nums', threshold ? 'text-xl' : 'text-3xl font-semibold text-primary')}
-        >
+        <span aria-hidden="true" className={cn('leading-none tabular-nums', threshold ? 'text-xl' : 'text-3xl font-semibold text-primary')}>
           {valueDisplay ?? (
             <>
               {value}

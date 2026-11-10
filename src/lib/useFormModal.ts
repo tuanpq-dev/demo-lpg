@@ -33,7 +33,7 @@ export type UseFormModalOptions<V, I = V, R = unknown> = {
   confirmIfDraft?: boolean;
 };
 
-const jsonDirty = <V,>(a: V, b: V) => JSON.stringify(a) !== JSON.stringify(b);
+const jsonDirty = <V>(a: V, b: V) => JSON.stringify(a) !== JSON.stringify(b);
 /** Kết quả dạng `{ ok: false }` = thao tác bị từ chối (không xoá nháp). */
 const rejected = (r: unknown) => !!r && typeof r === 'object' && 'ok' in r && (r as { ok: unknown }).ok === false;
 

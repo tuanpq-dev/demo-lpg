@@ -28,10 +28,7 @@ export function ViewsPanel({ getCamera, onAddView }: { getCamera: () => SceneCam
       {!views.length && <p className="text-sm text-fg-muted">Chưa có view – Viewer chỉ có “Toàn cảnh”.</p>}
       <ul className="flex flex-col gap-2">
         {views.map((v) => (
-          <li
-            key={v.id}
-            className={cn('flex flex-col gap-2 rounded-md border p-2', previewView === v.id ? 'border-accent/60' : 'border-line/30')}
-          >
+          <li key={v.id} className={cn('flex flex-col gap-2 rounded-md border p-2', previewView === v.id ? 'border-accent/60' : 'border-line/30')}>
             <div className="flex items-center gap-2">
               <InlineInput
                 label={`Tên view ${v.id}`}

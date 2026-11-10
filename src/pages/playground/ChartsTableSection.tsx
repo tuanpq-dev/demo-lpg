@@ -19,9 +19,9 @@ import { cn } from '@/lib/cn';
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
 
-const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
-const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
-const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
+const OVERVIEW = import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined;
+const ALERTS = import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined;
+const MAINT = import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined;
 
 const valueTone: Record<Severity, string> = {
   critical: 'text-danger-text',
@@ -55,11 +55,7 @@ export function ChartsTableSection() {
       id: 'value',
       header: 'Giá trị/Ngưỡng',
       width: 110,
-      cell: (r) => (
-        <span className={valueTone[r.severity]}>
-          {tableValue(r)}
-        </span>
-      ),
+      cell: (r) => <span className={valueTone[r.severity]}>{tableValue(r)}</span>,
     },
     { id: 'status', header: 'Trạng thái', width: 120, cell: (r) => <Badge variant="status" value={r.status} /> },
     { id: 'assignee', header: 'Người xử lý', width: 110, className: 'text-fg opacity-75', cell: (r) => r.assignee ?? '-' },
@@ -102,7 +98,13 @@ export function ChartsTableSection() {
 
       <Demo title="DataTable" node="70:3032 · phân trang 70:5530 (màu đọc từ ảnh chụp)">
         <div className="flex flex-wrap items-center gap-3">
-          <Button size="sm" onClick={() => { setEmpty((v) => !v); setPage(1); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEmpty((v) => !v);
+              setPage(1);
+            }}
+          >
             {empty ? 'Hiện dữ liệu' : 'Thử trạng thái rỗng'}
           </Button>
           <span className="font-mono text-xs text-fg-muted/65">
@@ -136,13 +138,7 @@ export function ChartsTableSection() {
 
       <Demo title="DataTable – density compact, không chọn, không phân trang" node="—">
         <div className={cn('w-[900px] overflow-hidden rounded-lg border border-line/30 bg-surface')}>
-          <DataTable
-            label="Bảng gọn"
-            density="compact"
-            columns={columns.slice(0, 5)}
-            rows={alertRows.slice(0, 4)}
-            getRowId={(r) => r.id}
-          />
+          <DataTable label="Bảng gọn" density="compact" columns={columns.slice(0, 5)} rows={alertRows.slice(0, 4)} getRowId={(r) => r.id} />
         </div>
       </Demo>
     </div>

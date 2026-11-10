@@ -17,11 +17,7 @@ const colorGroups: { title: string; tokens: { name: string }[] }[] = [
   },
   {
     title: 'Border',
-    tokens: [
-      { name: 'line' },
-      { name: 'line-card' },
-      { name: 'divider' },
-    ],
+    tokens: [{ name: 'line' }, { name: 'line-card' }, { name: 'divider' }],
   },
   {
     title: 'Text',
@@ -36,11 +32,7 @@ const colorGroups: { title: string; tokens: { name: string }[] }[] = [
   },
   {
     title: 'Brand',
-    tokens: [
-      { name: 'primary' },
-      { name: 'accent' },
-      { name: 'info' },
-    ],
+    tokens: [{ name: 'primary' }, { name: 'accent' }, { name: 'info' }],
   },
   {
     title: 'Status',
@@ -128,10 +120,7 @@ export function TokensSection() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
             {group.tokens.map((t) => (
               <div key={t.name} className="flex flex-col gap-2">
-                <div
-                  className="h-14 rounded-lg border border-line/30"
-                  style={{ backgroundColor: `rgb(var(--color-${t.name}))` }}
-                />
+                <div className="h-14 rounded-lg border border-line/30" style={{ backgroundColor: `rgb(var(--color-${t.name}))` }} />
                 <div className="text-sm text-fg">{t.name}</div>
                 <div className="font-mono text-xs text-fg-muted/70">{tokenHex(t.name)}</div>
               </div>

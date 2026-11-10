@@ -1,14 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import {
-  AlertCard,
-  AlertItem,
-  AssetWatchlist,
-  Card,
-  Icon,
-  KpiCard,
-  RecentEventsCard,
-  SystemHealthCard,
-} from '@/components';
+import { AlertCard, AlertItem, AssetWatchlist, Card, Icon, KpiCard, RecentEventsCard, SystemHealthCard } from '@/components';
 import { KpiFromData } from '@/app/kpi';
 import { deriveAlertKpis, derivePriorityCards } from '@/data/alerts';
 import { alertRecords } from '@/mocks/alerts';
@@ -23,9 +14,9 @@ const alertKpis = deriveAlertKpis(alertRecords);
 const priorityAlertCards = derivePriorityCards(alertRecords);
 const maintenanceKpis = deriveMaintenanceKpis(maintenanceRecords, new Date());
 
-const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
-const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
-const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
+const OVERVIEW = import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined;
+const ALERTS = import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined;
+const MAINT = import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined;
 
 function Log({ children }: { children: ReactNode }) {
   return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;
@@ -68,7 +59,14 @@ export function BusinessSection() {
       <Demo title="KpiCard – API trực tiếp (không qua mock)" node="—">
         <div className="grid w-[760px] grid-cols-4 gap-4">
           <KpiCard label="Áp suất" value="1.82" unit="bar" sub="Ổn định" />
-          <KpiCard label="Cảnh báo" value="3" unit="Active" variant="danger" icon={<Icon name="kpiDanger" box={24} />} action={{ label: 'Xem chi tiết' }} />
+          <KpiCard
+            label="Cảnh báo"
+            value="3"
+            unit="Active"
+            variant="danger"
+            icon={<Icon name="kpiDanger" box={24} />}
+            action={{ label: 'Xem chi tiết' }}
+          />
           <KpiCard label="Hiệu suất" value="64" unit="%" variant="with-progress" tone="success" progress={{ value: 64 }} />
           <KpiCard label="Quá hạn" value="05" variant="compact" tone="danger" outlined sub="Cần xử lý ngay" subTone="danger" />
         </div>

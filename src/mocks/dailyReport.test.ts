@@ -31,14 +31,24 @@ describe('buildDailyReadings', () => {
   it('ngày thường: không ô nào ngoài ngưỡng (thẻ "Dữ liệu bất thường" = 0)', () => {
     for (const day of ['2026-06-24', '2026-06-23', '2026-06-19', '2026-06-10']) {
       const r = daily(day);
-      expect(flaggedReadings(buildDailyReadings(r, NOW), r.checkpoints.map((c) => c.key))).toEqual([]);
+      expect(
+        flaggedReadings(
+          buildDailyReadings(r, NOW),
+          r.checkpoints.map((c) => c.key),
+        ),
+      ).toEqual([]);
     }
   });
 
   it('kịch bản: lùi 2 ngày GS-02 12:00 Cảnh báo; lùi 9 ngày áp suất bồn 14:00 Bất thường', () => {
     const d2 = daily('2026-06-22');
     const rows2 = buildDailyReadings(d2, NOW);
-    expect(flaggedReadings(rows2, d2.checkpoints.map((c) => c.key))).toEqual([{ rowId: 'gas-gs-02', device: 'GS-02', checkpoint: '12:00', level: 'warning' }]);
+    expect(
+      flaggedReadings(
+        rows2,
+        d2.checkpoints.map((c) => c.key),
+      ),
+    ).toEqual([{ rowId: 'gas-gs-02', device: 'GS-02', checkpoint: '12:00', level: 'warning' }]);
     const d9 = daily('2026-06-15');
     const pressure = buildDailyReadings(d9, NOW).find((r) => r.id === 'v101-pressure')!;
     expect(rowResult(pressure)).toBe('abnormal');
@@ -48,7 +58,12 @@ describe('buildDailyReadings', () => {
   it('kịch bản ký: lùi 4 ngày (bị trả lại) GS-03 10:00 Cảnh báo, chưa ghi chú', () => {
     const d4 = daily('2026-06-20');
     const rows = buildDailyReadings(d4, NOW);
-    expect(flaggedReadings(rows, d4.checkpoints.map((c) => c.key))).toEqual([{ rowId: 'gas-gs-03', device: 'GS-03', checkpoint: '10:00', level: 'warning' }]);
+    expect(
+      flaggedReadings(
+        rows,
+        d4.checkpoints.map((c) => c.key),
+      ),
+    ).toEqual([{ rowId: 'gas-gs-03', device: 'GS-03', checkpoint: '10:00', level: 'warning' }]);
     expect(rows.find((r) => r.id === 'gas-gs-03')!.notes).toBeUndefined();
   });
 
@@ -58,7 +73,9 @@ describe('buildDailyReadings', () => {
   });
 
   it('số đọc tại chỗ: E-101B và đồng hồ PR-101', () => {
-    const field = buildDailyReadings(daily('2026-06-24'), NOW).filter((r) => r.source === 'field').map((r) => r.id);
+    const field = buildDailyReadings(daily('2026-06-24'), NOW)
+      .filter((r) => r.source === 'field')
+      .map((r) => r.id);
     expect(field).toEqual(['e101b-temp', 'pr101-gauge']);
   });
 });

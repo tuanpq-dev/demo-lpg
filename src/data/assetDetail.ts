@@ -162,8 +162,14 @@ export function filterAssetEvents(events: readonly AssetEvent[], asset: string, 
 // Cảnh báo liên quan
 // ============================================================================
 
-export type RelatedAlert = { id: string; code: string; message: string; time: string; severity: AlertRecord['severity']; tone: 'danger' | 'warning' | 'success' };
-
+export type RelatedAlert = {
+  id: string;
+  code: string;
+  message: string;
+  time: string;
+  severity: AlertRecord['severity'];
+  tone: 'danger' | 'warning' | 'success';
+};
 
 /** "10:42" (hôm nay) · "Hôm qua" · "20/10" (ngày theo giờ nhà máy). */
 export function dayTimeLabel(daysAgo: number, time: string, now: Date): string {
@@ -210,9 +216,7 @@ export type MaintenanceSummary = {
 export function deriveMaintenanceSummary(rows: readonly MaintenanceRecord[], device: string, now: Date): MaintenanceSummary {
   const mine = rows.filter((r) => r.device === device);
   const next = mine.filter((r) => r.status !== 'done' && r.status !== 'cancelled').sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
-  const last = mine
-    .filter((r) => r.status === 'done' && r.completedAt)
-    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
+  const last = mine.filter((r) => r.status === 'done' && r.completedAt).sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
   return {
     next: next && {
       record: next,

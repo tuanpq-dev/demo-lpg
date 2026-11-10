@@ -37,7 +37,15 @@ function Where() {
 function renderAt(url: string) {
   const router = createMemoryRouter(
     [
-      { path: '/alerts', element: <><AlertsPage /><Where /></> },
+      {
+        path: '/alerts',
+        element: (
+          <>
+            <AlertsPage />
+            <Where />
+          </>
+        ),
+      },
       { path: '*', element: <Where /> },
     ],
     { initialEntries: [url] },
@@ -74,7 +82,11 @@ describe('drawer chi tiết cảnh báo', () => {
     expect(locked).toHaveAccessibleDescription('Xác nhận cảnh báo để bắt đầu xử lý.');
     // Tiến trình
     const steps = within(d).getByRole('navigation', { name: 'Tiến trình xử lý ALT-00128' });
-    expect(within(steps).getByText(/Chưa xác nhận/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(steps)
+        .getByText(/Chưa xác nhận/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(steps).toHaveTextContent('Đã phát hiện (10:45:22)');
     expect(steps).toHaveTextContent('Đã gửi thông báo (10:45:25)');
     // Footer
@@ -153,7 +165,9 @@ describe('drawer chi tiết cảnh báo', () => {
     await user.type(within(m).getByRole('textbox', { name: /Lý do đổi người \(chung\)/ }), 'Gom việc khu lọc');
     await user.click(confirm);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Phân công xử lý cảnh báo' })).toBeNull());
-    expect(await screen.findByText(/^Đã phân công 2/)).toHaveTextContent('Đã phân công 2 (đổi người 1) · bỏ qua 1 (1 đã hoàn thành) – người phụ trách: Võ Thị F.');
+    expect(await screen.findByText(/^Đã phân công 2/)).toHaveTextContent(
+      'Đã phân công 2 (đổi người 1) · bỏ qua 1 (1 đã hoàn thành) – người phụ trách: Võ Thị F.',
+    );
     // Không tự xác nhận: ALT-00128 vẫn Chưa xác nhận.
     await user.click(screen.getByRole('button', { name: 'Xem chi tiết ALT-00128' }));
     const d = await screen.findByRole('dialog', { name: 'Áp suất bồn V-101 vượt ngưỡng' });
@@ -177,7 +191,11 @@ describe('drawer chi tiết cảnh báo', () => {
     expect(within(d).queryByRole('button', { name: 'Xác nhận cảnh báo' })).toBeNull();
     expect(tab(/Chưa xác nhận/).textContent).not.toBe(unackBefore);
     const steps = within(d).getByRole('navigation', { name: 'Tiến trình xử lý ALT-00126' });
-    expect(within(steps).getByText(/^Đang xử lý/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(steps)
+        .getByText(/^Đang xử lý/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(steps).toHaveTextContent('Đã xác nhận');
 
     // Hướng dẫn mở khoá, tick lưu theo cảnh báo + lịch sử
@@ -198,7 +216,11 @@ describe('drawer chi tiết cảnh báo', () => {
     await user.click(within(d).getByRole('button', { name: 'Đánh dấu đã xử lý' }));
     await waitFor(() => expect(within(d).getByText(/Đã xử lý lúc \d{2}:\d{2}, chờ xác nhận đóng/)).toBeInTheDocument());
     expect(within(d).getByText('Đã tăng nhiệt cấp, nhiệt độ về 52 °C')).toBeInTheDocument();
-    expect(within(steps).getByText(/^Hoàn thành/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(steps)
+        .getByText(/^Hoàn thành/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(pendingClose()).toBe(pendingBefore + 1);
     expect(kpis()).not.toBe(kpiBefore);
 

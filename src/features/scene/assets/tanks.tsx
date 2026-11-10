@@ -6,7 +6,21 @@ import { TANK_DRAIN_Y, TANK_SADDLE_H, tankHorizontalPlatform } from './specs';
 const HALF_PI = Math.PI / 2;
 
 /** Đáy elip (nửa cầu dẹt) hướng theo ±X. */
-function Head({ x, y, r, dir, depth = 0.5, material = 'body' }: { x: number; y: number; r: number; dir: 1 | -1; depth?: number; material?: 'body' | 'shiny' }) {
+function Head({
+  x,
+  y,
+  r,
+  dir,
+  depth = 0.5,
+  material = 'body',
+}: {
+  x: number;
+  y: number;
+  r: number;
+  dir: 1 | -1;
+  depth?: number;
+  material?: 'body' | 'shiny';
+}) {
   const m = useAssetMaterials();
   return (
     <mesh position={[x, y, 0]} rotation={[0, 0, -dir * HALF_PI]} scale={[1, depth, 1]} material={m[material]}>
@@ -16,7 +30,21 @@ function Head({ x, y, r, dir, depth = 0.5, material = 'body' }: { x: number; y: 
 }
 
 /** Vành mỏng quanh thân trụ trục X (mối hàn / đai). `arc` < 2π → chỉ phần dưới (tấm đệm yên đỡ). */
-function Band({ x, y, r, w, arc = Math.PI * 2, material = 'metal' }: { x: number; y: number; r: number; w: number; arc?: number; material?: 'metal' | 'body' }) {
+function Band({
+  x,
+  y,
+  r,
+  w,
+  arc = Math.PI * 2,
+  material = 'metal',
+}: {
+  x: number;
+  y: number;
+  r: number;
+  w: number;
+  arc?: number;
+  material?: 'metal' | 'body';
+}) {
   const m = useAssetMaterials();
   // Trục trụ (Y cục bộ) → X; thetaStart đặt cung đối xứng quanh đáy (−Y thế giới).
   return (

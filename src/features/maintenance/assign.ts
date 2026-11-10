@@ -169,7 +169,13 @@ export function applyAssignment(r: MaintenanceRecord, f: AssignForm, ctx: Action
       shift,
       history: [
         ...history,
-        { id: `h${history.length + 1}`, at: plantDateTimeKey(ctx.now), kind: 'reassign', text: [`${head} – lý do: ${f.reason.trim()}`, ...details].join(' · '), actor: ctx.actor },
+        {
+          id: `h${history.length + 1}`,
+          at: plantDateTimeKey(ctx.now),
+          kind: 'reassign',
+          text: [`${head} – lý do: ${f.reason.trim()}`, ...details].join(' · '),
+          actor: ctx.actor,
+        },
       ],
     };
   }

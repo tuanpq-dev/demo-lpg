@@ -27,7 +27,16 @@ const sample = (patch: Partial<MaintenanceRecord> = {}): MaintenanceRecord => ({
 });
 
 const ITEMS: StaffPickerItem[] = [
-  { id: 'a', name: 'Nguyễn Văn A', subtitle: 'Cơ khí • Chuyên gia Van/Bồn', shiftLabel: 'Ca 2', shiftMatch: true, busy: false, active: 1, overdue: 0 },
+  {
+    id: 'a',
+    name: 'Nguyễn Văn A',
+    subtitle: 'Cơ khí • Chuyên gia Van/Bồn',
+    shiftLabel: 'Ca 2',
+    shiftMatch: true,
+    busy: false,
+    active: 1,
+    overdue: 0,
+  },
   { id: 'b', name: 'Trần Bình', subtitle: 'Cơ khí • Thiết bị áp lực', shiftLabel: 'Ca 1', busy: true, active: 3, overdue: 1 },
   { id: 'c', name: 'Lê Thị C', subtitle: 'Đo lường • Cảm biến', shiftLabel: 'Ca 2', shiftMatch: true, busy: false, active: 0, overdue: 0 },
 ];
@@ -61,7 +70,12 @@ export function AssignSection() {
       </Demo>
       <Demo title="Switch · Avatar (sm / md / lg)">
         <div className="flex flex-col gap-4">
-          <Switch label="Gửi thông báo đẩy và SMS cho người được phân công" description="Chưa gửi được – chờ backend." checked={notify} onChange={setNotify} />
+          <Switch
+            label="Gửi thông báo đẩy và SMS cho người được phân công"
+            description="Chưa gửi được – chờ backend."
+            checked={notify}
+            onChange={setNotify}
+          />
           <div className="flex items-center gap-3">
             <Avatar name="Nguyễn Văn A" size="sm" />
             <Avatar name="Trần Bình" size="md" />

@@ -40,7 +40,15 @@ function Where() {
 function renderAt(url: string) {
   const router = createMemoryRouter(
     [
-      { path: '/operations/logs', element: <><OperationLogsPage /><Where /></> },
+      {
+        path: '/operations/logs',
+        element: (
+          <>
+            <OperationLogsPage />
+            <Where />
+          </>
+        ),
+      },
       { path: '*', element: <Where /> },
     ],
     { initialEntries: [url] },

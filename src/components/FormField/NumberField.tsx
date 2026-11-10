@@ -200,20 +200,23 @@ export function Vec3Field({
         {unit && <span className="font-normal text-fg-muted"> ({unit})</span>}
       </legend>
       <div className={cn('grid gap-1.5', only.length === 3 ? 'grid-cols-3' : only.length === 2 ? 'grid-cols-2' : 'grid-cols-1')}>
-        {axes.map((axis, i) => only.includes(i as 0 | 1 | 2) && (
-          <NumberField
-            key={axis}
-            label={`${label} ${axis}`}
-            hideLabel
-            size="sm"
-            prefix={axis}
-            step={step}
-            precision={precision}
-            value={value[i]}
-            disabled={disabled}
-            onChange={(v) => onChange(value.map((x, k) => (k === i ? v : x)) as Vec3Value)}
-          />
-        ))}
+        {axes.map(
+          (axis, i) =>
+            only.includes(i as 0 | 1 | 2) && (
+              <NumberField
+                key={axis}
+                label={`${label} ${axis}`}
+                hideLabel
+                size="sm"
+                prefix={axis}
+                step={step}
+                precision={precision}
+                value={value[i]}
+                disabled={disabled}
+                onChange={(v) => onChange(value.map((x, k) => (k === i ? v : x)) as Vec3Value)}
+              />
+            ),
+        )}
       </div>
     </fieldset>
   );

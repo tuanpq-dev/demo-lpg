@@ -46,7 +46,7 @@ describe('tankLayers', () => {
   it('viên phân: thể tích lớp = f(h) theo hình học, không tỉ lệ thẳng với chiều cao', () => {
     const l = tankLayers(25, 0, { length: 1, diameter: 1 })!;
     // h/D = 0.25 → (θ − sin θ)/2π với θ = 2·acos(0.5) = 2π/3 → ≈ 19.55 %
-    expect(l.lpg.fraction).toBeCloseTo((2 * Math.PI / 3 - Math.sin(2 * Math.PI / 3)) / (2 * Math.PI), 10);
+    expect(l.lpg.fraction).toBeCloseTo(((2 * Math.PI) / 3 - Math.sin((2 * Math.PI) / 3)) / (2 * Math.PI), 10);
     expect(l.lpg.fraction).toBeLessThan(0.25);
     expect(l.water.fraction).toBe(0);
   });

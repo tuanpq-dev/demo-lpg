@@ -15,7 +15,12 @@ import AlertUpdateModal from './AlertUpdateModal';
 
 const MODAL = 'Cập nhật xử lý cảnh báo áp suất';
 const LONG = { timeout: 6000 };
-const rec = { ...alertRecords.find((x) => x.id === 'ALT-00128')!, status: 'in-progress' as const, phase: 'inspecting' as const, assignee: 'Nguyễn Văn A' };
+const rec = {
+  ...alertRecords.find((x) => x.id === 'ALT-00128')!,
+  status: 'in-progress' as const,
+  phase: 'inspecting' as const,
+  assignee: 'Nguyễn Văn A',
+};
 type Submit = (input: AlertUpdateInput, check: UpdateCheck) => Promise<AlertUpdateResult> | AlertUpdateResult;
 
 function open(onSubmit: Submit = () => ({ ok: true, record: rec }), onClose = vi.fn()) {

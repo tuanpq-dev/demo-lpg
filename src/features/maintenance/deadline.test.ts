@@ -14,10 +14,18 @@ describe('deadlineCountdown (now truyền vào, Asia/Bangkok)', () => {
   test('1 s trước hạn còn 00:00:01; đúng mốc hạn → quá hạn 00:00:00; 1 s sau → quá hạn 00:00:01', () => {
     expect(deadlineCountdown(DUE, new Date('2026-10-26T08:59:59Z'))).toMatchObject({ overdue: false, clock: '00:00:01' });
     expect(deadlineCountdown(DUE, new Date('2026-10-26T09:00:00Z'))).toMatchObject({ overdue: true, clock: '00:00:00' });
-    expect(deadlineCountdown(DUE, new Date('2026-10-26T09:00:01Z'))).toMatchObject({ overdue: true, clock: '00:00:01', speech: 'Quá hạn dưới 1 phút' });
+    expect(deadlineCountdown(DUE, new Date('2026-10-26T09:00:01Z'))).toMatchObject({
+      overdue: true,
+      clock: '00:00:01',
+      speech: 'Quá hạn dưới 1 phút',
+    });
   });
   test('quá hạn: đếm thời gian đã quá', () => {
-    expect(deadlineCountdown(DUE, new Date('2026-10-26T10:05:30Z'))).toMatchObject({ overdue: true, clock: '01:05:30', speech: 'Quá hạn 1 giờ 5 phút' });
+    expect(deadlineCountdown(DUE, new Date('2026-10-26T10:05:30Z'))).toMatchObject({
+      overdue: true,
+      clock: '01:05:30',
+      speech: 'Quá hạn 1 giờ 5 phút',
+    });
   });
   test('qua nửa đêm: hạn 00:30 ngày 27, now 23:50 ngày 26 → còn 00:40:00', () => {
     expect(deadlineCountdown('2026-10-27T00:30', new Date('2026-10-26T16:50:00Z'))!.clock).toBe('00:40:00');

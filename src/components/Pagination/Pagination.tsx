@@ -49,8 +49,7 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
 export function Pagination({ page, pageCount, onPageChange, siblingCount = 1, className }: PaginationProps) {
   if (pageCount <= 1) return null;
   const items = getPageItems(page, pageCount, siblingCount);
-  const btn =
-    'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base tabular-nums transition-colors';
+  const btn = 'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base tabular-nums transition-colors';
 
   return (
     <nav aria-label="Phân trang" className={cn('flex items-center gap-3', className)}>

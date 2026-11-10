@@ -1,0 +1,9 @@
+# Mọi file văn bản lưu và checkout bằng LF (khớp Prettier endOfLine=lf, EditorConfig) – kể cả trên Windows autocrlf.
+* text=auto eol=lf
+# Nhị phân
+*.png binary
+*.jpg binary
+*.webp binary
+*.avif binary
+*.glb binary
+*.ico binary

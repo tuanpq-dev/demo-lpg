@@ -16,7 +16,15 @@ function Harness({ initial = [] as string[] }) {
   const [sel, setSel] = useState<string[]>(initial);
   return (
     <>
-      <DataTable label="Thiết bị" columns={[{ id: 'name', header: 'Tên' }]} rows={rows} getRowId={(r) => r.id} selectable selectedIds={sel} onSelectionChange={setSel} />
+      <DataTable
+        label="Thiết bị"
+        columns={[{ id: 'name', header: 'Tên' }]}
+        rows={rows}
+        getRowId={(r) => r.id}
+        selectable
+        selectedIds={sel}
+        onSelectionChange={setSel}
+      />
       <output data-testid="sel">{sel.join(',')}</output>
     </>
   );
@@ -63,7 +71,15 @@ describe('DataTable – số dòng mỗi trang', () => {
   });
 
   test('không truyền pageSizeOptions → không có ô chọn', () => {
-    render(<DataTable label="Thiết bị" columns={[{ id: 'name', header: 'Tên' }]} rows={rows} getRowId={(r) => r.id} pagination={{ page: 1, pageSize: 10, total: 3, onPageChange: () => {} }} />);
+    render(
+      <DataTable
+        label="Thiết bị"
+        columns={[{ id: 'name', header: 'Tên' }]}
+        rows={rows}
+        getRowId={(r) => r.id}
+        pagination={{ page: 1, pageSize: 10, total: 3, onPageChange: () => {} }}
+      />,
+    );
     expect(screen.queryByRole('combobox', { name: 'Số dòng mỗi trang' })).not.toBeInTheDocument();
   });
 });
@@ -92,7 +108,14 @@ describe('DataTable – nhóm dòng (groupBy)', () => {
     renderGrouped();
     const headers = screen.getAllByRole('columnheader').filter((h) => h.getAttribute('scope') === 'colgroup');
     expect(headers.map((h) => h.textContent)).toEqual(['Nhóm V-101', 'Nhóm GS']);
-    expect(screen.getAllByRole('row').map((r) => r.textContent)).toEqual(['Hạng mục', 'Nhóm V-101', 'Mức bồn', 'Áp suất bồn', 'Nhóm GS', 'Nồng độ khí']);
+    expect(screen.getAllByRole('row').map((r) => r.textContent)).toEqual([
+      'Hạng mục',
+      'Nhóm V-101',
+      'Mức bồn',
+      'Áp suất bồn',
+      'Nhóm GS',
+      'Nồng độ khí',
+    ]);
   });
 
   test('bấm tên nhóm → thu gọn (aria-expanded=false, ẩn dòng); bấm lại → mở', async () => {

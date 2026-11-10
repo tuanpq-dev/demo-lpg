@@ -10,7 +10,16 @@
  * Đây là đường DUY NHẤT sang review (gửi) và sang done (Đạt). Mỗi thao tác = MỘT dòng lịch sử.
  */
 import { plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
-import type { DeviceCondition, MaintenanceAttachment, MaintenanceRecord, ReadingSnapshot, ReviewResult, ReviewSubmission, SensorStatus, ValveStatus } from '@/features/maintenance/types';
+import type {
+  DeviceCondition,
+  MaintenanceAttachment,
+  MaintenanceRecord,
+  ReadingSnapshot,
+  ReviewResult,
+  ReviewSubmission,
+  SensorStatus,
+  ValveStatus,
+} from '@/features/maintenance/types';
 import { checklistProgress } from './checklist';
 import { reportedProgressOf } from './progress';
 import type { ActionContext } from './workflow';
@@ -248,7 +257,13 @@ export function reviewRecord(r: MaintenanceRecord, input: ReviewInput, ctx: Pick
       review: { result: 'pass', reviewer, ...(comment ? { comment } : {}), followUpHours: hours, ...(until ? { followUpUntil: until } : {}), at },
       history: [
         ...history,
-        { id: hId, at, kind: 'review-pass', text: `Nghiệm thu đạt – hoàn thành${until ? ` · theo dõi thêm ${hours} giờ (đến ${until.slice(11, 16)})` : ''}`, actor: reviewer },
+        {
+          id: hId,
+          at,
+          kind: 'review-pass',
+          text: `Nghiệm thu đạt – hoàn thành${until ? ` · theo dõi thêm ${hours} giờ (đến ${until.slice(11, 16)})` : ''}`,
+          actor: reviewer,
+        },
       ],
     };
     delete next.reviewFailed;

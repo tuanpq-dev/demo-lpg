@@ -110,4 +110,3 @@ export function initialValues(a: AlertRecord, now: Date) {
   };
   return { values, draft: true };
 }
-

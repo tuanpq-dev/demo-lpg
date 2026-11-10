@@ -34,8 +34,7 @@ export function nowOffsetFrom(search: string, enabled: boolean, realNow: number,
 }
 
 const enabled = import.meta.env.DEV || import.meta.env.VITE_DEMO === 'true';
-const offsetMs =
-  typeof window === 'undefined' ? 0 : nowOffsetFrom(window.location.search, enabled, Date.now(), import.meta.env.VITE_FIXED_NOW);
+const offsetMs = typeof window === 'undefined' ? 0 : nowOffsetFrom(window.location.search, enabled, Date.now(), import.meta.env.VITE_FIXED_NOW);
 
 /** Đang dời giờ (`?now=` hoặc `VITE_FIXED_NOW`). */
 export const isNowOverridden = offsetMs !== 0;

@@ -502,10 +502,26 @@ export function simTimeline(
     });
   }
   if (seen(marks.ai)) {
-    events.push({ id: 'ai', sec: marks.ai, time: at(marks.ai), title: 'AI gợi ý rà soát quy trình', detail: monitor.aiDetail, feedTitle: monitor.aiAction, tone: 'info' });
+    events.push({
+      id: 'ai',
+      sec: marks.ai,
+      time: at(marks.ai),
+      title: 'AI gợi ý rà soát quy trình',
+      detail: monitor.aiDetail,
+      feedTitle: monitor.aiAction,
+      tone: 'info',
+    });
   }
   if (seen(marks.recovery)) {
-    events.push({ id: 'recovery', sec: marks.recovery, time: at(marks.recovery), title: monitor.recoveryTitle, detail: monitor.recoveryDetail, feedTitle: monitor.recoveryTitle, tone: 'info' });
+    events.push({
+      id: 'recovery',
+      sec: marks.recovery,
+      time: at(marks.recovery),
+      title: monitor.recoveryTitle,
+      detail: monitor.recoveryDetail,
+      feedTitle: monitor.recoveryTitle,
+      tone: 'info',
+    });
   }
   if (seen(marks.recovered)) {
     events.push({
@@ -525,8 +541,14 @@ export function simTimeline(
       id: 'end',
       sec: elapsed,
       time: at(elapsed),
-      title: stopped ? 'Dừng mô phỏng thủ công' : reached ? 'Hoàn thành mô phỏng theo giá trị mục tiêu' : 'Hoàn thành mô phỏng – chưa chạm giá trị mục tiêu',
-      detail: stopped ? `Dừng lúc ${clockText(elapsed)}. Tạo báo cáo nháp.` : `Kết thúc phiên chạy sau ${session.config.durationMin} phút. Tạo báo cáo nháp.`,
+      title: stopped
+        ? 'Dừng mô phỏng thủ công'
+        : reached
+          ? 'Hoàn thành mô phỏng theo giá trị mục tiêu'
+          : 'Hoàn thành mô phỏng – chưa chạm giá trị mục tiêu',
+      detail: stopped
+        ? `Dừng lúc ${clockText(elapsed)}. Tạo báo cáo nháp.`
+        : `Kết thúc phiên chạy sau ${session.config.durationMin} phút. Tạo báo cáo nháp.`,
       feedTitle: stopped ? 'Dừng mô phỏng' : 'Kết thúc mô phỏng',
       tone: 'success',
     });
@@ -583,7 +605,12 @@ export function trendAt(p: SimProfile, sec: number, active: boolean): Trend {
   return rising ? 'up' : 'down';
 }
 
-export function monitorSnapshot(s: Pick<Scenario, 'steps' | 'setup'>, monitor: MonitorSetup, session: SimulationSession, now: number): MonitorSnapshot {
+export function monitorSnapshot(
+  s: Pick<Scenario, 'steps' | 'setup'>,
+  monitor: MonitorSetup,
+  session: SimulationSession,
+  now: number,
+): MonitorSnapshot {
   const v = s.setup.variable;
   const p = profileOf(session);
   const phase = sessionPhase(session, now);
@@ -602,7 +629,12 @@ export function monitorSnapshot(s: Pick<Scenario, 'steps' | 'setup'>, monitor: M
   const reading = `${monitor.subject} đạt ${fmt(value)}`;
   const feed: MonitorTimelineItem[] = events
     .filter((e) => e.id !== 'end')
-    .map((e) => ({ id: e.id, time: e.id === 'start' ? clockText(0) : e.time, title: e.feedTitle, tone: e.id === 'start' ? 'neutral' : FEED_TONE[e.tone] }));
+    .map((e) => ({
+      id: e.id,
+      time: e.id === 'start' ? clockText(0) : e.time,
+      title: e.feedTitle,
+      tone: e.id === 'start' ? 'neutral' : FEED_TONE[e.tone],
+    }));
   feed.push(
     active
       ? { id: 'now', time: `${clockText(elapsed)} (Hiện tại)`, title: reading, tone: 'danger' }
@@ -643,7 +675,9 @@ export function monitorSnapshot(s: Pick<Scenario, 'steps' | 'setup'>, monitor: M
 }
 
 /** Câu chờ của khối Gợi ý AI trước khi có gợi ý. */
-export function pendingSuggestionText(v: Pick<SimVariable, 'noun' | 'direction' | 'thresholdLabel' | 'threshold' | 'unit' | 'qualifier' | 'digits'>): string {
+export function pendingSuggestionText(
+  v: Pick<SimVariable, 'noun' | 'direction' | 'thresholdLabel' | 'threshold' | 'unit' | 'qualifier' | 'digits'>,
+): string {
   return `AI đang theo dõi diễn biến – gợi ý sẽ có khi ${v.noun} ${v.direction === 'above' ? 'vượt' : 'xuống dưới'} ${lowerFirst(v.thresholdLabel)} (${formatVariable(v.threshold, v)}).`;
 }
 
@@ -679,4 +713,5 @@ export function chartDomain(values: readonly number[], intervals = 4): { domain:
 }
 
 /** "40%" · "12 bar" – nhãn trục Y (không qualifier). */
-export const axisLabel = (v: number, variable: Pick<SimVariable, 'unit'>) => (v === 0 ? '0' : formatQty(v, variable.unit, Number.isInteger(v) ? 0 : 1));
+export const axisLabel = (v: number, variable: Pick<SimVariable, 'unit'>) =>
+  v === 0 ? '0' : formatQty(v, variable.unit, Number.isInteger(v) ? 0 : 1);

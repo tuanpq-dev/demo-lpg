@@ -116,7 +116,11 @@ export function applyPreview(config: SceneConfig, preview: ScenePreview | null):
   return {
     ...config,
     objects: config.objects.map((o) =>
-      positions[o.id] ? { ...o, position: positions[o.id] } : attachT[o.id] !== undefined && o.attach ? { ...o, attach: { ...o.attach, t: attachT[o.id]! } } : o,
+      positions[o.id]
+        ? { ...o, position: positions[o.id] }
+        : attachT[o.id] !== undefined && o.attach
+          ? { ...o, attach: { ...o.attach, t: attachT[o.id]! } }
+          : o,
     ),
     pipes: config.pipes.map((p) => (pipePoints[p.id] ? { ...p, points: pipePoints[p.id]! } : p)),
   };

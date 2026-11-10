@@ -12,7 +12,13 @@ function daily(day: string, done: readonly string[], signature: ReportRecord['si
     code: `R-${day}`,
     period: 'daily',
     periodKey: day,
-    checkpoints: DAILY_CHECKPOINTS.map((t) => ({ key: t, label: t, dueAt: `${day}T${t}`, done: done.includes(t), needsVerify: t === verify || undefined })),
+    checkpoints: DAILY_CHECKPOINTS.map((t) => ({
+      key: t,
+      label: t,
+      dueAt: `${day}T${t}`,
+      done: done.includes(t),
+      needsVerify: t === verify || undefined,
+    })),
     inspector: 'A',
     signature,
     updatedAt: `${day}T18:10`,
@@ -26,7 +32,12 @@ describe('deriveReportKpis', () => {
   });
   it('tổng = tổng 4 nhóm', () => {
     const now = at('2026-06-24T09:00');
-    const rows = [daily('2026-06-24', []), daily('2026-06-23', ALL), daily('2026-06-22', ['08:00']), daily('2026-06-21', ALL, { status: 'rejected' })];
+    const rows = [
+      daily('2026-06-24', []),
+      daily('2026-06-23', ALL),
+      daily('2026-06-22', ['08:00']),
+      daily('2026-06-21', ALL, { status: 'rejected' }),
+    ];
     const k = deriveReportKpis(rows, now);
     expect(k).toEqual({ total: 4, 'in-progress': 1, 'missing-data': 1, awaiting: 1, signed: 1 });
   });

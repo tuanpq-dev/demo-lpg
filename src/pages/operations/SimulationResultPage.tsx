@@ -94,7 +94,14 @@ function SimulationResultPage({ scenarioId }: { scenarioId: string }) {
   ) : (
     back
   );
-  const header = <PageHeader breadcrumb={crumbs(scenario.code, simulationConfigPath(scenario.id))} title={TITLE} description={description} actions={backToPicked} />;
+  const header = (
+    <PageHeader
+      breadcrumb={crumbs(scenario.code, simulationConfigPath(scenario.id))}
+      title={TITLE}
+      description={description}
+      actions={backToPicked}
+    />
+  );
   if (!picked || isActivePhase(sessionPhase(picked, now)) || !picked.runId) {
     const running = picked && isActivePhase(sessionPhase(picked, now));
     return (
@@ -228,7 +235,9 @@ function ResultView({ scenario: s, session, sessions, scenarios, runs, live, now
             busy={busy}
             onInclude={() => void patchReport({ aiIncluded: true, aiDismissed: false }, 'Đã thêm gợi ý AI vào báo cáo nháp.')}
             onDismiss={() => void patchReport({ aiDismissed: true, aiIncluded: false }, 'Đã bỏ qua gợi ý AI.')}
-            onUndo={() => void patchReport({ aiIncluded: false, aiDismissed: false }, report.aiIncluded ? 'Đã bỏ gợi ý AI khỏi báo cáo.' : 'Hiện lại gợi ý AI.')}
+            onUndo={() =>
+              void patchReport({ aiIncluded: false, aiDismissed: false }, report.aiIncluded ? 'Đã bỏ gợi ý AI khỏi báo cáo.' : 'Hiện lại gợi ý AI.')
+            }
           />
           <ResultAlertsCard alerts={r.alerts} />
           <ResultReferenceCard session={session} />

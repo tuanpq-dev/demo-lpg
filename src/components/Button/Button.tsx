@@ -1,7 +1,20 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'danger' | 'info' | 'ghost' | 'outline' | 'outline-warning' | 'tinted' | 'subtle' | 'plain' | 'icon' | 'toolbar' | 'overlay' | 'link';
+export type ButtonVariant =
+  | 'primary'
+  | 'danger'
+  | 'info'
+  | 'ghost'
+  | 'outline'
+  | 'outline-warning'
+  | 'tinted'
+  | 'subtle'
+  | 'plain'
+  | 'icon'
+  | 'toolbar'
+  | 'overlay'
+  | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -39,8 +52,7 @@ const variantClass: Record<ButtonVariant, string> = {
   primary: 'rounded-lg bg-primary font-semibold text-fg-inverse backdrop-blur-[4px] hover:bg-primary/90',
   danger: 'rounded-lg bg-danger-solid font-semibold text-fg hover:bg-danger-solid/90',
   info: 'rounded-lg bg-info font-semibold text-fg-inverse hover:bg-info/90',
-  ghost:
-    'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
+  ghost: 'rounded-lg border border-accent/30 bg-surface font-semibold text-fg backdrop-blur-[4px] hover:border-accent/60 hover:bg-surface-raised',
   outline: 'rounded-md border border-primary/80 bg-transparent font-semibold text-primary hover:bg-primary/10',
   'outline-warning': 'rounded-md border border-warning/80 bg-transparent font-semibold text-warning hover:bg-warning/10',
   // Nền primary nhạt + viền primary – "Áp dụng gợi ý" (Gợi ý từ AI, màn cấu hình kịch bản).

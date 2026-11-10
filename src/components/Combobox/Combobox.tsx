@@ -71,9 +71,7 @@ export function Combobox(props: ComboboxProps) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return options.filter(
-      (o) =>
-        (!props.multiple || !selected.includes(o.value)) &&
-        (!q || o.label.toLowerCase().includes(q) || o.meta?.toLowerCase().includes(q)),
+      (o) => (!props.multiple || !selected.includes(o.value)) && (!q || o.label.toLowerCase().includes(q) || o.meta?.toLowerCase().includes(q)),
     );
   }, [options, query, props.multiple, selected]);
 
@@ -236,10 +234,7 @@ export function Combobox(props: ComboboxProps) {
       {props.multiple && props.value.length > 0 && (
         <ul aria-label="Đã chọn" className="flex flex-wrap gap-2">
           {props.value.map((v) => (
-            <li
-              key={v}
-              className="inline-flex items-center gap-1 rounded-sm bg-surface-muted py-0.5 pl-2 pr-1 text-sm text-fg"
-            >
+            <li key={v} className="inline-flex items-center gap-1 rounded-sm bg-surface-muted py-0.5 pl-2 pr-1 text-sm text-fg">
               {labelOf(v)}
               <button
                 type="button"

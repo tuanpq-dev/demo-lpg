@@ -13,7 +13,15 @@ export type UpdateCauseFieldsProps = {
 };
 
 /** Khối "Nguyên nhân xử lý" + "Nội dung đã xử lý" (bắt buộc khi chọn trạng thái đã xử lý). */
-export function UpdateCauseFields({ cause, actionTaken, resolved, resolvedLabel, errors, onCauseChange, onActionTakenChange }: UpdateCauseFieldsProps) {
+export function UpdateCauseFields({
+  cause,
+  actionTaken,
+  resolved,
+  resolvedLabel,
+  errors,
+  onCauseChange,
+  onActionTakenChange,
+}: UpdateCauseFieldsProps) {
   const hint = resolved ? undefined : `Bắt buộc khi chọn "${resolvedLabel}".`;
   return (
     <div className="grid gap-6 lg:grid-cols-2">

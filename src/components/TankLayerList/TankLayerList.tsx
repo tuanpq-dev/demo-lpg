@@ -37,10 +37,7 @@ export function TankLayerList({ title = 'Cấu trúc tồn chứa', items, class
       {title && <p className="pb-2 text-xs text-fg-muted">{title}</p>}
       <dl className="flex flex-col">
         {items.map((it, i) => (
-          <div
-            key={it.id}
-            className={cn('flex items-center justify-between gap-4 py-3', i < items.length - 1 && 'border-b border-line/30')}
-          >
+          <div key={it.id} className={cn('flex items-center justify-between gap-4 py-3', i < items.length - 1 && 'border-b border-line/30')}>
             <dt className="text-sm text-fg-muted">{it.label}</dt>
             <dd className={cn('text-right text-sm tabular-nums', toneClass[it.tone ?? 'neutral'])}>{it.value}</dd>
           </div>

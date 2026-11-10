@@ -39,7 +39,9 @@ describe('applyLive – ghép số liệu trực tiếp vào Tổng quan', async
   });
 
   test('marker 2.5D: giá trị theo trường, mất tín hiệu → xám + icon', () => {
-    const m = Object.fromEntries(applyLive(data, { ...live, 'FT-101': tv(198.6), 'TT-201': tv(45.6, 'bad') }, T0 + 1).map.markers.map((x) => [x.id, x]));
+    const m = Object.fromEntries(
+      applyLive(data, { ...live, 'FT-101': tv(198.6), 'TT-201': tv(45.6, 'bad') }, T0 + 1).map.markers.map((x) => [x.id, x]),
+    );
     expect(m['ft-101']!.value).toBe('199 m³/h');
     expect(m['vaporizer']).toMatchObject({ tone: 'neutral', value: 'Mất tín hiệu', showSignalLostIcon: true });
   });

@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  Button,
-  Checklist,
-  KpiCard,
-  StaffList,
-  ThresholdGauge,
-  WorkflowStepper,
-  type StaffPickerItem,
-} from '@/components';
+import { Button, Checklist, KpiCard, StaffList, ThresholdGauge, WorkflowStepper, type StaffPickerItem } from '@/components';
 import { alertRecords } from '@/mocks/alerts';
 import type { AlertRecord } from '@/features/alerts/types';
 import { gaugeScale, gaugeValueText } from '@/features/alerts/gauge';
@@ -119,17 +111,39 @@ const SAMPLES: Record<string, { label: string; alert: AlertRecord; maintenance?:
   fireUnack: { label: 'CHÁY – Chưa xác nhận (FIR-00018, theo ảnh)', alert: fire },
   fireProgress: {
     label: 'CHÁY – Đang xử lý',
-    alert: { ...fire, status: 'in-progress', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33'), history: [{ id: 'h1', at: at('14:33'), kind: 'acknowledge', text: 'Xác nhận cảnh báo – Hoàng Minh E nhận xử lý', actor: 'Hoàng Minh E' }] },
+    alert: {
+      ...fire,
+      status: 'in-progress',
+      assignee: 'Hoàng Minh E',
+      acknowledgedAt: at('14:33'),
+      history: [{ id: 'h1', at: at('14:33'), kind: 'acknowledge', text: 'Xác nhận cảnh báo – Hoàng Minh E nhận xử lý', actor: 'Hoàng Minh E' }],
+    },
   },
   fireFalse: {
     label: 'CHÁY – Đã xử lý: báo động giả (chờ đóng, vẫn tạo được yêu cầu bảo trì)',
-    alert: { ...fire, status: 'resolved', assignee: 'Hoàng Minh E', acknowledgedAt: at('14:33'), resolvedAt: at('14:50'), resolution: { kind: 'false-alarm', closedBy: 'live' } },
+    alert: {
+      ...fire,
+      status: 'resolved',
+      assignee: 'Hoàng Minh E',
+      acknowledgedAt: at('14:33'),
+      resolvedAt: at('14:50'),
+      resolution: { kind: 'false-alarm', closedBy: 'live' },
+    },
   },
   rate: { label: 'Tốc độ thay đổi – không thang đo (ALT-00112)', alert: alertRecords.find((a) => a.id === 'ALT-00112')! },
 };
 
 const STAFF_ITEMS: StaffPickerItem[] = [
-  { id: 'a', name: 'Nguyễn Văn A', subtitle: 'Kỹ sư cơ khí • Bảo trì Cơ khí', shiftLabel: '', busy: false, active: 2, overdue: 0, meta: '2 đang xử lý' },
+  {
+    id: 'a',
+    name: 'Nguyễn Văn A',
+    subtitle: 'Kỹ sư cơ khí • Bảo trì Cơ khí',
+    shiftLabel: '',
+    busy: false,
+    active: 2,
+    overdue: 0,
+    meta: '2 đang xử lý',
+  },
   { id: 'e', name: 'Hoàng Minh E', subtitle: 'Trưởng ca vận hành • Vận hành', shiftLabel: '', busy: false, active: 0, overdue: 0 },
 ];
 
@@ -191,12 +205,16 @@ export function AlertDrawerSection() {
           return res;
         }}
         onCloseAlert={(_, input, conditions) => {
-          const res = rec ? closeAlert(rec, input, conditions, followUpConfig(rec), ctx()) : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
+          const res = rec
+            ? closeAlert(rec, input, conditions, followUpConfig(rec), ctx())
+            : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
           if (res.ok) setRec(res.record);
           return res;
         }}
         onMonitor={(_, input) => {
-          const res = rec ? continueMonitoring(rec, input, followUpConfig(rec), ctx()) : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
+          const res = rec
+            ? continueMonitoring(rec, input, followUpConfig(rec), ctx())
+            : ({ ok: false, reason: 'status', message: 'Không có cảnh báo.' } as const);
           if (res.ok) setRec(res.record);
           return res;
         }}
@@ -212,7 +230,9 @@ export function AlertDrawerSection() {
             <Button onClick={() => liveSimulator.rampTo('GS-04', 25)}>Về 25% LEL (như ảnh)</Button>
             <Button onClick={() => liveSimulator.setBad(['GS-04'], !liveSimulator.state.bad.includes('GS-04'))}>Bật/tắt mất tín hiệu GS-04</Button>
           </div>
-          <p className="text-sm text-fg-secondary">Mở mẫu "GAS – …" ở trên để xem thay đổi (banner ESD, badge mức, khoá "Đã xử lý xong"). Số đổi mỗi 2 s.</p>
+          <p className="text-sm text-fg-secondary">
+            Mở mẫu "GAS – …" ở trên để xem thay đổi (banner ESD, badge mức, khoá "Đã xử lý xong"). Số đổi mỗi 2 s.
+          </p>
         </Demo>
       )}
 
@@ -221,7 +241,9 @@ export function AlertDrawerSection() {
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => liveSimulator.setBase(FT.heatAlarm, 'normal')}>HD-02 đã phục hồi</Button>
             <Button onClick={() => liveSimulator.setBase(FT.heatAlarm, 'alarm')}>HD-02 báo động lại</Button>
-            <Button onClick={() => liveSimulator.setBad([FT.heatAlarm, FT.heatTemp], !liveSimulator.state.bad.includes(FT.heatAlarm))}>Bật/tắt mất tín hiệu HD-02</Button>
+            <Button onClick={() => liveSimulator.setBad([FT.heatAlarm, FT.heatTemp], !liveSimulator.state.bad.includes(FT.heatAlarm))}>
+              Bật/tắt mất tín hiệu HD-02
+            </Button>
             <Button onClick={() => liveSimulator.setBase(FT.smokeAlarm, 'alarm')}>Khói SD-02 báo động</Button>
             <Button onClick={() => liveSimulator.setBase(FT.callPoint, 'activated')}>Kích hoạt nút nhấn</Button>
             <Button onClick={() => liveSimulator.rampTo(FT.gas, 14)}>GS-05 tăng tới 14% LEL</Button>
@@ -236,7 +258,9 @@ export function AlertDrawerSection() {
               Về như ảnh
             </Button>
           </div>
-          <p className="text-sm text-fg-secondary">Mở mẫu "CHÁY – …" ở trên: xác nhận chéo (banner), khoá đóng khi đầu báo còn báo động, mất tín hiệu → kiểm tra tại chỗ.</p>
+          <p className="text-sm text-fg-secondary">
+            Mở mẫu "CHÁY – …" ở trên: xác nhận chéo (banner), khoá đóng khi đầu báo còn báo động, mất tín hiệu → kiểm tra tại chỗ.
+          </p>
         </Demo>
       )}
 

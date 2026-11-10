@@ -76,7 +76,9 @@ export function plcStatus(heartbeat: StateRead, link: StateRead): LinkStatusView
 export function scadaStatus(link: StateRead): LinkStatusView {
   if (link.state === 'pending') return { label: '—', tone: 'neutral', headerLabel: '—' };
   if (link.state === 'lost') return { label: SIGNAL_LOST_LABEL, tone: 'neutral', headerLabel: SIGNAL_LOST_LABEL };
-  return link.raw === 'active' ? { label: 'Đã kết nối', tone: 'success', headerLabel: 'Đã kết nối' } : { label: 'Mất kết nối', tone: 'danger', headerLabel: 'Mất kết nối' };
+  return link.raw === 'active'
+    ? { label: 'Đã kết nối', tone: 'success', headerLabel: 'Đã kết nối' }
+    : { label: 'Mất kết nối', tone: 'danger', headerLabel: 'Mất kết nối' };
 }
 
 // ============================================================================

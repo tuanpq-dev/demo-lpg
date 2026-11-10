@@ -21,7 +21,17 @@ export type UpdateReadingsSectionProps = {
 };
 
 /** Khối "Thông số trước và sau xử lý": bảng trước/sau, nguồn xác minh (nếu loại có), thời gian ghi nhận, ghi chú cách đọc. */
-export function UpdateReadingsSection({ cfg, rows, source, recordedAt, editable, primaryLost, onAfterChange, onSourceChange, onRecordedAtChange }: UpdateReadingsSectionProps) {
+export function UpdateReadingsSection({
+  cfg,
+  rows,
+  source,
+  recordedAt,
+  editable,
+  primaryLost,
+  onAfterChange,
+  onSourceChange,
+  onRecordedAtChange,
+}: UpdateReadingsSectionProps) {
   const uid = useId();
   const sourceOptions = cfg.sources ? SOURCES.map((s) => ({ value: s, label: sourceLabel(cfg, s) })) : null;
   return (
@@ -40,7 +50,14 @@ export function UpdateReadingsSection({ cfg, rows, source, recordedAt, editable,
                 <span id={`${uid}-src`} className="text-sm text-fg-secondary">
                   Nguồn xác minh
                 </span>
-                <Select variant="field" label="Nguồn xác minh" labelledBy={`${uid}-src`} options={sourceOptions} value={source} onChange={(s) => s && onSourceChange(s)} />
+                <Select
+                  variant="field"
+                  label="Nguồn xác minh"
+                  labelledBy={`${uid}-src`}
+                  options={sourceOptions}
+                  value={source}
+                  onChange={(s) => s && onSourceChange(s)}
+                />
               </div>
             )}
             <DatePicker type="datetime-local" label="Thời gian ghi nhận" value={recordedAt} onChange={onRecordedAtChange} />
@@ -49,7 +66,12 @@ export function UpdateReadingsSection({ cfg, rows, source, recordedAt, editable,
       />
       <p className="text-sm text-fg-secondary">
         "Trước" = số lúc cảnh báo. "Sau" = số trực tiếp
-        {cfg.sources ? (editable ? `; sửa tay theo ${sourceLabel(cfg, 'gauge').toLowerCase()}` : ` (chọn nguồn có "${sourceLabel(cfg, 'gauge')}" để nhập tay)`) : ''}.
+        {cfg.sources
+          ? editable
+            ? `; sửa tay theo ${sourceLabel(cfg, 'gauge').toLowerCase()}`
+            : ` (chọn nguồn có "${sourceLabel(cfg, 'gauge')}" để nhập tay)`
+          : ''}
+        .
         {primaryLost &&
           (cfg.sources
             ? ` ${cfg.quantity[0]!.toUpperCase()}${cfg.quantity.slice(1)} đang mất tín hiệu – nhập số đo bằng ${sourceLabel(cfg, 'gauge').toLowerCase()}.`

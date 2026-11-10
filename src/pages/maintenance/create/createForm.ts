@@ -168,7 +168,12 @@ export function createFormReducer(s: CreateFormState, a: CreateFormAction): Crea
     case 'start':
       return { ...s, form: { ...s.form, startAt: a.startAt, shift: s.touched.shift || !a.startAt ? s.form.shift : shiftFor(a.startAt) } };
     case 'department':
-      return { ...s, touched: { ...s.touched, department: true }, form: { ...s.form, department: a.department }, errors: clearError(s.errors, 'department') };
+      return {
+        ...s,
+        touched: { ...s.touched, department: true },
+        form: { ...s.form, department: a.department },
+        errors: clearError(s.errors, 'department'),
+      };
     case 'shift':
       return { ...s, touched: { ...s.touched, shift: true }, form: { ...s.form, shift: a.shift }, errors: clearError(s.errors, 'shift') };
     case 'toggle-suggestion': {

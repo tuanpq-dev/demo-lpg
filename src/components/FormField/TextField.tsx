@@ -103,7 +103,21 @@ export type DatePickerProps = Omit<Common, 'value' | 'onChange'> & {
  * Chọn ngày – dùng <input type="date"> gốc (bàn phím, trình đọc màn hình, lịch của hệ điều hành),
  * style theo token; `color-scheme: dark` để lịch bật lên theo nền tối.
  */
-export function DatePicker({ label, value, onChange, required, hint, error, className, min, max, disabled, type = 'date', labelVariant, hideLabel }: DatePickerProps) {
+export function DatePicker({
+  label,
+  value,
+  onChange,
+  required,
+  hint,
+  error,
+  className,
+  min,
+  max,
+  disabled,
+  type = 'date',
+  labelVariant,
+  hideLabel,
+}: DatePickerProps) {
   if (hideLabel) {
     // Bọc div: `className` (độ rộng) đặt ở khung, ô nhập luôn w-full (cn không gộp class trùng loại).
     return (

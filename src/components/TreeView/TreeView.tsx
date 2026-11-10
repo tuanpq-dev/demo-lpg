@@ -44,8 +44,7 @@ function flatten(items: readonly TreeItem[], open: ReadonlySet<string>, depth = 
   });
 }
 
-const allGroupIds = (items: readonly TreeItem[]): string[] =>
-  items.flatMap((i) => (i.children?.length ? [i.id, ...allGroupIds(i.children)] : []));
+const allGroupIds = (items: readonly TreeItem[]): string[] => items.flatMap((i) => (i.children?.length ? [i.id, ...allGroupIds(i.children)] : []));
 
 /**
  * Cây chọn nhiều (ARIA tree, aria-multiselectable) – ⚠ Figma chưa có, style theo token (giống dòng Select/listbox).
@@ -67,8 +66,7 @@ export function TreeView({
   // Không controlled: nhớ nhánh ĐÓNG (nhánh mới xuất hiện sau vẫn mở mặc định).
   const [ownClosed, setOwnClosed] = useState<string[]>([]);
   const open = new Set(expanded ?? allGroupIds(items).filter((id) => !ownClosed.includes(id)));
-  const setOpen = (ids: string[]) =>
-    onExpandedChange ? onExpandedChange(ids) : setOwnClosed(allGroupIds(items).filter((id) => !ids.includes(id)));
+  const setOpen = (ids: string[]) => (onExpandedChange ? onExpandedChange(ids) : setOwnClosed(allGroupIds(items).filter((id) => !ids.includes(id))));
   const rows = flatten(items, open);
   const selectableRows = rows.filter((r) => r.selectable);
   const sel = new Set(selected);

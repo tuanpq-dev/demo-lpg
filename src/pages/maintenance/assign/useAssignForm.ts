@@ -2,7 +2,17 @@ import { useMemo, useReducer, useState } from 'react';
 import type { StaffPickerItem } from '@/components';
 import { ASSIGNABLE_STAFF, SHIFTS, staffByName, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
 import { clearAssignDraft, loadAssignDraft, saveAssignDraft } from '@/data/maintenanceDetail';
-import { WORKLOAD_HINT, assignMode, assignWarnings, computeWorkloads, initialAssignForm, shiftShortLabel, validateAssign, workloadOf, type AssignForm } from '@/features/maintenance/assign';
+import {
+  WORKLOAD_HINT,
+  assignMode,
+  assignWarnings,
+  computeWorkloads,
+  initialAssignForm,
+  shiftShortLabel,
+  validateAssign,
+  workloadOf,
+  type AssignForm,
+} from '@/features/maintenance/assign';
 import { announce } from '@/lib/announce';
 import { useFormModal } from '@/lib/useFormModal';
 import { useNow } from '@/lib/useNow';
@@ -58,7 +68,16 @@ export function useAssignForm({ record: r, records, onClose, onSubmit }: UseAssi
     draft: {
       exists: !!initial.draft,
       save: (v) =>
-        saveAssignDraft(r.id, { assignee: v.assignee, collaborators: [...v.collaborators], startAt: v.startAt, dueAt: v.dueAt, shift: v.shift, note: v.note, reason: v.reason, savedAt: new Date().toISOString() }),
+        saveAssignDraft(r.id, {
+          assignee: v.assignee,
+          collaborators: [...v.collaborators],
+          startAt: v.startAt,
+          dueAt: v.dueAt,
+          shift: v.shift,
+          note: v.note,
+          reason: v.reason,
+          savedAt: new Date().toISOString(),
+        }),
       clear: () => clearAssignDraft(r.id),
     },
     onSubmit,
@@ -75,7 +94,10 @@ export function useAssignForm({ record: r, records, onClose, onSubmit }: UseAssi
 
   const q = s.query.trim().toLowerCase();
   const staffItems: StaffPickerItem[] = ASSIGNABLE_STAFF.filter(
-    (p) => (!s.dept || p.department === s.dept) && (!s.shiftFilter || p.defaultShift === s.shiftFilter) && (!q || [p.name, p.specialty, p.department, p.title].some((t) => t.toLowerCase().includes(q))),
+    (p) =>
+      (!s.dept || p.department === s.dept) &&
+      (!s.shiftFilter || p.defaultShift === s.shiftFilter) &&
+      (!q || [p.name, p.specialty, p.department, p.title].some((t) => t.toLowerCase().includes(q))),
   ).map((p) => {
     const w = workloadOf(workloads, p.name);
     return {

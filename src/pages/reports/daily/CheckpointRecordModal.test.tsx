@@ -74,16 +74,11 @@ describe('CheckpointRecordModal', () => {
     expect(where()).toContain('record=16%3A00');
     const d = await dialog();
     const nav = within(d).getByRole('navigation', { name: 'Mục của biểu mẫu ghi nhận' });
-    expect(within(nav).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Tổng quan',
-      'Bồn chứa LPG',
-      'Máy hóa hơi',
-      'Bộ điều áp',
-      'Lưu lượng',
-      'Gas & Báo cháy',
-      'PLC/SCADA',
-      'Nhận xét',
-    ]);
+    expect(
+      within(nav)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Tổng quan', 'Bồn chứa LPG', 'Máy hóa hơi', 'Bộ điều áp', 'Lưu lượng', 'Gas & Báo cháy', 'PLC/SCADA', 'Nhận xét']);
     expect(within(nav).getByRole('button', { name: 'Tổng quan' })).toHaveAttribute('aria-current', 'location');
     expect(within(d).getByText('Gián đoạn')).toBeInTheDocument();
     expect(within(d).getByText('Mất kết nối', { selector: 'span' })).toBeInTheDocument();

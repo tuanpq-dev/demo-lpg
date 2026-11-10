@@ -31,7 +31,12 @@ export type DeviceParam = {
   okTone: 'success' | 'warning';
 };
 
-export type PlcSignal = { id: string; label: string; /** Địa chỉ/tên biến trên PLC (ảnh); không có → chỉ hiện `label`. */ address?: string; tag: string };
+export type PlcSignal = {
+  id: string;
+  label: string;
+  /** Địa chỉ/tên biến trên PLC (ảnh); không có → chỉ hiện `label`. */ address?: string;
+  tag: string;
+};
 
 /** Một dòng nhật ký: `minutesAgo` so với lúc mở trang (mốc tương đối – giờ hiển thị tính từ `now`). */
 export type OperationLogEntry = { id: string; minutesAgo: number; text: string };

@@ -1,4 +1,14 @@
-import { AlertCircleIcon, Badge, EmergencyBanner, InfoGrid, SensorList, SignalLostIcon, ThresholdGauge, type InfoGridItem, type TagTone } from '@/components';
+import {
+  AlertCircleIcon,
+  Badge,
+  EmergencyBanner,
+  InfoGrid,
+  SensorList,
+  SignalLostIcon,
+  ThresholdGauge,
+  type InfoGridItem,
+  type TagTone,
+} from '@/components';
 import { cn } from '@/lib/cn';
 import { alertKind, alertOccurredAt, levelOf, useAlertLive, useAreaSensors, useTagSignal } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
@@ -8,7 +18,12 @@ import { Section } from '../drawerParts';
 
 // eslint-disable-next-line no-restricted-syntax -- chữ lớn 32px đậm (số nồng độ ở mức ESD)
 const BIG_TONE = { success: 'text-success', warning: 'text-warning', danger: 'text-danger-strong', neutral: 'text-fg' } as const;
-const BADGE_TONE: Record<'success' | 'warning' | 'danger' | 'neutral', TagTone> = { success: 'success', warning: 'warning', danger: 'danger', neutral: 'neutral' };
+const BADGE_TONE: Record<'success' | 'warning' | 'danger' | 'neutral', TagTone> = {
+  success: 'success',
+  warning: 'warning',
+  danger: 'danger',
+  neutral: 'neutral',
+};
 
 /** "25" + "% LEL" → số lớn "25%" + đơn vị nhỏ "LEL" (ảnh); đơn vị khác → số lớn + đơn vị nhỏ. */
 function BigValue({ value, unit, tone }: { value: number; unit: string; tone: keyof typeof BIG_TONE }) {
@@ -73,7 +88,8 @@ export function GasPanel({ alert: a, now }: { alert: AlertRecord; now: Date }) {
       id: 'over',
       label: `T/G vượt ngưỡng ${thresholdText}`,
       hint: `Thời gian nồng độ còn ≥ ${thresholdText} (ngưỡng của cảnh báo), tính từ lúc phát sinh.`,
-      value: over.state === 'over' ? formatMinutes(over.minutes) : over.state === 'below' ? <span className="text-success">Đã về dưới ngưỡng</span> : '—',
+      value:
+        over.state === 'over' ? formatMinutes(over.minutes) : over.state === 'below' ? <span className="text-success">Đã về dưới ngưỡng</span> : '—',
     },
     {
       id: 'signal',
@@ -120,7 +136,9 @@ export function GasPanel({ alert: a, now }: { alert: AlertRecord; now: Date }) {
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               {/* eslint-disable-next-line no-restricted-syntax -- icon */}
-              {lv && lv.tone !== 'success' && <AlertCircleIcon size={22} aria-hidden="true" className={lv.tone === 'danger' ? 'text-danger-strong' : 'text-warning'} />}
+              {lv && lv.tone !== 'success' && (
+                <AlertCircleIcon size={22} aria-hidden="true" className={lv.tone === 'danger' ? 'text-danger-strong' : 'text-warning'} />
+              )}
               {lv ? (
                 // Lót nền đặc (tương phản chữ đỏ mức ESD trên nền thẻ sáng hơn).
                 <span className="rounded-sm bg-surface">

@@ -8,7 +8,16 @@ import { useTableFilters } from '@/app/useTableFilters';
 import { assetV101Image, plantMapImage } from '@/assets/digital-twin';
 import { Button, HistoryIcon, Icon, MapIcon, PageHeader, StatusPill } from '@/components';
 import { useAlerts } from '@/data/alerts';
-import { EVENT_PARAMS, STATUS_LABEL, deriveMaintenanceSummary, deriveRelatedAlerts, newestEventFirst, parseHiddenTypes, useAssetDetail, type AssetEvent } from '@/data/assetDetail';
+import {
+  EVENT_PARAMS,
+  STATUS_LABEL,
+  deriveMaintenanceSummary,
+  deriveRelatedAlerts,
+  newestEventFirst,
+  parseHiddenTypes,
+  useAssetDetail,
+  type AssetEvent,
+} from '@/data/assetDetail';
 import { useMaintenance } from '@/data/maintenance';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
@@ -41,7 +50,14 @@ export function AssetDetail({ assetId }: { assetId: string }) {
   const maintenance = useMaintenance();
   const canWrite = useCan('maintenance:write');
 
-  const events = useTableFilters({ rows: data?.events ?? [], getId: getEventId, params: EVENT_PARAMS, match: matchEvent, sort: sortEvents, pageSize: EVENT_ROWS });
+  const events = useTableFilters({
+    rows: data?.events ?? [],
+    getId: getEventId,
+    params: EVENT_PARAMS,
+    match: matchEvent,
+    sort: sortEvents,
+    pageSize: EVENT_ROWS,
+  });
   const create = useAssetCreateRequest({ open: canWrite && events.search.get('create') === '1', setExtra: events.setExtra });
   const alertsUrl = `/alerts?q=${encodeURIComponent(assetId)}&range=30d`;
 
@@ -74,7 +90,12 @@ export function AssetDetail({ assetId }: { assetId: string }) {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <PageError title="Không tải được tài sản" error={error} onRetry={refetch} actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>} />
+        <PageError
+          title="Không tải được tài sản"
+          error={error}
+          onRetry={refetch}
+          actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>}
+        />
       </Page>
     );
   }
@@ -129,7 +150,14 @@ export function AssetDetail({ assetId }: { assetId: string }) {
       <AssetEventsCard assetId={data.id} events={events} />
 
       {create.open && (
-        <CreateMaintenanceModal open onClose={create.close} devices={create.devices} defaultDevice={data.id} onDraftSaved={create.onDraftSaved} onSubmit={create.onSubmit} />
+        <CreateMaintenanceModal
+          open
+          onClose={create.close}
+          devices={create.devices}
+          defaultDevice={data.id}
+          onDraftSaved={create.onDraftSaved}
+          onSubmit={create.onSubmit}
+        />
       )}
       {create.created && <CreatedNotice created={create.created} onDismiss={create.dismissCreated} />}
     </Page>

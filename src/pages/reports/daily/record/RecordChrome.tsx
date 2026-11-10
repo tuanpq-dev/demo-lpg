@@ -90,7 +90,12 @@ export function RecordFooter({ f, checkpoint, blockersId }: { f: CheckpointRecor
       <Button variant="ghost" onClick={() => f.saveDraft(true)}>
         Lưu và tiếp tục sau
       </Button>
-      <Button type="submit" variant="primary" aria-disabled={!f.ready || modal.submitting || undefined} aria-describedby={f.ready ? undefined : blockersId}>
+      <Button
+        type="submit"
+        variant="primary"
+        aria-disabled={!f.ready || modal.submitting || undefined}
+        aria-describedby={f.ready ? undefined : blockersId}
+      >
         Xác nhận mốc {checkpoint}
       </Button>
     </>

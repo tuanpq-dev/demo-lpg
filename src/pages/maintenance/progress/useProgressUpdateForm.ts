@@ -38,7 +38,13 @@ export function useProgressUpdateForm({ record: r, onClose, onSubmit, onOpenChec
     const base = { state: workStateOf(r), progress: defaultReportedProgress(r), text: '' };
     return { base, draft, values: draft ? { state: draft.state, progress: draft.progress, text: draft.text } : base };
   });
-  const [s, dispatch] = useReducer(progressFormReducer, undefined, () => ({ ...initial.values, files: [], errors: {}, uploadError: '', preview: null }));
+  const [s, dispatch] = useReducer(progressFormReducer, undefined, () => ({
+    ...initial.values,
+    files: [],
+    errors: {},
+    uploadError: '',
+    preview: null,
+  }));
   const { state, progress, text, files } = s;
 
   // Revoke mọi URL xem trước khi đóng modal (unmount) – ref giữ danh sách mới nhất.
@@ -107,7 +113,14 @@ export function useProgressUpdateForm({ record: r, onClose, onSubmit, onOpenChec
     },
     addFiles: (list: File[]) => {
       const { accepted, rejected } = checkUploads(list, files.length);
-      const added: TempFile[] = accepted.map((f, i) => ({ id: `tmp-${Date.now()}-${i}`, name: f.name, size: f.size, kind: uploadKind(f.name), url: URL.createObjectURL(f), type: f.type }));
+      const added: TempFile[] = accepted.map((f, i) => ({
+        id: `tmp-${Date.now()}-${i}`,
+        name: f.name,
+        size: f.size,
+        kind: uploadKind(f.name),
+        url: URL.createObjectURL(f),
+        type: f.type,
+      }));
       dispatch({ type: 'upload', rejected: rejected.map((x) => `${x.name}: ${x.reason}`).join('; '), added });
       if (added.length) announce(`Đã thêm ${added.length} tệp (chưa tải lên máy chủ).`);
     },

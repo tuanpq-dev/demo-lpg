@@ -34,8 +34,13 @@ describe('banner ESD theo ngưỡng', () => {
   test('dưới cấp 2 không hiện; cấp 2 → câu "nếu đạt hoặc vượt 40% LEL"; ≥ 40 → câu "đã vượt ESD"', () => {
     expect(bannerFor(19.9, gas, U)).toBeNull();
     expect(bannerFor(20, gas, U)).toMatchObject({ stage: 'before-esd', title: 'Quy trình Khẩn cấp (ESD)' });
-    expect(bannerFor(25, gas, U)!.text).toBe('Nồng độ hiện tại đang ở mức cảnh báo cấp 2. Nếu đạt hoặc vượt 40% LEL, thực hiện quy trình ESD và sơ tán theo quy định.');
-    expect(bannerFor(40, gas, U)).toMatchObject({ stage: 'after-esd', text: 'Đã vượt ngưỡng ESD (40% LEL), thực hiện quy trình ESD và sơ tán ngay.' });
+    expect(bannerFor(25, gas, U)!.text).toBe(
+      'Nồng độ hiện tại đang ở mức cảnh báo cấp 2. Nếu đạt hoặc vượt 40% LEL, thực hiện quy trình ESD và sơ tán theo quy định.',
+    );
+    expect(bannerFor(40, gas, U)).toMatchObject({
+      stage: 'after-esd',
+      text: 'Đã vượt ngưỡng ESD (40% LEL), thực hiện quy trình ESD và sơ tán ngay.',
+    });
     expect(bannerFor(undefined, gas, U)).toBeNull();
     expect(bannerFor(50, ALERT_KINDS['tank-overpressure'], 'bar')).toBeNull();
   });

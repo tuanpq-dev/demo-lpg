@@ -35,11 +35,7 @@ export function Tabs({ items, value, onChange, label, panelId, className }: Tabs
   const uid = useId();
 
   return (
-    <div
-      role="tablist"
-      aria-label={label}
-      className={cn('flex items-start border-b border-line/30 bg-surface-raised px-2 pb-px', className)}
-    >
+    <div role="tablist" aria-label={label} className={cn('flex items-start border-b border-line/30 bg-surface-raised px-2 pb-px', className)}>
       {items.map((item) => {
         const selected = item.id === value;
         return (

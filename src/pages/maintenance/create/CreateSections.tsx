@@ -5,7 +5,15 @@ import { PRIORITY_TEXT, type CreateFormValues } from './createForm';
 import type { CreateMaintenanceForm } from './useCreateMaintenanceForm';
 
 /** "Góp ý từ AI" (mock): đánh giá + gợi ý kiểm tra – bấm để thêm / bỏ khỏi checklist. */
-export function AiSuggestionPanel({ suggestion, checklist, onToggle }: { suggestion: AiSuggestion; checklist: readonly ChecklistItem[]; onToggle: (text: string) => void }) {
+export function AiSuggestionPanel({
+  suggestion,
+  checklist,
+  onToggle,
+}: {
+  suggestion: AiSuggestion;
+  checklist: readonly ChecklistItem[];
+  onToggle: (text: string) => void;
+}) {
   return (
     <section aria-labelledby="ai-title" className="flex flex-col gap-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -62,7 +70,14 @@ export function AttachmentsNotesSection({ f }: { f: CreateMaintenanceForm }) {
           <ShieldIcon className="text-fg-secondary" />
           Ghi chú &amp; An toàn
         </h3>
-        <Textarea label="Ghi chú nội bộ" value={form.notes} onChange={(v) => set('notes', v)} rows={4} placeholder="Thêm ghi chú nội bộ hoặc lưu ý an toàn…" className="[&>label]:sr-only" />
+        <Textarea
+          label="Ghi chú nội bộ"
+          value={form.notes}
+          onChange={(v) => set('notes', v)}
+          rows={4}
+          placeholder="Thêm ghi chú nội bộ hoặc lưu ý an toàn…"
+          className="[&>label]:sr-only"
+        />
         {/* Nhãn hiển thị = tên truy cập (WCAG 2.5.3), bấm chữ cũng chọn; không lồng <label>. */}
         <Checkbox
           showLabel
@@ -90,7 +105,12 @@ export function CreateOverview({ form }: { form: CreateFormValues }) {
       </div>
       <div className="flex flex-col gap-0.5 border-l border-line/30 pl-8">
         <dt className="text-2xs uppercase tracking-label text-fg-muted/65">Mức độ</dt>
-        <dd className={cn('text-sm font-semibold', form.priority === 'critical' ? 'text-danger-text' : form.priority === 'high' ? 'text-warning' : 'text-fg')}>
+        <dd
+          className={cn(
+            'text-sm font-semibold',
+            form.priority === 'critical' ? 'text-danger-text' : form.priority === 'high' ? 'text-warning' : 'text-fg',
+          )}
+        >
           {form.priority === 'critical' && '! '}
           {PRIORITY_TEXT[form.priority]}
         </dd>

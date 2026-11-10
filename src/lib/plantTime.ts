@@ -27,8 +27,7 @@ export function dayNumber(isoDay: string): number {
 }
 
 /** Số ngày từ hôm nay (giờ nhà máy) tới ngày `isoDay` – âm = đã qua. */
-export const daysFromToday = (isoDay: string, now: Date, timeZone?: string) =>
-  dayNumber(isoDay) - dayNumber(plantDayKey(now, timeZone));
+export const daysFromToday = (isoDay: string, now: Date, timeZone?: string) => dayNumber(isoDay) - dayNumber(plantDayKey(now, timeZone));
 
 /** "yyyy-mm" của tháng hiện tại (giờ nhà máy) dời `offset` tháng. */
 export function plantMonthKey(now: Date, offset = 0, timeZone?: string): string {

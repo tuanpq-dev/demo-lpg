@@ -69,7 +69,16 @@ describe('3 điều kiện hệ thống', () => {
     expect(byId(closeConditions(input({ primary: { ...input().primary!, reading: { state: 'pending' } } }))).stable!.reason).toMatch(/Đang đọc/);
   });
   test('tín hiệu phụ bất thường → "ổn định" sai, nêu tên; tín hiệu phụ mất tín hiệu không chặn', () => {
-    const c = byId(closeConditions(input({ secondary: [{ label: 'Nhiệt độ bồn', state: 'abnormal' }, { label: 'Áp suất sau PR-101', state: 'lost' }] })));
+    const c = byId(
+      closeConditions(
+        input({
+          secondary: [
+            { label: 'Nhiệt độ bồn', state: 'abnormal' },
+            { label: 'Áp suất sau PR-101', state: 'lost' },
+          ],
+        }),
+      ),
+    );
     expect(c.stable).toMatchObject({ ok: false, reason: 'Còn tín hiệu bất thường: Nhiệt độ bồn.' });
     expect(closeConditions(input({ secondary: [{ label: 'X', state: 'lost' }] }))[0]!.ok).toBe(true);
   });
@@ -122,7 +131,14 @@ describe('xác nhận đóng', () => {
   test('Đã xử lý → Hoàn thành + người đóng + ghi chú kết luận + lịch sử; mục tick tay lưu lại', () => {
     const r = closeAlert(alert(), { note: '  Ổn định sau 30 phút ', followUpMinutes: 0, manualChecks: ['log-updated'] }, OK, cfg, ctx);
     if (!r.ok) throw new Error(r.message);
-    expect(r.record).toMatchObject({ status: 'done', closedAt: ctx.at.toISOString(), closedBy: 'Trần Văn B', closingNote: 'Ổn định sau 30 phút', closeChecks: ['log-updated'], followUp: undefined });
+    expect(r.record).toMatchObject({
+      status: 'done',
+      closedAt: ctx.at.toISOString(),
+      closedBy: 'Trần Văn B',
+      closingNote: 'Ổn định sau 30 phút',
+      closeChecks: ['log-updated'],
+      followUp: undefined,
+    });
     expect(r.record.notes!.at(-1)!.text).toBe('Kết luận: Ổn định sau 30 phút');
     expect(r.record.history!.at(-1)).toMatchObject({ kind: 'close', text: 'Xác nhận đóng cảnh báo: Ổn định sau 30 phút', actor: 'Trần Văn B' });
     // chỉ đi tiến: đóng rồi không đóng lại / không quay về Đang xử lý
@@ -130,7 +146,8 @@ describe('xác nhận đóng', () => {
     expect(canResolve(r.record)).toBe(false);
   });
   test('chặn: chưa Đã xử lý · người đóng = người xử lý (Nghiêm trọng) · thiếu điều kiện · thiếu ghi chú', () => {
-    const go = (a: AlertRecord, conds = OK, note = 'ok', by = 'Trần Văn B') => closeAlert(a, { note, followUpMinutes: 0, manualChecks: [] }, conds, cfg, { ...ctx, by });
+    const go = (a: AlertRecord, conds = OK, note = 'ok', by = 'Trần Văn B') =>
+      closeAlert(a, { note, followUpMinutes: 0, manualChecks: [] }, conds, cfg, { ...ctx, by });
     expect(go(alert({ status: 'in-progress' }))).toMatchObject({ ok: false, reason: 'status' });
     expect(go(alert({ status: 'unacknowledged' }))).toMatchObject({ ok: false, reason: 'status' });
     expect(go(alert(), OK, 'ok', 'Nguyễn Văn A')).toMatchObject({ ok: false, reason: 'closer' });
@@ -142,7 +159,13 @@ describe('xác nhận đóng', () => {
     const cur = { minutes: 120, until: '2026-10-28T06:00:00.000Z', target: 10, unit: 'bar', owner: 'Nguyễn Văn A' };
     const a = alert({ followUp: cur });
     expect(followUpFor(a, 120, ctx.at, cfg, 'X')).toBe(cur);
-    expect(followUpFor(a, 30, ctx.at, cfg, 'X')).toEqual({ minutes: 30, until: '2026-10-28T05:00:00.000Z', target: 10, unit: 'bar', owner: 'Nguyễn Văn A' });
+    expect(followUpFor(a, 30, ctx.at, cfg, 'X')).toEqual({
+      minutes: 30,
+      until: '2026-10-28T05:00:00.000Z',
+      target: 10,
+      unit: 'bar',
+      owner: 'Nguyễn Văn A',
+    });
     expect(followUpFor(a, 0, ctx.at, cfg, 'X')).toBeUndefined();
     // hết giờ → cùng số phút cũng tính lại
     expect(followUpFor(a, 120, new Date('2026-10-28T06:00:00Z'), cfg, 'X')!.until).toBe('2026-10-28T08:00:00.000Z');

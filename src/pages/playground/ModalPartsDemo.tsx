@@ -80,7 +80,15 @@ export function ModalPartsDemo() {
         </FormField>
         <FormField label="Mức độ ưu tiên (SegmentedControl field)">
           {({ id, labelId }) => (
-            <SegmentedControl variant="field" id={id} labelledBy={labelId} label="Mức độ ưu tiên" options={FORM_PRIORITY_OPTIONS} value={prio} onChange={setPrio} />
+            <SegmentedControl
+              variant="field"
+              id={id}
+              labelledBy={labelId}
+              label="Mức độ ưu tiên"
+              options={FORM_PRIORITY_OPTIONS}
+              value={prio}
+              onChange={setPrio}
+            />
           )}
         </FormField>
         <FormField label="Người phụ trách chính (Combobox + avatar)">
@@ -90,7 +98,17 @@ export function ModalPartsDemo() {
         </FormField>
         <FormField label="Người phối hợp (Combobox nhiều + chip)">
           {({ id, labelId }) => (
-            <Combobox multiple id={id} labelledBy={labelId} showAvatar leading={<PeopleIcon />} placeholder="Tìm kiếm nhân sự…" options={people} value={collab} onChange={setCollab} />
+            <Combobox
+              multiple
+              id={id}
+              labelledBy={labelId}
+              showAvatar
+              leading={<PeopleIcon />}
+              placeholder="Tìm kiếm nhân sự…"
+              options={people}
+              value={collab}
+              onChange={setCollab}
+            />
           )}
         </FormField>
         <DatePicker type="datetime-local" label="DatePicker datetime-local" value={start} onChange={setStart} />

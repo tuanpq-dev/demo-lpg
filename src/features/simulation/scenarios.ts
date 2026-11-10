@@ -282,7 +282,9 @@ export function aiSuggestion(
   const needsImprove = ready.filter((s) => lastRunOf(s.id, runs)?.result === 'improve');
   const priority = [
     ...needsImprove,
-    ...ready.filter((s) => !needsImprove.includes(s) && s.risk !== 'medium').sort((a, b) => RISK_ORDER[a.risk] - RISK_ORDER[b.risk] || a.code.localeCompare(b.code)),
+    ...ready
+      .filter((s) => !needsImprove.includes(s) && s.risk !== 'medium')
+      .sort((a, b) => RISK_ORDER[a.risk] - RISK_ORDER[b.risk] || a.code.localeCompare(b.code)),
   ];
   const picked = (priority.length ? priority : ready).slice(0, 3).sort((a, b) => a.code.localeCompare(b.code));
   const text = picked.length

@@ -106,7 +106,9 @@ describe('simulationResult – ca biên', () => {
 describe('báo cáo', () => {
   it('trạng thái tệp: Nháp • Chưa xuất → thêm gợi ý AI + đã xuất Excel', () => {
     expect(reportStatusText({})).toBe('Nháp • Chưa xuất');
-    expect(reportStatusText({ report: { aiIncluded: true, excelAt: '2026-06-24T11:30:00Z' } }, () => '18:30')).toBe('Nháp • Đã thêm gợi ý AI • Đã xuất Excel 18:30');
+    expect(reportStatusText({ report: { aiIncluded: true, excelAt: '2026-06-24T11:30:00Z' } }, () => '18:30')).toBe(
+      'Nháp • Đã thêm gợi ý AI • Đã xuất Excel 18:30',
+    );
   });
 
   it('CSV có thông tin lượt, KPI, tiêu chí, sự kiện; gợi ý AI chỉ khi đã thêm; ô có dấu phẩy được bao nháy', () => {

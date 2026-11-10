@@ -86,7 +86,9 @@ export function SupportRequestModal({
         error={error}
         placeholder="Vd: nồng độ tăng nhanh, cần bộ phận an toàn hỗ trợ khoanh vùng"
       />
-      <p className="text-sm text-fg-secondary">Người được chọn thêm vào danh sách phối hợp của cảnh báo. Thông báo đẩy/SMS chưa gửi được – chờ backend.</p>
+      <p className="text-sm text-fg-secondary">
+        Người được chọn thêm vào danh sách phối hợp của cảnh báo. Thông báo đẩy/SMS chưa gửi được – chờ backend.
+      </p>
       {submitError && (
         <p role="alert" className="text-sm text-danger-text">
           {submitError}

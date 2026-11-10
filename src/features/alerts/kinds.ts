@@ -113,7 +113,12 @@ export type AlertKindConfig = {
    * "Xem quy trình khẩn cấp": các bước ứng phó + danh bạ. `draft` = nhãn hiển thị trong modal khi nội dung chưa được duyệt.
    * `phone` thiếu → "Chờ khách cung cấp" (KHÔNG đặt số giả trông như thật).
    */
-  emergency?: { title: string; draft?: string; steps: readonly string[]; contacts: readonly { id: string; name: string; role: string; phone?: string }[] };
+  emergency?: {
+    title: string;
+    draft?: string;
+    steps: readonly string[];
+    contacts: readonly { id: string; name: string; role: string; phone?: string }[];
+  };
   /** Mục thu gọn mặc định (ảnh không có): Tiến trình, Ghi chú, Nhật ký. */
   collapsed?: readonly ('progress' | 'notes' | 'log')[];
   /**

@@ -92,7 +92,11 @@ export function SegmentedControl({
                     'flex-1 border-l border-line px-2 first:border-l-0',
                     selected ? cn(fieldTone[opt.tone ?? 'neutral'], 'font-semibold') : 'text-fg-muted hover:bg-surface-muted/40 hover:text-fg',
                   )
-                : cn('rounded-md', size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1', selected ? 'bg-surface-muted text-fg' : 'text-fg-muted hover:text-fg'),
+                : cn(
+                    'rounded-md',
+                    size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1',
+                    selected ? 'bg-surface-muted text-fg' : 'text-fg-muted hover:text-fg',
+                  ),
             )}
           >
             {opt.label}

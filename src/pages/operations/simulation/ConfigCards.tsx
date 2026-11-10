@@ -62,7 +62,13 @@ export function ScenarioInfoCard({ scenario: s, readiness, inputSync }: { scenar
           { id: 'equipment', label: 'Thiết bị liên quan', value: s.setup.equipment },
           { id: 'risk', label: 'Mức độ gốc', value: <Badge variant="severity" size="chip" value={RISK_SEVERITY[s.risk]} /> },
           { id: 'status', label: 'Trạng thái', value: readiness.label, tone: READINESS_TONE[readiness.tone] },
-          { id: 'input', label: 'Dữ liệu đầu vào', value: DATA_SYNC_LABEL[inputSync], newRow: true, tone: inputSync === 'missing' ? 'warning' : 'default' },
+          {
+            id: 'input',
+            label: 'Dữ liệu đầu vào',
+            value: DATA_SYNC_LABEL[inputSync],
+            newRow: true,
+            tone: inputSync === 'missing' ? 'warning' : 'default',
+          },
         ]}
       />
       <p className="mt-5 flex items-start gap-2.5 rounded-md border border-line/30 bg-surface-raised px-4 py-3 text-base text-fg-secondary">
@@ -107,9 +113,7 @@ export function InputParamsCard({ scenario: s, config, onChange, check, start, r
         <div className="flex min-w-0 flex-col gap-5">
           {/* Giá trị thực tế – chỉ đọc (không phải ô nhập). */}
           <div className="flex flex-col gap-2">
-            <span className="text-base text-fg-secondary">
-              {v.startLabel}
-            </span>
+            <span className="text-base text-fg-secondary">{v.startLabel}</span>
             <p className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-line bg-surface-sunken px-4">
               {start === undefined ? (
                 <span className="flex items-center gap-2 text-base text-fg-muted">
@@ -222,7 +226,14 @@ export function InputParamsCard({ scenario: s, config, onChange, check, start, r
               </legend>
               <div className="flex flex-col gap-2.5">
                 {s.setup.areaOptions.map((a) => (
-                  <Checkbox key={a} variant="list" label={a} checked={config.areas.includes(a)} onChange={(on) => toggleArea(a, on)} disabled={readOnly} />
+                  <Checkbox
+                    key={a}
+                    variant="list"
+                    label={a}
+                    checked={config.areas.includes(a)}
+                    onChange={(on) => toggleArea(a, on)}
+                    disabled={readOnly}
+                  />
                 ))}
               </div>
               {check.errors.areas && (
@@ -309,7 +320,12 @@ export function ReferenceDataCard({
       titleSize="lg"
       aria-label="Dữ liệu PLC/SCADA tham chiếu"
       headerEnd={
-        <span className={cn('flex items-center gap-1.5 text-base', liveSynced === false ? 'text-warning' : liveSynced ? 'text-success' : 'text-fg-secondary')}>
+        <span
+          className={cn(
+            'flex items-center gap-1.5 text-base',
+            liveSynced === false ? 'text-warning' : liveSynced ? 'text-success' : 'text-fg-secondary',
+          )}
+        >
           <StatusDot status={liveSynced === false ? 'warning' : liveSynced ? 'success' : 'offline'} />
           {liveSynced === false ? 'Thiếu dữ liệu' : liveSynced ? 'Live Sync' : 'Đang kết nối'}
         </span>

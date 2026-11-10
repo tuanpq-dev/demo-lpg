@@ -15,7 +15,15 @@ import {
 import { dueHasTime, dueTimeLabel, type MaintenanceRecord } from '@/data/maintenance';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { isPastDue } from '@/features/maintenance/deadline';
-import { TEXT_LABEL, WORK_STATE_OPTIONS, isNearOrPastDue, reportedProgressOf, requiresText, workStateDisabled, type WorkState } from '@/features/maintenance/progress';
+import {
+  TEXT_LABEL,
+  WORK_STATE_OPTIONS,
+  isNearOrPastDue,
+  reportedProgressOf,
+  requiresText,
+  workStateDisabled,
+  type WorkState,
+} from '@/features/maintenance/progress';
 import { daysFromToday } from '@/lib/plantTime';
 import type { ProgressUpdateForm } from './useProgressUpdateForm';
 
@@ -34,7 +42,8 @@ export function DraftNote({ savedAt }: { savedAt: string | undefined }) {
       <Badge variant="tag" tone="neutral">
         Bản nháp
       </Badge>
-      Đang mở bản nháp đã lưu{savedAt ? ` lúc ${new Date(savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' })}` : ''}.
+      Đang mở bản nháp đã lưu
+      {savedAt ? ` lúc ${new Date(savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' })}` : ''}.
     </p>
   );
 }
@@ -110,7 +119,9 @@ export function ProgressSection({ f, record: r, canOpenChecklist }: { f: Progres
               </>
             )}
             {f.state === 'completed' && checklist.done < checklist.total && (
-              <span className="basis-full text-warning">Checklist chưa xong hết – cần hoàn thành checklist (trừ mục Không áp dụng) mới gửi nghiệm thu được.</span>
+              <span className="basis-full text-warning">
+                Checklist chưa xong hết – cần hoàn thành checklist (trừ mục Không áp dụng) mới gửi nghiệm thu được.
+              </span>
             )}
           </>
         ) : (

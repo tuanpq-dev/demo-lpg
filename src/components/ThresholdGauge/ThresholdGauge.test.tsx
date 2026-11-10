@@ -5,7 +5,17 @@ import { ThresholdGauge } from './ThresholdGauge';
 
 describe('ThresholdGauge – role="meter"', () => {
   test('min/max/now + valuetext nói rõ vượt ngưỡng; phần vẽ ẩn khỏi trình đọc', () => {
-    render(<ThresholdGauge label="Áp suất so với ngưỡng" value={11.8} min={0} max={14.4} threshold={10.5} valueText="11.8 bar, vượt ngưỡng 10.5 bar" valueLabel="11.8" />);
+    render(
+      <ThresholdGauge
+        label="Áp suất so với ngưỡng"
+        value={11.8}
+        min={0}
+        max={14.4}
+        threshold={10.5}
+        valueText="11.8 bar, vượt ngưỡng 10.5 bar"
+        valueLabel="11.8"
+      />,
+    );
     const m = screen.getByRole('meter', { name: 'Áp suất so với ngưỡng' });
     expect(m).toHaveAttribute('aria-valuemin', '0');
     expect(m).toHaveAttribute('aria-valuemax', '14.4');
@@ -14,7 +24,9 @@ describe('ThresholdGauge – role="meter"', () => {
     expect(m.firstElementChild).toHaveAttribute('aria-hidden', 'true');
   });
   test('above: xanh trước ngưỡng, đỏ sau; below: đảo màu', () => {
-    const { container, rerender } = render(<ThresholdGauge label="x" value={11.8} min={0} max={14.4} threshold={10.5} valueText="" valueLabel="11.8" />);
+    const { container, rerender } = render(
+      <ThresholdGauge label="x" value={11.8} min={0} max={14.4} threshold={10.5} valueText="" valueLabel="11.8" />,
+    );
     const segs = () => [...container.querySelectorAll('.rounded-full > span')].map((s) => s.className);
     expect(segs()[0]).toContain('bg-success');
     expect(segs()[1]).toContain('bg-danger');
@@ -34,9 +46,25 @@ describe('ThresholdGauge – role="meter"', () => {
       { from: 20, to: 40, tone: 'warning' as const, label: 'Cảnh báo cấp 2' },
       { from: 40, tone: 'danger' as const, label: 'ESD' },
     ];
-    const ticks = [{ value: 0, label: '0' }, { value: 10, label: '10' }, { value: 20, label: '20' }, { value: 40, label: '40 (ESD)', danger: true }, { value: 100, label: '100' }];
+    const ticks = [
+      { value: 0, label: '0' },
+      { value: 10, label: '10' },
+      { value: 20, label: '20' },
+      { value: 40, label: '40 (ESD)', danger: true },
+      { value: 100, label: '100' },
+    ];
     const { container } = render(
-      <ThresholdGauge label="Nồng độ" value={25} min={0} max={100} threshold={10} bands={bands} ticks={ticks} valueText="25% LEL – Cảnh báo cấp 2" valueLabel="25%" />,
+      <ThresholdGauge
+        label="Nồng độ"
+        value={25}
+        min={0}
+        max={100}
+        threshold={10}
+        bands={bands}
+        ticks={ticks}
+        valueText="25% LEL – Cảnh báo cấp 2"
+        valueLabel="25%"
+      />,
     );
     const m = screen.getByRole('meter', { name: 'Nồng độ' });
     expect(m).toHaveAttribute('aria-valuetext', '25% LEL – Cảnh báo cấp 2');

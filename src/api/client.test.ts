@@ -38,7 +38,9 @@ describe('createApiClient', () => {
   });
 
   test('error.details (tuỳ chọn) → ApiError.details', async () => {
-    const { client } = make({ 'POST /auth/register': [json(400, { error: { code: 'VALIDATION_ERROR', message: 'x', details: ['password: ngắn'] } })] });
+    const { client } = make({
+      'POST /auth/register': [json(400, { error: { code: 'VALIDATION_ERROR', message: 'x', details: ['password: ngắn'] } })],
+    });
     await expect(client.request('/auth/register', { method: 'POST', auth: false })).rejects.toMatchObject({ details: ['password: ngắn'] });
   });
 

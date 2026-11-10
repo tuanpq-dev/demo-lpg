@@ -35,7 +35,6 @@ const T0 = Date.parse('2026-11-02T11:13:50Z'); // 18:13:50 giờ nhà máy
 const tv = (value: number | string, extra: Partial<TagValue> = {}): TagValue => ({ value, ts: T0, quality: 'good', ...extra });
 const LIVE = { 'GS-06': tv(2), 'PLC-01.HEARTBEAT': tv('ok') };
 
-
 const session = (over: Partial<SimulationSession> = {}, config: Partial<ScenarioConfig> = {}): SimulationSession => ({
   id: 'SES-1',
   scenarioId: 'SC-001',
@@ -145,7 +144,11 @@ describe('bắt đầu / kết thúc', () => {
   });
 
   it('sessionRun: kết quả theo bước phản ứng; dừng sớm ghi thêm giờ dừng', () => {
-    expect(sessionRun(SCENARIO, session(), 'R', at(600))).toMatchObject({ result: 'pass', responseSeconds: 38, note: 'Phản ứng 38 s, trong mục tiêu 60 s.' });
+    expect(sessionRun(SCENARIO, session(), 'R', at(600))).toMatchObject({
+      result: 'pass',
+      responseSeconds: 38,
+      note: 'Phản ứng 38 s, trong mục tiêu 60 s.',
+    });
     const stopped = session({ stoppedAt: new Date(at(95)).toISOString() });
     expect(sessionRun(SCENARIO, stopped, 'R', at(200)).note).toBe('Dừng thủ công lúc 01:35. Phản ứng 38 s, trong mục tiêu 60 s.');
   });

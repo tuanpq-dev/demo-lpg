@@ -71,12 +71,7 @@ export function Railing({
       <Instances limit={Math.max(1, bars.length)} material={m}>
         <boxGeometry args={[1, 1, 1]} />
         {bars.map((b) => (
-          <Instance
-            key={`${b.cx}:${b.cz}:${b.h}`}
-            position={[b.cx, b.h, b.cz]}
-            rotation={[0, b.angle, 0]}
-            scale={[b.len + 0.03, b.t, b.t]}
-          />
+          <Instance key={`${b.cx}:${b.cz}:${b.h}`} position={[b.cx, b.h, b.cz]} rotation={[0, b.angle, 0]} scale={[b.len + 0.03, b.t, b.t]} />
         ))}
       </Instances>
     </group>

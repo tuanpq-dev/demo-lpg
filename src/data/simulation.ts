@@ -109,7 +109,15 @@ export async function startSimulation(scenarioId: string, by: string, live: Live
   if (running) return running;
   sessionSeq += 1;
   // Kiểm + chụp số liệu TRƯỚC độ trễ: đúng lúc người dùng bấm.
-  const session = createSession(s, live, Date.now(), appNow(), by, `SES-${Date.now().toString(36)}-${sessionSeq}`, tagHealth(SIMULATION_REFERENCE_TAGS, live, Date.now()));
+  const session = createSession(
+    s,
+    live,
+    Date.now(),
+    appNow(),
+    by,
+    `SES-${Date.now().toString(36)}-${sessionSeq}`,
+    tagHealth(SIMULATION_REFERENCE_TAGS, live, Date.now()),
+  );
   await new Promise((r) => setTimeout(r, SIMULATION_DELAY_MS));
   const started: SimulationSession = { ...session, startedAt: appNow().toISOString() };
   sessionsDb = [started, ...sessionsDb!];

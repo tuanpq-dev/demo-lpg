@@ -12,54 +12,54 @@
   color-scheme: dark;
 
   /* ---------- Background / surface ---------- */
-  --color-bg-app: 7 17 31;            /* #07111F – nền trang */
-  --color-bg-header: 15 28 45;        /* #0F1C2D – app header */
-  --color-bg-canvas: 10 17 26;        /* #0A111A – nền vùng bản đồ */
-  --color-surface: 17 24 39;          /* #111827 – card */
-  --color-surface-raised: 14 26 43;   /* #0E1A2B – card ưu tiên, tab bar, overlay bản đồ */
-  --color-surface-sunken: 14 20 23;   /* #0E1417 – input, select */
-  --color-surface-muted: 48 54 57;    /* #303639 – nút icon, badge trung tính, track */
-  --color-surface-chip: 60 65 72;     /* #3C4148 – counter chip trong tab */
+  --color-bg-app: 7 17 31; /* #07111F – nền trang */
+  --color-bg-header: 15 28 45; /* #0F1C2D – app header */
+  --color-bg-canvas: 10 17 26; /* #0A111A – nền vùng bản đồ */
+  --color-surface: 17 24 39; /* #111827 – card */
+  --color-surface-raised: 14 26 43; /* #0E1A2B – card ưu tiên, tab bar, overlay bản đồ */
+  --color-surface-sunken: 14 20 23; /* #0E1417 – input, select */
+  --color-surface-muted: 48 54 57; /* #303639 – nút icon, badge trung tính, track */
+  --color-surface-chip: 60 65 72; /* #3C4148 – counter chip trong tab */
 
   /* ---------- Border ---------- */
-  --color-line: 60 73 78;             /* #3C494E – dùng với alpha: /10 subtle, /30 default, /100 strong */
-  --color-line-card: 61 72 80;        /* #3D4850 – viền KPI card trang Bảo trì */
-  --color-divider: 115 115 115;       /* #737373 – Figma variable "Line" */
+  --color-line: 60 73 78; /* #3C494E – dùng với alpha: /10 subtle, /30 default, /100 strong */
+  --color-line-card: 61 72 80; /* #3D4850 – viền KPI card trang Bảo trì */
+  --color-divider: 115 115 115; /* #737373 – Figma variable "Line" */
 
   /* ---------- Text ---------- */
-  --color-text-primary: 221 227 231;  /* #DDE3E7 */
-  --color-text-secondary: 189 200 210;/* #BDC8D2 */
-  --color-text-muted: 187 201 207;    /* #BBC9CF – dùng với alpha /60–/70 cho text phụ */
-  --color-text-label: 169 199 234;    /* #A9C7EA – tiêu đề KPI */
-  --color-text-inverse: 7 17 31;      /* #07111F – chữ trên nền primary */
-  --color-text-disabled: 59 64 72;    /* #3B4048 – mục nav bị vô hiệu ("Vận hành") */
+  --color-text-primary: 221 227 231; /* #DDE3E7 */
+  --color-text-secondary: 189 200 210; /* #BDC8D2 */
+  --color-text-muted: 187 201 207; /* #BBC9CF – dùng với alpha /60–/70 cho text phụ */
+  --color-text-label: 169 199 234; /* #A9C7EA – tiêu đề KPI */
+  --color-text-inverse: 7 17 31; /* #07111F – chữ trên nền primary */
+  --color-text-disabled: 59 64 72; /* #3B4048 – mục nav bị vô hiệu ("Vận hành") */
 
   /* ---------- Brand ---------- */
-  --color-primary: 34 211 238;        /* #22D3EE – nav active, nút primary */
-  --color-accent: 0 183 255;          /* #00B7FF – chart, link, viền nút secondary */
-  --color-info: 135 207 255;          /* #87CFFF – tab active, link bảng, "Đang xử lý" */
+  --color-primary: 34 211 238; /* #22D3EE – nav active, nút primary */
+  --color-accent: 0 183 255; /* #00B7FF – chart, link, viền nút secondary */
+  --color-info: 135 207 255; /* #87CFFF – tab active, link bảng, "Đang xử lý" */
 
   /* ---------- Status ---------- */
-  --color-success: 52 211 153;        /* #34D399 */
+  --color-success: 52 211 153; /* #34D399 */
   --color-success-strong: 15 168 118; /* #0FA876 */
-  --color-live: 13 230 53;            /* #0DE635 – chấm "Dữ liệu trực tiếp" */
-  --color-warning: 255 187 67;        /* #FFBB43 – mức "Cao" */
-  --color-warning-soft: 255 217 161;  /* #FFD9A1 – chart bar, mã cảnh báo vàng nhạt */
-  --color-danger: 211 73 87;          /* #D34957 – mức "Nghiêm trọng": VIỀN, NỀN, CHẤM, ICON (không dùng cho chữ) */
-  --color-danger-text: 220 109 121;   /* #DC6D79 – CHỮ đỏ (= danger pha 20 % trắng, cùng sắc): ≥ 4.8:1 trên mọi nền tối đang dùng
+  --color-live: 13 230 53; /* #0DE635 – chấm "Dữ liệu trực tiếp" */
+  --color-warning: 255 187 67; /* #FFBB43 – mức "Cao" */
+  --color-warning-soft: 255 217 161; /* #FFD9A1 – chart bar, mã cảnh báo vàng nhạt */
+  --color-danger: 211 73 87; /* #D34957 – mức "Nghiêm trọng": VIỀN, NỀN, CHẤM, ICON (không dùng cho chữ) */
+  --color-danger-text: 220 109 121; /* #DC6D79 – CHỮ đỏ (= danger pha 20 % trắng, cùng sắc): ≥ 4.8:1 trên mọi nền tối đang dùng
                                          (danger chỉ 3.3–4.4:1). Duyệt 26/10/2026 vì a11y – sáng hơn Figma ~20 %. */
-  --color-danger-strong: 250 36 57;   /* #FA2439 – viền/vòng sáng cảnh báo + SỐ LỚN (≥ 24px, hoặc ≥ 18.66px đậm – chuẩn "chữ lớn" WCAG, 4.5:1 đủ 3:1) */
-  --color-danger-solid: 180 32 52;    /* #B42034 – NỀN ĐẶC có chữ trắng (nút/ô chọn "Nghiêm trọng"): chữ fg 5.07:1. Duyệt 26/10/2026 */
-  --color-neutral: 189 200 210;       /* #BDC8D2 – mức "Thấp"/offline */
-  --color-verify: 167 139 250;        /* #A78BFA – tím Figma 117:4250: số đo nhập tay / "XM hiện trường" (CHỜ DUYỆT – 6,5:1 trên surface) */
+  --color-danger-strong: 250 36 57; /* #FA2439 – viền/vòng sáng cảnh báo + SỐ LỚN (≥ 24px, hoặc ≥ 18.66px đậm – chuẩn "chữ lớn" WCAG, 4.5:1 đủ 3:1) */
+  --color-danger-solid: 180 32 52; /* #B42034 – NỀN ĐẶC có chữ trắng (nút/ô chọn "Nghiêm trọng"): chữ fg 5.07:1. Duyệt 26/10/2026 */
+  --color-neutral: 189 200 210; /* #BDC8D2 – mức "Thấp"/offline */
+  --color-verify: 167 139 250; /* #A78BFA – tím Figma 117:4250: số đo nhập tay / "XM hiện trường" (CHỜ DUYỆT – 6,5:1 trên surface) */
 
   /* ---------- Cảnh 3D: scene-* ----------
    * Đọc pixel ảnh bản đồ Figma 53:244; lệch < 5% (khoảng cách RGB) so với token sẵn có → alias.
    */
-  --color-scene-ground: var(--color-bg-app);  /* #061123 lệch 0.9% */
-  --color-scene-grid: var(--color-line);      /* #343C4C lệch 3.5% */
-  --color-scene-asset: var(--color-neutral);  /* #C1C0C8 lệch 3.0% */
-  --color-scene-flow: 148 217 196;            /* #94D9C4 – ống phát sáng; gần nhất text-muted 9.9%, primary/success > 20% */
+  --color-scene-ground: var(--color-bg-app); /* #061123 lệch 0.9% */
+  --color-scene-grid: var(--color-line); /* #343C4C lệch 3.5% */
+  --color-scene-asset: var(--color-neutral); /* #C1C0C8 lệch 3.0% */
+  --color-scene-flow: 148 217 196; /* #94D9C4 – ống phát sáng; gần nhất text-muted 9.9%, primary/success > 20% */
 
   /* ---------- Radius ---------- */
   --radius-xs: 2px;
@@ -70,7 +70,7 @@
   --radius-full: 9999px;
 
   /* ---------- Spacing (bổ sung cho thang Tailwind) ---------- */
-  --space-card: 17px;                 /* padding card (16 + 1px border) */
+  --space-card: 17px; /* padding card (16 + 1px border) */
   --space-gutter: 24px;
   --space-page: 32px;
 
@@ -91,17 +91,17 @@
 
   /* ---------- Layout ---------- */
   --header-height: 60px;
-  --content-max-width: 1920px;      /* vùng nội dung trang tối đa (màn 2560) */
+  --content-max-width: 1920px; /* vùng nội dung trang tối đa (màn 2560) */
 
   /* ---------- Layout chi tiết yêu cầu bảo trì (/maintenance/:id) ----------
    * ⚠ ƯỚC LƯỢNG TỪ ẢNH MT-00128 (public/figma-ref/mt-detail-design.png, khung 1565, chưa có node Figma).
    * Có số đo thật từ designer → sửa MỘT chỗ này. Dùng qua class `w-[var(--…)]` / style.
    */
-  --mt-aside-width: 456px;          /* cột phải ở ≥ wide (ảnh: 1077–1533 px) – dưới wide co theo 3fr */
-  --mt-stepper-height: 94px;        /* thẻ stepper 5 bước */
-  --action-bar-height: 72px;        /* StickyActionBar (ảnh ~71 px) */
-  --checklist-row-height: 38px;     /* chiều cao tối thiểu một mục checklist */
-  --attachment-card-width: 235px;   /* thẻ tệp "Ảnh và tài liệu" (đo lại trên ảnh 1565: 235 × 110) */
+  --mt-aside-width: 456px; /* cột phải ở ≥ wide (ảnh: 1077–1533 px) – dưới wide co theo 3fr */
+  --mt-stepper-height: 94px; /* thẻ stepper 5 bước */
+  --action-bar-height: 72px; /* StickyActionBar (ảnh ~71 px) */
+  --checklist-row-height: 38px; /* chiều cao tối thiểu một mục checklist */
+  --attachment-card-width: 235px; /* thẻ tệp "Ảnh và tài liệu" (đo lại trên ảnh 1565: 235 × 110) */
   --attachment-card-height: 110px;
-  --note-avatar-size: 28px;         /* avatar luồng ghi chú */
+  --note-avatar-size: 28px; /* avatar luồng ghi chú */
 }

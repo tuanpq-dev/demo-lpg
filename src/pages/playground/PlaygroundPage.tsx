@@ -35,19 +35,31 @@ export default function PlaygroundPage() {
         <p className="text-base text-fg-secondary">Digital Twin 2026 – đối chiếu với Figma</p>
       </header>
 
-      <Section id="reports" title="18. Báo cáo định kỳ (ảnh thiết kế): KpiCard viền màu, MetricListCard, ScheduleList, ActionItemList, badge trạng thái, FilterBar inline">
+      <Section
+        id="reports"
+        title="18. Báo cáo định kỳ (ảnh thiết kế): KpiCard viền màu, MetricListCard, ScheduleList, ActionItemList, badge trạng thái, FilterBar inline"
+      >
         <ReportsSection />
       </Section>
 
-      <Section id="alert-update" title="17. Cập nhật xử lý (áp suất theo ảnh, gas, cháy) + xác nhận đóng cảnh báo: modal, InspectionTable, BeforeAfterReadings, Checkbox card">
+      <Section
+        id="alert-update"
+        title="17. Cập nhật xử lý (áp suất theo ảnh, gas, cháy) + xác nhận đóng cảnh báo: modal, InspectionTable, BeforeAfterReadings, Checkbox card"
+      >
         <AlertUpdateSection />
       </Section>
 
-      <Section id="alert-assign" title="16. Phân công xử lý cảnh báo (ảnh thiết kế): modal một / hàng loạt / đổi người, thẻ đầu, StaffPickerCard có xét ca, StaffFilters">
+      <Section
+        id="alert-assign"
+        title="16. Phân công xử lý cảnh báo (ảnh thiết kế): modal một / hàng loạt / đổi người, thẻ đầu, StaffPickerCard có xét ca, StaffFilters"
+      >
         <AlertAssignSection />
       </Section>
 
-      <Section id="alert-drawer" title="15. Chi tiết cảnh báo (ảnh thiết kế): drawer, ThresholdGauge, WorkflowStepper dọc, Checklist plain, KpiCard lg, Button danger, StaffList compact">
+      <Section
+        id="alert-drawer"
+        title="15. Chi tiết cảnh báo (ảnh thiết kế): drawer, ThresholdGauge, WorkflowStepper dọc, Checklist plain, KpiCard lg, Button danger, StaffList compact"
+      >
         <AlertDrawerSection />
       </Section>
 
@@ -55,11 +67,17 @@ export default function PlaygroundPage() {
         <AssignSection />
       </Section>
 
-      <Section id="review" title="13. Nghiệm thu bảo trì (ảnh thiết kế): modal Gửi yêu cầu nghiệm thu, modal Nghiệm thu, biến thể StatusOptionGroup/Checklist/Badge/KpiCard">
+      <Section
+        id="review"
+        title="13. Nghiệm thu bảo trì (ảnh thiết kế): modal Gửi yêu cầu nghiệm thu, modal Nghiệm thu, biến thể StatusOptionGroup/Checklist/Badge/KpiCard"
+      >
         <ReviewSection />
       </Section>
 
-      <Section id="progress-update" title="12. Cập nhật tiến độ bảo trì (ảnh thiết kế): modal, StatusOptionCard, ProgressSlider, UploadTile, cờ Tạm dừng/Gặp sự cố">
+      <Section
+        id="progress-update"
+        title="12. Cập nhật tiến độ bảo trì (ảnh thiết kế): modal, StatusOptionCard, ProgressSlider, UploadTile, cờ Tạm dừng/Gặp sự cố"
+      >
         <ProgressUpdateSection />
       </Section>
 

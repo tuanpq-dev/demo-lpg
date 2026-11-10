@@ -91,12 +91,7 @@ export function objectStatus(
 }
 
 /** Danh sách "nhãn: giá trị" của một object để hiển thị tooltip. */
-export function objectReadings(
-  obj: SceneObject,
-  live: LiveData | undefined,
-  defaults?: Record<string, Thresholds>,
-  now: number = Date.now(),
-) {
+export function objectReadings(obj: SceneObject, live: LiveData | undefined, defaults?: Record<string, Thresholds>, now: number = Date.now()) {
   return resolveBindings(obj, defaults).map(({ field, tag, thresholds }) => ({
     field,
     tag,

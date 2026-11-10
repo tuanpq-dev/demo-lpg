@@ -54,7 +54,11 @@ describe('tải việc TÍNH TỪ danh sách cảnh báo', () => {
   test('Bận từ 3 cảnh báo (ranh giới 2 / 3)', () => {
     const two = computeAlertLoads([alert('1', { assignee: 'A' }), alert('2', { assignee: 'A' })]);
     expect(alertLoadOf(two, 'A').busy).toBe(false);
-    const three = computeAlertLoads([alert('1', { assignee: 'A' }), alert('2', { assignee: 'A' }), alert('3', { assignee: 'A', status: 'in-progress' })]);
+    const three = computeAlertLoads([
+      alert('1', { assignee: 'A' }),
+      alert('2', { assignee: 'A' }),
+      alert('3', { assignee: 'A', status: 'in-progress' }),
+    ]);
     expect(alertLoadOf(three, 'A').busy).toBe(true);
   });
 
@@ -76,7 +80,9 @@ describe('trạng thái theo ca + sắp xếp gợi ý', () => {
     const busyOff = rankAlertStaff([person('Bùi Bận', { defaultShift: 'shift-2' })], { areas: [], skills: [] }, loads, at('10:45'));
     expect(busyOff[0]).toMatchObject({ availability: 'off-shift', onShift: false });
     expect(busyOff[0]!.load.active).toBe(3);
-    expect(rankAlertStaff([person('Bùi Bận', { defaultShift: 'shift-2' })], { areas: [], skills: [] }, loads, at('14:00'))[0]!.availability).toBe('busy');
+    expect(rankAlertStaff([person('Bùi Bận', { defaultShift: 'shift-2' })], { areas: [], skills: [] }, loads, at('14:00'))[0]!.availability).toBe(
+      'busy',
+    );
   });
 
   test('cùng khu / đúng chuyên môn lên trước, rồi Sẵn sàng → Bận → Ngoài ca, rồi theo tên', () => {

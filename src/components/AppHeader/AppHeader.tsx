@@ -50,9 +50,7 @@ export function AppHeader({
   className,
 }: AppHeaderProps) {
   return (
-    <header
-      className={cn('flex h-header items-center justify-between gap-6 bg-bg-header px-6', className)}
-    >
+    <header className={cn('flex h-header items-center justify-between gap-6 bg-bg-header px-6', className)}>
       {/* Logo – 53:14 */}
       <div className="flex shrink-0 items-center gap-3 px-2">
         <span className="flex size-10 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
@@ -81,15 +79,7 @@ export function AppHeader({
             <span className="inline-flex opacity-90 transition-opacity group-hover:opacity-100">
               <Icon name="bell" box={24} />
             </span>
-            {!!notificationCount && (
-              <Badge
-                variant="count"
-                value={notificationCount}
-                tone="danger"
-                outlined
-                className="absolute -right-2 -top-1.5"
-              />
-            )}
+            {!!notificationCount && <Badge variant="count" value={notificationCount} tone="danger" outlined className="absolute -right-2 -top-1.5" />}
           </button>
           <button
             type="button"
@@ -159,22 +149,12 @@ function UserMenu({
 
   return (
     <div className="relative" ref={root}>
-      <button
-        ref={button}
-        type="button"
-        aria-expanded={open}
-        aria-controls={listId}
-        onClick={() => setOpen((o) => !o)}
-        className={userButtonClass}
-      >
+      <button ref={button} type="button" aria-expanded={open} aria-controls={listId} onClick={() => setOpen((o) => !o)} className={userButtonClass}>
         <UserButtonContent user={user} />
         <span className="sr-only">– mở menu tài khoản</span>
       </button>
       {open && (
-        <div
-          id={listId}
-          className="absolute right-0 top-full z-40 mt-2 min-w-56 rounded-lg border border-line/30 bg-surface-raised p-1 shadow-card"
-        >
+        <div id={listId} className="absolute right-0 top-full z-40 mt-2 min-w-56 rounded-lg border border-line/30 bg-surface-raised p-1 shadow-card">
           <div className="border-b border-line/30 px-3 py-2">
             <p className="truncate text-md font-semibold text-fg">{user.name}</p>
             {user.detail && <p className="truncate text-xs text-fg-muted">{user.detail}</p>}

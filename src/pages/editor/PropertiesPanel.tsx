@@ -102,9 +102,7 @@ export function PropertiesPanel({ actions, onUseCurrentCamera }: PropertiesPanel
       <div className="flex flex-col gap-3">
         <p className="text-base font-semibold text-fg">{picked.length} object đang chọn</p>
         <p className="text-sm text-fg-muted">{picked.map((o) => o.id).join(', ')}</p>
-        <p className="text-sm text-fg-muted">
-          Di chuyển (W): kéo một object trong nhóm – cả nhóm trượt trên sàn. Xoay/scale: gizmo quanh trọng tâm.
-        </p>
+        <p className="text-sm text-fg-muted">Di chuyển (W): kéo một object trong nhóm – cả nhóm trượt trên sàn. Xoay/scale: gizmo quanh trọng tâm.</p>
         <GroupPlacement picked={picked} actions={actions} />
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" size="sm" icon={<DuplicateIcon />} onClick={actions.duplicateSelection}>
@@ -144,12 +142,7 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
       </div>
 
       <Section title="Định danh">
-        <CommitTextField
-          label="id"
-          value={obj.id}
-          hint="Đổi id cập nhật cả view và ống trỏ tới"
-          onCommit={(v) => actions.rename(obj.id, v.trim())}
-        />
+        <CommitTextField label="id" value={obj.id} hint="Đổi id cập nhật cả view và ống trỏ tới" onCommit={(v) => actions.rename(obj.id, v.trim())} />
         <CommitTextField
           label="Nhãn"
           value={obj.label ?? ''}
@@ -232,21 +225,12 @@ function ObjectProperties({ obj, actions }: { obj: SceneObject; actions: EditorA
             {(obj.rotation?.[0] || obj.rotation?.[2]) && (
               <div className="flex items-center justify-between gap-2 rounded-md bg-warning/10 px-2 py-1.5 text-sm text-warning">
                 <span>Có nghiêng X/Z (từ JSON) – đáy lệch khỏi sàn.</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => update((o) => ({ ...o, rotation: [0, o.rotation?.[1] ?? 0, 0] }))}
-                >
+                <Button variant="ghost" size="sm" onClick={() => update((o) => ({ ...o, rotation: [0, o.rotation?.[1] ?? 0, 0] }))}>
                   Bỏ nghiêng
                 </Button>
               </div>
             )}
-            <Vec3Field
-              label="Scale"
-              step={0.1}
-              value={obj.scale ?? [1, 1, 1]}
-              onChange={(scale) => update((o) => ({ ...o, scale }))}
-            />
+            <Vec3Field label="Scale" step={0.1} value={obj.scale ?? [1, 1, 1]} onChange={(scale) => update((o) => ({ ...o, scale }))} />
           </>
         )}
       </Section>
@@ -336,7 +320,12 @@ function PipeProperties({ pipe, actions }: { pipe: Pipe; actions: EditorActions 
       </div>
 
       <Section title="Định danh">
-        <CommitTextField label="id" value={pipe.id} hint="Đổi id cập nhật cả object gắn trên ống" onCommit={(v) => actions.rename(pipe.id, v.trim())} />
+        <CommitTextField
+          label="id"
+          value={pipe.id}
+          hint="Đổi id cập nhật cả object gắn trên ống"
+          onCommit={(v) => actions.rename(pipe.id, v.trim())}
+        />
         <NumberField
           label="Bán kính"
           unit="m"
@@ -492,13 +481,23 @@ function GroupPlacement({ picked, actions }: { picked: SceneObject[]; actions: E
           step={ELEVATION_STEP}
           value={same}
           placeholder="khác nhau"
-          onChange={(v) => actions.setElevation(snap ? snapTo(v, ELEVATION_STEP) : v, placed.map((o) => o.id))}
+          onChange={(v) =>
+            actions.setElevation(
+              snap ? snapTo(v, ELEVATION_STEP) : v,
+              placed.map((o) => o.id),
+            )
+          }
         />
         <Button
           variant="ghost"
           size="sm"
           disabled={same === 0}
-          onClick={() => actions.setElevation(0, placed.map((o) => o.id))}
+          onClick={() =>
+            actions.setElevation(
+              0,
+              placed.map((o) => o.id),
+            )
+          }
         >
           Đặt xuống sàn
         </Button>
@@ -512,8 +511,7 @@ function PathEditor({ obj, update }: { obj: SceneObject; update: Update }) {
   const path = obj.path ?? [];
   const closed = path.length > 2 && path[0]![0] === path.at(-1)![0] && path[0]![2] === path.at(-1)![2];
   const pts = closed ? path.slice(0, -1) : path;
-  const save = (next: Vec3[], close = closed) =>
-    update((o) => ({ ...o, path: close && next.length > 2 ? [...next, [...next[0]!] as Vec3] : next }));
+  const save = (next: Vec3[], close = closed) => update((o) => ({ ...o, path: close && next.length > 2 ? [...next, [...next[0]!] as Vec3] : next }));
   return (
     <Section
       title={`Đường bao (${pts.length} điểm)`}
@@ -838,7 +836,9 @@ function SceneProperties({ onUseCurrentCamera }: { onUseCurrentCamera: () => voi
           )
         }
       >
-        {Object.keys(thresholds).length === 0 && <p className="text-sm text-fg-muted">Chưa có – object chỉ đổi trạng thái theo ngưỡng riêng của binding.</p>}
+        {Object.keys(thresholds).length === 0 && (
+          <p className="text-sm text-fg-muted">Chưa có – object chỉ đổi trạng thái theo ngưỡng riêng của binding.</p>
+        )}
         {Object.entries(thresholds).map(([field, t]) => (
           <div key={field} className={cn('flex flex-col gap-1.5 rounded-md border border-line/30 p-2')}>
             <div className="flex items-center justify-between">

@@ -8,7 +8,19 @@ describe('AlertItem layout="bar"', () => {
   test('tên gồm mã ẩn + nội dung, dòng phụ "giờ - trạng thái", vạch theo tone, bấm gọi id', async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
-    render(<AlertItem layout="bar" id="A1" code="ALT-1" message="Nhiệt độ thấp" time="08:45" severity="high" statusLabel="Chưa xác nhận" tone="success" onClick={onClick} />);
+    render(
+      <AlertItem
+        layout="bar"
+        id="A1"
+        code="ALT-1"
+        message="Nhiệt độ thấp"
+        time="08:45"
+        severity="high"
+        statusLabel="Chưa xác nhận"
+        tone="success"
+        onClick={onClick}
+      />,
+    );
     const btn = screen.getByRole('button', { name: /ALT-1: Nhiệt độ thấp/ });
     expect(btn).toHaveTextContent('08:45 - Chưa xác nhận');
     expect(btn).toHaveClass('border-l-success');

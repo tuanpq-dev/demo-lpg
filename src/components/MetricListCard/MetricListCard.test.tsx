@@ -29,7 +29,9 @@ describe('MetricListCard', () => {
   });
 
   test('thanh tiến độ: tên truy cập + % làm tròn; max = 0 không chia cho 0', () => {
-    const { rerender } = render(<MetricListCard title="Tiến độ" progress={{ label: 'Hoàn thành', value: 19, max: 24, valueText: '19/24 ngày' }} rows={[]} />);
+    const { rerender } = render(
+      <MetricListCard title="Tiến độ" progress={{ label: 'Hoàn thành', value: 19, max: 24, valueText: '19/24 ngày' }} rows={[]} />,
+    );
     expect(screen.getByRole('progressbar', { name: 'Hoàn thành' })).toBeInTheDocument();
     expect(screen.getByText('79%')).toBeInTheDocument();
     rerender(<MetricListCard title="Tiến độ" progress={{ label: 'Hoàn thành', value: 0, max: 0, valueText: '0/0 ngày' }} rows={[]} />);

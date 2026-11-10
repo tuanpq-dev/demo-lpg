@@ -57,7 +57,13 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
       <Button variant="subtle" onClick={f.saveDraft}>
         Lưu nháp
       </Button>
-      <Button type="submit" variant="primary" disabled={busy} aria-disabled={f.blocked || undefined} aria-describedby={f.blocked ? blockId : undefined}>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={busy}
+        aria-disabled={f.blocked || undefined}
+        aria-describedby={f.blocked ? blockId : undefined}
+      >
         Lưu cập nhật
       </Button>
     </>
@@ -105,7 +111,14 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
         onSupportPeopleChange={(ids) => set('supportPeople', ids)}
       />
 
-      <UpdateInspectionSection code={a.code} steps={f.steps} inspection={v.inspection} errors={err.inspection} actor={actor} onChange={f.setInspection} />
+      <UpdateInspectionSection
+        code={a.code}
+        steps={f.steps}
+        inspection={v.inspection}
+        errors={err.inspection}
+        actor={actor}
+        onChange={f.setInspection}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <UpdateReadingsSection
@@ -142,7 +155,14 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit, f
         onActionTakenChange={(t) => set('actionTaken', t)}
       />
 
-      <UpdateFilesSection code={a.code} attachments={a.attachments} files={f.files} uploadError={f.uploadError} onAdd={f.addFiles} onRemove={f.removeFile} />
+      <UpdateFilesSection
+        code={a.code}
+        attachments={a.attachments}
+        files={f.files}
+        uploadError={f.uploadError}
+        onAdd={f.addFiles}
+        onRemove={f.removeFile}
+      />
 
       <UpdateIssueSection
         issues={cfg.issues}

@@ -43,7 +43,15 @@ export function PriorityTasksSection({ tasks, onDetail }: { tasks: ReturnType<ty
 }
 
 /** Lịch sắp tới – Figma 70:4889 (cột phải của danh sách). */
-export function ScheduleCard({ events, onShowSchedule, onEventClick }: { events: TimelineEvent[]; onShowSchedule: () => void; onEventClick: (id: string) => void }) {
+export function ScheduleCard({
+  events,
+  onShowSchedule,
+  onEventClick,
+}: {
+  events: TimelineEvent[];
+  onShowSchedule: () => void;
+  onEventClick: (id: string) => void;
+}) {
   return (
     <Card title="Lịch sắp tới" headerVariant="plain" action={{ label: 'Xem lịch', onClick: onShowSchedule }}>
       {events.length ? (

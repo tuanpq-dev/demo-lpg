@@ -32,5 +32,4 @@ export function mockFetch(routes: Record<string, Handler[]>) {
 }
 
 /** JWT giả (không ký) có exp – để test hẹn refresh. */
-export const fakeJwt = (exp: number) =>
-  `eyJhbGciOiJub25lIn0.${btoa(JSON.stringify({ sub: 'u1', exp })).replace(/=+$/, '')}.x`;
+export const fakeJwt = (exp: number) => `eyJhbGciOiJub25lIn0.${btoa(JSON.stringify({ sub: 'u1', exp })).replace(/=+$/, '')}.x`;

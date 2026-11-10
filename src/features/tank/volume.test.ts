@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  heightToVolumePercent,
-  horizontalCylinderFillFraction,
-  levelPercentToVolumePercent,
-  strappingVolume,
-} from './volume';
+import { heightToVolumePercent, horizontalCylinderFillFraction, levelPercentToVolumePercent, strappingVolume } from './volume';
 
 /** Công thức giải tích độc lập: diện tích viên phân = R²·acos((R−h)/R) − (R−h)·√(2Rh − h²), chia πR². */
 function segmentFraction(h: number, D: number) {
@@ -42,7 +37,8 @@ describe('horizontalCylinderFillFraction – bồn trụ nằm', () => {
   });
 
   test('đối xứng: f(x) + f(1 − x) = 1', () => {
-    for (const x of [0.05, 0.2, 0.37, 0.6]) expect(horizontalCylinderFillFraction(x, 1) + horizontalCylinderFillFraction(1 - x, 1)).toBeCloseTo(1, 12);
+    for (const x of [0.05, 0.2, 0.37, 0.6])
+      expect(horizontalCylinderFillFraction(x, 1) + horizontalCylinderFillFraction(1 - x, 1)).toBeCloseTo(1, 12);
   });
 
   test('chiều cao âm → 0, vượt đường kính → 100 % (kẹp, cảm biến lệch không làm vỡ số)', () => {

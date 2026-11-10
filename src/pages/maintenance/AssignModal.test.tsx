@@ -50,7 +50,11 @@ describe('AssignModal', () => {
     expect(within(d).getByText('Kiểm tra van an toàn PSV-101')).toBeInTheDocument();
     expect(within(d).getByText('Chờ tiếp nhận')).toBeInTheDocument();
     const list = within(d).getByRole('radiogroup', { name: 'Danh sách nhân sự' });
-    expect(within(list).getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    expect(
+      within(list)
+        .getAllByRole('radio')
+        .every((r) => r.getAttribute('aria-checked') === 'false'),
+    ).toBe(true);
     expect(within(list).queryByRole('radio', { name: /Hoàng Minh E/ })).toBeNull(); // trưởng ca không còn chọn được
     const ok = within(d).getByRole('button', { name: 'Xác nhận phân công' });
     expect(ok).toHaveAttribute('aria-disabled', 'true');
@@ -68,7 +72,11 @@ describe('AssignModal', () => {
     expect(screen.getByRole('button', { name: 'Bỏ chọn Nguyễn Văn A' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Ca làm việc/ })).toHaveTextContent('Ca 2'); // ca mặc định của Nguyễn Văn A
     await user.click(screen.getByRole('button', { name: 'Bỏ chọn Nguyễn Văn A' }));
-    expect(within(list).getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    expect(
+      within(list)
+        .getAllByRole('radio')
+        .every((r) => r.getAttribute('aria-checked') === 'false'),
+    ).toBe(true);
   });
 
   test('người phối hợp không gồm người chính; xác nhận gửi đủ trường', async () => {
@@ -80,7 +88,14 @@ describe('AssignModal', () => {
     await user.type(screen.getByRole('textbox', { name: /Ghi chú phân công/ }), 'Lưu ý cô lập áp suất');
     await user.click(screen.getByRole('button', { name: 'Xác nhận phân công' }));
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ assignee: 'Lê Thị C', collaborators: ['Võ Thị F'], dueAt: '2099-10-26T16:00', shift: 'shift-2', note: 'Lưu ý cô lập áp suất', notify: true }),
+      expect.objectContaining({
+        assignee: 'Lê Thị C',
+        collaborators: ['Võ Thị F'],
+        dueAt: '2099-10-26T16:00',
+        shift: 'shift-2',
+        note: 'Lưu ý cô lập áp suất',
+        notify: true,
+      }),
     );
   });
 
@@ -196,7 +211,11 @@ describe('AssignModal', () => {
     await user.click(screen.getByRole('option', { name: 'Tất cả phòng ban' }));
     await user.click(screen.getByRole('button', { name: /Lọc ca/ }));
     await user.click(screen.getByRole('option', { name: 'Ca 3' }));
-    expect(within(list()).queryAllByRole('radio').every((r) => /Ca 3/.test(r.textContent ?? ''))).toBe(true);
+    expect(
+      within(list())
+        .queryAllByRole('radio')
+        .every((r) => /Ca 3/.test(r.textContent ?? '')),
+    ).toBe(true);
   });
 
   test('lưu tạm thất bại → câu lỗi, không đóng; sửa một ô → lỗi biến mất', async () => {

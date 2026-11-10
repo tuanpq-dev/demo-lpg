@@ -56,7 +56,9 @@ const OPEN = new Set<AlertRecord['status']>(['unacknowledged', 'in-progress']);
 
 /** Cảnh báo ĐANG MỞ (Chưa xác nhận / Đang xử lý) khác cùng thiết bị hoặc cùng khu – mới nhất trước theo thứ tự danh sách. */
 export function relatedOpenAlerts(a: Pick<AlertRecord, 'id' | 'device' | 'area'>, all: readonly AlertRecord[]): RelatedAlert[] {
-  return all.filter((x) => x.id !== a.id && OPEN.has(x.status) && (x.device === a.device || x.area === a.area)).map(({ id, code, message }) => ({ id, code, message }));
+  return all
+    .filter((x) => x.id !== a.id && OPEN.has(x.status) && (x.device === a.device || x.area === a.area))
+    .map(({ id, code, message }) => ({ id, code, message }));
 }
 
 const NO_LIVE = 'Không có số trực tiếp cho cảnh báo này – theo kết quả xử lý đã ghi.';
@@ -89,7 +91,9 @@ function inRangeCondition(c: CloseConditionInput): CloseCondition {
   const v = p.reading.value;
   const f = (n: number) => formatMeasure(n, p.unit);
   const ok = p.direction === 'above' ? v < p.limit : v > p.limit;
-  return ok ? { id: 'in-range', ok: true } : fail(`${p.label} hiện tại ${f(v)} chưa ${p.direction === 'above' ? 'dưới' : 'trên'} ngưỡng ${f(p.limit)}.`);
+  return ok
+    ? { id: 'in-range', ok: true }
+    : fail(`${p.label} hiện tại ${f(v)} chưa ${p.direction === 'above' ? 'dưới' : 'trên'} ngưỡng ${f(p.limit)}.`);
 }
 
 /** 3 điều kiện hệ thống theo thứ tự ảnh. */
@@ -97,7 +101,12 @@ export function closeConditions(c: CloseConditionInput): CloseCondition[] {
   const rel: CloseCondition =
     c.related.length === 0
       ? { id: 'no-related', ok: true }
-      : { id: 'no-related', ok: false, reason: `Còn ${c.related.length} cảnh báo đang mở cùng thiết bị/khu: ${c.related.map((r) => r.code).join(', ')}.`, related: c.related };
+      : {
+          id: 'no-related',
+          ok: false,
+          reason: `Còn ${c.related.length} cảnh báo đang mở cùng thiết bị/khu: ${c.related.map((r) => r.code).join(', ')}.`,
+          related: c.related,
+        };
   return [stableCondition(c), inRangeCondition(c), rel];
 }
 
@@ -107,7 +116,10 @@ export const allConditionsOk = (list: readonly CloseCondition[]) => list.length 
 export const resolverOf = (a: Pick<AlertRecord, 'resolvedBy' | 'assignee'>) => a.resolvedBy ?? a.assignee ?? null;
 
 /** Mức Nghiêm trọng: người đóng phải khác người xử lý. Mức khác: người xử lý tự đóng được. */
-export function closerCheck(a: Pick<AlertRecord, 'severity' | 'resolvedBy' | 'assignee'>, closer: string): { ok: true } | { ok: false; reason: string } {
+export function closerCheck(
+  a: Pick<AlertRecord, 'severity' | 'resolvedBy' | 'assignee'>,
+  closer: string,
+): { ok: true } | { ok: false; reason: string } {
   const resolver = resolverOf(a);
   if (a.severity === 'critical' && resolver && resolver === closer.trim())
     return { ok: false, reason: `Cảnh báo Nghiêm trọng: người đóng phải khác người xử lý (${resolver}).` };
@@ -155,7 +167,13 @@ export function closeBlock(a: AlertRecord, conditions: readonly CloseCondition[]
 }
 
 /** "Xác nhận đóng cảnh báo": Đã xử lý → Hoàn thành + người đóng + ghi chú kết luận (thành ghi chú) + MỘT dòng lịch sử. */
-export function closeAlert(a: AlertRecord, input: CloseInput, conditions: readonly CloseCondition[], cfg: Pick<FollowUpConfig, 'target'>, ctx: AlertActionCtx): CloseResult {
+export function closeAlert(
+  a: AlertRecord,
+  input: CloseInput,
+  conditions: readonly CloseCondition[],
+  cfg: Pick<FollowUpConfig, 'target'>,
+  ctx: AlertActionCtx,
+): CloseResult {
   const block = closeBlock(a, conditions, ctx.by, input.note);
   if (block) return block;
   const note = input.note.trim();
@@ -179,7 +197,12 @@ export function closeAlert(a: AlertRecord, input: CloseInput, conditions: readon
 export type MonitorResult = { ok: true; record: AlertRecord } | { ok: false; reason: 'status' | 'minutes'; message: string };
 
 /** "Tiếp tục theo dõi": giữ Đã xử lý + MỘT giá trị theo dõi (bắt buộc > 0 phút); ghi chú không bắt buộc. */
-export function continueMonitoring(a: AlertRecord, input: { minutes: number; note: string }, cfg: Pick<FollowUpConfig, 'target'>, ctx: AlertActionCtx): MonitorResult {
+export function continueMonitoring(
+  a: AlertRecord,
+  input: { minutes: number; note: string },
+  cfg: Pick<FollowUpConfig, 'target'>,
+  ctx: AlertActionCtx,
+): MonitorResult {
   if (a.status !== 'resolved') return { ok: false, reason: 'status', message: 'Chỉ theo dõi tiếp cảnh báo Đã xử lý (chờ đóng).' };
   const followUp = followUpFor(a, input.minutes, ctx.at, cfg, ctx.by);
   if (!followUp) return { ok: false, reason: 'minutes', message: 'Chọn thời gian theo dõi để tiếp tục theo dõi.' };

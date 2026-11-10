@@ -66,7 +66,10 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
           {fallback ? (
             <>
               <img src={fallbackImage} alt={`Ảnh tĩnh mô hình ${assetName}`} className="absolute inset-0 size-full object-contain" />
-              <p role="status" className="absolute bottom-3 left-3 right-3 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-[3px]">
+              <p
+                role="status"
+                className="absolute bottom-3 left-3 right-3 rounded-sm bg-surface-raised/85 px-2 py-1 text-xs text-fg-muted backdrop-blur-[3px]"
+              >
                 Không chạy được mô hình 3D – đang hiển thị ảnh tĩnh.
               </p>
             </>

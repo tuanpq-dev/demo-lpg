@@ -4,9 +4,9 @@ import { RoutedAppHeader } from '@/app/Page';
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
 
-const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
-const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
-const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
+const OVERVIEW = import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined;
+const ALERTS = import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined;
+const MAINT = import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined;
 
 export function LayoutSection() {
   return (

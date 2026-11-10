@@ -32,15 +32,7 @@ const toneClass: Record<ProgressTone, string> = {
   neutral: 'bg-fg-secondary',
 };
 
-export function ProgressBar({
-  value,
-  max = 100,
-  tone = 'success',
-  size = 'sm',
-  track = 'subtle',
-  label,
-  className,
-}: ProgressBarProps) {
+export function ProgressBar({ value, max = 100, tone = 'success', size = 'sm', track = 'subtle', label, className }: ProgressBarProps) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div

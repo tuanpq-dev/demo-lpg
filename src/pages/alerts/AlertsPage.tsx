@@ -90,7 +90,24 @@ function exportCsv(rows: readonly AlertRecord[]) {
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
-  const { status, data, error, refetch, acknowledge, closeMany, assign, assignOne, resolve, toggleGuide, addNote, noteMaintenance, update, close, monitor, requestSupport } = useAlerts();
+  const {
+    status,
+    data,
+    error,
+    refetch,
+    acknowledge,
+    closeMany,
+    assign,
+    assignOne,
+    resolve,
+    toggleGuide,
+    addNote,
+    noteMaintenance,
+    update,
+    close,
+    monitor,
+    requestSupport,
+  } = useAlerts();
   const maintenance = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
@@ -123,7 +140,7 @@ export default function AlertsPage() {
 
   const kpis = useMemo(() => deriveAlertKpis(all, filters.range), [all, filters.range]);
   const priority = useMemo(() => derivePriorityCards(all), [all]);
-  const openAlert = openId ? all.find((a) => a.id === openId) ?? null : null;
+  const openAlert = openId ? (all.find((a) => a.id === openId) ?? null) : null;
 
   // Thông báo kết quả thao tác tự ẩn sau 4 giây.
   useEffect(() => {
@@ -179,10 +196,30 @@ export default function AlertsPage() {
   ];
 
   const columns: DataTableColumn<AlertRecord>[] = [
-    { id: 'time', header: 'Thời gian', width: 81, cell: (a) => (a.daysAgo === 0 ? a.time : <span title={dayLabel(a.daysAgo)}>{a.time}<span className="block text-2xs text-fg-muted/65">{dayLabel(a.daysAgo)}</span></span>) },
+    {
+      id: 'time',
+      header: 'Thời gian',
+      width: 81,
+      cell: (a) =>
+        a.daysAgo === 0 ? (
+          a.time
+        ) : (
+          <span title={dayLabel(a.daysAgo)}>
+            {a.time}
+            <span className="block text-2xs text-fg-muted/65">{dayLabel(a.daysAgo)}</span>
+          </span>
+        ),
+    },
     { id: 'severity', header: 'Mức độ', width: 110, cell: (a) => <Badge variant="severity" value={a.severity} /> },
     { id: 'code', header: 'Mã CB', width: 90 },
-    { id: 'message', header: 'Nội dung', align: 'start', width: 260, className: 'max-w-[260px] truncate text-fg', cell: (a) => <span title={a.message}>{a.message}</span> },
+    {
+      id: 'message',
+      header: 'Nội dung',
+      align: 'start',
+      width: 260,
+      className: 'max-w-[260px] truncate text-fg',
+      cell: (a) => <span title={a.message}>{a.message}</span>,
+    },
     { id: 'device', header: 'Thiết bị', width: 72, className: 'text-info' },
     { id: 'area', header: 'Khu vực', width: 100 },
     { id: 'reading', header: 'Giá trị/Ngưỡng', width: 116, cell: (a) => <span className={readingTone[a.severity]}>{tableValue(a)}</span> },
@@ -252,10 +289,7 @@ export default function AlertsPage() {
     <Page pageHeader={header}>
       {/* 1. Cảnh báo ưu tiên – 70:2901 */}
       <section aria-labelledby="priority-heading" className="flex flex-col gap-3">
-        <h2
-          id="priority-heading"
-          className="flex items-center gap-2 text-xl font-semibold uppercase leading-6 tracking-label text-fg-secondary"
-        >
+        <h2 id="priority-heading" className="flex items-center gap-2 text-xl font-semibold uppercase leading-6 tracking-label text-fg-secondary">
           <Icon name="dangerLg" box={24} />
           Cảnh báo ưu tiên
         </h2>

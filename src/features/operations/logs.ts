@@ -71,8 +71,7 @@ export const LOG_RANGE_OPTIONS: { value: LogRange; label: string }[] = [
 export const LOG_RANGE_DAYS: Record<LogRange, number> = { today: 0, '7d': 6, '30d': 29 };
 
 /** Số ngày từ ngày của sự kiện tới hôm nay (giờ nhà máy): 0 = hôm nay, 1 = hôm qua. */
-export const eventDaysAgo = (e: Pick<OperationLogEvent, 'at'>, now: Date) =>
-  dayNumber(plantDayKey(now)) - dayNumber(plantDayKey(new Date(e.at)));
+export const eventDaysAgo = (e: Pick<OperationLogEvent, 'at'>, now: Date) => dayNumber(plantDayKey(now)) - dayNumber(plantDayKey(new Date(e.at)));
 
 /** Sự kiện nằm trong khoảng và KHÔNG ở tương lai (giờ trong mock cảnh báo cố định – có thể sau `now`). */
 export function inLogRange(e: Pick<OperationLogEvent, 'at'>, range: LogRange, now: Date) {
@@ -167,7 +166,11 @@ export function deriveLogKpis(events: readonly OperationLogEvent[], range: LogRa
     alertsOpen: alerts.filter((e) => e.status === 'open').length,
     userActions: users.length,
     activeUsers: new Set(users.map((e) => e.actor).filter(Boolean)).size,
-    connectionIssues: new Set(of('connection').filter((e) => e.status === 'open').map((e) => e.device)).size,
+    connectionIssues: new Set(
+      of('connection')
+        .filter((e) => e.status === 'open')
+        .map((e) => e.device),
+    ).size,
   };
 }
 

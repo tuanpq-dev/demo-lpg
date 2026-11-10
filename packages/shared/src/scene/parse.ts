@@ -10,10 +10,7 @@ import { ASSET_TYPES, SCENE_SCHEMA_VERSION, type SceneConfig } from './types.js'
  */
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()]);
-const thresholds = z
-  .object({ warn: z.number(), danger: z.number(), lowWarn: z.number(), lowDanger: z.number() })
-  .partial()
-  .strict();
+const thresholds = z.object({ warn: z.number(), danger: z.number(), lowWarn: z.number(), lowDanger: z.number() }).partial().strict();
 const binding = z.union([z.string().min(1), thresholds.extend({ tag: z.string().min(1) }).strict()]);
 const camera = z.object({ position: vec3, zoom: z.number().positive(), target: vec3 }).strict();
 const marker = z
@@ -37,7 +34,10 @@ const objectSchema = z
     elevation: z.number().finite().optional(),
     rotation: vec3.optional(),
     scale: vec3.optional(),
-    attach: z.object({ pipe: z.string().min(1), t: z.number().min(0).max(1) }).strict().optional(),
+    attach: z
+      .object({ pipe: z.string().min(1), t: z.number().min(0).max(1) })
+      .strict()
+      .optional(),
     path: z.array(vec3).optional(),
     params: z.record(z.number()).optional(),
     label: z.string().optional(),
@@ -85,7 +85,10 @@ const sceneSchema = z
       const spec = ASSET_SPECS[o.asset as keyof typeof ASSET_SPECS];
       if (!o.attach && !o.position) issue(['objects', i], `"${o.id}" cần position hoặc attach`);
       if (!o.attach && o.position && Math.abs(o.position[1] - (o.elevation ?? 0)) > 1e-6)
-        issue(['objects', i, 'position'], `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`);
+        issue(
+          ['objects', i, 'position'],
+          `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`,
+        );
       if (o.attach && !c.pipes.some((p) => p.id === o.attach!.pipe))
         issue(['objects', i, 'attach', 'pipe'], `"${o.id}" gắn vào ống "${o.attach.pipe}" không tồn tại`);
       if (o.asset === 'fence' && (o.path?.length ?? 0) < 2) issue(['objects', i, 'path'], 'hàng rào cần path ≥ 2 điểm');
@@ -176,6 +179,10 @@ export function validateSceneConfig(raw: unknown): SceneIssue[] {
 /** JSON (file mock hoặc API, định dạng cũ được migrate) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
 export function parseSceneConfig(raw: unknown, sceneId = (raw as { id?: string } | null)?.id ?? '?'): SceneConfig {
   const r = sceneSchema.safeParse(migrateScene(raw));
-  if (!r.success) throw new SceneConfigError(sceneId, r.error.issues.map((i) => `${fmtPath(i.path)}: ${i.message}`));
+  if (!r.success)
+    throw new SceneConfigError(
+      sceneId,
+      r.error.issues.map((i) => `${fmtPath(i.path)}: ${i.message}`),
+    );
   return r.data as SceneConfig;
 }

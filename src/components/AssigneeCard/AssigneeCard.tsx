@@ -40,7 +40,10 @@ export function AssigneeCard({ assignee, assigneeNote, department, shift, onAssi
           </div>
         ) : (
           <div className="flex items-center gap-3 rounded-md border border-dashed border-line p-3">
-            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-muted text-md font-semibold text-fg-secondary">
+            <span
+              aria-hidden="true"
+              className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-muted text-md font-semibold text-fg-secondary"
+            >
               ?
             </span>
             <div className="flex flex-col">

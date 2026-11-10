@@ -7,7 +7,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 test('setBase: tag không dao động (chuỗi trạng thái, số cố định) theo giá trị nền ở bước kế tiếp; tag dao động giữ biên', () => {
-  const mock = new MockLiveSource({ base: { 'HD-02.ALARM': 'alarm', 'K': 5, 'J': 10 }, jitter: { J: 1 }, intervalMs: 1000, connectMs: 10 });
+  const mock = new MockLiveSource({ base: { 'HD-02.ALARM': 'alarm', K: 5, J: 10 }, jitter: { J: 1 }, intervalMs: 1000, connectMs: 10 });
   let last: LiveData = {};
   const off = mock.subscribe(null, (d) => (last = d));
   vi.advanceTimersByTime(20);

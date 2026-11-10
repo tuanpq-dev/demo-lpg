@@ -36,11 +36,7 @@ export const CHECKLIST_LOCK_HINT: Record<'pending' | 'readonly', string> = {
 };
 
 /** Đảo trạng thái một mục: xong → ghi giờ (giờ nhà máy) + bỏ "Đang làm"; bỏ tick → xoá giờ. Mục N/A / id lạ → giữ nguyên. */
-export function toggleChecklistItem(
-  items: readonly MaintenanceChecklistItem[],
-  id: string,
-  now: Date,
-): MaintenanceChecklistItem[] {
+export function toggleChecklistItem(items: readonly MaintenanceChecklistItem[], id: string, now: Date): MaintenanceChecklistItem[] {
   return items.map((c) => {
     if (c.id !== id || c.na) return c;
     if (c.done) {

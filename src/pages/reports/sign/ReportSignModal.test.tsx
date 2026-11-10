@@ -61,7 +61,8 @@ function renderAt(url: string, role: 'viewer' | 'operator' = 'operator') {
 const codeBack = (n: number) => reportCode('daily', dayFromNumber(dayNumber(plantDayKey(new Date())) - n));
 const where = () => screen.getByTestId('where').textContent ?? '';
 const dialog = () => screen.findByRole('dialog', { name: 'Hoàn thành nhận xét & ký xác nhận' });
-const conditions = (d: HTMLElement) => within(within(d).getByRole('heading', { name: 'Điều kiện ký xác nhận' }).closest('section')!).getAllByRole('listitem');
+const conditions = (d: HTMLElement) =>
+  within(within(d).getByRole('heading', { name: 'Điều kiện ký xác nhận' }).closest('section')!).getAllByRole('listitem');
 const signButton = (d: HTMLElement) => within(d).getByRole('button', { name: 'Ký xác nhận báo cáo' });
 
 describe('ReportSignModal', () => {
@@ -128,10 +129,11 @@ describe('ReportSignModal', () => {
     expect(within(flow).getByRole('listitem', { current: 'step' })).toHaveTextContent('1. Người kiểm tra ký');
 
     expect(conditions(d)).toHaveLength(8);
-    expect(conditions(d).filter((li) => li.textContent?.startsWith('Chưa đạt')).map((li) => li.textContent)).toEqual([
-      'Chưa đạt: Chưa xem trước biểu mẫu bản nháp',
-      'Chưa đạt: Người kiểm tra chưa xác nhận trách nhiệm',
-    ]);
+    expect(
+      conditions(d)
+        .filter((li) => li.textContent?.startsWith('Chưa đạt'))
+        .map((li) => li.textContent),
+    ).toEqual(['Chưa đạt: Chưa xem trước biểu mẫu bản nháp', 'Chưa đạt: Người kiểm tra chưa xác nhận trách nhiệm']);
     expect(signButton(d)).toHaveAttribute('aria-disabled', 'true');
 
     await user.click(within(d).getByRole('link', { name: /Xem trước biểu mẫu/ }));

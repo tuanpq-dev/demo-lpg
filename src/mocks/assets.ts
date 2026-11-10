@@ -30,7 +30,7 @@ export type AssetEvent = {
  * lại khi nối API. Mỗi mục kèm `note` giải thích vì sao còn là số giả.
  */
 export type PlaceholderValue<T> = { value: T; isPlaceholder: true; note: string };
-const placeholder = <T,>(value: T, note: string): PlaceholderValue<T> => ({ value, isPlaceholder: true, note });
+const placeholder = <T>(value: T, note: string): PlaceholderValue<T> => ({ value, isPlaceholder: true, note });
 
 export type AssetMock = {
   id: string;

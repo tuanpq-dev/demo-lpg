@@ -1,16 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  Badge,
-  Button,
-  Card,
-  Divider,
-  Icon,
-  ProgressBar,
-  StatusDot,
-  type DotStatus,
-  type Severity,
-  type WorkStatus,
-} from '@/components';
+import { Badge, Button, Card, Divider, Icon, ProgressBar, StatusDot, type DotStatus, type Severity, type WorkStatus } from '@/components';
 import { Demo } from './Demo';
 
 /** Ảnh Figma chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
@@ -133,19 +122,12 @@ export function PrimitivesSection() {
       {/* ---------------- Card ---------------- */}
       <Demo title="Card" node="53:458 · 53:495" refImg={REF_53_458_PRIORITY_ALARMS}>
         <div className="grid gap-4 md:grid-cols-2">
-          <Card
-            title="Cảnh báo ưu tiên"
-            icon={<Icon name="danger" />}
-            action={{ label: 'Xem tất cả', onClick: () => undefined }}
-            padding="none"
-          >
+          <Card title="Cảnh báo ưu tiên" icon={<Icon name="danger" />} action={{ label: 'Xem tất cả', onClick: () => undefined }} padding="none">
             {alarms.map((a, i) => (
               <div key={a.code}>
                 <div className={a.critical ? 'flex flex-col gap-2.5 bg-danger-strong/15 px-4 py-2.5' : 'flex flex-col gap-2.5 px-4 py-2.5'}>
                   <div className="flex items-center justify-between">
-                    <span className={a.critical ? 'text-sm font-bold text-danger-text' : 'text-sm font-bold text-warning-soft'}>
-                      {a.code}
-                    </span>
+                    <span className={a.critical ? 'text-sm font-bold text-danger-text' : 'text-sm font-bold text-warning-soft'}>{a.code}</span>
                     <span className="text-2xs text-fg-muted/65">{a.time}</span>
                   </div>
                   <p className="text-sm text-fg-muted/70">{a.text}</p>

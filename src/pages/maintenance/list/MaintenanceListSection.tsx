@@ -1,6 +1,27 @@
-import { Button, Card, DataTable, FilterBar, Select, TableActionButton, Tabs, type DataTableColumn, type FilterDef, type Severity, type TabItem, type TimelineEvent } from '@/components';
+import {
+  Button,
+  Card,
+  DataTable,
+  FilterBar,
+  Select,
+  TableActionButton,
+  Tabs,
+  type DataTableColumn,
+  type FilterDef,
+  type Severity,
+  type TabItem,
+  type TimelineEvent,
+} from '@/components';
 import type { useTableFilters } from '@/app/useTableFilters';
-import { MAINTENANCE_ASSIGNEES, PRIORITY_OPTIONS, TYPE_OPTIONS, type MAINTENANCE_PARAMS, type MaintenanceRecord, type MaintenanceTab, type MaintenanceType } from '@/data/maintenance';
+import {
+  MAINTENANCE_ASSIGNEES,
+  PRIORITY_OPTIONS,
+  TYPE_OPTIONS,
+  type MAINTENANCE_PARAMS,
+  type MaintenanceRecord,
+  type MaintenanceTab,
+  type MaintenanceType,
+} from '@/data/maintenance';
 import { ScheduleCard, SectionHeading } from './MaintenanceSections';
 
 export const PAGE_SIZE = 8;
@@ -44,7 +65,16 @@ export type MaintenanceListSectionProps = {
  * 3. Danh sách yêu cầu + Lịch sắp tới – Figma 70:5642: tab trạng thái, tìm kiếm + bộ lọc (đồng bộ URL), thao tác hàng loạt,
  * thông báo, bảng phân trang (mã + cột "Xem" cố định khi cuộn ngang); cột phải = lịch bảo trì định kỳ.
  */
-export function MaintenanceListSection({ table, all, columns, notice, schedule, onShowSchedule, openDetail, onBulkAssign }: MaintenanceListSectionProps) {
+export function MaintenanceListSection({
+  table,
+  all,
+  columns,
+  notice,
+  schedule,
+  onShowSchedule,
+  openDetail,
+  onBulkAssign,
+}: MaintenanceListSectionProps) {
   const { values: f, setValues, selected, setSelected } = table;
   const tc = table.tabCounts as Record<MaintenanceTab, number>;
   const tabs: TabItem[] = [
@@ -57,7 +87,12 @@ export function MaintenanceListSection({ table, all, columns, notice, schedule, 
     { id: 'overdue', label: 'Quá hạn', count: tc.overdue, countTone: 'danger' },
   ];
   const filterDefs: FilterDef[] = [
-    { id: 'area', label: 'Khu vực', allLabel: 'Tất cả khu vực', options: [...new Set(all.map((r) => r.area))].sort().map((a) => ({ value: a, label: a })) },
+    {
+      id: 'area',
+      label: 'Khu vực',
+      allLabel: 'Tất cả khu vực',
+      options: [...new Set(all.map((r) => r.area))].sort().map((a) => ({ value: a, label: a })),
+    },
     { id: 'priority', label: 'Mức độ', options: PRIORITY_OPTIONS },
     { id: 'type', label: 'Loại bảo trì', options: TYPE_OPTIONS },
   ];
@@ -69,7 +104,13 @@ export function MaintenanceListSection({ table, all, columns, notice, schedule, 
       </SectionHeading>
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_346px]">
         <Card padding="none" radius="lg">
-          <Tabs label="Lọc theo trạng thái" items={tabs} value={f.tab} onChange={(tab) => setValues({ tab: tab as MaintenanceTab })} panelId="maintenance-table" />
+          <Tabs
+            label="Lọc theo trạng thái"
+            items={tabs}
+            value={f.tab}
+            onChange={(tab) => setValues({ tab: tab as MaintenanceTab })}
+            panelId="maintenance-table"
+          />
           <FilterBar
             search={f.q}
             onSearchChange={(q) => setValues({ q })}

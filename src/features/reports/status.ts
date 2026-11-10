@@ -151,7 +151,10 @@ export function progressText(r: ReportRecord): string {
 export function missingText(r: ReportRecord, now: Date, max = 3): string {
   const m = missingCheckpoints(r, now);
   if (!m.length) return 'Không có';
-  const head = m.slice(0, max).map((c) => c.label).join(', ');
+  const head = m
+    .slice(0, max)
+    .map((c) => c.label)
+    .join(', ');
   return m.length > max ? `${head} +${m.length - max}` : head;
 }
 

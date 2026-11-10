@@ -89,7 +89,15 @@ describe('chi tiết bảo trì – chỉ đọc', () => {
   test('các khối: thông tin chung, nội dung, ghi chú, tệp, lịch sử, kết quả; cột phải: hạn chót, phân công, cảnh báo, thiết bị', async () => {
     renderAt('/maintenance/MT-00128');
     await screen.findByRole('heading', { level: 1, name: TITLE });
-    for (const t of ['Thông tin chung', 'Nội dung công việc', 'Checklist công việc', 'Ghi chú kỹ thuật', 'Ảnh và tài liệu', 'Lịch sử xử lý', 'Kết quả bảo trì']) {
+    for (const t of [
+      'Thông tin chung',
+      'Nội dung công việc',
+      'Checklist công việc',
+      'Ghi chú kỹ thuật',
+      'Ảnh và tài liệu',
+      'Lịch sử xử lý',
+      'Kết quả bảo trì',
+    ]) {
       expect(screen.getByText(t)).toBeInTheDocument();
     }
     expect(screen.getByText('Mã yêu cầu').parentElement).toHaveTextContent('MT-00128');
@@ -111,7 +119,11 @@ describe('chi tiết bảo trì – chỉ đọc', () => {
     const dlg = screen.getByRole('dialog', { name: 'bao-cao-kiem-dinh.pdf' });
     expect(dlg).toHaveTextContent('Dữ liệu mẫu');
     expect(within(dlg).getByRole('button', { name: 'Tải bản mẫu (.txt)' })).toBeInTheDocument();
-    await user.click(within(dlg).getAllByRole('button', { name: 'Đóng' }).find((b) => b.textContent === 'Đóng')!);
+    await user.click(
+      within(dlg)
+        .getAllByRole('button', { name: 'Đóng' })
+        .find((b) => b.textContent === 'Đóng')!,
+    );
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -140,11 +152,21 @@ describe('chi tiết bảo trì – thao tác ghi: lỗi rồi thành công (đ�
     fail.op = 'advance';
     await user.click(within(bar()).getByRole('button', { name: 'Tiếp nhận ngay' }));
     await toastShown();
-    expect(within(stepper()).getByText(/Tiếp nhận/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(stepper())
+        .getByText(/Tiếp nhận/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(within(bar()).getByRole('button', { name: 'Tiếp nhận ngay' })).toBeInTheDocument();
 
     await user.click(within(bar()).getByRole('button', { name: 'Tiếp nhận ngay' }));
-    await waitFor(() => expect(within(stepper()).getByText(/Đang thực hiện/).closest('li')).toHaveAttribute('aria-current', 'step'));
+    await waitFor(() =>
+      expect(
+        within(stepper())
+          .getByText(/Đang thực hiện/)
+          .closest('li'),
+      ).toHaveAttribute('aria-current', 'step'),
+    );
     expect(screen.getByText('Tiếp nhận yêu cầu – phụ trách: Kỹ sư A')).toBeInTheDocument();
   });
 

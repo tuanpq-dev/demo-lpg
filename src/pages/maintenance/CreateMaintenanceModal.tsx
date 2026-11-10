@@ -25,7 +25,16 @@ export type CreateMaintenanceModalProps = {
  * Khối (thư mục `create/`): liên kết cảnh báo / nháp · hai cột thông tin · Góp ý từ AI (mock) · Checklist · Tệp đính kèm ·
  * Ghi chú & An toàn · thanh tổng quan. State + kiểm tra: `useCreateMaintenanceForm`; hàm thuần: `create/createForm.ts`.
  */
-export function CreateMaintenanceModal({ open, onClose, devices, defaultDevice, alert, defaultTitle, onSubmit, onDraftSaved }: CreateMaintenanceModalProps) {
+export function CreateMaintenanceModal({
+  open,
+  onClose,
+  devices,
+  defaultDevice,
+  alert,
+  defaultTitle,
+  onSubmit,
+  onDraftSaved,
+}: CreateMaintenanceModalProps) {
   const f = useCreateMaintenanceForm({ devices, defaultDevice, alert, defaultTitle, onSubmit, onDraftSaved });
   const { form } = f;
 

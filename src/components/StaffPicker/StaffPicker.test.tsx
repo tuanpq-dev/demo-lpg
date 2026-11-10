@@ -6,7 +6,17 @@ import { describe, expect, test, vi } from 'vitest';
 import { StaffList, type StaffPickerItem } from './StaffPicker';
 
 const items: StaffPickerItem[] = [
-  { id: 'A', name: 'Nguyễn Văn A', subtitle: 'Cơ khí • Van/Bồn', shiftLabel: 'Ca 2', shiftMatch: true, busy: false, active: 1, overdue: 0, workloadHint: 'cách tính' },
+  {
+    id: 'A',
+    name: 'Nguyễn Văn A',
+    subtitle: 'Cơ khí • Van/Bồn',
+    shiftLabel: 'Ca 2',
+    shiftMatch: true,
+    busy: false,
+    active: 1,
+    overdue: 0,
+    workloadHint: 'cách tính',
+  },
   { id: 'B', name: 'Trần Bình', subtitle: 'Cơ khí • Áp lực', shiftLabel: 'Ca 1', busy: true, active: 3, overdue: 1 },
   { id: 'C', name: 'Lê Thị C', subtitle: 'Đo lường • Cảm biến', shiftLabel: 'Ca 2', busy: false, active: 0, overdue: 0 },
 ];
@@ -68,8 +78,30 @@ describe('StaffPickerCard – biến thể có xét ca (phân công cảnh báo)
         value={null}
         onChange={onChange}
         items={[
-          { id: 'A', name: 'Trần Bình', subtitle: 'KTV • Áp lực', shiftLabel: 'Ca 1', shiftMatch: true, busy: false, active: 1, overdue: 0, availability: 'available', loadLabel: '1 cảnh báo đang xử lý', suggestion: 'Cùng khu' },
-          { id: 'B', name: 'Lê Thị C', subtitle: 'KTV • Cảm biến', shiftLabel: 'Ca 2', busy: true, active: 3, overdue: 1, availability: 'off-shift', loadLabel: '3 cảnh báo đang xử lý (1 nghiêm trọng)' },
+          {
+            id: 'A',
+            name: 'Trần Bình',
+            subtitle: 'KTV • Áp lực',
+            shiftLabel: 'Ca 1',
+            shiftMatch: true,
+            busy: false,
+            active: 1,
+            overdue: 0,
+            availability: 'available',
+            loadLabel: '1 cảnh báo đang xử lý',
+            suggestion: 'Cùng khu',
+          },
+          {
+            id: 'B',
+            name: 'Lê Thị C',
+            subtitle: 'KTV • Cảm biến',
+            shiftLabel: 'Ca 2',
+            busy: true,
+            active: 3,
+            overdue: 1,
+            availability: 'off-shift',
+            loadLabel: '3 cảnh báo đang xử lý (1 nghiêm trọng)',
+          },
         ]}
       />,
     );

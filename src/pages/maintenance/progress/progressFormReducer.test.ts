@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import { progressFormReducer, type ProgressFormState, type TempFile } from './progressFormReducer';
 
-const s0 = (over: Partial<ProgressFormState> = {}): ProgressFormState => ({ state: 'working', progress: 35, text: '', files: [], errors: {}, uploadError: '', preview: null, ...over });
+const s0 = (over: Partial<ProgressFormState> = {}): ProgressFormState => ({
+  state: 'working',
+  progress: 35,
+  text: '',
+  files: [],
+  errors: {},
+  uploadError: '',
+  preview: null,
+  ...over,
+});
 const file = (id: string): TempFile => ({ id, name: `${id}.png`, size: 1, kind: 'image', url: `blob:${id}`, type: 'image/png' });
 
 describe('progressFormReducer', () => {
@@ -12,8 +21,14 @@ describe('progressFormReducer', () => {
     expect(progressFormReducer(s0(), { type: 'choose-state', state: 'completed' }).progress).toBe(100);
   });
   test('text: bỏ lỗi nội dung + chung; progress: giữ lỗi', () => {
-    expect(progressFormReducer(s0({ errors: { text: 'a', form: 'b' } }), { type: 'text', value: 'x' }).errors).toEqual({ text: undefined, form: undefined });
-    expect(progressFormReducer(s0({ errors: { form: 'b' } }), { type: 'progress', value: 40 })).toMatchObject({ progress: 40, errors: { form: 'b' } });
+    expect(progressFormReducer(s0({ errors: { text: 'a', form: 'b' } }), { type: 'text', value: 'x' }).errors).toEqual({
+      text: undefined,
+      form: undefined,
+    });
+    expect(progressFormReducer(s0({ errors: { form: 'b' } }), { type: 'progress', value: 40 })).toMatchObject({
+      progress: 40,
+      errors: { form: 'b' },
+    });
   });
   test('upload: ghi lỗi tệp bị từ chối; có tệp hợp lệ → thêm + bỏ lỗi chung; không có → giữ lỗi chung', () => {
     const a = progressFormReducer(s0({ errors: { form: 'x' } }), { type: 'upload', rejected: 'v.exe: sai loại', added: [file('a')] });

@@ -171,7 +171,12 @@ export function loadSubmitDraft(id: string): SubmitDraft | null {
     const d = JSON.parse(raw) as Partial<SubmitDraft>;
     const str = (v: unknown) => (typeof v === 'string' ? v : null);
     if (str(d.summary) === null || str(d.cause) === null || str(d.remedy) === null) return null;
-    if (!CONDITIONS.includes(d.deviceCondition as DeviceCondition) || !SENSORS.includes(d.sensorStatus as SensorStatus) || !VALVES.includes(d.valveStatus as ValveStatus)) return null;
+    if (
+      !CONDITIONS.includes(d.deviceCondition as DeviceCondition) ||
+      !SENSORS.includes(d.sensorStatus as SensorStatus) ||
+      !VALVES.includes(d.valveStatus as ValveStatus)
+    )
+      return null;
     return {
       summary: d.summary!,
       cause: d.cause!,

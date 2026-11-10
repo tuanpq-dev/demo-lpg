@@ -56,17 +56,7 @@ const segDot: Record<DonutSegmentTone, DotStatus> = {
  * Donut nhiều segment + số tổng ở giữa + legend (Figma 53:397 "Trạng thái thiết bị").
  * Track nền surface-muted dày 8px; segment bắt đầu từ 12 giờ, chạy theo chiều kim đồng hồ.
  */
-export function DonutGauge({
-  segments,
-  totalLabel = 'Tổng',
-  total,
-  size = 180,
-  hideLegend,
-  center,
-  ringWidth,
-  label,
-  className,
-}: DonutGaugeProps) {
+export function DonutGauge({ segments, totalLabel = 'Tổng', total, size = 180, hideLegend, center, ringWidth, label, className }: DonutGaugeProps) {
   const c = useTokenColors();
   const sum = total ?? segments.reduce((s, x) => s + x.value, 0);
   // Tỉ lệ theo Figma: bán kính ngoài 65 / trong 57 trên khung 180.
@@ -76,48 +66,43 @@ export function DonutGauge({
 
   return (
     <div className={cn('flex flex-col gap-0', className)}>
-      <div
-        className="relative"
-        style={{ width: size, height: size }}
-        role="img"
-        aria-label={label ?? `${totalLabel} ${sum}: ${summary}`}
-      >
+      <div className="relative" style={{ width: size, height: size }} role="img" aria-label={label ?? `${totalLabel} ${sum}: ${summary}`}>
         {/* role="img" đã mô tả đủ (aria-label); SVG recharts bên trong ẩn khỏi trình đọc màn hình. */}
         <div aria-hidden="true">
-        <PieChart width={size} height={size}>
-          {/* Track */}
-          <Pie
-            data={[{ v: 1 }]}
-            rootTabIndex={-1}
-            dataKey="v"
-            innerRadius={inner}
-            outerRadius={outer}
-            stroke="none"
-            fill={c('surface-muted')}
-            isAnimationActive={false}
-            startAngle={90}
-            endAngle={-270}
-          />
-          <Pie
-            // Không truyền `id` (recharts gắn thành id của <path> → trùng id khi có nhiều donut); không tab vào SVG.
-            data={segments.map(({ id: _id, ...s }) => s)}
-            rootTabIndex={-1}
-            dataKey="value"
-            nameKey="label"
-            innerRadius={inner}
-            outerRadius={outer}
-            startAngle={90}
-            endAngle={-270}
-            paddingAngle={segments.length > 1 ? 1.5 : 0}
-            stroke="none"
-            isAnimationActive={false}
-          >
-            {segments.map((s) => (
-              <Cell key={s.id} fill={c(segColor[s.tone])} />
-            ))}
-          </Pie>
-          <Tooltip content={<ChartTooltip />} />
-        </PieChart>
+          <PieChart width={size} height={size}>
+            {/* Track */}
+            <Pie
+              data={[{ v: 1 }]}
+              rootTabIndex={-1}
+              dataKey="v"
+              innerRadius={inner}
+              outerRadius={outer}
+              stroke="none"
+              fill={c('surface-muted')}
+              isAnimationActive={false}
+              startAngle={90}
+              endAngle={-270}
+            />
+            <Pie
+              // Không truyền `id` (recharts gắn thành id của <path> → trùng id khi có nhiều donut); không tab vào SVG.
+              data={segments.map(({ id: _id, ...s }) => s)}
+              rootTabIndex={-1}
+              dataKey="value"
+              nameKey="label"
+              innerRadius={inner}
+              outerRadius={outer}
+              startAngle={90}
+              endAngle={-270}
+              paddingAngle={segments.length > 1 ? 1.5 : 0}
+              stroke="none"
+              isAnimationActive={false}
+            >
+              {segments.map((s) => (
+                <Cell key={s.id} fill={c(segColor[s.tone])} />
+              ))}
+            </Pie>
+            <Tooltip content={<ChartTooltip />} />
+          </PieChart>
         </div>
         {center ? (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">

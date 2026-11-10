@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 
-export type AssignNotice = { id: string; label: string; /** Nút gợi ý cạnh cảnh báo (vd "Đổi sang Ca 2") – nằm NGOÀI vùng aria-live. */ action?: ReactNode };
+export type AssignNotice = {
+  id: string;
+  label: string;
+  /** Nút gợi ý cạnh cảnh báo (vd "Đổi sang Ca 2") – nằm NGOÀI vùng aria-live. */ action?: ReactNode;
+};
 
 export type AssignNoticesProps = {
   /** Cảnh báo KHÔNG chặn. */
@@ -27,7 +31,10 @@ export function AssignNotices({ warnings, issues, blockId, blockTitle, warningSu
       {warnings.length > 0 && (
         <ul aria-label="Cảnh báo phân công" className="flex flex-col gap-1.5">
           {warnings.map((w) => (
-            <li key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-fg">
+            <li
+              key={w.id}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-fg"
+            >
               <span className="flex min-w-0 flex-1 items-start gap-2">
                 <span aria-hidden="true" className="text-warning">
                   ⚠

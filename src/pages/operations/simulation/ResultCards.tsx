@@ -31,7 +31,17 @@ import type { Scenario } from '@/features/simulation/scenarios';
 import { cn } from '@/lib/cn';
 
 /** Khối thông tin lượt (ảnh `16.png`): Mã phiên · Kịch bản · Tên kịch bản · Khu vực / Tài sản chính · Người chạy · Trạng thái. */
-export function ResultInfoStrip({ scenario: s, session, code, stopped }: { scenario: Scenario; session: SimulationSession; code: string; stopped: boolean }) {
+export function ResultInfoStrip({
+  scenario: s,
+  session,
+  code,
+  stopped,
+}: {
+  scenario: Scenario;
+  session: SimulationSession;
+  code: string;
+  stopped: boolean;
+}) {
   const items: { id: string; label: string; value: ReactNode }[] = [
     { id: 'code', label: 'Mã phiên', value: code },
     { id: 'scenario', label: 'Kịch bản', value: s.code },
@@ -114,7 +124,13 @@ export function OverviewCard({ result: r }: { result: SimulationResult }) {
             const ok = t.result === 'pass';
             return (
               <li key={t.id} className="flex flex-col items-center gap-2 rounded-lg border border-line/40 bg-surface-raised px-3 py-4 text-center">
-                <span aria-hidden="true" className={cn('flex size-10 items-center justify-center rounded-lg', ok ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning')}>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'flex size-10 items-center justify-center rounded-lg',
+                    ok ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning',
+                  )}
+                >
                   {TILE_ICON[t.id]}
                 </span>
                 <span className="text-base text-fg-secondary">{t.label}</span>
@@ -248,7 +264,15 @@ const CRITERIA_COLUMNS: readonly DataTableColumn<Criterion>[] = [
 export function CriteriaCard({ criteria }: { criteria: readonly Criterion[] }) {
   return (
     <Card title="Đánh giá phản ứng hệ thống" headerVariant="plain" radius="lg" titleSize="lg" padding="md" aria-label="Đánh giá phản ứng hệ thống">
-      <DataTable columns={CRITERIA_COLUMNS} rows={criteria} getRowId={(c) => c.id} label="Đánh giá phản ứng hệ thống" headerStyle="plain" density="compact" minWidth={640} />
+      <DataTable
+        columns={CRITERIA_COLUMNS}
+        rows={criteria}
+        getRowId={(c) => c.id}
+        label="Đánh giá phản ứng hệ thống"
+        headerStyle="plain"
+        density="compact"
+        minWidth={640}
+      />
     </Card>
   );
 }
@@ -316,7 +340,9 @@ export function ResultAdviceCard({ advice, confidence, included, dismissed, canE
         {canEdit &&
           (included || dismissed ? (
             <div role="status" className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className={included ? 'text-success' : 'text-fg-secondary'}>{included ? 'Đã thêm gợi ý vào báo cáo nháp.' : 'Đã bỏ qua gợi ý cho báo cáo này.'}</span>
+              <span className={included ? 'text-success' : 'text-fg-secondary'}>
+                {included ? 'Đã thêm gợi ý vào báo cáo nháp.' : 'Đã bỏ qua gợi ý cho báo cáo này.'}
+              </span>
               <Button variant="link" size="md" onClick={onUndo} aria-busy={busy || undefined}>
                 {included ? 'Bỏ khỏi báo cáo' : 'Xem lại gợi ý'}
               </Button>
@@ -347,7 +373,10 @@ export function ResultAlertsCard({ alerts }: { alerts: SimulationResult['alerts'
           {alerts.map((a) => (
             <li
               key={a.id}
-              className={cn('flex flex-col gap-2 rounded-lg border-l-4 bg-surface-raised px-4 py-3', a.tone === 'danger' ? 'border-l-danger' : 'border-l-warning')}
+              className={cn(
+                'flex flex-col gap-2 rounded-lg border-l-4 bg-surface-raised px-4 py-3',
+                a.tone === 'danger' ? 'border-l-danger' : 'border-l-warning',
+              )}
             >
               <div className="flex items-start justify-between gap-3">
                 <span className={cn('text-md font-semibold', a.tone === 'danger' ? 'text-danger-text' : 'text-warning')}>{a.id}</span>
@@ -385,11 +414,19 @@ export function ResultReferenceCard({ session }: { session: SimulationSession })
         <p
           className={cn(
             'flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm',
-            !h ? 'border-line/40 text-fg-secondary' : synced ? 'border-success/40 bg-success/10 text-success' : 'border-warning/40 bg-warning/10 text-warning',
+            !h
+              ? 'border-line/40 text-fg-secondary'
+              : synced
+                ? 'border-success/40 bg-success/10 text-success'
+                : 'border-warning/40 bg-warning/10 text-warning',
           )}
         >
           <SyncIcon size={16} className="shrink-0" />
-          {!h ? 'Chưa có thông tin đồng bộ lúc bắt đầu.' : synced ? 'Đã đồng bộ dữ liệu thời gian thực làm nền.' : `Thiếu ${h.total - h.ok}/${h.total} thông số lúc bắt đầu.`}
+          {!h
+            ? 'Chưa có thông tin đồng bộ lúc bắt đầu.'
+            : synced
+              ? 'Đã đồng bộ dữ liệu thời gian thực làm nền.'
+              : `Thiếu ${h.total - h.ok}/${h.total} thông số lúc bắt đầu.`}
         </p>
         <dl className="flex flex-col text-base">
           <div className="flex items-center justify-between gap-3 border-b border-line/30 py-2">

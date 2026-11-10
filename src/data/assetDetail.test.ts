@@ -78,9 +78,21 @@ describe('deriveAssetLive', () => {
 });
 
 const ev = (id: string, daysAgo: number, time: string, type: AssetEvent['type'], asset = 'V-101'): AssetEvent => ({
-  id, asset, daysAgo, time, type, title: id, status: 'normal',
+  id,
+  asset,
+  daysAgo,
+  time,
+  type,
+  title: id,
+  status: 'normal',
 });
-const EVENTS = [ev('a', 0, '09:00:00', 'sensor'), ev('b', 1, '23:00:00', 'alert'), ev('c', 0, '11:00:00', 'system'), ev('d', 0, '10:00:00', 'operation'), ev('x', 0, '12:00:00', 'sensor', 'V-102')];
+const EVENTS = [
+  ev('a', 0, '09:00:00', 'sensor'),
+  ev('b', 1, '23:00:00', 'alert'),
+  ev('c', 0, '11:00:00', 'system'),
+  ev('d', 0, '10:00:00', 'operation'),
+  ev('x', 0, '12:00:00', 'sensor', 'V-102'),
+];
 
 describe('bộ lọc sự kiện', () => {
   it('theo tài sản, mới nhất trước (ngày rồi giờ), không đổi mảng gốc', () => {
@@ -107,7 +119,11 @@ describe('bộ lọc sự kiện', () => {
   });
   it('mock V-101: 5 dòng đầu theo ảnh', async () => {
     const d = await fetchAssetDetail('V-101');
-    expect(filterAssetEvents(d.events, 'V-101').slice(0, 5).map((e) => e.time)).toEqual(['11:24:05', '11:15:22', '10:55:10', '10:42:00', '09:30:15']);
+    expect(
+      filterAssetEvents(d.events, 'V-101')
+        .slice(0, 5)
+        .map((e) => e.time),
+    ).toEqual(['11:24:05', '11:15:22', '10:55:10', '10:42:00', '09:30:15']);
     expect(d.events.every((e) => e.asset === 'V-101')).toBe(true);
   });
 });
@@ -119,7 +135,20 @@ describe('fetchAssetDetail', () => {
 });
 
 const alert = (id: string, device: string, daysAgo: number, time: string, over: Partial<AlertRecord> = {}): AlertRecord => ({
-  id, code: id, device, daysAgo, time, severity: 'high', message: id, area: 'Khu bồn LPG', value: '1', threshold: '1', unit: 'bar', status: 'unacknowledged', assignee: null, ...over,
+  id,
+  code: id,
+  device,
+  daysAgo,
+  time,
+  severity: 'high',
+  message: id,
+  area: 'Khu bồn LPG',
+  value: '1',
+  threshold: '1',
+  unit: 'bar',
+  status: 'unacknowledged',
+  assignee: null,
+  ...over,
 });
 
 describe('cảnh báo liên quan', () => {
@@ -146,8 +175,26 @@ describe('cảnh báo liên quan', () => {
   });
 });
 
-const rec = (code: string, status: MaintenanceRecord['status'], dueAt: string, completedAt: string | null = null, device = 'V-101'): MaintenanceRecord => ({
-  id: code, code, title: code, device, area: 'Khu bồn LPG', type: 'periodic', priority: 'medium', status, assignee: null, createdAt: '2026-01-01', dueAt, completedAt, progress: 0,
+const rec = (
+  code: string,
+  status: MaintenanceRecord['status'],
+  dueAt: string,
+  completedAt: string | null = null,
+  device = 'V-101',
+): MaintenanceRecord => ({
+  id: code,
+  code,
+  title: code,
+  device,
+  area: 'Khu bồn LPG',
+  type: 'periodic',
+  priority: 'medium',
+  status,
+  assignee: null,
+  createdAt: '2026-01-01',
+  dueAt,
+  completedAt,
+  progress: 0,
 });
 
 describe('tóm tắt bảo trì', () => {
@@ -168,7 +215,11 @@ describe('tóm tắt bảo trì', () => {
   // ĐỔI 26/10/2026 (quá hạn theo giờ): trước đây hạn 08:00 hôm nay lúc 10:00 vẫn "chưa quá hạn".
   it('hạn hôm nay: chưa tới giờ → chưa quá hạn, đã qua giờ → quá hạn; không có bản ghi → rỗng', () => {
     expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T16:00')], 'V-101', NOW).next).toMatchObject({ overdue: false, daysLeft: 0 });
-    expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T08:00')], 'V-101', NOW).next).toMatchObject({ overdue: true, daysLeft: 0, dueText: 'Quá hạn từ 08:00' });
+    expect(deriveMaintenanceSummary([rec('M1', 'pending', '2026-10-23T08:00')], 'V-101', NOW).next).toMatchObject({
+      overdue: true,
+      daysLeft: 0,
+      dueText: 'Quá hạn từ 08:00',
+    });
     expect(deriveMaintenanceSummary([], 'V-101', NOW)).toEqual({ next: undefined, last: undefined });
   });
   it('formatLongDate', () => {

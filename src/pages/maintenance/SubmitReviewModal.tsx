@@ -72,7 +72,17 @@ const EMPTY = (now: Date): Omit<SubmitDraft, 'savedAt'> => ({
 });
 
 /** Ô chọn trạng thái nhỏ (Cảm biến / Van xả) – cùng khung với ô số liệu. */
-function SelectTile<V extends string>({ label, value, options, onChange }: { label: string; value: V; options: readonly { value: V; label: string }[]; onChange: (v: V) => void }) {
+function SelectTile<V extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: V;
+  options: readonly { value: V; label: string }[];
+  onChange: (v: V) => void;
+}) {
   const id = useId();
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md border border-line/30 px-3.5 py-3">
@@ -181,7 +191,12 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
       <Button variant="subtle" onClick={onSaveDraft}>
         Lưu nháp
       </Button>
-      <Button type="submit" variant="primary" aria-disabled={!eligible || submitting || undefined} aria-describedby={eligible ? undefined : missingId}>
+      <Button
+        type="submit"
+        variant="primary"
+        aria-disabled={!eligible || submitting || undefined}
+        aria-describedby={eligible ? undefined : missingId}
+      >
         Gửi nghiệm thu
       </Button>
     </>
@@ -189,7 +204,15 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
 
   const reading = (label: string, unit: string, rd: Reading | undefined) =>
     rd ? (
-      <KpiCard size="sm" emphasis label={label} value={rd.value?.toFixed(1) ?? '—'} unit={unit} tone={readingTone(rd)} signalLost={rd.state === 'lost'} />
+      <KpiCard
+        size="sm"
+        emphasis
+        label={label}
+        value={rd.value?.toFixed(1) ?? '—'}
+        unit={unit}
+        tone={readingTone(rd)}
+        signalLost={rd.state === 'lost'}
+      />
     ) : (
       <KpiCard size="sm" emphasis label={label} value="—" footnote="Không có số liệu trực tiếp" />
     );
@@ -261,7 +284,9 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-fg-secondary">Hạn chót</dt>
-              <dd className={dueRed ? 'text-md font-semibold text-danger-text' : 'text-md font-semibold text-fg'}>{deadlineDayLabel(r.dueAt, now, hasTime)}</dd>
+              <dd className={dueRed ? 'text-md font-semibold text-danger-text' : 'text-md font-semibold text-fg'}>
+                {deadlineDayLabel(r.dueAt, now, hasTime)}
+              </dd>
             </div>
           </dl>
           {!eligible && (
@@ -277,7 +302,16 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
         </section>
 
         <div data-field="summary">
-          <Textarea labelVariant="section" label="Tóm tắt công việc" required value={v.summary} onChange={(x) => set('summary', x)} rows={2} maxLength={1000} placeholder="Các việc đã làm, kết quả kiểm tra…" />
+          <Textarea
+            labelVariant="section"
+            label="Tóm tắt công việc"
+            required
+            value={v.summary}
+            onChange={(x) => set('summary', x)}
+            rows={2}
+            maxLength={1000}
+            placeholder="Các việc đã làm, kết quả kiểm tra…"
+          />
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
@@ -287,7 +321,13 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
                 Checklist hoàn thành
               </h3>
               {checklist && (
-                <span className={checklist.done === checklist.total ? 'text-lg font-semibold tabular-nums text-success' : 'text-lg font-semibold tabular-nums text-warning'}>
+                <span
+                  className={
+                    checklist.done === checklist.total
+                      ? 'text-lg font-semibold tabular-nums text-success'
+                      : 'text-lg font-semibold tabular-nums text-warning'
+                  }
+                >
                   {checklist.done}/{checklist.total}
                   <span className="sr-only"> mục hoàn thành</span>
                 </span>
@@ -302,12 +342,30 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
             </div>
           </section>
           <div data-field="cause" className="flex min-w-0 flex-col">
-            <Textarea labelVariant="section" label="Nguyên nhân xác định" required value={v.cause} onChange={(x) => set('cause', x)} rows={10} maxLength={1000} placeholder="Nguyên nhân gốc của sự cố / bất thường…" />
+            <Textarea
+              labelVariant="section"
+              label="Nguyên nhân xác định"
+              required
+              value={v.cause}
+              onChange={(x) => set('cause', x)}
+              rows={10}
+              maxLength={1000}
+              placeholder="Nguyên nhân gốc của sự cố / bất thường…"
+            />
           </div>
         </div>
 
         <div data-field="remedy">
-          <Textarea labelVariant="section" label="Biện pháp" required value={v.remedy} onChange={(x) => set('remedy', x)} rows={2} maxLength={1000} placeholder="Biện pháp đã thực hiện để khắc phục…" />
+          <Textarea
+            labelVariant="section"
+            label="Biện pháp"
+            required
+            value={v.remedy}
+            onChange={(x) => set('remedy', x)}
+            rows={2}
+            maxLength={1000}
+            placeholder="Biện pháp đã thực hiện để khắc phục…"
+          />
         </div>
 
         <section className="flex flex-col gap-3">
@@ -332,7 +390,12 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
             {reading('Áp suất', 'bar', device.kind === 'live' ? device.pressure : undefined)}
             {reading('Nhiệt độ', '°C', device.kind === 'live' ? device.temperature : undefined)}
-            <SelectTile<SensorStatus> label="Cảm biến" value={v.sensorStatus} options={SENSOR_STATUS_OPTIONS} onChange={(x) => set('sensorStatus', x)} />
+            <SelectTile<SensorStatus>
+              label="Cảm biến"
+              value={v.sensorStatus}
+              options={SENSOR_STATUS_OPTIONS}
+              onChange={(x) => set('sensorStatus', x)}
+            />
             <SelectTile<ValveStatus> label="Van xả" value={v.valveStatus} options={VALVE_STATUS_OPTIONS} onChange={(x) => set('valveStatus', x)} />
           </div>
           {device.kind === 'live' && (
@@ -360,10 +423,19 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
               )}
             </FormField>
           </div>
-          <DatePicker labelVariant="section" type="datetime-local" label="Thời gian đề nghị" value={v.proposedAt} onChange={(x) => set('proposedAt', x)} hint="Mặc định: sau 30 phút (làm tròn mốc 15 phút) – sửa được, không bắt buộc." />
+          <DatePicker
+            labelVariant="section"
+            type="datetime-local"
+            label="Thời gian đề nghị"
+            value={v.proposedAt}
+            onChange={(x) => set('proposedAt', x)}
+            hint="Mặc định: sau 30 phút (làm tròn mốc 15 phút) – sửa được, không bắt buộc."
+          />
         </div>
 
-        {files.length > 0 && <p className="text-sm text-fg-secondary">Kèm {files.length} tệp đã thêm ở bước cập nhật tiến độ (chưa tải lên máy chủ).</p>}
+        {files.length > 0 && (
+          <p className="text-sm text-fg-secondary">Kèm {files.length} tệp đã thêm ở bước cập nhật tiến độ (chưa tải lên máy chủ).</p>
+        )}
 
         {error && (
           <p role="alert" className="text-sm text-danger-text">

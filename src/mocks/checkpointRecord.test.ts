@@ -13,7 +13,14 @@ const daily = (day: string) => reports.find((r) => r.period === 'daily' && r.per
 describe('buildCheckpointSnapshot', () => {
   it('mốc 18:00 hôm nay: đủ IoT, 7/7 nhóm, 16 cảm biến bình thường, đúng bố cục ảnh', () => {
     const s = buildCheckpointSnapshot(daily('2026-06-24'), '18:00', NOW);
-    expect(s.tank.map((r) => r.label)).toEqual(['Mức chất lỏng', 'Thể tích chất lỏng', 'Áp suất bồn', 'Nhiệt độ bồn', 'Nhiệt độ khu vực bồn', 'Gas khu vực bồn']);
+    expect(s.tank.map((r) => r.label)).toEqual([
+      'Mức chất lỏng',
+      'Thể tích chất lỏng',
+      'Áp suất bồn',
+      'Nhiệt độ bồn',
+      'Nhiệt độ khu vực bồn',
+      'Gas khu vực bồn',
+    ]);
     expect(s.vaporizers.map((v) => `${v.id}:${v.state}`)).toEqual(['E-101A:running', 'E-101B:standby']);
     expect(s.flowLines.map((l) => l.label)).toEqual(['Line 0', 'Line 1', 'Line 2']);
     expect(recordGroups(s, {}).every((g) => g.complete)).toBe(true);

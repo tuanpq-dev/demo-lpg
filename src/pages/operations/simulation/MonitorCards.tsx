@@ -58,14 +58,23 @@ export function MonitorHeaderMeta({ scenario: s, session }: { scenario: Scenario
       id: 'risk',
       label: 'Mức độ',
       value: (
-        <span className={cn('inline-flex items-center gap-1', s.risk === 'critical' ? 'text-danger-text' : s.risk === 'high' ? 'text-warning' : 'text-fg')}>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1',
+            s.risk === 'critical' ? 'text-danger-text' : s.risk === 'high' ? 'text-warning' : 'text-fg',
+          )}
+        >
           {s.risk !== 'medium' && <AlertTriangleIcon size={16} className="shrink-0" />}
           {SCENARIO_RISK_LABEL[s.risk]}
         </span>
       ),
     },
     { id: 'title', label: 'Kịch bản', value: s.title },
-    { id: 'target', label: 'Thời lượng / Mục tiêu', value: `${session.config.durationMin} phút / ${formatVariable(session.config.target, s.setup.variable)}` },
+    {
+      id: 'target',
+      label: 'Thời lượng / Mục tiêu',
+      value: `${session.config.durationMin} phút / ${formatVariable(session.config.target, s.setup.variable)}`,
+    },
   ];
   return (
     <dl className="flex flex-wrap items-stretch justify-end gap-y-2">
@@ -188,7 +197,9 @@ export function SimulationTrendCard({ scenario: s, session, snap }: { scenario: 
           format={(n) => formatVariable(n, v)}
         />
       </div>
-      <p className="mt-3 text-right text-sm text-fg-secondary">* {formatVariable(target, v)} là giá trị mục tiêu mô phỏng, không phải trạng thái thiết bị thật.</p>
+      <p className="mt-3 text-right text-sm text-fg-secondary">
+        * {formatVariable(target, v)} là giá trị mục tiêu mô phỏng, không phải trạng thái thiết bị thật.
+      </p>
     </Card>
   );
 }
@@ -214,7 +225,10 @@ export function SimAlertsCard({ scenario: s, snap }: { scenario: Scenario; snap:
           {snap.alerts.map((a) => (
             <li
               key={a.id}
-              className={cn('flex flex-col gap-2 rounded-lg border px-3 py-3', a.tone === 'danger' ? 'border-danger/40 bg-danger/10' : 'border-warning/25 bg-warning/5')}
+              className={cn(
+                'flex flex-col gap-2 rounded-lg border px-3 py-3',
+                a.tone === 'danger' ? 'border-danger/40 bg-danger/10' : 'border-warning/25 bg-warning/5',
+              )}
             >
               <p className="text-md text-fg">
                 {a.id}: {a.title}
@@ -250,7 +264,15 @@ export function MonitorTimelineCard({ snap }: { snap: MonitorSnapshot }) {
 }
 
 /** "Gợi ý từ AI" (ảnh `1.png`): câu tóm tắt + danh sách đánh số + chân trang an toàn. */
-export function MonitorSuggestionCard({ scenario: s, snap, confidence }: { scenario: Scenario; snap: MonitorSnapshot; confidence: number | undefined }) {
+export function MonitorSuggestionCard({
+  scenario: s,
+  snap,
+  confidence,
+}: {
+  scenario: Scenario;
+  snap: MonitorSnapshot;
+  confidence: number | undefined;
+}) {
   const listId = useId();
   return (
     <Card
@@ -281,7 +303,10 @@ export function MonitorSuggestionCard({ scenario: s, snap, confidence }: { scena
             </span>
             {snap.recommendations.map((r, i) => (
               <li key={r} className="flex items-center gap-3 rounded-lg border border-line/30 bg-app/60 px-3 py-2.5">
-                <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-surface-raised text-sm font-bold text-primary">
+                <span
+                  aria-hidden="true"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-surface-raised text-sm font-bold text-primary"
+                >
                   {i + 1}
                 </span>
                 <span className="text-md text-fg">{r}</span>
@@ -328,14 +353,25 @@ export function MonitorStatusCard({ scenario: s, session, snap }: { scenario: Sc
 const SYNC_BADGE: Record<DataSyncState, TagTone> = { synced: 'success', missing: 'warning', pending: 'muted' };
 
 /** "Dữ liệu PLC/SCADA tham chiếu" (ảnh `7.png`): trạng thái nguồn thật (trực tiếp) + giá trị CHỤP lúc bắt đầu. */
-export function ReferenceSnapshotCard({ rows, sync, health }: { rows: readonly ReferenceSnapshotRow[]; sync: DataSyncState; health: TagHealth | undefined }) {
+export function ReferenceSnapshotCard({
+  rows,
+  sync,
+  health,
+}: {
+  rows: readonly ReferenceSnapshotRow[];
+  sync: DataSyncState;
+  health: TagHealth | undefined;
+}) {
   return (
     <Card title="Dữ liệu PLC/SCADA tham chiếu" headerVariant="divided" radius="lg" titleSize="lg" aria-label="Dữ liệu PLC/SCADA tham chiếu">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-base text-fg-secondary">PLC/SCADA thật:</span>
           <Badge variant="tag" size="sm" tone={SYNC_BADGE[sync]} className="gap-1.5 rounded-md px-2 font-bold uppercase">
-            <span aria-hidden="true" className={cn('size-1.5 rounded-full', sync === 'synced' ? 'bg-success' : sync === 'missing' ? 'bg-warning' : 'bg-neutral')} />
+            <span
+              aria-hidden="true"
+              className={cn('size-1.5 rounded-full', sync === 'synced' ? 'bg-success' : sync === 'missing' ? 'bg-warning' : 'bg-neutral')}
+            />
             {DATA_SYNC_LABEL[sync]}
           </Badge>
         </div>
@@ -357,7 +393,9 @@ export function ReferenceSnapshotCard({ rows, sync, health }: { rows: readonly R
             </div>
           ))}
         </dl>
-        <p className="px-1 text-sm italic leading-6 text-fg-secondary">Dữ liệu thật chỉ dùng làm trạng thái ban đầu và không bị thay đổi trong quá trình mô phỏng.</p>
+        <p className="px-1 text-sm italic leading-6 text-fg-secondary">
+          Dữ liệu thật chỉ dùng làm trạng thái ban đầu và không bị thay đổi trong quá trình mô phỏng.
+        </p>
       </div>
     </Card>
   );

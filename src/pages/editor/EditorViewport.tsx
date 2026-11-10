@@ -138,8 +138,20 @@ export function EditorViewport({ viewer, actions }: { viewer: RefObject<SceneVie
         )}
         <Button variant="toolbar" size="sm" aria-label="Khung hình vừa (F)" title="Khung hình vừa (F)" onClick={actions.fit} icon={<FitIcon />} />
         <span aria-hidden="true" className="mx-1 h-5 w-px bg-line/60" />
-        <Button variant="toolbar" size="sm" aria-label="Phóng to" onClick={() => viewer.current?.zoomIn()} icon={<Icon name="mapZoomIn" box={16} />} />
-        <Button variant="toolbar" size="sm" aria-label="Thu nhỏ" onClick={() => viewer.current?.zoomOut()} icon={<Icon name="mapZoomOut" box={16} />} />
+        <Button
+          variant="toolbar"
+          size="sm"
+          aria-label="Phóng to"
+          onClick={() => viewer.current?.zoomIn()}
+          icon={<Icon name="mapZoomIn" box={16} />}
+        />
+        <Button
+          variant="toolbar"
+          size="sm"
+          aria-label="Thu nhỏ"
+          onClick={() => viewer.current?.zoomOut()}
+          icon={<Icon name="mapZoomOut" box={16} />}
+        />
       </div>
 
       {view && (

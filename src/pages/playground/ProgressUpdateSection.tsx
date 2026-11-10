@@ -19,13 +19,19 @@ import { WORKFLOW_STEPS } from '@/features/maintenance/workflow';
 import { ProgressUpdateModal } from '../maintenance/ProgressUpdateModal';
 import { Demo } from './Demo';
 
-const REF = (import.meta.env.DEV ? '/scratch/figma-ref/mt-progress-modal-design.png' : undefined);
+const REF = import.meta.env.DEV ? '/scratch/figma-ref/mt-progress-modal-design.png' : undefined;
 
 const OPTIONS: StatusOption[] = [
   { id: 'working', label: 'Đang thực hiện', icon: <PlayCircleIcon size={20} /> },
   { id: 'paused', label: 'Tạm dừng', icon: <PauseCircleIcon size={20} />, tone: 'warning' },
   { id: 'blocked', label: 'Gặp sự cố', icon: <AlertOctagonIcon size={20} />, tone: 'danger' },
-  { id: 'completed', label: 'Hoàn thành', icon: <CheckCircleIcon size={20} />, disabled: true, disabledHint: 'bắt đầu thực hiện trước khi báo hoàn thành' },
+  {
+    id: 'completed',
+    label: 'Hoàn thành',
+    icon: <CheckCircleIcon size={20} />,
+    disabled: true,
+    disabledHint: 'bắt đầu thực hiện trước khi báo hoàn thành',
+  },
 ];
 
 const sample = (): MaintenanceRecord => ({
@@ -128,7 +134,11 @@ export function ProgressUpdateSection() {
           </Badge>
         </div>
         <WorkflowStepper
-          steps={WORKFLOW_STEPS.map((s) => ({ id: s.status, label: s.label, ...(s.status === 'in-progress' ? { note: 'Gặp sự cố', noteTone: 'danger' as const } : {}) }))}
+          steps={WORKFLOW_STEPS.map((s) => ({
+            id: s.status,
+            label: s.label,
+            ...(s.status === 'in-progress' ? { note: 'Gặp sự cố', noteTone: 'danger' as const } : {}),
+          }))}
           completed={3}
           current={3}
           label="Mẫu stepper gặp sự cố"

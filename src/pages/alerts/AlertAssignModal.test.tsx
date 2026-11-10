@@ -51,7 +51,12 @@ describe('AlertAssignModal – một cảnh báo', () => {
     const group = within(dialog).getByRole('radiogroup', { name: 'Chọn nhân sự' });
     const radios = within(group).getAllByRole('radio');
     // Cùng khu / đúng chuyên môn trước (Sẵn sàng → Ngoài ca), rồi người khác.
-    expect(radios.map((r) => r.textContent?.split(/(?=Cùng khu|Đúng chuyên môn)/)[0]?.slice(2)).slice(0, 4)).toEqual(['Trần Bình', 'Trần Văn B', 'Hoàng Minh E', 'Nguyễn Văn A']);
+    expect(radios.map((r) => r.textContent?.split(/(?=Cùng khu|Đúng chuyên môn)/)[0]?.slice(2)).slice(0, 4)).toEqual([
+      'Trần Bình',
+      'Trần Văn B',
+      'Hoàng Minh E',
+      'Nguyễn Văn A',
+    ]);
     expect(radios.every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
 
     const nva = within(group).getByRole('radio', { name: /Nguyễn Văn A/ });

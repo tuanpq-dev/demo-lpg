@@ -28,7 +28,18 @@ export type UpdateFollowUpSectionProps = {
 };
 
 /** Khối "Theo dõi sau xử lý": thời gian theo dõi, mục tiêu (số hoặc "Không có mục tiêu số"), thời điểm kiểm tra lại, người chịu trách nhiệm. */
-export function UpdateFollowUpSection({ cfg, value, customAtLocal, unit, resolved, resolvedLabel, active, window, onChange, onCustomAtChange }: UpdateFollowUpSectionProps) {
+export function UpdateFollowUpSection({
+  cfg,
+  value,
+  customAtLocal,
+  unit,
+  resolved,
+  resolvedLabel,
+  active,
+  window,
+  onChange,
+  onCustomAtChange,
+}: UpdateFollowUpSectionProps) {
   const uid = useId();
   const hintId = `${uid}-follow-hint`;
   const options: StatusOption<string>[] = [...cfg.followUp.options, 'custom' as const].map((c) => ({
@@ -73,7 +84,13 @@ export function UpdateFollowUpSection({ cfg, value, customAtLocal, unit, resolve
             disabled={!active}
           />
         ) : (
-          <TextField label="Giá trị mục tiêu" value="Không có mục tiêu số" onChange={() => {}} readOnly hint="Theo dõi trạng thái đầu báo và tín hiệu liên quan." />
+          <TextField
+            label="Giá trị mục tiêu"
+            value="Không có mục tiêu số"
+            onChange={() => {}}
+            readOnly
+            hint="Theo dõi trạng thái đầu báo và tín hiệu liên quan."
+          />
         )}
         {value.choice === 'custom' ? (
           <DatePicker type="datetime-local" label="Thời điểm kiểm tra lại" value={customAtLocal} onChange={onCustomAtChange} disabled={!active} />

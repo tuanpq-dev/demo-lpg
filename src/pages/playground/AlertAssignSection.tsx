@@ -29,9 +29,42 @@ const SAMPLES: Record<string, { label: string; alerts: AlertRecord[] }> = {
 };
 
 const CARD_ITEMS: StaffPickerItem[] = [
-  { id: 'a', name: 'Nguyễn Văn A', subtitle: 'Kỹ sư cơ khí • Chuyên gia Van/Bồn', shiftLabel: 'Ca 1', shiftMatch: true, busy: false, active: 1, overdue: 0, availability: 'available', loadLabel: '1 cảnh báo đang xử lý', suggestion: 'Cùng khu · Đúng chuyên môn' },
-  { id: 'b', name: 'Trần Bình', subtitle: 'Kỹ thuật viên cơ khí • Thiết bị áp lực', shiftLabel: 'Ca 1', shiftMatch: true, busy: true, active: 3, overdue: 1, availability: 'busy', loadLabel: '3 cảnh báo đang xử lý (1 nghiêm trọng)' },
-  { id: 'c', name: 'Lê Thị C', subtitle: 'Kỹ thuật viên đo lường • Cảm biến', shiftLabel: 'Ca 2', busy: false, active: 0, overdue: 0, availability: 'off-shift', loadLabel: '0 cảnh báo đang xử lý' },
+  {
+    id: 'a',
+    name: 'Nguyễn Văn A',
+    subtitle: 'Kỹ sư cơ khí • Chuyên gia Van/Bồn',
+    shiftLabel: 'Ca 1',
+    shiftMatch: true,
+    busy: false,
+    active: 1,
+    overdue: 0,
+    availability: 'available',
+    loadLabel: '1 cảnh báo đang xử lý',
+    suggestion: 'Cùng khu · Đúng chuyên môn',
+  },
+  {
+    id: 'b',
+    name: 'Trần Bình',
+    subtitle: 'Kỹ thuật viên cơ khí • Thiết bị áp lực',
+    shiftLabel: 'Ca 1',
+    shiftMatch: true,
+    busy: true,
+    active: 3,
+    overdue: 1,
+    availability: 'busy',
+    loadLabel: '3 cảnh báo đang xử lý (1 nghiêm trọng)',
+  },
+  {
+    id: 'c',
+    name: 'Lê Thị C',
+    subtitle: 'Kỹ thuật viên đo lường • Cảm biến',
+    shiftLabel: 'Ca 2',
+    busy: false,
+    active: 0,
+    overdue: 0,
+    availability: 'off-shift',
+    loadLabel: '0 cảnh báo đang xử lý',
+  },
 ];
 
 /**

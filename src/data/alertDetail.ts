@@ -76,7 +76,8 @@ function configFor(tag: string | undefined) {
   if (!tag) return undefined;
   for (const asset of Object.values(assetMocks)) {
     const field = (Object.keys(asset.tags) as (keyof typeof asset.tags)[]).find((k) => asset.tags[k] === tag);
-    if (field && field in asset.alarms) return asset.alarms[field as keyof typeof asset.alarms] as { warn?: number; danger?: number; lowWarn?: number; lowDanger?: number };
+    if (field && field in asset.alarms)
+      return asset.alarms[field as keyof typeof asset.alarms] as { warn?: number; danger?: number; lowWarn?: number; lowDanger?: number };
   }
   return undefined;
 }
@@ -164,7 +165,13 @@ export function alertGauge(a: AlertRecord): AlertGauge {
   return scale ? { kind: 'scale', scale } : { kind: 'invalid' };
 }
 
-export type SensorReading = { tag: string; state: 'pending' | 'lost' | 'ok'; value?: number; label?: string; tone: 'success' | 'warning' | 'danger' | 'neutral' };
+export type SensorReading = {
+  tag: string;
+  state: 'pending' | 'lost' | 'ok';
+  value?: number;
+  label?: string;
+  tone: 'success' | 'warning' | 'danger' | 'neutral';
+};
 
 const BAND_TONE = { success: 'success', 'warning-dim': 'warning', warning: 'warning', danger: 'danger' } as const;
 
@@ -252,7 +259,12 @@ export function useFireReadings(a: Pick<AlertRecord, 'device' | 'area' | 'tag'>)
   const tempR = readingOf(live, tempTag, now);
   const alarmR = readingOf(live, detector?.alarmTag, now);
   const st = detectorStatus(alarmR, readingOf(live, detector?.stateTag, now));
-  const signals = sigCfg.map((s) => ({ id: s.id, label: s.label, kind: s.kind, ...fireSignalView(s.kind, s.label, readingOf(live, s.tag, now), { bands: GAS_BANDS, unit: '% LEL' }) }));
+  const signals = sigCfg.map((s) => ({
+    id: s.id,
+    label: s.label,
+    kind: s.kind,
+    ...fireSignalView(s.kind, s.label, readingOf(live, s.tag, now), { bands: GAS_BANDS, unit: '% LEL' }),
+  }));
   const stamps = [tempR.ts, alarmR.ts].filter((t): t is number => t !== undefined);
   return {
     detector,
@@ -261,7 +273,12 @@ export function useFireReadings(a: Pick<AlertRecord, 'device' | 'area' | 'tag'>)
     device: st.device,
     alarm: st.alarm,
     signals,
-    equipment: eqCfg.map((e) => ({ id: e.id, name: e.name, temp: e.tempTag ? numberOf(e.tempTag) : undefined, state: equipmentStateView(readingOf(live, e.stateTag, now)) })),
+    equipment: eqCfg.map((e) => ({
+      id: e.id,
+      name: e.name,
+      temp: e.tempTag ? numberOf(e.tempTag) : undefined,
+      state: equipmentStateView(readingOf(live, e.stateTag, now)),
+    })),
     cross: crossConfirm(signals),
   };
 }
@@ -288,7 +305,13 @@ const alertAssignDraft = createSessionDraft<AlertAssignDraft>('demo-lpg:alert-as
   const str = (v: unknown): v is string => typeof v === 'string';
   if (!str(d.note) || !str(d.reason) || !Array.isArray(d.collaborators)) return null;
   if (d.assignee !== null && !str(d.assignee)) return null;
-  return { assignee: d.assignee ?? null, collaborators: d.collaborators.filter(str), note: d.note, reason: d.reason, savedAt: str(d.savedAt) ? d.savedAt : '' };
+  return {
+    assignee: d.assignee ?? null,
+    collaborators: d.collaborators.filter(str),
+    note: d.note,
+    reason: d.reason,
+    savedAt: str(d.savedAt) ? d.savedAt : '',
+  };
 });
 
 export const saveAlertAssignDraft = alertAssignDraft.save;
@@ -339,7 +362,10 @@ export type UpdateReadingRow = {
   alarm?: boolean;
 };
 
-const gasLimits = (cfg: AlertKindConfig) => ({ warn: levelStart(cfg.bands ?? GAS_BANDS, 'level-1'), danger: levelStart(cfg.bands ?? GAS_BANDS, 'level-2') });
+const gasLimits = (cfg: AlertKindConfig) => ({
+  warn: levelStart(cfg.bands ?? GAS_BANDS, 'level-1'),
+  danger: levelStart(cfg.bands ?? GAS_BANDS, 'level-2'),
+});
 
 /**
  * Ngưỡng ĐÓNG của tag chính: áp suất / loại khác = "Ngưỡng cho phép" (`alertMetric`) · gas = đầu mức `closeBelow` (cấp 1) ·
@@ -373,12 +399,31 @@ export function updateReadingRows(a: AlertRecord, cfg: AlertUpdateConfig): Updat
       const limit = closeLimit(a);
       const tag = cfg.close.rule === 'fire' ? (detector?.tempTag ?? a.tag) : (a.tag ?? assetTags?.pressure);
       const danger = cfg.close.rule === 'gas' ? gl.danger : cfg.close.rule === 'fire' ? undefined : m.danger;
-      return [{ id: r.id, label: fill(r.label), unit: a.unit, tag, before: Number.isFinite(m.value) ? m.value : undefined, warn: limit, danger, primary: true }];
+      return [
+        {
+          id: r.id,
+          label: fill(r.label),
+          unit: a.unit,
+          tag,
+          before: Number.isFinite(m.value) ? m.value : undefined,
+          warn: limit,
+          danger,
+          primary: true,
+        },
+      ];
     }
     if (r.field === 'areaSensors') {
       return sensorsInArea(a.area)
         .filter((x) => x.tag !== a.tag)
-        .map((x) => ({ id: `${r.id}-${x.tag}`, label: fill(r.label, { sensor: x.tag }), unit: '% LEL', tag: x.tag, warn: gl.warn, danger: gl.danger, primary: false }));
+        .map((x) => ({
+          id: `${r.id}-${x.tag}`,
+          label: fill(r.label, { sensor: x.tag }),
+          unit: '% LEL',
+          tag: x.tag,
+          warn: gl.warn,
+          danger: gl.danger,
+          primary: false,
+        }));
     }
     if (r.field === 'smoke' || r.field === 'gas') {
       const sg = signal(r.field);
@@ -389,7 +434,18 @@ export function updateReadingRows(a: AlertRecord, cfg: AlertUpdateConfig): Updat
     }
     const tag = r.field === 'regulatorOut' ? REGULATOR_TAGS[REGULATORS[a.device] ?? '']?.outletPressure : assetTags?.temperature;
     const th = tagThresholds(tag);
-    return [{ id: r.id, label: fill(r.label), unit: r.field === 'temperature' ? '°C' : 'bar', tag, before: a.readingsAtAlert?.[r.id], warn: th?.warn, danger: th?.danger, primary: false }];
+    return [
+      {
+        id: r.id,
+        label: fill(r.label),
+        unit: r.field === 'temperature' ? '°C' : 'bar',
+        tag,
+        before: a.readingsAtAlert?.[r.id],
+        warn: th?.warn,
+        danger: th?.danger,
+        primary: false,
+      },
+    ];
   });
 }
 
@@ -416,7 +472,9 @@ function closeSpec(a: AlertRecord): CloseSpec {
     const rows = updateReadingRows(a, u);
     const p = rows.find((r) => r.primary)!;
     return {
-      primary: p.tag ? { label: p.label, tag: p.tag, limit: closeLimit(a), unit: p.unit, direction: 'above' } : { label: p.label, limit: closeLimit(a), unit: p.unit, direction: 'above' },
+      primary: p.tag
+        ? { label: p.label, tag: p.tag, limit: closeLimit(a), unit: p.unit, direction: 'above' }
+        : { label: p.label, limit: closeLimit(a), unit: p.unit, direction: 'above' },
       secondary: rows.filter((r) => !r.primary && r.tag).map((r) => ({ label: r.label, tag: r.tag!, warn: r.warn, alarm: r.alarm })),
       detector: u.close.rule === 'fire' ? HEAT_DETECTORS[a.device] : undefined,
     };
@@ -442,7 +500,16 @@ export function closeConditionInput(a: AlertRecord, all: readonly AlertRecord[],
   const d = spec.detector;
   const st = d ? detectorStatus(readingOf(live, d.alarmTag, now), readingOf(live, d.stateTag, now)) : undefined;
   return {
-    primary: p && pr ? { label: p.label, reading: { state: pr.state === 'none' ? 'lost' : pr.state, value: pr.value }, limit: p.limit, unit: p.unit, direction: p.direction } : null,
+    primary:
+      p && pr
+        ? {
+            label: p.label,
+            reading: { state: pr.state === 'none' ? 'lost' : pr.state, value: pr.value },
+            limit: p.limit,
+            unit: p.unit,
+            direction: p.direction,
+          }
+        : null,
     secondary: spec.secondary.map((s) => ({ label: s.label, state: secondaryState(s, read(s.tag)) })),
     detector: d && st ? { name: d.id, alarm: st.alarm, device: live ? st.device : 'pending' } : undefined,
     related: relatedOpenAlerts(a, all),

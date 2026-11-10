@@ -21,7 +21,12 @@ describe('chuẩn hoá guide (một hàm cho dạng cũ + mới)', () => {
   test('thiếu → Chưa kiểm tra; dạng cũ {at, by} → Đạt; dạng mới giữ status + ghi chú', () => {
     expect(inspectionEntry(undefined, 'a')).toEqual({ status: 'pending', note: '' });
     expect(inspectionEntry({ a: { at: 'T', by: 'X' } }, 'a')).toEqual({ status: 'pass', by: 'X', at: 'T', note: '' });
-    expect(inspectionEntry({ a: { at: 'T', by: 'X', status: 'issue', note: 'Kẹt cơ cấu' } }, 'a')).toEqual({ status: 'issue', by: 'X', at: 'T', note: 'Kẹt cơ cấu' });
+    expect(inspectionEntry({ a: { at: 'T', by: 'X', status: 'issue', note: 'Kẹt cơ cấu' } }, 'a')).toEqual({
+      status: 'issue',
+      by: 'X',
+      at: 'T',
+      note: 'Kẹt cơ cấu',
+    });
     // pending có ghi chú: không có người/giờ kiểm tra
     expect(inspectionEntry({ a: { at: 'T', by: 'X', status: 'pending', note: 'Chờ' } }, 'a')).toEqual({ status: 'pending', note: 'Chờ' });
   });

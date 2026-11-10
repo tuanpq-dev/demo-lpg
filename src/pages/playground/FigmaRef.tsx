@@ -26,19 +26,19 @@ export function FigmaRef({
       <figcaption className="text-xs text-fg-muted/65">{caption ?? 'Figma (tham chiếu)'}</figcaption>
       {/* Ảnh rộng hơn khung → cuộn ngang; vùng cuộn focus được (WCAG 2.1.1). */}
       <div role="region" aria-label={caption ?? 'Ảnh Figma tham chiếu'} tabIndex={0} className="max-w-full overflow-x-auto">
-      <div
-        role="img"
-        aria-label={caption ?? 'Figma reference'}
-        className="shrink-0 rounded-sm border border-dashed border-line/30"
-        style={{
-          width: w * scale,
-          height: h * scale,
-          backgroundImage: `url(${src})`,
-          backgroundPosition: `-${x * scale}px -${y * scale}px`,
-          backgroundSize: `${1565 * scale}px auto`,
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
+        <div
+          role="img"
+          aria-label={caption ?? 'Figma reference'}
+          className="shrink-0 rounded-sm border border-dashed border-line/30"
+          style={{
+            width: w * scale,
+            height: h * scale,
+            backgroundImage: `url(${src})`,
+            backgroundPosition: `-${x * scale}px -${y * scale}px`,
+            backgroundSize: `${1565 * scale}px auto`,
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
       </div>
     </figure>
   );

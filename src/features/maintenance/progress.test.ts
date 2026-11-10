@@ -65,7 +65,9 @@ describe('ánh xạ trạng thái công việc → bản ghi', () => {
 
   test('Hoàn thành: modal tiến độ KHÔNG ghi gì (chuyển sang modal Gửi nghiệm thu – review.ts)', () => {
     const r = rec({ hold: { kind: 'blocked', reason: 'x', at: 'y' } });
-    expect(validateProgressUpdate(r, upd({ state: 'completed', progress: 100, text: 'Xong' })).state).toBe('Báo hoàn thành qua "Tiếp tục gửi nghiệm thu".');
+    expect(validateProgressUpdate(r, upd({ state: 'completed', progress: 100, text: 'Xong' })).state).toBe(
+      'Báo hoàn thành qua "Tiếp tục gửi nghiệm thu".',
+    );
     expect(applyProgressUpdate(r, upd({ state: 'completed', progress: 100, text: 'Xong' }), ctx)).toBe(r);
     expect(canContinueToSubmit('in-progress', 'completed')).toBe(true);
     expect(canContinueToSubmit('assigned', 'completed')).toBe(false);
@@ -121,7 +123,12 @@ describe('tiến độ báo cáo', () => {
     const r1 = applyProgressUpdate(r0, upd({ progress: 30 }), ctx);
     expect(r1.reportedProgress).toBe(30);
     expect(r1.progress).toBe(33);
-    expect(r1.history?.at(-1)).toMatchObject({ kind: 'progress', text: 'Cập nhật tiến độ · 50% → 30%', actor: 'Nguyễn Văn A', at: '2026-10-26T11:45' });
+    expect(r1.history?.at(-1)).toMatchObject({
+      kind: 'progress',
+      text: 'Cập nhật tiến độ · 50% → 30%',
+      actor: 'Nguyễn Văn A',
+      at: '2026-10-26T11:45',
+    });
   });
 
   test('reportedProgressOf: thiếu → checklist (có checklist) hoặc progress', () => {
@@ -153,7 +160,13 @@ describe('lịch sử + ghi chú + tệp tạm', () => {
     const r0 = rec({ history: [{ id: 'h1', at: '2026-10-26T08:30', kind: 'create', text: 'Tạo' }] });
     const r1 = applyProgressUpdate(r0, upd({ state: 'paused', progress: 45, text: 'Chờ dừng tuyến' }), ctx);
     expect(r1.history).toHaveLength(2);
-    expect(r1.history?.[1]).toEqual({ id: 'h2', at: '2026-10-26T11:45', kind: 'pause', text: 'Tạm dừng – lý do: Chờ dừng tuyến · 30% → 45%', actor: 'Nguyễn Văn A' });
+    expect(r1.history?.[1]).toEqual({
+      id: 'h2',
+      at: '2026-10-26T11:45',
+      kind: 'pause',
+      text: 'Tạm dừng – lý do: Chờ dừng tuyến · 30% → 45%',
+      actor: 'Nguyễn Văn A',
+    });
     expect(r1.notes).toEqual([{ id: 'n1', author: 'Nguyễn Văn A', at: '2026-10-26T11:45', text: 'Chờ dừng tuyến' }]);
   });
 
@@ -174,7 +187,9 @@ describe('lịch sử + ghi chú + tệp tạm', () => {
     ];
     const r = rec({ progress: 33, checklist });
     expect(validateProgressUpdate(r, upd({ progress: 35 })).form).toBeTruthy();
-    expect(applyProgressUpdate(r, upd({ state: 'paused', progress: 35, text: 'x' }), ctx).history?.at(-1)?.text).toBe('Tạm dừng – lý do: x · tiến độ 35%');
+    expect(applyProgressUpdate(r, upd({ state: 'paused', progress: 35, text: 'x' }), ctx).history?.at(-1)?.text).toBe(
+      'Tạm dừng – lý do: x · tiến độ 35%',
+    );
     expect(applyProgressUpdate(r, upd({ progress: 40 }), ctx).history?.at(-1)?.text).toBe('Cập nhật tiến độ · 33% → 40%');
   });
 

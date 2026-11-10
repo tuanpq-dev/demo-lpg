@@ -18,7 +18,10 @@ import AlertUpdateModal from './AlertUpdateModal';
  * File riêng → store cảnh báo riêng. Live mock PT-101 = 9.2 bar (dưới ngưỡng 10.5). Test đổi dữ liệu nối tiếp nhau trên ALT-00128.
  */
 
-const state: AuthState = { status: 'authenticated', user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' } };
+const state: AuthState = {
+  status: 'authenticated',
+  user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' },
+};
 const service: AuthService = {
   getState: () => state,
   subscribe: () => () => {},
@@ -79,7 +82,11 @@ describe('modal cập nhật xử lý cảnh báo áp suất (ALT-00128)', () =>
     expect(within(m).getByText('Ghi nhận kết quả kiểm tra và tình trạng xử lý cảnh báo ALT-00128')).toBeInTheDocument();
     expect(radio(m, 'Đang kiểm tra')).toHaveAttribute('aria-checked', 'true');
     const table = within(m).getByRole('table', { name: 'Kết quả kiểm tra thiết bị ALT-00128' });
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Hạng mục kiểm tra', 'Trạng thái', 'Người kiểm tra', 'Thời gian', 'Ghi chú']);
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Hạng mục kiểm tra', 'Trạng thái', 'Người kiểm tra', 'Thời gian', 'Ghi chú']);
     expect(within(table).getAllByRole('rowheader')).toHaveLength(6);
     expect(within(table).queryByRole('checkbox')).toBeNull(); // bỏ cột checkbox của ảnh
     expect(within(m).getByRole('button', { name: /^Trạng thái: Kiểm tra bộ điều áp PR-101 Chưa kiểm tra$/ })).toBeInTheDocument();
@@ -180,7 +187,12 @@ describe('modal cập nhật xử lý cảnh báo áp suất (ALT-00128)', () =>
 describe('nháp + loại khác', () => {
   test('Lưu nháp (sessionStorage theo mã) → Esc đóng không hỏi lại → mở lại khôi phục; sửa tiếp rồi Esc → hỏi "Bỏ thay đổi"', async () => {
     const user = userEvent.setup();
-    const rec = { ...alertRecords.find((x) => x.id === 'ALT-00128')!, status: 'in-progress' as const, phase: 'inspecting' as const, assignee: 'Nguyễn Văn A' };
+    const rec = {
+      ...alertRecords.find((x) => x.id === 'ALT-00128')!,
+      status: 'in-progress' as const,
+      phase: 'inspecting' as const,
+      assignee: 'Nguyễn Văn A',
+    };
     const onClose = vi.fn();
     const first = render(<AlertUpdateModal alert={rec} actor="Vận hành A" onClose={onClose} onSubmit={() => ({ ok: true, record: rec })} />);
     const m = screen.getByRole('dialog', { name: MODAL });

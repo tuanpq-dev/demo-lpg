@@ -3,17 +3,7 @@ import type { KpiData } from '@/data/overview';
 
 /** Map dữ liệu KPI thuần (mock/API, đã ghép số liệu trực tiếp – `applyLive`) → <KpiCard>. */
 export function KpiFromData({ data, onAction }: { data: KpiData; onAction?: (id: string) => void }) {
-  const {
-    id,
-    icon,
-    iconBox = 24,
-    subIcon,
-    progress,
-    progressTone,
-    action,
-    live: _live,
-    ...rest
-  } = data;
+  const { id, icon, iconBox = 24, subIcon, progress, progressTone, action, live: _live, ...rest } = data;
   void _live;
   return (
     <KpiCard

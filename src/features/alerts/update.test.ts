@@ -55,7 +55,15 @@ const texts: Record<string, string> = {
   'over-confirmed': 'Xác nhận áp suất thực tế vượt ngưỡng',
   'back-to-normal': 'Hệ thống đã trở về bình thường',
 };
-const closeIn = (p: Partial<CloseInput> = {}): CloseInput => ({ liveState: 'ok', live: 9.2, after: 9.2, source: 'sensor', warn: 10.5, unit: 'bar', ...p });
+const closeIn = (p: Partial<CloseInput> = {}): CloseInput => ({
+  liveState: 'ok',
+  live: 9.2,
+  after: 9.2,
+  source: 'sensor',
+  warn: 10.5,
+  unit: 'bar',
+  ...p,
+});
 const pClose = (p: Partial<CloseInput> = {}): UpdateClose => updateCloseCheck(cfg.close, { ...closeIn(p), limit: closeIn(p).warn });
 const check = (close: UpdateClose = pClose()): UpdateCheck => ({ close, config: cfg, steps, verificationText: (id) => texts[id] ?? id, unit: 'bar' });
 const input = (p: Partial<AlertUpdateInput> = {}): AlertUpdateInput => ({
@@ -88,8 +96,14 @@ describe('map trạng thái xử lý', () => {
   test('ô → trường bản ghi (Đã xử lý / Báo động giả = resolved, KHÔNG phải done)', () => {
     expect(updateStateFields('inspecting', '', 'T')).toEqual({ status: 'in-progress', phase: 'inspecting', hold: undefined });
     expect(updateStateFields('resolving', '', 'T')).toEqual({ status: 'in-progress', phase: 'resolving', hold: undefined });
-    expect(updateStateFields('paused', ' Chờ vật tư ', 'T')).toEqual({ status: 'in-progress', hold: { kind: 'paused', reason: 'Chờ vật tư', at: 'T' } });
-    expect(updateStateFields('needs-support', 'Cần thêm người', 'T')).toEqual({ status: 'in-progress', hold: { kind: 'needs-support', reason: 'Cần thêm người', at: 'T' } });
+    expect(updateStateFields('paused', ' Chờ vật tư ', 'T')).toEqual({
+      status: 'in-progress',
+      hold: { kind: 'paused', reason: 'Chờ vật tư', at: 'T' },
+    });
+    expect(updateStateFields('needs-support', 'Cần thêm người', 'T')).toEqual({
+      status: 'in-progress',
+      hold: { kind: 'needs-support', reason: 'Cần thêm người', at: 'T' },
+    });
     expect(updateStateFields('resolved', '', 'T')).toEqual({ status: 'resolved', hold: undefined });
     expect(updateStateFields('false-alarm', '', 'T')).toEqual({ status: 'resolved', hold: undefined });
   });
@@ -105,21 +119,32 @@ describe('điều kiện "Đã xử lý" theo loại (giữ nguyên như modal c
     expect(pClose({ live: 11 })).toMatchObject({ ok: false, reason: 'live-high' });
   });
   test('gas: live < đầu mức cấp 1; mất tín hiệu → cần nguồn có máy đo cầm tay + số đo lại < ngưỡng; đang đọc → khoá', () => {
-    const g = (p: Partial<Parameters<typeof updateCloseCheck>[1]>) => updateCloseCheck(gasCfg.close, { liveState: 'ok', live: 6, source: 'sensor', limit: 10, unit: '% LEL', ...p });
+    const g = (p: Partial<Parameters<typeof updateCloseCheck>[1]>) =>
+      updateCloseCheck(gasCfg.close, { liveState: 'ok', live: 6, source: 'sensor', limit: 10, unit: '% LEL', ...p });
     expect(g({})).toEqual({ ok: true, value: 6, basis: 'live' });
     expect(g({ live: 25 })).toMatchObject({ ok: false, reason: 'above' });
     expect(g({ live: 10 })).toMatchObject({ ok: false, reason: 'above' });
     expect(g({ liveState: 'pending', live: undefined })).toMatchObject({ ok: false, reason: 'pending' });
     expect(g({ liveState: 'lost', live: undefined })).toMatchObject({ ok: false, reason: 'need-gauge' });
     expect(g({ liveState: 'lost', live: undefined, source: 'gauge' })).toMatchObject({ ok: false, reason: 'need-measure' });
-    expect(g({ liveState: 'lost', live: undefined, source: 'gauge', after: 12, manual: true })).toMatchObject({ ok: false, reason: 'measured-above' });
+    expect(g({ liveState: 'lost', live: undefined, source: 'gauge', after: 12, manual: true })).toMatchObject({
+      ok: false,
+      reason: 'measured-above',
+    });
     expect(g({ liveState: 'lost', live: undefined, source: 'gauge', after: 3, manual: true })).toEqual({ ok: true, value: 3, basis: 'measured' });
     // live dưới nhưng số đo tay vẫn trên → khoá
     expect(g({ source: 'both', after: 15, manual: true })).toMatchObject({ ok: false, reason: 'measured-above' });
   });
   test('cháy: đầu báo phải phục hồi; còn báo động → khoá (kể cả đã kiểm tra tại chỗ); mất tín hiệu → cần kiểm tra tại chỗ', () => {
     const f = (alarm: 'active' | 'cleared' | 'unknown', fieldChecked = false, device: 'online' | 'lost' | 'pending' = 'online') =>
-      updateCloseCheck(fireCfg.close, { liveState: 'ok', source: 'sensor', limit: 57, unit: '°C', detector: { alarm, device, name: 'HD-02' }, fieldChecked });
+      updateCloseCheck(fireCfg.close, {
+        liveState: 'ok',
+        source: 'sensor',
+        limit: 57,
+        unit: '°C',
+        detector: { alarm, device, name: 'HD-02' },
+        fieldChecked,
+      });
     expect(f('cleared')).toEqual({ ok: true, basis: 'live' });
     expect(f('active', true)).toMatchObject({ ok: false, reason: 'still-alarm' });
     expect(f('unknown', false, 'lost')).toMatchObject({ ok: false, reason: 'need-field-check' });
@@ -151,7 +176,9 @@ describe('kết quả xác minh mâu thuẫn bị chặn', () => {
     expect(verificationErrors([], cfg, false, 'inspecting', t)).toEqual([]);
   });
   test('cháy: "Có cháy thật" mâu thuẫn với "Báo động giả"; "Đầu báo đã phục hồi" chỉ khi đủ điều kiện, không bắt buộc', () => {
-    expect(verificationErrors(['real-fire'], fireCfg, true, 'false-alarm', (id) => (id === 'real-fire' ? 'Có cháy thật' : id))[0]).toBe('"Có cháy thật" mâu thuẫn với "Báo động giả" – bỏ một mục.');
+    expect(verificationErrors(['real-fire'], fireCfg, true, 'false-alarm', (id) => (id === 'real-fire' ? 'Có cháy thật' : id))[0]).toBe(
+      '"Có cháy thật" mâu thuẫn với "Báo động giả" – bỏ một mục.',
+    );
     expect(verificationErrors(['real-fire'], fireCfg, true, 'resolved', (id) => id)).toEqual([]);
     expect(verificationErrors(['detector-restored'], fireCfg, false, 'resolving', (id) => id)[0]).toMatch(/^Chỉ chọn/);
     expect(verificationErrors([], fireCfg, true, 'resolved', (id) => id)).toEqual([]);
@@ -190,7 +217,10 @@ describe('theo dõi sau xử lý + giờ kiểm tra lại', () => {
 describe('kiểm tra form', () => {
   test('Tạm dừng / Cần hỗ trợ bắt buộc lý do (+ người hỗ trợ)', () => {
     expect(validateAlertUpdate(input({ state: 'paused' }), check(), ctx.at)).toEqual({ holdReason: 'Nhập lý do tạm dừng.' });
-    expect(validateAlertUpdate(input({ state: 'needs-support' }), check(), ctx.at)).toEqual({ supportPeople: 'Chọn người hỗ trợ.', holdReason: 'Nhập lý do cần hỗ trợ.' });
+    expect(validateAlertUpdate(input({ state: 'needs-support' }), check(), ctx.at)).toEqual({
+      supportPeople: 'Chọn người hỗ trợ.',
+      holdReason: 'Nhập lý do cần hỗ trợ.',
+    });
   });
   test('Đã xử lý: bắt buộc nguyên nhân + nội dung + điều kiện đóng; theo dõi tùy chỉnh sai giờ', () => {
     const e = validateAlertUpdate(input({ state: 'resolved', verification: ['back-to-normal'] }), check(pClose({ live: 11 })), ctx.at);
@@ -198,16 +228,27 @@ describe('kiểm tra form', () => {
     expect(e.actionTaken).toBeTruthy();
     expect(e.close).toMatch(/chưa dưới ngưỡng/);
     expect(e.verification).toMatch(/Chỉ chọn/);
-    const f = validateAlertUpdate(resolvedInput({ followUp: { choice: 'custom', customAt: '2026-10-28T06:00:00Z', target: 10, owner: 'A' } }), check(), ctx.at);
+    const f = validateAlertUpdate(
+      resolvedInput({ followUp: { choice: 'custom', customAt: '2026-10-28T06:00:00Z', target: 10, owner: 'A' } }),
+      check(),
+      ctx.at,
+    );
     expect(f).toEqual({ followUp: 'Chọn thời điểm kiểm tra lại sau thời điểm lưu.' });
   });
   test('"Khác" bắt buộc mô tả; hạng mục "Có vấn đề" bắt buộc ghi chú', () => {
-    const e = validateAlertUpdate(input({ issue: { kind: 'other', note: ' ' }, inspection: { regulator: { status: 'issue', note: '' } } }), check(), ctx.at);
+    const e = validateAlertUpdate(
+      input({ issue: { kind: 'other', note: ' ' }, inspection: { regulator: { status: 'issue', note: '' } } }),
+      check(),
+      ctx.at,
+    );
     expect(e.issueNote).toBe('Mô tả vấn đề phát sinh.');
     expect(e.inspection).toEqual({ regulator: 'Nhập ghi chú cho hạng mục có vấn đề.' });
   });
   test('cảnh báo không chặn: nêu TÊN hạng mục "Có vấn đề" khi chọn Đã xử lý; gợi ý Cần hỗ trợ', () => {
-    const w = updateWarnings(resolvedInput({ inspection: { 'field-gauge': { status: 'pass', note: '' }, regulator: { status: 'issue', note: 'Kẹt cơ cấu' } } }), check());
+    const w = updateWarnings(
+      resolvedInput({ inspection: { 'field-gauge': { status: 'pass', note: '' }, regulator: { status: 'issue', note: 'Kẹt cơ cấu' } } }),
+      check(),
+    );
     expect(w).toEqual(['Còn hạng mục "Có vấn đề": Kiểm tra bộ điều áp PR-101.']);
     expect(updateWarnings(input({ inspection: { regulator: { status: 'issue', note: 'x' } } }), check())).toEqual([]);
     expect(suggestsSupport({ state: 'resolving', issue: { kind: 'need-staff', note: '' } }, cfg)).toBe(true);
@@ -217,7 +258,12 @@ describe('kiểm tra form', () => {
 
 describe('Lưu cập nhật', () => {
   test('Đang xử lý: hạng mục + thông số + một ghi chú + một dòng lịch sử; giữ Đang xử lý', () => {
-    const r = alertUpdate(alert(), input({ inspection: { 'field-gauge': { status: 'pass', note: 'Khớp nhau', by: 'Nguyễn Văn A', at: 'T' } }, cause: 'Bộ điều áp kẹt' }), check(), ctx);
+    const r = alertUpdate(
+      alert(),
+      input({ inspection: { 'field-gauge': { status: 'pass', note: 'Khớp nhau', by: 'Nguyễn Văn A', at: 'T' } }, cause: 'Bộ điều áp kẹt' }),
+      check(),
+      ctx,
+    );
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.record).toMatchObject({ status: 'in-progress', phase: 'resolving', cause: 'Bộ điều áp kẹt', followUp: undefined });
@@ -239,10 +285,18 @@ describe('Lưu cập nhật', () => {
   test('Đã xử lý: resolved (chờ đóng) + người xử lý + theo dõi tự tính từ lúc lưu + tệp chỉ giữ tên/kích thước/loại', () => {
     const r = alertUpdate(alert(), resolvedInput({ files: [{ name: 'a.jpg', size: 10, kind: 'image' }] }), check(), ctx);
     if (!r.ok) throw new Error('fail');
-    expect(r.record).toMatchObject({ status: 'resolved', resolvedAt: ctx.at.toISOString(), resolvedBy: 'Nguyễn Văn A', closingReading: { value: 9.2, source: 'live' } });
+    expect(r.record).toMatchObject({
+      status: 'resolved',
+      resolvedAt: ctx.at.toISOString(),
+      resolvedBy: 'Nguyễn Văn A',
+      closingReading: { value: 9.2, source: 'live' },
+    });
     expect(r.record.followUp).toEqual({ minutes: 30, until: '2026-10-28T07:36:00.000Z', target: 10, unit: 'bar', owner: 'Nguyễn Văn A' });
     expect(r.record.attachments).toEqual([{ name: 'a.jpg', size: 10, kind: 'image', isTemp: true }]);
-    expect(r.record.history!.at(-1)).toMatchObject({ kind: 'resolve', text: 'Đã xử lý – áp suất sau xử lý 9.2 bar (Cảm biến (SCADA)) · theo dõi đến 14:36, mục tiêu < 10 bar' });
+    expect(r.record.history!.at(-1)).toMatchObject({
+      kind: 'resolve',
+      text: 'Đã xử lý – áp suất sau xử lý 9.2 bar (Cảm biến (SCADA)) · theo dõi đến 14:36, mục tiêu < 10 bar',
+    });
   });
   test('bị chặn → không đổi bản ghi; không ở Đang xử lý → chặn', () => {
     const a = alert();
@@ -273,29 +327,69 @@ describe('nháp', () => {
 });
 
 describe('khung chung – gas và cháy', () => {
-  const gasAlert = alert({ id: 'ALT-00127', code: 'ALT-00127', kind: 'gas-leak', severity: 'high', device: 'GS-04', area: 'Khu nạp xuất', value: '25', threshold: '20', unit: '% LEL' });
-  const fireAlert = alert({ id: 'FIR-00018', code: 'FIR-00018', kind: 'fire', device: 'HD-02', area: 'Trạm hóa hơi', value: '68', threshold: '57', unit: '°C' });
+  const gasAlert = alert({
+    id: 'ALT-00127',
+    code: 'ALT-00127',
+    kind: 'gas-leak',
+    severity: 'high',
+    device: 'GS-04',
+    area: 'Khu nạp xuất',
+    value: '25',
+    threshold: '20',
+    unit: '% LEL',
+  });
+  const fireAlert = alert({
+    id: 'FIR-00018',
+    code: 'FIR-00018',
+    kind: 'fire',
+    device: 'HD-02',
+    area: 'Trạm hóa hơi',
+    value: '68',
+    threshold: '57',
+    unit: '°C',
+  });
   const base = { cause: 'Khớp nối lỏng', actionTaken: 'Siết lại khớp nối', verification: [] as string[] };
   test('gas Đã xử lý: resolved + nồng độ sau xử lý (đo tay) + theo dõi mục tiêu < 10 % LEL', () => {
     const close = updateCloseCheck(gasCfg.close, { liveState: 'lost', source: 'gauge', after: 3, manual: true, limit: 10, unit: '% LEL' });
     const r = alertUpdate(
       gasAlert,
-      input({ state: 'resolved', ...base, readings: { source: 'gauge', at: ctx.at.toISOString(), rows: [{ id: 'concentration', before: 25, after: 3, manual: true }] }, followUp: { choice: 30, target: 10, owner: 'A' } }),
+      input({
+        state: 'resolved',
+        ...base,
+        readings: { source: 'gauge', at: ctx.at.toISOString(), rows: [{ id: 'concentration', before: 25, after: 3, manual: true }] },
+        followUp: { choice: 30, target: 10, owner: 'A' },
+      }),
       { close, config: gasCfg, steps: [], verificationText: (id) => id, unit: '% LEL' },
       ctx,
     );
     if (!r.ok) throw new Error(JSON.stringify(r.errors));
-    expect(r.record).toMatchObject({ status: 'resolved', closingReading: { value: 3, source: 'measured' }, followUp: { minutes: 30, target: 10, unit: '% LEL' } });
+    expect(r.record).toMatchObject({
+      status: 'resolved',
+      closingReading: { value: 3, source: 'measured' },
+      followUp: { minutes: 30, target: 10, unit: '% LEL' },
+    });
     expect(r.record.history!.at(-1)!.text).toBe('Đã xử lý – nồng độ sau xử lý 3% LEL (Máy đo cầm tay) · theo dõi đến 14:36, mục tiêu < 10% LEL');
   });
   test('gas: nồng độ còn trên ngưỡng → không lưu được Đã xử lý, bản ghi không đổi', () => {
     const close = updateCloseCheck(gasCfg.close, { liveState: 'ok', live: 25, source: 'sensor', limit: 10, unit: '% LEL' });
-    const r = alertUpdate(gasAlert, input({ state: 'resolved', ...base }), { close, config: gasCfg, steps: [], verificationText: (id) => id, unit: '% LEL' }, ctx);
+    const r = alertUpdate(
+      gasAlert,
+      input({ state: 'resolved', ...base }),
+      { close, config: gasCfg, steps: [], verificationText: (id) => id, unit: '% LEL' },
+      ctx,
+    );
     expect(r).toMatchObject({ ok: false, errors: { close: expect.stringMatching(/vẫn trên ngưỡng/) } });
   });
   test('cháy: Đã xử lý sự cố / Báo động giả → resolved + resolution; theo dõi KHÔNG có mục tiêu số; mất tín hiệu + kiểm tra tại chỗ → field', () => {
     const chk = (alarm: 'cleared' | 'unknown', fieldChecked: boolean): UpdateCheck => ({
-      close: updateCloseCheck(fireCfg.close, { liveState: 'ok', source: 'sensor', limit: 57, unit: '°C', detector: { alarm, device: alarm === 'unknown' ? 'lost' : 'online', name: 'HD-02' }, fieldChecked }),
+      close: updateCloseCheck(fireCfg.close, {
+        liveState: 'ok',
+        source: 'sensor',
+        limit: 57,
+        unit: '°C',
+        detector: { alarm, device: alarm === 'unknown' ? 'lost' : 'online', name: 'HD-02' },
+        fieldChecked,
+      }),
       config: fireCfg,
       steps: [],
       verificationText: (id) => id,
@@ -306,7 +400,12 @@ describe('khung chung – gas và cháy', () => {
     expect(handled.record).toMatchObject({ status: 'resolved', resolution: { kind: 'handled', closedBy: 'live' } });
     expect(handled.record.followUp).toEqual({ minutes: 60, until: '2026-10-28T08:06:00.000Z', unit: '°C', owner: 'A' });
     expect(handled.record.history!.at(-1)!.text).toBe('Đã xử lý sự cố (đầu báo HD-02 đã phục hồi) · theo dõi đến 15:06');
-    const fa = alertUpdate(fireAlert, input({ state: 'false-alarm', ...base, verification: ['field-verified'], followUp: { choice: 0, owner: '' } }), chk('unknown', true), ctx);
+    const fa = alertUpdate(
+      fireAlert,
+      input({ state: 'false-alarm', ...base, verification: ['field-verified'], followUp: { choice: 0, owner: '' } }),
+      chk('unknown', true),
+      ctx,
+    );
     if (!fa.ok) throw new Error(JSON.stringify(fa.errors));
     expect(fa.record).toMatchObject({ status: 'resolved', resolution: { kind: 'false-alarm', closedBy: 'field' } });
     expect(fa.record.history!.at(-1)!.text).toBe('Báo động giả (đầu báo HD-02 mất tín hiệu – đã kiểm tra tại chỗ)');

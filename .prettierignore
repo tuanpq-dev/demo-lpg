@@ -1,0 +1,13 @@
+# Sinh ra / bên ngoài
+dist
+coverage
+node_modules
+scratch
+public
+package-lock.json
+*.tsbuildinfo
+# Tài liệu viết tay (bảng tiếng Việt) – không tự format
+*.md
+# Cảnh 3D lưu từ Editor (JSON lớn, giữ nguyên định dạng Editor xuất)
+src/mocks/scenes/*.json
+.mcp.json

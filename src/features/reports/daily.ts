@@ -173,7 +173,10 @@ export function deriveDailyCards(r: ReportRecord, rows: readonly DailyReadingRow
   const upcoming = states.filter((s) => s.state === 'upcoming').length;
   const confirmed = states.filter((s) => s.state === 'confirmed').length;
   const verify = states.filter((s) => s.state === 'needs-verify').map((s) => s.label);
-  const flagged = flaggedReadings(rows, r.checkpoints.map((c) => c.key));
+  const flagged = flaggedReadings(
+    rows,
+    r.checkpoints.map((c) => c.key),
+  );
   const abnormal = flagged.filter((f) => f.level === 'abnormal').length;
 
   const sig = signatureOf(r, now);

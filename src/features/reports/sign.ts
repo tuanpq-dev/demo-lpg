@@ -127,7 +127,10 @@ export function signConditions(ctx: SignContext): SignCondition[] {
       id: 'anomalies-noted',
       met: unnoted.length === 0,
       label: unnoted.length
-        ? `Còn ${unnoted.length} bất thường chưa ghi chú: ${listText(unnoted.map((f) => `${f.device} lúc ${f.checkpoint}`), 2)}`
+        ? `Còn ${unnoted.length} bất thường chưa ghi chú: ${listText(
+            unnoted.map((f) => `${f.device} lúc ${f.checkpoint}`),
+            2,
+          )}`
         : 'Không có bất thường chưa ghi chú',
     },
   ];

@@ -38,7 +38,15 @@ const boxStroke: Record<DiagramReadingTone, string> = {
 };
 
 /** Ô số đo cảm biến: caption trên, khung có icon + số; mất tín hiệu → icon tín hiệu + chữ xám. */
-function SensorBox({ x, y, w, caption, captionClass, reading, icon }: {
+function SensorBox({
+  x,
+  y,
+  w,
+  caption,
+  captionClass,
+  reading,
+  icon,
+}: {
   x: number;
   y: number;
   w: number;
@@ -81,9 +89,13 @@ export function VaporizerDiagram({ title, temperature, pressure, label, classNam
       </defs>
 
       {/* Đầu vào */}
-      <text x={28} y={243} className="fill-fg-secondary text-[13px] font-semibold tracking-label">LPG lỏng đầu vào</text>
+      <text x={28} y={243} className="fill-fg-secondary text-[13px] font-semibold tracking-label">
+        LPG lỏng đầu vào
+      </text>
       <rect x={28} y={251} width={104} height={37} rx={2} className="fill-surface-muted/30 stroke-line/40" />
-      <text x={80} y={276} textAnchor="middle" className="fill-fg text-[19px]">LPG lỏng</text>
+      <text x={80} y={276} textAnchor="middle" className="fill-fg text-[19px]">
+        LPG lỏng
+      </text>
       <line x1={132} y1={255} x2={248} y2={255} className="stroke-accent" strokeWidth={3} markerEnd="url(#vd-arrow)" />
 
       {/* Thân máy */}
@@ -93,17 +105,27 @@ export function VaporizerDiagram({ title, temperature, pressure, label, classNam
         <path key={x} d={`M ${x} 182 ${WAVE}`} fill="none" className="stroke-fg-secondary/60" strokeWidth={2} />
       ))}
       <rect x={368} y={201} width={262} height={32} rx={3} className="fill-surface-sunken stroke-accent" strokeWidth={1.5} />
-      <text x={499} y={224} textAnchor="middle" className="fill-accent text-[19px] font-semibold">{title}</text>
+      <text x={499} y={224} textAnchor="middle" className="fill-accent text-[19px] font-semibold">
+        {title}
+      </text>
       <rect x={357} y={255} width={113} height={32} rx={3} className="fill-surface-muted/60 stroke-line/40" />
-      <text x={413} y={276} textAnchor="middle" className="fill-fg text-[14px] font-semibold">Bộ gia nhiệt</text>
+      <text x={413} y={276} textAnchor="middle" className="fill-fg text-[14px] font-semibold">
+        Bộ gia nhiệt
+      </text>
       <rect x={510} y={255} width={132} height={32} rx={3} className="fill-surface-muted/60 stroke-line/40" />
-      <text x={576} y={276} textAnchor="middle" className="fill-fg text-[14px] font-semibold">Buồng hóa hơi</text>
+      <text x={576} y={276} textAnchor="middle" className="fill-fg text-[14px] font-semibold">
+        Buồng hóa hơi
+      </text>
 
       {/* Đầu ra */}
       <line x1={642} y1={255} x2={1112} y2={255} className="stroke-accent" strokeWidth={3} markerEnd="url(#vd-arrow)" />
-      <text x={1165} y={235} textAnchor="middle" className="fill-fg-secondary text-[13px] font-semibold tracking-label">LPG khí đầu ra</text>
+      <text x={1165} y={235} textAnchor="middle" className="fill-fg-secondary text-[13px] font-semibold tracking-label">
+        LPG khí đầu ra
+      </text>
       <rect x={1117} y={243} width={96} height={30} rx={2} className="fill-surface-muted/30 stroke-line/40" />
-      <text x={1165} y={265} textAnchor="middle" className="fill-fg text-[19px]">LPG khí</text>
+      <text x={1165} y={265} textAnchor="middle" className="fill-fg text-[19px]">
+        LPG khí
+      </text>
 
       {/* Cảm biến */}
       <path d="M 607 160 L 665 115 L 786 115" fill="none" className="stroke-fg-secondary/60" strokeDasharray="4 4" />

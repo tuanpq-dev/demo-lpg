@@ -48,7 +48,15 @@ describe('Checklist', () => {
     expect(onToggle).toHaveBeenCalledWith('a');
     expect(screen.getByRole('checkbox', { name: 'Xác minh van' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Xác minh van' })).toHaveAccessibleDescription('Đã làm lúc 10:58');
-    rerender(<Checklist variant="plain" items={items} progress={{ done: 1, total: 2, percent: 50 }} onToggle={onToggle} lockHint="Xác nhận cảnh báo để bắt đầu xử lý." />);
+    rerender(
+      <Checklist
+        variant="plain"
+        items={items}
+        progress={{ done: 1, total: 2, percent: 50 }}
+        onToggle={onToggle}
+        lockHint="Xác nhận cảnh báo để bắt đầu xử lý."
+      />,
+    );
     onToggle.mockClear();
     const cb = screen.getByRole('checkbox', { name: 'Kiểm tra đồng hồ' });
     // aria-disabled (không disabled): vẫn focus được, đọc được gợi ý, nhưng click/Space không tick.

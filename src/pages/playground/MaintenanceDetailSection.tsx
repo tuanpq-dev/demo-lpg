@@ -28,7 +28,7 @@ import { useNow } from '@/lib/useNow';
 import type { MaintenanceChecklistItem, MaintenanceStatus } from '@/features/maintenance/types';
 import { Demo } from './Demo';
 
-const REF = (import.meta.env.DEV ? '/scratch/figma-ref/mt-detail-design.png' : undefined);
+const REF = import.meta.env.DEV ? '/scratch/figma-ref/mt-detail-design.png' : undefined;
 const STEPS = WORKFLOW_STEPS.map((s) => ({ id: s.status, label: s.label }));
 
 const STATUS_CASES = [
@@ -99,8 +99,12 @@ export function MaintenanceDetailSection() {
   return (
     <>
       <p className="text-sm text-fg-muted">
-        Trang thật: <Link className="text-accent underline" to="/maintenance/MT-00128">/maintenance/MT-00128</Link> (nhóm 3). Ảnh thiết kế:{' '}
-        chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu). Lần bấm gần nhất: <span className="text-fg">{log}</span>
+        Trang thật:{' '}
+        <Link className="text-accent underline" to="/maintenance/MT-00128">
+          /maintenance/MT-00128
+        </Link>{' '}
+        (nhóm 3). Ảnh thiết kế: chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu). Lần bấm gần nhất:{' '}
+        <span className="text-fg">{log}</span>
       </p>
 
       <Demo title="Header: Badge severity chip (+ icon) · status md · tag md · WorkflowStepper" refImg={REF}>
@@ -152,7 +156,13 @@ export function MaintenanceDetailSection() {
           <Checklist
             items={toView(items)}
             progress={checklistProgress(items)}
-            lockHint={lock === 'pending' ? 'Tiếp nhận yêu cầu trước khi cập nhật checklist.' : lock === 'readonly' ? 'Checklist chỉ đọc ở trạng thái này.' : null}
+            lockHint={
+              lock === 'pending'
+                ? 'Tiếp nhận yêu cầu trước khi cập nhật checklist.'
+                : lock === 'readonly'
+                  ? 'Checklist chỉ đọc ở trạng thái này.'
+                  : null
+            }
             onToggle={lock === 'open' ? (id) => setItems((xs) => toggleChecklistItem(xs, id, new Date())) : undefined}
           />
         </Card>
@@ -175,7 +185,14 @@ export function MaintenanceDetailSection() {
         <div className="grid max-w-[760px] grid-cols-2 gap-3 md:grid-cols-4">
           <AttachmentCard id="f1" name="hien-truong-psv101.jpg" onView={(id) => setLog(`Xem ${id}`)} onDownload={(id) => setLog(`Tải ${id}`)} />
           <AttachmentCard id="f2" name="bao-cao-kiem-dinh.pdf" onView={(id) => setLog(`Xem ${id}`)} onDownload={(id) => setLog(`Tải ${id}`)} />
-          <AttachmentCard id="f3" name="manual-psv101.pdf" kind="manual" meta="4,2 MB" onView={(id) => setLog(`Xem ${id}`)} onDownload={(id) => setLog(`Tải ${id}`)} />
+          <AttachmentCard
+            id="f3"
+            name="manual-psv101.pdf"
+            kind="manual"
+            meta="4,2 MB"
+            onView={(id) => setLog(`Xem ${id}`)}
+            onDownload={(id) => setLog(`Tải ${id}`)}
+          />
           <AttachmentCard id="f4" name="ten-tep-rat-dai-de-kiem-tra-cat-chu.xlsx" />
         </div>
       </Demo>
@@ -194,12 +211,25 @@ export function MaintenanceDetailSection() {
       </Demo>
 
       <Demo title="Cột phải: DeadlineCountdownCard · AssigneeCard · AlertCard compact · KpiCard sm" refImg={REF}>
-        <SegmentedControl label="Đồng hồ" size="sm" options={DEADLINE_CASES} value={deadlineCase} onChange={(v) => setDeadlineCase(v as typeof deadlineCase)} />
+        <SegmentedControl
+          label="Đồng hồ"
+          size="sm"
+          options={DEADLINE_CASES}
+          value={deadlineCase}
+          onChange={(v) => setDeadlineCase(v as typeof deadlineCase)}
+        />
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex max-w-[456px] flex-col gap-4">
             <DeadlineCountdownCard countdown={countdown} dueText="16:00 Hôm nay" closedText="Đã hoàn thành" />
             <AssigneeCard assignee={null} department="Bảo trì Cơ khí" shift="Ca 1" onAssign={() => setLog('Phân công')} />
-            <AssigneeCard assignee="Nguyễn Văn A" assigneeNote="Bảo trì Cơ khí" department="Bảo trì Cơ khí" shift="Ca 2" onAssign={() => undefined} assignDisabled />
+            <AssigneeCard
+              assignee="Nguyễn Văn A"
+              assigneeNote="Bảo trì Cơ khí"
+              department="Bảo trì Cơ khí"
+              shift="Ca 2"
+              onAssign={() => undefined}
+              assignDisabled
+            />
           </div>
           <div className="flex max-w-[456px] flex-col gap-4">
             <Card title="Cảnh báo liên quan" headerVariant="divided" radius="lg">

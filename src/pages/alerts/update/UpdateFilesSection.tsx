@@ -62,7 +62,13 @@ export function UpdateFilesSection({ code, attachments, files, uploadError, onAd
         </p>
       )}
       {sample && (
-        <Modal open onClose={() => setPreview(null)} size="md" title={sample.name} description="Dữ liệu mẫu – chưa có tệp thật (chờ backend lưu trữ).">
+        <Modal
+          open
+          onClose={() => setPreview(null)}
+          size="md"
+          title={sample.name}
+          description="Dữ liệu mẫu – chưa có tệp thật (chờ backend lưu trữ)."
+        >
           <p className="text-base text-fg-secondary">Tệp mẫu đi kèm cảnh báo {code}. Xem/tải tệp thật khi có API lưu trữ.</p>
         </Modal>
       )}

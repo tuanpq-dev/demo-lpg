@@ -101,20 +101,40 @@ describe('thời gian đề nghị mặc định (+30 phút, làm tròn lên m�
 
 describe('submitForReview', () => {
   test('→ review, tiến độ 100, bỏ cờ, lưu hồ sơ, MỘT dòng lịch sử + ghi chú tóm tắt', () => {
-    const r0 = rec({ hold: { kind: 'paused', reason: 'x', at: 'y' }, reviewFailed: true, history: [{ id: 'h1', at: 'a', kind: 'create', text: 'Tạo' }] });
+    const r0 = rec({
+      hold: { kind: 'paused', reason: 'x', at: 'y' },
+      reviewFailed: true,
+      history: [{ id: 'h1', at: 'a', kind: 'create', text: 'Tạo' }],
+    });
     const r = submitForReview(r0, input({ proposedAt: '2026-10-26T15:30' }), tech);
     expect(r.status).toBe('review');
     expect(r.reportedProgress).toBe(100);
     expect('hold' in r).toBe(false);
     expect('reviewFailed' in r).toBe(false);
-    expect(r.submission).toMatchObject({ reviewer: 'Trần Hoàng Nam', submittedBy: 'Nguyễn Văn A', submittedAt: '2026-10-26T11:45', proposedAt: '2026-10-26T15:30', remedy: 'Vệ sinh tiếp điểm' });
+    expect(r.submission).toMatchObject({
+      reviewer: 'Trần Hoàng Nam',
+      submittedBy: 'Nguyễn Văn A',
+      submittedAt: '2026-10-26T11:45',
+      proposedAt: '2026-10-26T15:30',
+      remedy: 'Vệ sinh tiếp điểm',
+    });
     expect(r.history).toHaveLength(2);
-    expect(r.history?.[1]).toEqual({ id: 'h2', at: '2026-10-26T11:45', kind: 'submit', text: 'Gửi nghiệm thu – người nghiệm thu: Trần Hoàng Nam · 80% → 100%', actor: 'Nguyễn Văn A' });
+    expect(r.history?.[1]).toEqual({
+      id: 'h2',
+      at: '2026-10-26T11:45',
+      kind: 'submit',
+      text: 'Gửi nghiệm thu – người nghiệm thu: Trần Hoàng Nam · 80% → 100%',
+      actor: 'Nguyễn Văn A',
+    });
     expect(r.notes?.at(-1)?.text).toBe('Tóm tắt gửi nghiệm thu: Đã kiểm tra PSV-101');
   });
 
   test('tiến độ đã 100 → lịch sử không ghi "→"; Chưa khắc phục + tệp ghi kèm', () => {
-    const r = submitForReview(rec({ reportedProgress: 100 }), input({ deviceCondition: 'unresolved', files: [{ name: 'a.jpg', size: 1, kind: 'image' }] }), tech);
+    const r = submitForReview(
+      rec({ reportedProgress: 100 }),
+      input({ deviceCondition: 'unresolved', files: [{ name: 'a.jpg', size: 1, kind: 'image' }] }),
+      tech,
+    );
     expect(r.history?.at(-1)?.text).toBe('Gửi nghiệm thu – người nghiệm thu: Trần Hoàng Nam · thiết bị: Chưa khắc phục · đính kèm 1 tệp');
     expect(r.attachments?.at(-1)).toEqual({ id: 't1', name: 'a.jpg', size: 1, kind: 'image', isTemp: true });
   });
@@ -149,7 +169,9 @@ describe('nghiệm thu', () => {
 
   test('chặn tự nghiệm thu (người thực hiện) và người nghiệm thu trống', () => {
     const r = inReview();
-    expect(validateReview(r, { result: 'pass', reviewer: 'Nguyễn Văn A', comment: '' }).reviewer).toBe('Người thực hiện không được tự nghiệm thu yêu cầu của mình.');
+    expect(validateReview(r, { result: 'pass', reviewer: 'Nguyễn Văn A', comment: '' }).reviewer).toBe(
+      'Người thực hiện không được tự nghiệm thu yêu cầu của mình.',
+    );
     expect(validateReview(r, { result: 'pass', reviewer: ' ', comment: '' }).reviewer).toBeTruthy();
     expect(reviewRecord(r, { result: 'pass', reviewer: 'Nguyễn Văn A', comment: '' }, reviewer)).toBe(r);
   });
@@ -159,8 +181,19 @@ describe('nghiệm thu', () => {
     const r = reviewRecord(r0, { result: 'pass', reviewer: 'Trần Hoàng Nam', comment: 'Ổn định', followUpHours: 2 }, reviewer);
     expect(r.status).toBe('done');
     expect(r.completedAt).toBe('2026-10-26');
-    expect(r.review).toEqual({ result: 'pass', reviewer: 'Trần Hoàng Nam', comment: 'Ổn định', followUpHours: 2, followUpUntil: '2026-10-26T16:00', at: '2026-10-26T14:00' });
-    expect(r.history?.at(-1)).toMatchObject({ kind: 'review-pass', text: 'Nghiệm thu đạt – hoàn thành · theo dõi thêm 2 giờ (đến 16:00)', actor: 'Trần Hoàng Nam' });
+    expect(r.review).toEqual({
+      result: 'pass',
+      reviewer: 'Trần Hoàng Nam',
+      comment: 'Ổn định',
+      followUpHours: 2,
+      followUpUntil: '2026-10-26T16:00',
+      at: '2026-10-26T14:00',
+    });
+    expect(r.history?.at(-1)).toMatchObject({
+      kind: 'review-pass',
+      text: 'Nghiệm thu đạt – hoàn thành · theo dõi thêm 2 giờ (đến 16:00)',
+      actor: 'Trần Hoàng Nam',
+    });
     expect(r.submission).toBe(r0.submission);
     expect(r.notes).toEqual(r0.notes); // Đạt: không thêm ghi chú
   });
@@ -179,7 +212,12 @@ describe('nghiệm thu', () => {
     expect(r.status).toBe('in-progress');
     expect(r.reportedProgress).toBe(100);
     expect(r.reviewFailed).toBeUndefined();
-    expect(r.notes?.at(-1)).toEqual({ id: `n${r.notes!.length}`, author: 'Trần Hoàng Nam', at: '2026-10-26T14:00', text: 'Nghiệm thu: Cần bổ sung – Thiếu ảnh mặt bích' });
+    expect(r.notes?.at(-1)).toEqual({
+      id: `n${r.notes!.length}`,
+      author: 'Trần Hoàng Nam',
+      at: '2026-10-26T14:00',
+      text: 'Nghiệm thu: Cần bổ sung – Thiếu ảnh mặt bích',
+    });
     expect(r.history?.at(-1)).toMatchObject({ kind: 'review-needs-info', text: 'Nghiệm thu: Cần bổ sung – xem ghi chú kỹ thuật' });
     expect(r.history?.at(-1)?.text).not.toContain('mặt bích');
   });

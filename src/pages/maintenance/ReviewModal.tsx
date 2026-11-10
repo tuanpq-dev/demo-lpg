@@ -27,7 +27,13 @@ const snapTone = (s: ReadingSnapshot): KpiTone => (s.value === null ? 'neutral' 
 /** "10.5" – bỏ số 0 thừa, không có dấu chấm cuối (ảnh: "Ngưỡng: 30."). */
 const fmtLimit = (n: number) => String(Number(n.toFixed(2)));
 const liveText = (rd: Reading | undefined, unit: string) =>
-  !rd ? null : rd.state === 'lost' ? 'Hiện tại: mất tín hiệu' : rd.value === undefined ? 'Hiện tại: —' : `Hiện tại: ${rd.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}`;
+  !rd
+    ? null
+    : rd.state === 'lost'
+      ? 'Hiện tại: mất tín hiệu'
+      : rd.value === undefined
+        ? 'Hiện tại: —'
+        : `Hiện tại: ${rd.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}`;
 
 export type ReviewModalProps = {
   record: MaintenanceRecord;
@@ -70,7 +76,12 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
   });
   const { confirming, submitting, requestClose } = form;
 
-  const options: StatusOption<ReviewResult>[] = REVIEW_RESULT_OPTIONS.map((o) => ({ id: o.id, label: o.label, tone: RESULT_TONE[o.id], toneLabel: o.id === 'fail' }));
+  const options: StatusOption<ReviewResult>[] = REVIEW_RESULT_OPTIONS.map((o) => ({
+    id: o.id,
+    label: o.label,
+    tone: RESULT_TONE[o.id],
+    toneLabel: o.id === 'fail',
+  }));
 
   const submit = async () => {
     const e = validateReview(r, input);
@@ -119,7 +130,12 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
       <Button variant="subtle" onClick={requestClose}>
         Hủy bỏ
       </Button>
-      <Button type="submit" variant="primary" aria-disabled={!!selfReview || submitting || undefined} aria-describedby={selfReview ? blockId : undefined}>
+      <Button
+        type="submit"
+        variant="primary"
+        aria-disabled={!!selfReview || submitting || undefined}
+        aria-describedby={selfReview ? blockId : undefined}
+      >
         {REVIEW_SUBMIT_LABEL[result]}
       </Button>
     </>
@@ -184,7 +200,11 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
                 ))}
               </dl>
               <p className="text-sm text-fg-secondary">
-                Tóm tắt: {sub.summary} · Tình trạng sau bảo trì: <span className={sub.deviceCondition === 'unresolved' ? 'text-danger-text' : 'text-fg'}>{DEVICE_CONDITION_LABEL[sub.deviceCondition]}</span> · Gửi bởi {sub.submittedBy}
+                Tóm tắt: {sub.summary} · Tình trạng sau bảo trì:{' '}
+                <span className={sub.deviceCondition === 'unresolved' ? 'text-danger-text' : 'text-fg'}>
+                  {DEVICE_CONDITION_LABEL[sub.deviceCondition]}
+                </span>{' '}
+                · Gửi bởi {sub.submittedBy}
               </p>
             </section>
 
@@ -228,10 +248,22 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
         </section>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <FormField labelVariant="section" label="Người nghiệm thu" error={selfReview} hint={selfReview ? undefined : 'Người đang đăng nhập (hoặc người được đề nghị khi gửi).'}>
+          <FormField
+            labelVariant="section"
+            label="Người nghiệm thu"
+            error={selfReview}
+            hint={selfReview ? undefined : 'Người đang đăng nhập (hoặc người được đề nghị khi gửi).'}
+          >
             {({ id, describedBy, invalid }) => (
               <>
-                <input id={id} readOnly value={reviewerLabel} aria-invalid={invalid || undefined} aria-describedby={describedBy} className={cn(inputClass(invalid), 'h-[35px] bg-surface-muted/60')} />
+                <input
+                  id={id}
+                  readOnly
+                  value={reviewerLabel}
+                  aria-invalid={invalid || undefined}
+                  aria-describedby={describedBy}
+                  className={cn(inputClass(invalid), 'h-[35px] bg-surface-muted/60')}
+                />
                 {selfReview && (
                   <span id={blockId} className="sr-only">
                     Không xác nhận được: {selfReview}
@@ -240,7 +272,11 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
               </>
             )}
           </FormField>
-          <FormField labelVariant="section" label="Thời gian theo dõi thêm" hint={result === 'pass' ? 'Sau khi hoàn thành, tiếp tục theo dõi thiết bị trong khoảng này.' : 'Chỉ áp dụng khi Đạt yêu cầu.'}>
+          <FormField
+            labelVariant="section"
+            label="Thời gian theo dõi thêm"
+            hint={result === 'pass' ? 'Sau khi hoàn thành, tiếp tục theo dõi thiết bị trong khoảng này.' : 'Chỉ áp dụng khi Đạt yêu cầu.'}
+          >
             {({ id, labelId, describedBy }) => (
               <Select
                 variant="field"
@@ -271,7 +307,9 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
             maxLength={1000}
             error={errors.comment}
             placeholder={result === 'pass' ? 'Nhận xét (không bắt buộc)…' : result === 'fail' ? 'Lý do không đạt…' : 'Nội dung cần bổ sung…'}
-            hint={result === 'pass' ? 'Không bắt buộc – lưu vào kết quả bảo trì.' : 'Bắt buộc – ghi thành ghi chú kỹ thuật để người thực hiện xử lý tiếp.'}
+            hint={
+              result === 'pass' ? 'Không bắt buộc – lưu vào kết quả bảo trì.' : 'Bắt buộc – ghi thành ghi chú kỹ thuật để người thực hiện xử lý tiếp.'
+            }
           />
         </div>
 

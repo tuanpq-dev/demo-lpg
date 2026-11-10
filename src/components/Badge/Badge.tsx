@@ -16,7 +16,17 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low';
  * - closed:         "Hoàn thành" (cảnh báo đã đóng – trung tính, phân biệt với "Đã xử lý")
  * - monitoring:     "Đang theo dõi" (nhật ký vận hành, Figma 64:989 – pill vàng nền /10 viền /20)
  */
-export type WorkStatus = 'unacknowledged' | 'pending' | 'assigned' | 'in-progress' | 'review' | 'done' | 'cancelled' | 'resolved' | 'closed' | 'monitoring';
+export type WorkStatus =
+  | 'unacknowledged'
+  | 'pending'
+  | 'assigned'
+  | 'in-progress'
+  | 'review'
+  | 'done'
+  | 'cancelled'
+  | 'resolved'
+  | 'closed'
+  | 'monitoring';
 
 type CommonProps = {
   /** Ghi đè nhãn mặc định (tiếng Việt). */
@@ -208,9 +218,7 @@ export function Badge(props: BadgeProps) {
   if (props.variant === 'tag') {
     const { tone = 'neutral', size = 'sm' } = props;
     return (
-      <span className={cn('inline-flex shrink-0 items-center whitespace-nowrap border', tagSize[size], tagClass[tone], className)}>
-        {children}
-      </span>
+      <span className={cn('inline-flex shrink-0 items-center whitespace-nowrap border', tagSize[size], tagClass[tone], className)}>{children}</span>
     );
   }
 

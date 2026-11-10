@@ -9,9 +9,7 @@ const HALF_PI = Math.PI / 2;
 /** Vị trí chia đều trên đoạn [a, b], mỗi ô ~`step`, bỏ các điểm quá gần `skip`. */
 function spread(a: number, b: number, step: number, skip?: { at: number; gap: number }) {
   const n = Math.max(1, Math.floor((b - a) / step));
-  return Array.from({ length: n }, (_, i) => a + ((i + 0.5) * (b - a)) / n).filter(
-    (x) => !skip || Math.abs(x - skip.at) > skip.gap,
-  );
+  return Array.from({ length: n }, (_, i) => a + ((i + 0.5) * (b - a)) / n).filter((x) => !skip || Math.abs(x - skip.at) > skip.gap);
 }
 
 /**
@@ -27,9 +25,7 @@ export function Building({ params }: AssetComponentProps) {
   const floors = params.floors!;
   const rows = Array.from({ length: floors }, (_, i) => (H / floors) * (i + 0.55));
   const doorX = W * 0.09;
-  const frontWindows = spread(-W / 2 + 0.6, W / 2 - 0.6, 2.6, { at: doorX, gap: 2.2 }).flatMap((x) =>
-    rows.map((y) => [x, y, D / 2 + 0.03] as const),
-  );
+  const frontWindows = spread(-W / 2 + 0.6, W / 2 - 0.6, 2.6, { at: doorX, gap: 2.2 }).flatMap((x) => rows.map((y) => [x, y, D / 2 + 0.03] as const));
   const sideWindows = spread(-D / 2 + 0.6, D / 2 - 0.6, 2.4).flatMap((z) => rows.map((y) => [W / 2 + 0.03, y, z] as const));
   const winH = Math.min(0.9, (H / floors) * 0.35);
   const doorH = Math.min(3.2, H * 0.45);
@@ -401,13 +397,7 @@ export function TankerTruck() {
         <cylinderGeometry args={[R, R, L, 48, 1, true]} />
       </mesh>
       {[1, -1].map((dir) => (
-        <mesh
-          key={dir}
-          position={[cx + (dir * L) / 2, cy, 0]}
-          rotation={[0, 0, -dir * HALF_PI]}
-          scale={[1, 0.45, 1]}
-          material={m.shiny}
-        >
+        <mesh key={dir} position={[cx + (dir * L) / 2, cy, 0]} rotation={[0, 0, -dir * HALF_PI]} scale={[1, 0.45, 1]} material={m.shiny}>
           <sphereGeometry args={[R, 48, 12, 0, Math.PI * 2, 0, HALF_PI]} />
         </mesh>
       ))}

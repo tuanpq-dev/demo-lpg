@@ -161,7 +161,10 @@ describe('deriveDailyCards', () => {
 
   it('cần xác minh, ngoài ngưỡng, chưa tới hạn', () => {
     const r = report(['08:00', '10:00'], { verify: ['10:00'] });
-    const rows = [row({ values: values({ '08:00': 91, '10:00': 96 }) }), row({ id: 'gas', device: 'GS-02 / Khu nạp xuất', limits: { warn: 10, danger: 20 }, values: values({ '10:00': 12 }) })];
+    const rows = [
+      row({ values: values({ '08:00': 91, '10:00': 96 }) }),
+      row({ id: 'gas', device: 'GS-02 / Khu nạp xuất', limits: { warn: 10, danger: 20 }, values: values({ '10:00': 12 }) }),
+    ];
     const cards = deriveDailyCards(r, rows, at(`${DAY}T11:00`));
     const byId = Object.fromEntries(cards.map((c) => [c.id, c]));
     expect(byId.progress!.sub).toBe('Còn 4 mốc chưa tới hạn');

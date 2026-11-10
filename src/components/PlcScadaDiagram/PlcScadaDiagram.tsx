@@ -37,7 +37,12 @@ const PLC = { x: 335, y: 97, w: 256, h: 130 };
 const SCADA = { x: 788, y: 108, w: 257, h: 108 };
 const ARROW_Y = 161;
 
-const iconTone: Record<DiagramLinkState, string> = { ok: 'text-success', lost: 'text-fg-secondary', pending: 'text-fg-secondary', danger: 'text-danger-text' };
+const iconTone: Record<DiagramLinkState, string> = {
+  ok: 'text-success',
+  lost: 'text-fg-secondary',
+  pending: 'text-fg-secondary',
+  danger: 'text-danger-text',
+};
 const chipTone: Record<DiagramLinkState, string> = {
   ok: 'border-success/30 bg-success/15 text-success',
   lost: 'border-line/40 bg-surface-muted/40 text-fg-secondary',
@@ -56,7 +61,12 @@ export function PlcScadaDiagram({ sources, controller, heartbeat, scada, link, s
   const plcLeftY = (i: number) => PLC.y + 18 + (i * (PLC.h - 36)) / Math.max(1, sources.length - 1);
   const scadaOk = scada.state === 'ok';
   return (
-    <div role="group" aria-label={label} className={cn('relative rounded-md border border-line-card bg-bg-app', className)} style={{ width: W, height: H }}>
+    <div
+      role="group"
+      aria-label={label}
+      className={cn('relative rounded-md border border-line-card bg-bg-app', className)}
+      style={{ width: W, height: H }}
+    >
       {/* Đường nối (trang trí – trạng thái đọc qua chữ ẩn của từng nút). */}
       <svg aria-hidden="true" width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="pointer-events-none absolute inset-0">
         <defs>
@@ -76,7 +86,15 @@ export function PlcScadaDiagram({ sources, controller, heartbeat, scada, link, s
             className={s.state === 'ok' ? 'stroke-primary/60' : 'stroke-fg-secondary/40'}
           />
         ))}
-        <line x1={PLC.x + PLC.w} y1={ARROW_Y} x2={SCADA.x - 2} y2={ARROW_Y} strokeWidth={1.5} markerEnd={`url(#${arrowId})`} className={scadaOk ? 'stroke-primary' : 'stroke-fg-secondary/60'} />
+        <line
+          x1={PLC.x + PLC.w}
+          y1={ARROW_Y}
+          x2={SCADA.x - 2}
+          y2={ARROW_Y}
+          strokeWidth={1.5}
+          markerEnd={`url(#${arrowId})`}
+          className={scadaOk ? 'stroke-primary' : 'stroke-fg-secondary/60'}
+        />
       </svg>
 
       <ul aria-label="Nhóm thiết bị gửi dữ liệu" className="absolute" style={{ left: SRC.x, top: SRC.top }}>
@@ -118,7 +136,10 @@ export function PlcScadaDiagram({ sources, controller, heartbeat, scada, link, s
         {heartbeat.text}
       </span>
 
-      <span className="absolute w-[132px] rounded-xs border border-primary/50 bg-surface py-0.5 text-center text-2xs text-primary" style={{ left: 616, top: 139 }}>
+      <span
+        className="absolute w-[132px] rounded-xs border border-primary/50 bg-surface py-0.5 text-center text-2xs text-primary"
+        style={{ left: 616, top: 139 }}
+      >
         Truyền dữ liệu
       </span>
       <span className="absolute text-2xs text-fg-secondary" style={{ left: 615, top: 177 }}>
@@ -126,14 +147,23 @@ export function PlcScadaDiagram({ sources, controller, heartbeat, scada, link, s
       </span>
 
       <div
-        className={cn('absolute flex flex-col items-center justify-center gap-1 rounded-md border bg-surface-raised text-center', scadaOk ? 'border-line-card' : 'border-line/40')}
+        className={cn(
+          'absolute flex flex-col items-center justify-center gap-1 rounded-md border bg-surface-raised text-center',
+          scadaOk ? 'border-line-card' : 'border-line/40',
+        )}
         style={{ left: SCADA.x, top: SCADA.y, width: SCADA.w, height: SCADA.h }}
       >
         <MonitorIcon size={30} aria-hidden="true" className={scadaOk ? 'text-fg' : 'text-fg-secondary'} />
         <p className="text-md font-bold text-fg">{scada.title}</p>
         <p className="text-xs text-fg-secondary">{scada.subtitle}</p>
       </div>
-      <span className={cn('absolute rounded-xs border px-1.5 py-0.5 text-2xs', link.state === 'ok' ? 'border-primary/30 bg-primary/15 text-primary' : chipTone[link.state])} style={{ left: 861, top: 226 }}>
+      <span
+        className={cn(
+          'absolute rounded-xs border px-1.5 py-0.5 text-2xs',
+          link.state === 'ok' ? 'border-primary/30 bg-primary/15 text-primary' : chipTone[link.state],
+        )}
+        style={{ left: 861, top: 226 }}
+      >
         {link.text}
       </span>
     </div>

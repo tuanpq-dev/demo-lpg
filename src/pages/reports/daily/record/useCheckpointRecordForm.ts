@@ -1,7 +1,16 @@
 import { useMemo, useReducer, useState } from 'react';
 import type { AttachedFile } from '@/components';
 import { clearRecordDraft, fetchCheckpointSnapshot, loadRecordDraft, recordCheckpoint, saveRecordDraft } from '@/data/checkpointRecord';
-import { appendRemark, recordBlockers, recordGroups, recordProgress, recordQuality, sensorSummary, type ManualValues, type ReportRecord } from '@/features/reports';
+import {
+  appendRemark,
+  recordBlockers,
+  recordGroups,
+  recordProgress,
+  recordQuality,
+  sensorSummary,
+  type ManualValues,
+  type ReportRecord,
+} from '@/features/reports';
 import { announce } from '@/lib/announce';
 import { useFormModal } from '@/lib/useFormModal';
 

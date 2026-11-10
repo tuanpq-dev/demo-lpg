@@ -34,7 +34,12 @@ export type ProgressFormAction =
 export function progressFormReducer(s: ProgressFormState, a: ProgressFormAction): ProgressFormState {
   switch (a.type) {
     case 'choose-state':
-      return { ...s, state: a.state, progress: a.state === 'completed' ? 100 : s.progress, errors: { ...s.errors, state: undefined, text: undefined, form: undefined } };
+      return {
+        ...s,
+        state: a.state,
+        progress: a.state === 'completed' ? 100 : s.progress,
+        errors: { ...s.errors, state: undefined, text: undefined, form: undefined },
+      };
     case 'progress':
       return { ...s, progress: a.value };
     case 'text':

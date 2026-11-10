@@ -51,7 +51,9 @@ describe('isBreached / gaugeValueText – hai chiều', () => {
   test('chữ đọc nói rõ vượt / dưới / trong giới hạn', () => {
     expect(gaugeValueText({ value: 11.8, threshold: 10.5, direction: 'above', breached: true }, 'bar')).toBe('11.8 bar, vượt ngưỡng 10.5 bar');
     expect(gaugeValueText({ value: 45, threshold: 50, direction: 'below', breached: true }, '°C')).toBe('45°C, dưới ngưỡng 50°C');
-    expect(gaugeValueText({ value: 9.6, threshold: 10.5, direction: 'above', breached: false }, 'bar')).toBe('9.6 bar, trong giới hạn (ngưỡng 10.5 bar)');
+    expect(gaugeValueText({ value: 9.6, threshold: 10.5, direction: 'above', breached: false }, 'bar')).toBe(
+      '9.6 bar, trong giới hạn (ngưỡng 10.5 bar)',
+    );
   });
   test('định dạng số và đơn vị', () => {
     expect(formatGaugeNumber(12.0)).toBe('12');

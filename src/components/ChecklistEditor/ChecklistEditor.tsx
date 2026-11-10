@@ -46,8 +46,7 @@ export function ChecklistEditor({
     setPendingFocus(null);
   }, [pendingFocus, items]);
 
-  const update = (id: string, patch: Partial<ChecklistItem>) =>
-    onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  const update = (id: string, patch: Partial<ChecklistItem>) => onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= items.length || from === to) return;
@@ -135,18 +134,10 @@ export function ChecklistEditor({
               overId === it.id && dragId !== it.id && 'bg-info/10',
             )}
           >
-            <span
-              className="cursor-grab text-fg-secondary/70 active:cursor-grabbing"
-              title="Kéo để sắp xếp (hoặc Alt + ↑/↓)"
-              aria-hidden="true"
-            >
+            <span className="cursor-grab text-fg-secondary/70 active:cursor-grabbing" title="Kéo để sắp xếp (hoặc Alt + ↑/↓)" aria-hidden="true">
               <GripIcon />
             </span>
-            <Checkbox
-              label={`Đánh dấu xong: ${it.text || `bước ${i + 1}`}`}
-              checked={it.done}
-              onChange={(done) => update(it.id, { done })}
-            />
+            <Checkbox label={`Đánh dấu xong: ${it.text || `bước ${i + 1}`}`} checked={it.done} onChange={(done) => update(it.id, { done })} />
             <input
               ref={(el) => {
                 if (el) inputs.current.set(it.id, el);

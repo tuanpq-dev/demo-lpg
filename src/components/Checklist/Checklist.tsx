@@ -107,7 +107,9 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                     if (off) e.currentTarget.checked = it.done;
                     else onToggle?.(it.id);
                   }}
-                  aria-describedby={[it.done && it.time ? metaId : null, it.flag ? flagId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined}
+                  aria-describedby={
+                    [it.done && it.time ? metaId : null, it.flag ? flagId : null, lockHint ? hintId : null].filter(Boolean).join(' ') || undefined
+                  }
                 />
                 <span
                   aria-hidden="true"
@@ -118,7 +120,14 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                 >
                   {it.done && (
                     <svg viewBox="0 0 16 16" className="size-3">
-                      <path d="M4 8.5l2.5 2.5L12 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M4 8.5l2.5 2.5L12 5.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   )}
                 </span>

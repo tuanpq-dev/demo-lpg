@@ -67,10 +67,7 @@ export function EventTimeline({ events, variant = 'event', onEventClick, classNa
   return (
     <ol className={cn('relative flex flex-col gap-3', className)}>
       {/* Đường dọc chạy qua tâm chấm: x = 6px (chấm 12) hoặc 7.5px (chấm 16) */}
-      <span
-        aria-hidden="true"
-        className={cn('absolute w-px bg-line', schedule ? 'bottom-2 left-[7.5px] top-2' : 'bottom-0 left-1.5 top-0')}
-      />
+      <span aria-hidden="true" className={cn('absolute w-px bg-line', schedule ? 'bottom-2 left-[7.5px] top-2' : 'bottom-0 left-1.5 top-0')} />
       {events.map((e, i) => {
         const active = hasActive ? !!e.active : i === 0;
         const Tag = onEventClick ? 'button' : 'div';

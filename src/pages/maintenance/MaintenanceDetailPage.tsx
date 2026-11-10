@@ -20,7 +20,9 @@ export default function MaintenanceDetailRoute() {
   const listUrl = maintenanceListUrl((state as { from?: unknown } | null)?.from);
 
   if (status !== 'success') {
-    const header = <PageHeader breadcrumb={[{ label: 'Bảo trì', to: '/maintenance' }, { label: 'Quản lý bảo trì', to: listUrl }, { label: raw }]} title={raw} />;
+    const header = (
+      <PageHeader breadcrumb={[{ label: 'Bảo trì', to: '/maintenance' }, { label: 'Quản lý bảo trì', to: listUrl }, { label: raw }]} title={raw} />
+    );
     return (
       <Page pageHeader={header}>
         {status === 'error' ? (

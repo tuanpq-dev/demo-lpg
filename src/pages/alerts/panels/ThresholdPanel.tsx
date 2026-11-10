@@ -57,7 +57,15 @@ function AlertMetrics({ alert: a }: { alert: AlertRecord }) {
   return (
     <Section title="Thông số cảnh báo">
       <div className="grid grid-cols-2 gap-4">
-        <KpiCard size="sm" valueSize="lg" label="Giá trị lúc cảnh báo" value={formatGaugeNumber(m.value)} unit={m.unit} tone={tone} footnote={current} />
+        <KpiCard
+          size="sm"
+          valueSize="lg"
+          label="Giá trị lúc cảnh báo"
+          value={formatGaugeNumber(m.value)}
+          unit={m.unit}
+          tone={tone}
+          footnote={current}
+        />
         <KpiCard
           size="sm"
           valueSize="lg"
@@ -69,7 +77,12 @@ function AlertMetrics({ alert: a }: { alert: AlertRecord }) {
         />
       </div>
       {scale ? (
-        <ThresholdGauge label="Giá trị lúc cảnh báo so với ngưỡng" {...scale} valueText={gaugeValueText(scale, m.unit)} valueLabel={formatGaugeNumber(m.value)} />
+        <ThresholdGauge
+          label="Giá trị lúc cảnh báo so với ngưỡng"
+          {...scale}
+          valueText={gaugeValueText(scale, m.unit)}
+          valueLabel={formatGaugeNumber(m.value)}
+        />
       ) : (
         <p className="text-sm text-fg-secondary">
           {gauge.kind === 'off'

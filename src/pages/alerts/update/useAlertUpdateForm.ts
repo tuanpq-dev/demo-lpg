@@ -37,7 +37,10 @@ import { useFormModal } from '@/lib/useFormModal';
 import { initialValues, updateFormReducer, type TempFile, type UpdateFormValues } from './updateFormState';
 
 export type { TempFile, UpdateFormValues } from './updateFormState';
-const ALARM_TEXT: Record<string, { text: string; tone: 'danger' | 'normal' }> = { alarm: { text: 'Báo động', tone: 'danger' }, normal: { text: 'Bình thường', tone: 'normal' } };
+const ALARM_TEXT: Record<string, { text: string; tone: 'danger' | 'normal' }> = {
+  alarm: { text: 'Báo động', tone: 'danger' },
+  normal: { text: 'Bình thường', tone: 'normal' },
+};
 
 export type UseAlertUpdateFormOptions = {
   alert: AlertRecord;
@@ -77,7 +80,8 @@ export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose 
   }));
   const { values: v, files, errors, triedSubmit } = state;
 
-  const set = <K extends keyof UpdateFormValues>(k: K, val: UpdateFormValues[K]) => dispatch({ type: 'set', patch: { [k]: val } as Partial<UpdateFormValues> });
+  const set = <K extends keyof UpdateFormValues>(k: K, val: UpdateFormValues[K]) =>
+    dispatch({ type: 'set', patch: { [k]: val } as Partial<UpdateFormValues> });
   const editable = !!cfg.sources && hasGauge(v.source);
 
   // ---- Thông số trước/sau ----
@@ -114,7 +118,8 @@ export function useAlertUpdateForm({ alert: a, now, fixedNow, onSubmit, onClose 
       afterTone: alarm ? alarm.tone : readingTone(after, r.warn, r.danger),
       afterText: alarm?.text,
       editable: editable && !r.alarm,
-      afterPlaceholder: reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
+      afterPlaceholder:
+        reading.state === 'lost' ? 'Mất tín hiệu' : reading.state === 'pending' ? '…' : reading.state === 'none' ? 'Chưa có tag' : undefined,
     };
   });
 

@@ -207,10 +207,19 @@ export type StaffListProps = {
 export function StaffList({ label, labelledBy, items, value, onChange, emptyState, compact, className }: StaffListProps) {
   const roving = useRovingFocus({ items, value: value ?? '', onChange, orientation: 'vertical' });
   if (!items.length) {
-    return <div className={cn('rounded-md border border-dashed border-line/30 px-4 py-8 text-center text-base text-fg-secondary', className)}>{emptyState ?? 'Không có nhân sự phù hợp.'}</div>;
+    return (
+      <div className={cn('rounded-md border border-dashed border-line/30 px-4 py-8 text-center text-base text-fg-secondary', className)}>
+        {emptyState ?? 'Không có nhân sự phù hợp.'}
+      </div>
+    );
   }
   return (
-    <div role="radiogroup" aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy} className={cn('flex flex-col', compact ? 'gap-2' : 'gap-3', className)}>
+    <div
+      role="radiogroup"
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
+      className={cn('flex flex-col', compact ? 'gap-2' : 'gap-3', className)}
+    >
       {items.map((it) => (
         <StaffPickerCard
           key={it.id}

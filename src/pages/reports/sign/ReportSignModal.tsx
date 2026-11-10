@@ -193,7 +193,11 @@ export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: 
             <ul className="grid gap-x-6 gap-y-2.5 md:grid-flow-col md:grid-cols-2 md:grid-rows-[repeat(4,auto)]">
               {conditions.map((c) => (
                 <li key={c.id} className={cn('flex items-start gap-2 text-sm', c.met ? 'text-success' : 'text-fg')}>
-                  {c.met ? <CheckCircleIcon size={16} className="mt-px shrink-0" /> : <AlertCircleIcon size={16} className="mt-px shrink-0 text-warning" />}
+                  {c.met ? (
+                    <CheckCircleIcon size={16} className="mt-px shrink-0" />
+                  ) : (
+                    <AlertCircleIcon size={16} className="mt-px shrink-0 text-warning" />
+                  )}
                   <span>
                     <span className="sr-only">{c.met ? 'Đạt: ' : 'Chưa đạt: '}</span>
                     {c.label}
@@ -220,7 +224,10 @@ export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: 
 
         {/* ---- Cột phải ---- */}
         <div className="flex min-w-0 flex-col gap-6">
-          <section aria-labelledby={`${uid}-pdf-title`} className="flex flex-col gap-3 rounded-lg border border-line-card bg-surface-raised px-4 py-4">
+          <section
+            aria-labelledby={`${uid}-pdf-title`}
+            className="flex flex-col gap-3 rounded-lg border border-line-card bg-surface-raised px-4 py-4"
+          >
             <div className="flex items-start gap-3">
               <PdfFileIcon size={36} className="shrink-0 text-fg-secondary" />
               <div className="flex min-w-0 flex-col">
@@ -268,7 +275,14 @@ export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: 
                 Xem trước biểu mẫu
                 <span className="sr-only"> (mở thẻ mới)</span>
               </a>
-              <Button variant="subtle" size="sm" icon={<Icon name="download" box={16} />} aria-disabled="true" aria-describedby={pdfPendingId} title="Chưa có dịch vụ xuất PDF – chờ kết nối máy chủ.">
+              <Button
+                variant="subtle"
+                size="sm"
+                icon={<Icon name="download" box={16} />}
+                aria-disabled="true"
+                aria-describedby={pdfPendingId}
+                title="Chưa có dịch vụ xuất PDF – chờ kết nối máy chủ."
+              >
                 Tải bản nháp PDF
               </Button>
             </div>

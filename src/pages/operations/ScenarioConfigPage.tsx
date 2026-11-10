@@ -29,7 +29,11 @@ import { ExpectedOutcomesCard, InputParamsCard, ReferenceDataCard, ScenarioInfoC
 import { ConfigSuggestionCard, ConfigSummaryCard, ReadinessCard, ScenarioHistoryCard } from './simulation/ConfigSideCards';
 import { CONFIG_SAFETY_RULES, SafetyRulesCard } from './simulation/SimulationSideCards';
 
-const BREADCRUMB_BASE: readonly BreadcrumbItem[] = [{ label: 'Vận hành' }, { label: 'AI mô phỏng sự cố', to: SIMULATION_PATH }, { label: 'Cấu hình kịch bản' }];
+const BREADCRUMB_BASE: readonly BreadcrumbItem[] = [
+  { label: 'Vận hành' },
+  { label: 'AI mô phỏng sự cố', to: SIMULATION_PATH },
+  { label: 'Cấu hình kịch bản' },
+];
 const TITLE = 'Cấu hình kịch bản mô phỏng';
 const DESCRIPTION = 'Mô phỏng các tình huống bất thường trong hệ thống LPG để đánh giá phản ứng vận hành và gợi ý xử lý an toàn.';
 const PENDING_HISTORY = 'Chưa có màn lịch sử đầy đủ – chờ thiết kế.';
@@ -239,25 +243,27 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
               Theo dõi mô phỏng đang chạy
               <PlayCircleSolidIcon size={18} className="shrink-0" />
             </Link>
-          ) : canRun && (
-            <>
-              <Button
-                variant="primary"
-                aria-disabled={!!runReason || !!busy || undefined}
-                aria-describedby={runReason ? runReasonId : undefined}
-                aria-busy={busy === 'run' || undefined}
-                title={runReason}
-                onClick={() => void onRun()}
-              >
-                {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
-                <PlayCircleSolidIcon size={18} className="shrink-0" />
-              </Button>
-              {runReason && (
-                <span id={runReasonId} hidden>
-                  {runReason}
-                </span>
-              )}
-            </>
+          ) : (
+            canRun && (
+              <>
+                <Button
+                  variant="primary"
+                  aria-disabled={!!runReason || !!busy || undefined}
+                  aria-describedby={runReason ? runReasonId : undefined}
+                  aria-busy={busy === 'run' || undefined}
+                  title={runReason}
+                  onClick={() => void onRun()}
+                >
+                  {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
+                  <PlayCircleSolidIcon size={18} className="shrink-0" />
+                </Button>
+                {runReason && (
+                  <span id={runReasonId} hidden>
+                    {runReason}
+                  </span>
+                )}
+              </>
+            )
           )}
         </>
       }

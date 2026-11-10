@@ -119,7 +119,13 @@ describe('CreateMaintenanceModal – điền sẵn, tự điền, nháp, gửi',
     await user.type(screen.getByLabelText(/Tên yêu cầu/), 'Hiệu chuẩn GS-04');
     await user.click(screen.getByRole('button', { name: 'Tạo yêu cầu' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0]![0]).toMatchObject({ device: 'GS-04', area: 'Khu nạp', department: 'Đo lường – Tự động hóa', shift: 'shift-2', source: 'manual' });
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+      device: 'GS-04',
+      area: 'Khu nạp',
+      department: 'Đo lường – Tự động hóa',
+      shift: 'shift-2',
+      source: 'manual',
+    });
     expect(overview()).toHaveTextContent('3 giờ');
   });
 

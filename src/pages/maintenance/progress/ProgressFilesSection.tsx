@@ -26,7 +26,15 @@ export function ProgressFilesSection({ f, record: r }: { f: ProgressUpdateForm; 
         ))}
         {f.files.map((t) => (
           <div key={t.id} className="relative flex min-w-0">
-            <AttachmentCard fluid id={t.id} name={t.name} kind={t.kind} meta={formatFileSize(t.size)} notice="Chưa tải lên máy chủ" onView={() => f.setPreview({ kind: 'temp', file: t })} />
+            <AttachmentCard
+              fluid
+              id={t.id}
+              name={t.name}
+              kind={t.kind}
+              meta={formatFileSize(t.size)}
+              notice="Chưa tải lên máy chủ"
+              onView={() => f.setPreview({ kind: 'temp', file: t })}
+            />
             <button
               type="button"
               aria-label={`Bỏ tệp ${t.name}`}

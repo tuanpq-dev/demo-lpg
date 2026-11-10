@@ -7,7 +7,14 @@ import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, St
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
 import { useMaintenance } from '@/data/maintenance';
-import { OPERATION_DEVICE_IDS, OPERATION_DEVICE_OPTIONS, deriveDeviceAlerts, deriveDeviceMaintenance, resolveOperationDeviceId, useOperationDevice } from '@/data/operationDevice';
+import {
+  OPERATION_DEVICE_IDS,
+  OPERATION_DEVICE_OPTIONS,
+  deriveDeviceAlerts,
+  deriveDeviceMaintenance,
+  resolveOperationDeviceId,
+  useOperationDevice,
+} from '@/data/operationDevice';
 import { connectionView } from '@/features/operations/device';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../NotFoundPage';
@@ -96,7 +103,12 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
   if (status === 'error') {
     return (
       <Page pageHeader={header}>
-        <PageError title="Không tải được thiết bị" error={error} onRetry={refetch} actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>} />
+        <PageError
+          title="Không tải được thiết bị"
+          error={error}
+          onRetry={refetch}
+          actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>}
+        />
       </Page>
     );
   }

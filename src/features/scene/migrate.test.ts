@@ -13,7 +13,15 @@ const legacy = () => ({
     { id: 'T-1', asset: 'tank-vertical', position: [8, 0, 0] },
     { id: 'XV-2', asset: 'valve', attach: { pipe: 'PL-1', t: 0.5 } },
   ],
-  pipes: [{ id: 'PL-1', points: [[0, 1, 5], [5, 1, 5]] }],
+  pipes: [
+    {
+      id: 'PL-1',
+      points: [
+        [0, 1, 5],
+        [5, 1, 5],
+      ],
+    },
+  ],
 });
 
 describe('migrateScene v1 → v2 (pivot tâm đáy + elevation)', () => {

@@ -18,9 +18,9 @@ import {
 import { FigmaRef } from './FigmaRef';
 import { Demo } from './Demo';
 
-const OVERVIEW = (import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined);
-const ALERTS = (import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined);
-const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
+const OVERVIEW = import.meta.env.DEV ? '/scratch/figma-ref/53-11-overview.png' : undefined;
+const ALERTS = import.meta.env.DEV ? '/scratch/figma-ref/70-2809-alerts.png' : undefined;
+const MAINT = import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined;
 
 function StateLine({ children }: { children: ReactNode }) {
   return <p className="font-mono text-xs text-fg-muted/65">{children}</p>;
@@ -63,9 +63,33 @@ type Alert = {
 };
 
 const alerts: Alert[] = [
-  { time: '10:45:22', severity: 'critical', code: 'ALT-00128', text: 'Áp suất bồn V-101 vượt ngưỡng', device: 'V-101', area: 'Khu bồn LPG', status: 'unacknowledged' },
-  { time: '09:12:05', severity: 'high', code: 'ALT-00127', text: 'Cảnh báo rò rỉ Gas nhẹ', device: 'GS-04', area: 'Khu nạp xuất', status: 'in-progress' },
-  { time: '08:45:10', severity: 'high', code: 'ALT-00126', text: 'Nhiệt độ máy hóa hơi thấp', device: 'E-101A', area: 'Trạm hóa hơi', status: 'unacknowledged' },
+  {
+    time: '10:45:22',
+    severity: 'critical',
+    code: 'ALT-00128',
+    text: 'Áp suất bồn V-101 vượt ngưỡng',
+    device: 'V-101',
+    area: 'Khu bồn LPG',
+    status: 'unacknowledged',
+  },
+  {
+    time: '09:12:05',
+    severity: 'high',
+    code: 'ALT-00127',
+    text: 'Cảnh báo rò rỉ Gas nhẹ',
+    device: 'GS-04',
+    area: 'Khu nạp xuất',
+    status: 'in-progress',
+  },
+  {
+    time: '08:45:10',
+    severity: 'high',
+    code: 'ALT-00126',
+    text: 'Nhiệt độ máy hóa hơi thấp',
+    device: 'E-101A',
+    area: 'Trạm hóa hơi',
+    status: 'unacknowledged',
+  },
   { time: '08:10:00', severity: 'medium', code: 'ALT-00125', text: 'Chênh áp lọc cao', device: 'F-201', area: 'Khu Lọc', status: 'in-progress' },
   { time: '07:30:22', severity: 'low', code: 'ALT-00124', text: 'Cảnh báo lưu lượng thấp', device: 'FT-101', area: 'Tuyến chính', status: 'done' },
 ];
@@ -208,7 +232,8 @@ export function NavigationSection() {
           </ul>
         </div>
         <StateLine>
-          {filtered.length}/{alerts.length} cảnh báo · tab = &quot;{alertTab}&quot; · filters = {JSON.stringify(filters)} · advanced = {String(advanced)}
+          {filtered.length}/{alerts.length} cảnh báo · tab = &quot;{alertTab}&quot; · filters = {JSON.stringify(filters)} · advanced ={' '}
+          {String(advanced)}
         </StateLine>
         <FigmaRef src={ALERTS} x={34.5} y={474} w={1496} h={108} caption="Figma – Tabs + Filters (70:3006, 70:3015)" />
       </Demo>

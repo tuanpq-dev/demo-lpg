@@ -2,7 +2,15 @@ import { describe, expect, test } from 'vitest';
 import { canClosePressure, type CloseInput } from './pressure';
 
 // Tách từ pressure.test.ts cũ (28/10/2026): phần khung chung chuyển sang update.test.ts; điều kiện áp suất giữ nguyên.
-const closeIn = (p: Partial<CloseInput> = {}): CloseInput => ({ liveState: 'ok', live: 9.2, after: 9.2, source: 'sensor', warn: 10.5, unit: 'bar', ...p });
+const closeIn = (p: Partial<CloseInput> = {}): CloseInput => ({
+  liveState: 'ok',
+  live: 9.2,
+  after: 9.2,
+  source: 'sensor',
+  warn: 10.5,
+  unit: 'bar',
+  ...p,
+});
 
 describe('điều kiện "Đã xử lý"', () => {
   test('live < ngưỡng VÀ sau xử lý < ngưỡng → đóng được', () => {
@@ -19,8 +27,14 @@ describe('điều kiện "Đã xử lý"', () => {
   });
   test('mất tín hiệu: nguồn chỉ cảm biến → khoá; có đồng hồ cơ → bắt buộc số đo tay < ngưỡng', () => {
     expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: undefined }))).toMatchObject({ ok: false, reason: 'need-gauge' });
-    expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: undefined, source: 'gauge' }))).toMatchObject({ ok: false, reason: 'need-after' });
-    expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: 11, source: 'both' }))).toMatchObject({ ok: false, reason: 'after-high' });
+    expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: undefined, source: 'gauge' }))).toMatchObject({
+      ok: false,
+      reason: 'need-after',
+    });
+    expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: 11, source: 'both' }))).toMatchObject({
+      ok: false,
+      reason: 'after-high',
+    });
     expect(canClosePressure(closeIn({ liveState: 'lost', live: undefined, after: 9.8, source: 'gauge' }))).toEqual({ ok: true, value: 9.8 });
     // không có tag = như mất tín hiệu
     expect(canClosePressure(closeIn({ liveState: 'none', live: undefined, after: 9.8, source: 'gauge' })).ok).toBe(true);

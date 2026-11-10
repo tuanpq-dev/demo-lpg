@@ -144,12 +144,8 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
               />
               {currentChild && currentChild.label !== item.label && <span className="sr-only">{item.label} – </span>}
               <span className={cn(!active && 'sr-only wide:not-sr-only')}>{shownLabel}</span>
-              {!!item.count && (
-                <Badge variant="count" value={item.count} tone="danger" size="md" />
-              )}
-              {hasMenu && (
-                <Icon name="navChevronDown" box={24} className={cn('hidden transition-transform wide:block', expanded && 'rotate-180')} />
-              )}
+              {!!item.count && <Badge variant="count" value={item.count} tone="danger" size="md" />}
+              {hasMenu && <Icon name="navChevronDown" box={24} className={cn('hidden transition-transform wide:block', expanded && 'rotate-180')} />}
             </button>
           );
         })}
@@ -334,7 +330,10 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
               const inGroup = item.children.some((c) => c.id === value);
               return (
                 <li key={item.id}>
-                  <span id={groupId} className={cn('flex items-center gap-2.5 px-3 py-2 text-md', inGroup ? 'font-semibold text-primary' : 'text-fg-secondary')}>
+                  <span
+                    id={groupId}
+                    className={cn('flex items-center gap-2.5 px-3 py-2 text-md', inGroup ? 'font-semibold text-primary' : 'text-fg-secondary')}
+                  >
                     <Icon name={item.icon} box={24} />
                     {item.label}
                   </span>

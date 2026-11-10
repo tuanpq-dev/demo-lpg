@@ -2,11 +2,35 @@ import { describe, expect, test } from 'vitest';
 import type { AlertRecord } from '@/features/alerts/types';
 import type { MaintenanceSummary } from './assetDetail';
 import type { MaintenanceRecord } from './maintenance';
-import { deriveDeviceAlerts, deriveDeviceMaintenance, deviceHistory, deviceLiveTags, fetchOperationDevice, plcLatencyHistory, resolveOperationDeviceId, trendPoints } from './operationDevice';
+import {
+  deriveDeviceAlerts,
+  deriveDeviceMaintenance,
+  deviceHistory,
+  deviceLiveTags,
+  fetchOperationDevice,
+  plcLatencyHistory,
+  resolveOperationDeviceId,
+  trendPoints,
+} from './operationDevice';
 
 const NOW = new Date('2026-10-31T09:00:00Z');
 const alert = (o: Partial<AlertRecord>): AlertRecord =>
-  ({ id: 'A', code: 'A', message: 'm', device: 'E-101A', area: 'Trạm hóa hơi', daysAgo: 0, time: '10:00:00', severity: 'high', status: 'unacknowledged', value: '1', threshold: '2', unit: '°C', assignee: null, ...o }) as AlertRecord;
+  ({
+    id: 'A',
+    code: 'A',
+    message: 'm',
+    device: 'E-101A',
+    area: 'Trạm hóa hơi',
+    daysAgo: 0,
+    time: '10:00:00',
+    severity: 'high',
+    status: 'unacknowledged',
+    value: '1',
+    threshold: '2',
+    unit: '°C',
+    assignee: null,
+    ...o,
+  }) as AlertRecord;
 
 describe('resolveOperationDeviceId / fetch', () => {
   test('không phân biệt hoa thường, mã lạ → null', async () => {
@@ -55,7 +79,12 @@ describe('deriveDeviceMaintenance', () => {
     ...o,
   });
   test('đúng hạn / hôm nay / quá hạn', () => {
-    expect(deriveDeviceMaintenance({ next: next({}) })).toMatchObject({ badge: { label: 'Đúng hạn' }, next: { text: '12 ngày' }, technician: 'Lê Thị C', lastDate: 'Chưa có' });
+    expect(deriveDeviceMaintenance({ next: next({}) })).toMatchObject({
+      badge: { label: 'Đúng hạn' },
+      next: { text: '12 ngày' },
+      technician: 'Lê Thị C',
+      lastDate: 'Chưa có',
+    });
     expect(deriveDeviceMaintenance({ next: next({ daysLeft: 0 }) }).next).toEqual({ text: 'Hôm nay', tone: 'warning' });
     expect(deriveDeviceMaintenance({ next: next({ overdue: true, daysLeft: -2 }) })).toMatchObject({
       badge: { label: 'Quá hạn', tone: 'danger' },
@@ -64,7 +93,12 @@ describe('deriveDeviceMaintenance', () => {
   });
   test('chưa lên lịch; lần cuối lấy ngày hoàn thành', () => {
     const v = deriveDeviceMaintenance({ last: { record: rec({ assignee: 'Nguyễn Văn A', completedAt: '2026-09-12T10:00' }), date: '' } });
-    expect(v).toMatchObject({ badge: { label: 'Chưa lên lịch' }, next: { text: 'Chưa lên lịch' }, technician: 'Nguyễn Văn A', lastDate: '12/09/2026' });
+    expect(v).toMatchObject({
+      badge: { label: 'Chưa lên lịch' },
+      next: { text: 'Chưa lên lịch' },
+      technician: 'Nguyễn Văn A',
+      lastDate: '12/09/2026',
+    });
     expect(deriveDeviceMaintenance({}).technician).toBe('Chưa phân công');
   });
 });

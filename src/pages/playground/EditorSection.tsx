@@ -77,14 +77,21 @@ export function EditorSection() {
       label: 'Thiết bị (3)',
       children: ['V-101', 'P-101A', 'F-101'].map((id) => ({ id, label: name(id), meta: 'equipment' })),
     },
-    { id: 'env', label: 'Bối cảnh (2)', children: ['FN-02', 'B-01'].map((id) => ({ id, label: name(id), meta: 'environment', dimmed: hidden.includes(id) })) },
+    {
+      id: 'env',
+      label: 'Bối cảnh (2)',
+      children: ['FN-02', 'B-01'].map((id) => ({ id, label: name(id), meta: 'environment', dimmed: hidden.includes(id) })),
+    },
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-base text-fg-secondary">
-        Dùng trong <Link className="text-accent underline" to="/editor?edit=1">Scene Editor (/editor?edit=1)</Link>. ⚠ Figma chưa có thiết kế –
-        style theo token, cùng ngôn ngữ với TextField / Select.
+        Dùng trong{' '}
+        <Link className="text-accent underline" to="/editor?edit=1">
+          Scene Editor (/editor?edit=1)
+        </Link>
+        . ⚠ Figma chưa có thiết kế – style theo token, cùng ngôn ngữ với TextField / Select.
       </p>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Demo title="NumberField">
@@ -102,7 +109,9 @@ export function EditorSection() {
           />
           <NumberField label="Số tầng" integer min={1} max={8} value={floors} onChange={setFloors} />
           <NumberField label="Lỗi" value={3} onChange={() => undefined} error="Ngoài khoảng cho phép" />
-          <p className="text-sm text-fg-muted">Giá trị đã chốt: {len ?? 'mặc định'} · {floors} tầng</p>
+          <p className="text-sm text-fg-muted">
+            Giá trị đã chốt: {len ?? 'mặc định'} · {floors} tầng
+          </p>
         </Demo>
         <Demo title="Vec3Field + Checkbox có nhãn">
           <Vec3Field label="Vị trí" unit="m" value={pos} onChange={setPos} />
@@ -139,9 +148,7 @@ export function EditorSection() {
               }
             />
           </div>
-          <p className="text-sm text-fg-muted">
-            Đang chọn: {sel.join(', ') || '—'} · Ctrl/⌘+click đảo · Shift+click dải · F2 đổi tên · ←/→ đóng/mở
-          </p>
+          <p className="text-sm text-fg-muted">Đang chọn: {sel.join(', ') || '—'} · Ctrl/⌘+click đảo · Shift+click dải · F2 đổi tên · ←/→ đóng/mở</p>
         </Demo>
       </div>
       <Demo title="Icon editor (tạm – currentColor)">

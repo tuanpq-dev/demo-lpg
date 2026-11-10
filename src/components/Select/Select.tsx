@@ -98,16 +98,16 @@ export function Select<V extends string = string>({
 
   const triggerText =
     variant === 'field'
-      ? selected?.label ?? placeholder ?? ''
+      ? (selected?.label ?? placeholder ?? '')
       : variant === 'button'
-      ? selected && selected.value !== null
-        ? selected.label
-        : label
-      : selected && selected.value !== null
-      ? `${label} ( ${selected.label} )`
-      : allLabel && !hideAllInTrigger
-        ? `${label} ( ${allLabel} )`
-        : label;
+        ? selected && selected.value !== null
+          ? selected.label
+          : label
+        : selected && selected.value !== null
+          ? `${label} ( ${selected.label} )`
+          : allLabel && !hideAllInTrigger
+            ? `${label} ( ${allLabel} )`
+            : label;
 
   // Click ra ngoài → đóng.
   useEffect(() => {
@@ -225,7 +225,10 @@ export function Select<V extends string = string>({
             cn('h-[34px] gap-1 rounded-md bg-surface-sunken px-[13px]', open ? 'border-accent/60' : 'border-line hover:border-accent/40'),
           fullWidth && 'w-full justify-between',
           variant === 'button' &&
-            cn('h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-[4px]', open ? 'border-accent/60' : 'border-accent/30 hover:border-accent/60'),
+            cn(
+              'h-9 gap-2 rounded-lg bg-surface px-4 font-semibold backdrop-blur-[4px]',
+              open ? 'border-accent/60' : 'border-accent/30 hover:border-accent/60',
+            ),
           variant === 'field' &&
             cn(
               'w-full justify-between gap-2 rounded-lg bg-surface-sunken text-left',
@@ -238,9 +241,7 @@ export function Select<V extends string = string>({
         <span id={`${uid}-value`} className={cn(variant === 'field' && 'truncate', variant === 'field' && !selected && 'text-fg-secondary/60')}>
           {triggerText}
         </span>
-        {variant !== 'button' && (
-          <Icon name="chevronDown" box={20} className={cn('transition-transform', open && 'rotate-180')} />
-        )}
+        {variant !== 'button' && <Icon name="chevronDown" box={20} className={cn('transition-transform', open && 'rotate-180')} />}
       </button>
 
       {open && (

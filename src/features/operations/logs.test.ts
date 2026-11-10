@@ -62,7 +62,18 @@ describe('cảnh báo → nhật ký', () => {
 
   it('thời điểm = hôm nay − daysAgo lúc `time` (giờ nhà máy); giữ mã cảnh báo + link', () => {
     const e = alertToLogEvent(
-      { id: 'ALT-1', code: 'ALT-00001', daysAgo: 1, time: '23:59:30', severity: 'critical', message: 'Áp suất cao', device: 'V-101', area: 'Khu bồn LPG', status: 'unacknowledged', assignee: null },
+      {
+        id: 'ALT-1',
+        code: 'ALT-00001',
+        daysAgo: 1,
+        time: '23:59:30',
+        severity: 'critical',
+        message: 'Áp suất cao',
+        device: 'V-101',
+        area: 'Khu bồn LPG',
+        status: 'unacknowledged',
+        assignee: null,
+      },
       NOW,
     );
     expect(e.at).toBe(at('2026-11-01T23:59:30'));
@@ -137,7 +148,14 @@ describe('deriveLogKpis', () => {
 });
 
 describe('matchLogEvent', () => {
-  const e = ev({ at: at('2026-11-02T09:00:00'), title: 'Đóng van cấp tuyến chính XV-101', area: 'Tuyến chính', device: 'XV-101', category: 'user-action', actor: 'Phạm Văn D' });
+  const e = ev({
+    at: at('2026-11-02T09:00:00'),
+    title: 'Đóng van cấp tuyến chính XV-101',
+    area: 'Tuyến chính',
+    device: 'XV-101',
+    category: 'user-action',
+    actor: 'Phạm Văn D',
+  });
 
   it('tìm không dấu theo nội dung / mã / thiết bị / người', () => {
     expect(matchLogEvent(e, { ...ALL, q: 'dong van' }, NOW)).toBe(true);

@@ -19,7 +19,15 @@ const NOW = parsePlantDateTime('2026-06-24T18:03')!.getTime();
 const tv = (value: TagValue['value'], patch: Partial<TagValue> = {}): TagValue => ({ value, ts: NOW - 1000, quality: 'good', ...patch });
 const stale = (value: TagValue['value']) => tv(value, { ts: NOW - 15_000 });
 
-const TAGS: PlcRowInput['tags'] = { heartbeat: 'HB', plcLink: 'PL', scadaLink: 'SL', latency: 'LAT', packetLoss: 'PKT', mode: 'MODE', historian: 'HIST' };
+const TAGS: PlcRowInput['tags'] = {
+  heartbeat: 'HB',
+  plcLink: 'PL',
+  scadaLink: 'SL',
+  latency: 'LAT',
+  packetLoss: 'PKT',
+  mode: 'MODE',
+  historian: 'HIST',
+};
 const LIMITS: PlcRowInput['limits'] = { latency: { warn: 3 }, packetLoss: { warn: 5 }, minAvailableTags: 18 };
 const okLive: Record<string, TagValue> = {
   HB: tv('ok'),

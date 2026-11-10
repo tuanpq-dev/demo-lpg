@@ -274,9 +274,11 @@ export type Readiness = {
 
 /** Từ lý do không chạy được (`runBlocker`) + lỗi cấu hình → nhãn trạng thái. Thứ tự: blocker → lỗi cấu hình → sẵn sàng. */
 export function readiness(blocker: RunBlocker | null, configOk: boolean): Readiness {
-  if (blocker?.kind === 'config') return { tone: 'warning', label: 'Cần cấu hình mapping', short: 'Cần cấu hình', headline: 'Cần cấu hình mapping trước khi chạy' };
+  if (blocker?.kind === 'config')
+    return { tone: 'warning', label: 'Cần cấu hình mapping', short: 'Cần cấu hình', headline: 'Cần cấu hình mapping trước khi chạy' };
   if (blocker?.kind === 'pending') return { tone: 'muted', label: 'Đang tải dữ liệu', short: 'Đang tải', headline: 'Đang tải dữ liệu tham chiếu…' };
-  if (blocker?.kind === 'signal') return { tone: 'warning', label: 'Thiếu dữ liệu tham chiếu', short: 'Thiếu dữ liệu', headline: 'Chưa sẵn sàng – thiếu dữ liệu tham chiếu' };
+  if (blocker?.kind === 'signal')
+    return { tone: 'warning', label: 'Thiếu dữ liệu tham chiếu', short: 'Thiếu dữ liệu', headline: 'Chưa sẵn sàng – thiếu dữ liệu tham chiếu' };
   if (!configOk) return { tone: 'warning', label: 'Cấu hình chưa hợp lệ', short: 'Chưa hợp lệ', headline: 'Chưa sẵn sàng – cấu hình chưa hợp lệ' };
   return { tone: 'success', label: 'Sẵn sàng mô phỏng', short: 'Sẵn sàng', headline: 'Sẵn sàng chạy mô phỏng' };
 }

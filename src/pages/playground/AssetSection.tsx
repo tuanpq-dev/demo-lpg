@@ -40,8 +40,11 @@ export function AssetSection() {
   return (
     <>
       <p className="text-sm text-fg-muted">
-        Trang thật: <Link className="text-accent underline" to="/map/V-101">/map/V-101</Link>. Ảnh thiết kế:{' '}
-        chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu).
+        Trang thật:{' '}
+        <Link className="text-accent underline" to="/map/V-101">
+          /map/V-101
+        </Link>
+        . Ảnh thiết kế: chỉ hiện trên máy dev (nếu có file trong thư mục ảnh tham chiếu).
       </p>
       <Demo title="TankCutawayDiagram + TankLayerList (lớp tính bằng tankLayers – tổng 100 %)" refImg={REF_ASSET_V101_DESIGN}>
         <SegmentedControl label="Ca thử" size="sm" options={CASES} value={caseId} onChange={(id) => setCaseId(id as typeof caseId)} />
@@ -51,13 +54,26 @@ export function AssetSection() {
               length={DIMS.length}
               diameter={DIMS.diameter}
               state="lost"
-              layers={l && { levelPct: l.levelPct, waterPct: l.waterPct, lpgPercent: l.lpg.percent, vaporPercent: l.vapor.percent, waterPercent: l.water.percent }}
+              layers={
+                l && {
+                  levelPct: l.levelPct,
+                  waterPct: l.waterPct,
+                  lpgPercent: l.lpg.percent,
+                  vaporPercent: l.vapor.percent,
+                  waterPercent: l.water.percent,
+                }
+              }
             />
           </div>
           <TankLayerList
             items={[
               { id: 'lpg', label: 'LPG lỏng', value: l ? fmt(l.lpg.percent, l.lpg.volume) : 'Mất tín hiệu', tone: l ? 'info' : 'muted' },
-              { id: 'vapor', label: 'Pha hơi / khí gas', value: l ? fmt(l.vapor.percent, l.vapor.volume) : 'Mất tín hiệu', tone: l ? 'neutral' : 'muted' },
+              {
+                id: 'vapor',
+                label: 'Pha hơi / khí gas',
+                value: l ? fmt(l.vapor.percent, l.vapor.volume) : 'Mất tín hiệu',
+                tone: l ? 'neutral' : 'muted',
+              },
               { id: 'water', label: 'Nước đáy bồn', value: l ? fmt(l.water.percent, l.water.volume) : 'Mất tín hiệu', tone: l ? 'warning' : 'muted' },
               { id: 'status', label: 'Trạng thái', value: 'Bình thường', tone: 'success' },
             ]}
@@ -67,27 +83,55 @@ export function AssetSection() {
 
       <Demo title="KpiCard dense (+ hint ⓘ, progress, mất tín hiệu) · StatusPill sm/neutral">
         <div className="grid max-w-[760px] auto-rows-[102px] grid-cols-3 gap-4">
-          <KpiCard dense label="Mức bồn" hint="% thể tích toàn bộ chất lỏng" hintIcon value="78.2" unit="%" progress={{ value: 78.2, tone: 'info' }} />
+          <KpiCard
+            dense
+            label="Mức bồn"
+            hint="% thể tích toàn bộ chất lỏng"
+            hintIcon
+            value="78.2"
+            unit="%"
+            progress={{ value: 78.2, tone: 'info' }}
+          />
           <KpiCard dense label="Áp suất" value="9.2" unit="bar" sub="Định mức: 12.0 bar" subTone="muted" />
           <KpiCard dense label="Nhiệt độ" value="28.6" unit="°C" signalLost />
         </div>
         <div className="flex flex-wrap gap-3">
           <StatusPill size="sm">Bình thường</StatusPill>
-          <StatusPill size="sm" tone="warning">Cảnh báo</StatusPill>
-          <StatusPill size="sm" tone="danger">Nguy hiểm</StatusPill>
-          <StatusPill size="sm" tone="neutral">Mất tín hiệu</StatusPill>
+          <StatusPill size="sm" tone="warning">
+            Cảnh báo
+          </StatusPill>
+          <StatusPill size="sm" tone="danger">
+            Nguy hiểm
+          </StatusPill>
+          <StatusPill size="sm" tone="neutral">
+            Mất tín hiệu
+          </StatusPill>
         </div>
       </Demo>
 
       <Demo title="DonutGauge center · AlertItem inline · MaintenanceSummaryCard · icon tạm">
         <div className="grid max-w-[900px] gap-6 md:grid-cols-3">
-          <DonutGauge size={132} ringWidth={10} hideLegend label="Tình trạng 98%" segments={[{ id: 'a', label: 'Tốt', value: 98, tone: 'success' }, { id: 'b', label: 'Còn lại', value: 2, tone: 'offline' }]} center={{ value: '98%', caption: 'Tối ưu' }} />
+          <DonutGauge
+            size={132}
+            ringWidth={10}
+            hideLegend
+            label="Tình trạng 98%"
+            segments={[
+              { id: 'a', label: 'Tốt', value: 98, tone: 'success' },
+              { id: 'b', label: 'Còn lại', value: 2, tone: 'offline' },
+            ]}
+            center={{ value: '98%', caption: 'Tối ưu' }}
+          />
           <div className="rounded-xl border border-line/30 bg-surface">
             <AlertItem layout="inline" id="1" code="ALT-1" message="Áp suất bồn V-101 vượt ngưỡng" time="10:45" severity="critical" />
             <AlertItem layout="inline" id="2" code="ALT-2" message="Kiểm tra định kỳ thành công" time="Hôm qua" severity="low" tone="success" />
             <AlertItem layout="inline" id="3" code="ALT-3" message="Cảnh báo mức cao (High Level)" time="20/10" severity="high" last />
           </div>
-          <MaintenanceSummaryCard next={{ date: '19 Tháng 10, 2026', note: 'Quá hạn 4 ngày', overdue: true }} last={{ date: '7 Tháng 9, 2026' }} records={{ value: 100, status: 'Đầy đủ' }} />
+          <MaintenanceSummaryCard
+            next={{ date: '19 Tháng 10, 2026', note: 'Quá hạn 4 ngày', overdue: true }}
+            last={{ date: '7 Tháng 9, 2026' }}
+            records={{ value: 100, status: 'Đầy đủ' }}
+          />
         </div>
         <div className="flex items-center gap-4 text-fg-muted">
           <AlertCircleIcon /> <HistoryIcon /> <MapIcon /> <FocusIcon /> <InfoIcon />

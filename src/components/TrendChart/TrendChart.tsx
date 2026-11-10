@@ -51,7 +51,14 @@ function useAxis(data: readonly TrendPoint[], domain?: [number, number], padRati
   return { domain: [lo, hi] as [number, number], ticks: [lo, (lo + hi) / 2, hi] };
 }
 
-function Common({ c, ticks, xTicks, domain, unit, format }: {
+function Common({
+  c,
+  ticks,
+  xTicks,
+  domain,
+  unit,
+  format,
+}: {
   c: ReturnType<typeof useTokenColors>;
   ticks: number[];
   xTicks: readonly string[];
@@ -84,11 +91,7 @@ function Common({ c, ticks, xTicks, domain, unit, format }: {
       tickMargin={6}
     />,
     <YAxis key="y" hide domain={domain} ticks={ticks} />,
-    <Tooltip
-      key="t"
-      cursor={{ stroke: c('line'), strokeDasharray: '3 3' }}
-      content={<ChartTooltip unit={unit} format={format} />}
-    />,
+    <Tooltip key="t" cursor={{ stroke: c('line'), strokeDasharray: '3 3' }} content={<ChartTooltip unit={unit} format={format} />} />,
   ];
 }
 
@@ -230,10 +233,7 @@ export function DualTrendChart({ data, series, xTicks }: DualTrendChartProps) {
         {series.map((s) => (
           <YAxis key={s.id} yAxisId={s.id} hide domain={s.domain} allowDataOverflow />
         ))}
-        <Tooltip
-          cursor={{ stroke: c('line'), strokeDasharray: '3 3' }}
-          content={<ChartTooltip format={(v) => v.toFixed(1)} />}
-        />
+        <Tooltip cursor={{ stroke: c('line'), strokeDasharray: '3 3' }} content={<ChartTooltip format={(v) => v.toFixed(1)} />} />
         {series.map((s) =>
           s.threshold ? (
             <ReferenceLine
@@ -302,8 +302,24 @@ export function DualTrendChart({ data, series, xTicks }: DualTrendChartProps) {
               ifOverflow="visible"
               label={(p: { viewBox: { x: number; y: number } }) => (
                 <g>
-                  <rect x={p.viewBox.x - w + 8} y={p.viewBox.y - 12} width={w} height={24} rx={3} fill={c('surface-sunken')} stroke={c(s.dashed ? 'text-secondary' : s.color, 0.8)} />
-                  <text x={p.viewBox.x + 1} y={p.viewBox.y} dy={4} textAnchor="end" fontSize={12} fontWeight={700} fill={c(s.dashed ? 'text-primary' : s.color)}>
+                  <rect
+                    x={p.viewBox.x - w + 8}
+                    y={p.viewBox.y - 12}
+                    width={w}
+                    height={24}
+                    rx={3}
+                    fill={c('surface-sunken')}
+                    stroke={c(s.dashed ? 'text-secondary' : s.color, 0.8)}
+                  />
+                  <text
+                    x={p.viewBox.x + 1}
+                    y={p.viewBox.y}
+                    dy={4}
+                    textAnchor="end"
+                    fontSize={12}
+                    fontWeight={700}
+                    fill={c(s.dashed ? 'text-primary' : s.color)}
+                  >
                     {text}
                   </text>
                 </g>
@@ -442,7 +458,9 @@ export function TargetTrendChart({
           dot={dots ? { r: 4, fill: c('surface'), stroke: c(color), strokeWidth: 2 } : false}
           activeDot={{ r: 4, fill: c(color), stroke: c('surface') }}
         />
-        {endDot && last && <ReferenceDot x={last.x} y={last.value} r={7} fill={c(color)} stroke={c(color, 0.35)} strokeWidth={4} ifOverflow="visible" />}
+        {endDot && last && (
+          <ReferenceDot x={last.x} y={last.value} r={7} fill={c(color)} stroke={c(color, 0.35)} strokeWidth={4} ifOverflow="visible" />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );

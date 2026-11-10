@@ -60,11 +60,7 @@ export function LiveDataButton({ onClick }: ActionProps) {
   const status = useLiveStatus();
   const s = LIVE_STATUS[status];
   return (
-    <Button
-      icon={<StatusDot status={s.dot} pulse={status === 'connecting'} />}
-      onClick={onClick}
-      data-live-status={status}
-    >
+    <Button icon={<StatusDot status={s.dot} pulse={status === 'connecting'} />} onClick={onClick} data-live-status={status}>
       {/* Đổi trạng thái được đọc qua LiveAnnouncer (aria-live polite) – không đặt vùng live trong nút. */}
       <span className={s.className}>{s.label}</span>
     </Button>

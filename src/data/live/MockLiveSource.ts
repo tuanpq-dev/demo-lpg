@@ -211,4 +211,3 @@ export class MockLiveSource implements LiveDataSource {
     return out;
   }
 }
-

@@ -121,7 +121,10 @@ describe('DailyReportDetailPage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Chi tiết báo cáo ngày' });
     await user.type(screen.getByRole('searchbox'), 'gs-03');
     await waitFor(() => expect(where()).toContain('q=gs-03'));
-    const dataRows = () => within(table()).getAllByRole('row').filter((r) => within(r).queryAllByRole('cell').length > 0);
+    const dataRows = () =>
+      within(table())
+        .getAllByRole('row')
+        .filter((r) => within(r).queryAllByRole('cell').length > 0);
     expect(dataRows()).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }));
     await waitFor(() => expect(dataRows()).toHaveLength(14));
@@ -133,6 +136,8 @@ describe('DailyReportDetailPage', () => {
     const date = await screen.findByLabelText('Ngày báo cáo');
     fireEvent.change(date, { target: { value: daysBack(3) } });
     await waitFor(() => expect(where()).toBe(`/reports/daily/${codeBack(3)}?group=GS`));
-    expect(await within(await screen.findByRole('region', { name: /^Tóm tắt báo cáo/ })).findByText('Còn thiếu mốc 16:00, 18:00')).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole('region', { name: /^Tóm tắt báo cáo/ })).findByText('Còn thiếu mốc 16:00, 18:00'),
+    ).toBeInTheDocument();
   });
 });

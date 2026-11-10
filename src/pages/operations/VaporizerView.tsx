@@ -22,7 +22,17 @@ import {
 import { type DeviceParam, type DeviceParamId, type OperationDeviceMock, deviceHistory, trendPoints } from '@/data/operationDevice';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
-import { connectionView, limitText, lostSensorCount, readParam, runState, standbyReadiness, trendTicks, type ParamReading, type ViewTone } from '@/features/operations/device';
+import {
+  connectionView,
+  limitText,
+  lostSensorCount,
+  readParam,
+  runState,
+  standbyReadiness,
+  trendTicks,
+  type ParamReading,
+  type ViewTone,
+} from '@/features/operations/device';
 import { cn } from '@/lib/cn';
 import { DeviceMaintenanceCard, OperationLogCard, PlcSignalsCard, RelatedAlertsCard, textTone } from './DeviceSideCards';
 import type { DeviceViewProps } from './deviceView';
@@ -44,7 +54,16 @@ export function vaporizerRun(data: OperationDeviceMock, liveData: Readonly<Recor
  * Máy hóa hơi (E-101A – ảnh `scratch/figma-ref/op-device-*.png`): 4 KPI · sơ đồ máy hóa hơi, xu hướng nhiệt độ/áp suất, bảng
  * 6 tham số · trạng thái nhanh (SCADA, cảnh báo nghiêm trọng, máy dự phòng, cảm biến lỗi, chế độ, bảo trì tiếp theo).
  */
-export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, alertsState, mt, maintenanceState }: DeviceViewProps<OperationDeviceMock>) {
+export function VaporizerView({
+  data,
+  liveData,
+  nowDate,
+  liveStatus,
+  alerts,
+  alertsState,
+  mt,
+  maintenanceState,
+}: DeviceViewProps<OperationDeviceMock>) {
   const now = nowDate.getTime();
   const live = !!liveData;
   const conn = connectionView(liveStatus);
@@ -65,7 +84,11 @@ export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, ale
   const temp = byId(data.kpi.temperature);
   const pressure = byId(data.kpi.pressure);
   const efficiency = byId(data.kpi.efficiency);
-  const lostCount = lostSensorCount(data.params.map((p) => p.tag), liveData, now);
+  const lostCount = lostSensorCount(
+    data.params.map((p) => p.tag),
+    liveData,
+    now,
+  );
   const standby = standbyReadiness(standbyRun, standbyRaw);
 
   const tTrend = data.trend.temperature;
@@ -106,10 +129,21 @@ export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, ale
       header: 'Giá trị hiện tại',
       align: 'start',
       width: '18%',
-      cell: (r) => <span className={cn('text-base tabular-nums', r.reading.state === 'ok' ? 'text-accent' : 'text-fg-secondary')}>{valueText(r.reading, r.param)}</span>,
+      cell: (r) => (
+        <span className={cn('text-base tabular-nums', r.reading.state === 'ok' ? 'text-accent' : 'text-fg-secondary')}>
+          {valueText(r.reading, r.param)}
+        </span>
+      ),
     },
     { id: 'unit', header: 'Đơn vị', align: 'start', width: '12%', className: 'text-base text-fg', cell: (r) => r.param.unit },
-    { id: 'limit', header: 'Ngưỡng cảnh báo', align: 'start', width: '20%', className: 'text-base tabular-nums text-fg', cell: (r) => limitText(r.param.limits, r.param.limitDigits) },
+    {
+      id: 'limit',
+      header: 'Ngưỡng cảnh báo',
+      align: 'start',
+      width: '20%',
+      className: 'text-base tabular-nums text-fg',
+      cell: (r) => limitText(r.param.limits, r.param.limitDigits),
+    },
     {
       id: 'status',
       header: 'Trạng thái',
@@ -210,7 +244,14 @@ export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, ale
           </Card>
 
           <Card title="Thông số vận hành chi tiết" padding="none">
-            <DataTable label="Thông số vận hành chi tiết" columns={columns} rows={rows} getRowId={(r) => r.param.id} minWidth={720} density="compact" />
+            <DataTable
+              label="Thông số vận hành chi tiết"
+              columns={columns}
+              rows={rows}
+              getRowId={(r) => r.param.id}
+              minWidth={720}
+              density="compact"
+            />
           </Card>
         </div>
 
@@ -220,14 +261,26 @@ export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, ale
             title="Trạng thái nhanh"
             headerVariant="divided"
             rows={[
-              { id: 'scada', label: 'Kết nối SCADA', value: <StatusPill size="sm" tone={pillTone(conn.tone)}>{conn.scada}</StatusPill> },
+              {
+                id: 'scada',
+                label: 'Kết nối SCADA',
+                value: (
+                  <StatusPill size="sm" tone={pillTone(conn.tone)}>
+                    {conn.scada}
+                  </StatusPill>
+                ),
+              },
               {
                 id: 'critical',
                 label: 'Cảnh báo nghiêm trọng',
                 value: alertsState.status !== 'success' ? '—' : alerts.criticalOpen === 0 ? 'Không có' : String(alerts.criticalOpen),
                 tone: alertsState.status !== 'success' ? 'default' : alerts.criticalOpen === 0 ? 'success' : 'danger',
               },
-              { id: 'standby', label: `Thiết bị dự phòng (${data.standby.id})`, value: <span className={textTone[standby.tone] === 'text-fg-secondary' ? 'text-fg' : textTone[standby.tone]}>{standby.label}</span> },
+              {
+                id: 'standby',
+                label: `Thiết bị dự phòng (${data.standby.id})`,
+                value: <span className={textTone[standby.tone] === 'text-fg-secondary' ? 'text-fg' : textTone[standby.tone]}>{standby.label}</span>,
+              },
               { id: 'lost', label: 'Cảm biến lỗi', value: lostCount ?? '—', tone: lostCount ? 'warning' : 'default' },
               {
                 id: 'mode',
@@ -245,7 +298,12 @@ export function VaporizerView({ data, liveData, nowDate, liveStatus, alerts, ale
                 id: 'next-mt',
                 label: 'Bảo trì tiếp theo',
                 separated: true,
-                value: maintenanceState.status !== 'success' ? '—' : <span className={mt.next.tone === 'neutral' ? 'text-accent' : textTone[mt.next.tone]}>{mt.next.text}</span>,
+                value:
+                  maintenanceState.status !== 'success' ? (
+                    '—'
+                  ) : (
+                    <span className={mt.next.tone === 'neutral' ? 'text-accent' : textTone[mt.next.tone]}>{mt.next.text}</span>
+                  ),
               },
             ]}
           />

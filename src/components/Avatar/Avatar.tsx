@@ -17,7 +17,11 @@ export function Avatar({ name, size = 'sm', className }: { name: string; size?: 
   return (
     <span
       aria-hidden="true"
-      className={cn('inline-flex shrink-0 items-center justify-center rounded-full bg-surface-chip font-bold text-primary', sizeClass[size], className)}
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full bg-surface-chip font-bold text-primary',
+        sizeClass[size],
+        className,
+      )}
     >
       {initials(name)}
     </span>

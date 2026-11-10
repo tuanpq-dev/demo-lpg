@@ -16,7 +16,15 @@ describe('PageError', () => {
   });
 
   test('nút phụ đứng sau "Thử lại"; preformatted → <pre> giữ xuống dòng', () => {
-    render(<PageError title="Không tải được cảnh 3D" error={new Error('a: sai\nb: thiếu')} onRetry={vi.fn()} preformatted actions={<Button>Về bản đồ 2.5D</Button>} />);
+    render(
+      <PageError
+        title="Không tải được cảnh 3D"
+        error={new Error('a: sai\nb: thiếu')}
+        onRetry={vi.fn()}
+        preformatted
+        actions={<Button>Về bản đồ 2.5D</Button>}
+      />,
+    );
     const buttons = screen.getAllByRole('button').map((b) => b.textContent);
     expect(buttons).toEqual(['Thử lại', 'Về bản đồ 2.5D']);
     expect(screen.getByText(/a: sai/).tagName).toBe('PRE');

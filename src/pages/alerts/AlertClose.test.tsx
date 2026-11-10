@@ -17,7 +17,10 @@ import AlertCloseModal from './AlertCloseModal';
  * Nghiêm trọng, tiếp tục theo dõi + hết giờ. File riêng → store cảnh báo riêng.
  */
 
-const state: AuthState = { status: 'authenticated', user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' } };
+const state: AuthState = {
+  status: 'authenticated',
+  user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' },
+};
 const service: AuthService = {
   getState: () => state,
   subscribe: () => () => {},
@@ -52,7 +55,11 @@ describe('xác nhận đóng cảnh báo từ drawer', () => {
     expect(d).toHaveTextContent(/Đã xử lý lúc \d{2}:\d{2}, chờ xác nhận đóng/);
     const steps = within(d).getByRole('navigation', { name: 'Tiến trình xử lý ALT-00120' });
     expect(steps).toHaveTextContent('Đã xử lý');
-    expect(within(steps).getByText(/^Hoàn thành/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(steps)
+        .getByText(/^Hoàn thành/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     await user.click(within(d).getByRole('button', { name: MODAL }));
     const m = await screen.findByRole('dialog', { name: MODAL }, LONG);
     expect(m).toHaveAccessibleDescription('Kiểm tra kết quả xử lý và xác nhận kết thúc cảnh báo ALT-00120');
@@ -126,7 +133,14 @@ describe('modal đóng – người đóng mức Nghiêm trọng', () => {
   const renderModal = (actor: string, onConfirmClose = vi.fn(() => ({ ok: true as const, record: rec }))) => {
     render(
       <MemoryRouter>
-        <AlertCloseModal alert={rec} allAlerts={[rec]} actor={actor} onClose={() => {}} onConfirmClose={onConfirmClose} onMonitor={() => ({ ok: true, record: rec })} />
+        <AlertCloseModal
+          alert={rec}
+          allAlerts={[rec]}
+          actor={actor}
+          onClose={() => {}}
+          onConfirmClose={onConfirmClose}
+          onMonitor={() => ({ ok: true, record: rec })}
+        />
       </MemoryRouter>,
     );
     return { m: screen.getByRole('dialog', { name: MODAL }), onConfirmClose };

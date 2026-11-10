@@ -15,7 +15,9 @@ import AssetDetailRoute from './AssetDetailPage';
  * qua ?hide=), mất tín hiệu, tạo yêu cầu bảo trì (?create=1 → thông báo + link), quyền người xem.
  * Mô hình 3D (SceneViewer, cần WebGL) thay bằng khung rỗng; lỗi tải giả lập bằng cờ `fail.load`.
  */
-vi.mock('@/app/AssetModelPanel', () => ({ AssetModelPanel: ({ description }: { description: string }) => <div data-testid="model">{description}</div> }));
+vi.mock('@/app/AssetModelPanel', () => ({
+  AssetModelPanel: ({ description }: { description: string }) => <div data-testid="model">{description}</div>,
+}));
 const fail = vi.hoisted(() => ({ load: false }));
 vi.mock('@/data/assetDetail', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/data/assetDetail')>();
@@ -48,7 +50,15 @@ function Where() {
 function renderAt(url: string, role: Role = 'operator') {
   const router = createMemoryRouter(
     [
-      { path: '/map/:assetId', element: <><AssetDetailRoute /><Where /></> },
+      {
+        path: '/map/:assetId',
+        element: (
+          <>
+            <AssetDetailRoute />
+            <Where />
+          </>
+        ),
+      },
       { path: '*', element: <Where /> },
     ],
     { initialEntries: [url] },

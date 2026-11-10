@@ -17,7 +17,17 @@ const scene = (patch: Partial<SceneConfig> = {}): SceneConfig => ({
     { id: 'V-101', asset: 'tank-horizontal', position: [-10, 0, 0], bindings: { level: 'LT-101' } },
     { id: 'P-101', asset: 'pump', position: [6, 0, 0], bindings: { state: 'P-101A.STATE' } },
   ],
-  pipes: [{ id: 'PL-01', from: 'V-101.out', to: 'P-101.suction', points: [[0, 3, 0], [0, 0.8, 0]] }],
+  pipes: [
+    {
+      id: 'PL-01',
+      from: 'V-101.out',
+      to: 'P-101.suction',
+      points: [
+        [0, 3, 0],
+        [0, 0.8, 0],
+      ],
+    },
+  ],
   ...patch,
 });
 const withObject = (o: SceneObject) => scene({ objects: [...scene().objects, o] });
@@ -55,7 +65,9 @@ describe('checkScene / validateSceneConfig', () => {
 
   test('cổng không tồn tại → lỗi liệt kê cổng có', () => {
     const s = scene({ pipes: [{ id: 'PL-01', from: 'V-101.nope', points: [[0, 1, 0]] }] });
-    expect(messages(s)).toContainEqual(expect.stringMatching(/^error: ống "PL-01": "V-101" \(tank-horizontal\) không có cổng "nope" \(có: in, out, drain\)/));
+    expect(messages(s)).toContainEqual(
+      expect.stringMatching(/^error: ống "PL-01": "V-101" \(tank-horizontal\) không có cổng "nope" \(có: in, out, drain\)/),
+    );
   });
 
   test('object lún dưới sàn → cảnh báo', () => {

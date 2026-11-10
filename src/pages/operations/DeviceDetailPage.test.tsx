@@ -37,7 +37,15 @@ function Where() {
 function renderAt(url: string) {
   const router = createMemoryRouter(
     [
-      { path: '/operations/devices/:deviceId', element: <><DeviceDetailPage /><Where /></> },
+      {
+        path: '/operations/devices/:deviceId',
+        element: (
+          <>
+            <DeviceDetailPage />
+            <Where />
+          </>
+        ),
+      },
       { path: '*', element: <Where /> },
     ],
     { initialEntries: [url] },
@@ -157,4 +165,3 @@ describe('đổi thiết bị ở header', () => {
     expect(await screen.findByText('Chi tiết thiết bị - PLC-SCADA')).toHaveAttribute('aria-current', 'page');
   });
 });
-

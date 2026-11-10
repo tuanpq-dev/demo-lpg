@@ -33,9 +33,7 @@ export function PageHeader({ breadcrumb, title, description, actions, titleEnd, 
   const hasHeading = !!breadcrumb?.length || title !== undefined;
 
   if (!hasHeading) {
-    return actions ? (
-      <div className={cn('flex flex-wrap items-center justify-end gap-3', className)}>{actions}</div>
-    ) : null;
+    return actions ? <div className={cn('flex flex-wrap items-center justify-end gap-3', className)}>{actions}</div> : null;
   }
 
   return (

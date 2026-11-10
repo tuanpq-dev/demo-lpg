@@ -54,7 +54,8 @@ const SOURCE_ICON: Record<PlcSourceIcon, ReactNode> = {
 
 const kpiTone = (t: ViewTone): KpiTone => (t === 'neutral' ? 'neutral' : t);
 const tagTone = (t: RowTone): TagTone => t;
-const linkState = (t: ViewTone, pending: boolean): DiagramLinkState => (pending ? 'pending' : t === 'success' ? 'ok' : t === 'danger' ? 'danger' : 'lost');
+const linkState = (t: ViewTone, pending: boolean): DiagramLinkState =>
+  pending ? 'pending' : t === 'success' ? 'ok' : t === 'danger' ? 'danger' : 'lost';
 
 /** Trạng thái PLC (pill "Trạng thái" ở header: "Đang hoạt động"). */
 export function plcHeaderStatus(data: PlcScadaDeviceMock, liveData: Readonly<Record<string, TagValue>> | undefined, now: number) {
@@ -160,7 +161,13 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
           value={latency.state === 'ok' ? latency.value!.toFixed(1) : '—'}
           unit="giây"
           signalLost={latency.state === 'lost'}
-          sub={latency.state !== 'ok' ? undefined : latency.status === 'normal' ? 'Trong ngưỡng chấp nhận' : `Vượt ngưỡng ${data.limits.latency.warn} giây`}
+          sub={
+            latency.state !== 'ok'
+              ? undefined
+              : latency.status === 'normal'
+                ? 'Trong ngưỡng chấp nhận'
+                : `Vượt ngưỡng ${data.limits.latency.warn} giây`
+          }
           subTone={latency.status === 'normal' ? 'muted' : 'warning'}
         />
       </section>
@@ -172,8 +179,16 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
             <div role="region" aria-label="Sơ đồ kết nối PLC/SCADA (cuộn ngang)" tabIndex={0} className="overflow-x-auto p-4">
               <PlcScadaDiagram
                 sources={sources}
-                controller={{ title: 'PLC Siemens', model: data.controller.replace(/^Siemens\s*/, ''), subtitle: 'Bộ điều khiển trung tâm', state: linkState(plc.tone, !live) }}
-                heartbeat={{ text: `Heartbeat: ${heartbeat.value}`, state: linkState(heartbeat.tone === 'primary' ? 'neutral' : heartbeat.tone, !live) }}
+                controller={{
+                  title: 'PLC Siemens',
+                  model: data.controller.replace(/^Siemens\s*/, ''),
+                  subtitle: 'Bộ điều khiển trung tâm',
+                  state: linkState(plc.tone, !live),
+                }}
+                heartbeat={{
+                  text: `Heartbeat: ${heartbeat.value}`,
+                  state: linkState(heartbeat.tone === 'primary' ? 'neutral' : heartbeat.tone, !live),
+                }}
                 scada={{ title: 'SCADA / HMI', subtitle: 'Giao diện giám sát', state: linkState(scada.tone, !live) }}
                 link={{ text: `Kết nối: ${scada.tone === 'success' ? 'Active' : scada.label}`, state: linkState(scada.tone, !live) }}
                 syncText={`Tag đồng bộ: ${availText}`}
@@ -221,8 +236,20 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
             title="Trạng thái nhanh"
             headerVariant="divided"
             rows={[
-              { id: 'plc', label: 'PLC', value: <StatusPill size="sm" tone={plc.tone}>{plc.label}</StatusPill> },
-              { id: 'scada', label: 'SCADA', value: <span className={cn('font-semibold', scada.tone === 'neutral' ? 'text-fg' : textTone[scada.tone])}>{scada.label}</span> },
+              {
+                id: 'plc',
+                label: 'PLC',
+                value: (
+                  <StatusPill size="sm" tone={plc.tone}>
+                    {plc.label}
+                  </StatusPill>
+                ),
+              },
+              {
+                id: 'scada',
+                label: 'SCADA',
+                value: <span className={cn('font-semibold', scada.tone === 'neutral' ? 'text-fg' : textTone[scada.tone])}>{scada.label}</span>,
+              },
               {
                 id: 'critical',
                 label: 'Cảnh báo nghiêm trọng',
@@ -234,7 +261,12 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
                 id: 'sync',
                 label: 'Đồng bộ dữ liệu',
                 value: (
-                  <span className={cn('font-semibold', historian.tone === 'success' ? 'text-success' : historian.tone === 'warning' ? 'text-warning' : 'text-fg-secondary')}>
+                  <span
+                    className={cn(
+                      'font-semibold',
+                      historian.tone === 'success' ? 'text-success' : historian.tone === 'warning' ? 'text-warning' : 'text-fg-secondary',
+                    )}
+                  >
                     {historian.tone === 'success' ? 'Ổn định' : historian.value}
                   </span>
                 ),
@@ -242,13 +274,14 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
               {
                 id: 'mode',
                 label: 'Chế độ vận hành',
-                value: mode.tone === 'primary' ? (
-                  <Badge variant="tag" tone="primary" size="md">
-                    {mode.value}
-                  </Badge>
-                ) : (
-                  <span className="text-fg-secondary">{mode.value}</span>
-                ),
+                value:
+                  mode.tone === 'primary' ? (
+                    <Badge variant="tag" tone="primary" size="md">
+                      {mode.value}
+                    </Badge>
+                  ) : (
+                    <span className="text-fg-secondary">{mode.value}</span>
+                  ),
               },
               {
                 id: 'uptime',
@@ -264,7 +297,12 @@ export function PlcScadaView({ data, liveData, nowDate, alerts, alertsState, mt,
           />
           <RelatedAlertsCard alerts={alerts} state={alertsState} query="Mất tín hiệu" />
           <DeviceMaintenanceCard mt={mt} state={maintenanceState} scope={data.maintenanceScope} deviceId={data.id} showNext />
-          <PlcSignalsCard signals={data.plcSignals} liveData={liveData} now={now} note="Dữ liệu PLC/SCADA dùng để giám sát trạng thái kết nối và tính sẵn sàng của hệ thống." />
+          <PlcSignalsCard
+            signals={data.plcSignals}
+            liveData={liveData}
+            now={now}
+            note="Dữ liệu PLC/SCADA dùng để giám sát trạng thái kết nối và tính sẵn sàng của hệ thống."
+          />
           <OperationLogCard log={data.log} now={nowDate} />
         </aside>
       </div>

@@ -2,7 +2,18 @@ import { describe, expect, test } from 'vitest';
 import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { maintenanceRecords } from '@/mocks/maintenance';
 import type { AlertRecord } from '@/features/alerts/types';
-import { daysUntilDue, deriveMaintenanceKpis, createMaintenance, deriveDeviceDirectory, derivePriorityTasks, deriveSchedule, dueLabel, isOverdue, matchMaintenance, scheduleLabel } from './maintenance';
+import {
+  daysUntilDue,
+  deriveMaintenanceKpis,
+  createMaintenance,
+  deriveDeviceDirectory,
+  derivePriorityTasks,
+  deriveSchedule,
+  dueLabel,
+  isOverdue,
+  matchMaintenance,
+  scheduleLabel,
+} from './maintenance';
 
 /** Bản ghi tối thiểu cho test; ngày dạng giờ địa phương nhà máy. */
 const rec = (patch: Partial<MaintenanceRecord>): MaintenanceRecord =>
@@ -120,7 +131,11 @@ describe('matchMaintenance – tab Quá hạn + khoảng ngày', () => {
 describe('deriveMaintenanceKpis – tháng theo giờ nhà máy', () => {
   test('00:30 ngày 1/11 ICT: yêu cầu tạo 1/11 thuộc "tháng này", quá hạn đếm đúng', () => {
     const now = new Date('2026-10-31T17:30:00Z');
-    const rows = [rec({ id: 'a', createdAt: '2026-11-01' }), rec({ id: 'b', createdAt: '2026-10-20' }), rec({ id: 'c', createdAt: '2026-10-21', status: 'done', completedAt: '2026-10-25' })];
+    const rows = [
+      rec({ id: 'a', createdAt: '2026-11-01' }),
+      rec({ id: 'b', createdAt: '2026-10-20' }),
+      rec({ id: 'c', createdAt: '2026-10-21', status: 'done', completedAt: '2026-10-25' }),
+    ];
     const kpi = Object.fromEntries(deriveMaintenanceKpis(rows, now).map((k) => [k.id, k.value]));
     expect(kpi.total).toBe('1');
     expect(kpi.overdue).toBe('02'); // a, b hạn 20/10, chưa xong
@@ -152,7 +167,13 @@ describe('Đã hủy (cancelled – chỉ FE)', () => {
 describe('mock MT-00128 theo ảnh chi tiết', () => {
   const r = maintenanceRecords.find((m) => m.id === 'MT-00128')!;
   test('chờ tiếp nhận, chưa phân công, hạn 16:00, Khu bồn LPG, từ ALT-00128', () => {
-    expect(r).toMatchObject({ status: 'pending', assignee: null, area: 'Khu bồn LPG', title: 'Kiểm tra van an toàn V-101', sourceAlertId: 'ALT-00128' });
+    expect(r).toMatchObject({
+      status: 'pending',
+      assignee: null,
+      area: 'Khu bồn LPG',
+      title: 'Kiểm tra van an toàn V-101',
+      sourceAlertId: 'ALT-00128',
+    });
     expect(r.dueAt.slice(11)).toBe('16:00');
     expect(r.dueAt.slice(0, 10)).toBe(r.createdAt);
   });
@@ -188,7 +209,15 @@ describe('danh bạ thiết bị → khu vực', () => {
 });
 
 describe('createMaintenance – khu vực', () => {
-  const base = { title: 'Kiểm tra', device: 'THIET-BI-LA', type: 'inspection', priority: 'medium', startAt: '2026-10-26T08:00', dueAt: '2099-10-26T16:00', assignee: null } as const;
+  const base = {
+    title: 'Kiểm tra',
+    device: 'THIET-BI-LA',
+    type: 'inspection',
+    priority: 'medium',
+    startAt: '2026-10-26T08:00',
+    dueAt: '2099-10-26T16:00',
+    assignee: null,
+  } as const;
 
   test('dùng khu vực form truyền vào (không tra bảng toàn cục)', async () => {
     const r = await createMaintenance({ ...base, area: 'Khu bơm' });

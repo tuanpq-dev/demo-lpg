@@ -34,10 +34,20 @@ function LiveSimulatorBar() {
       <Button variant="ghost" size="sm" aria-pressed={sim.disconnected} onClick={act(() => liveSimulator.disconnect(!sim.disconnected))}>
         {sim.disconnected ? 'Kết nối lại' : 'Mất kết nối'}
       </Button>
-      <Button variant="ghost" size="sm" aria-pressed={sim.bad.includes('LT-101')} onClick={act(() => liveSimulator.setBad(['LT-101', 'FT-101'], !sim.bad.includes('LT-101')))}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-pressed={sim.bad.includes('LT-101')}
+        onClick={act(() => liveSimulator.setBad(['LT-101', 'FT-101'], !sim.bad.includes('LT-101')))}
+      >
         Tag lỗi (LT-101, FT-101 = bad)
       </Button>
-      <Button variant="ghost" size="sm" aria-pressed={sim.frozen.includes('TT-201')} onClick={act(() => liveSimulator.freeze(['TT-201'], !sim.frozen.includes('TT-201')))}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-pressed={sim.frozen.includes('TT-201')}
+        onClick={act(() => liveSimulator.freeze(['TT-201'], !sim.frozen.includes('TT-201')))}
+      >
         Ngừng cập nhật TT-201 (mất tín hiệu sau 10 s)
       </Button>
       <Button variant="ghost" size="sm" onClick={act(() => liveSimulator.restore())}>
@@ -82,13 +92,7 @@ export function SceneSection() {
           Đã chọn: <output className="font-mono text-fg">{selected ?? '—'}</output>
         </span>
       </div>
-      <ConnectedPlantMap
-        sceneId={sceneId}
-        liveData={liveData}
-        editable={editing}
-        alt="Cảnh 3D khu bồn LPG"
-        onSelect={setSelected}
-      />
+      <ConnectedPlantMap sceneId={sceneId} liveData={liveData} editable={editing} alt="Cảnh 3D khu bồn LPG" onSelect={setSelected} />
       <FigmaRef src={REF_53_11_OVERVIEW} x={32} y={318} w={1146} h={591} />
     </div>
   );

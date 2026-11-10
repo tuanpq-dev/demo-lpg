@@ -4,7 +4,18 @@ import { describe, expect, test } from 'vitest';
 import { KpiCard } from './KpiCard';
 
 /** Cỡ chữ Tailwind của dự án (px) – tailwind.config.ts `fontSize`. */
-const SIZE_PX: Record<string, number> = { 'text-2xs': 10, 'text-xs': 11, 'text-sm': 12, 'text-base': 14, 'text-md': 16, 'text-lg': 18, 'text-xl': 24, 'text-2xl': 28, 'text-kpi': 28, 'text-3xl': 32 };
+const SIZE_PX: Record<string, number> = {
+  'text-2xs': 10,
+  'text-xs': 11,
+  'text-sm': 12,
+  'text-base': 14,
+  'text-md': 16,
+  'text-lg': 18,
+  'text-xl': 24,
+  'text-2xl': 28,
+  'text-kpi': 28,
+  'text-3xl': 32,
+};
 /** "Chữ lớn" WCAG 1.4.3: ≥ 24px thường hoặc ≥ 18.66px đậm (≥ 700). */
 const isLargeText = (cls: string) => {
   const size = Object.entries(SIZE_PX).find(([c]) => cls.split(/\s+/).includes(c))?.[1] ?? 0;

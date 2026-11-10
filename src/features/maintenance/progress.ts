@@ -141,11 +141,7 @@ function historyLine(r: MaintenanceRecord, input: ProgressUpdateInput, progress:
  * - reportedProgress = giá trị thanh trượt (được giảm); `progress` (checklist) giữ nguyên.
  * - Nội dung → một ghi chú kỹ thuật; tệp → `attachments` với `isTemp: true` (chỉ tên/kích thước/loại).
  */
-export function applyProgressUpdate(
-  r: MaintenanceRecord,
-  input: ProgressUpdateInput,
-  ctx: ActionContext,
-): MaintenanceRecord {
+export function applyProgressUpdate(r: MaintenanceRecord, input: ProgressUpdateInput, ctx: ActionContext): MaintenanceRecord {
   if (Object.keys(validateProgressUpdate(r, input)).length) return r;
   const at = plantDateTimeKey(ctx.now);
   const progress = clampProgress(input.progress);
@@ -212,7 +208,8 @@ export function checkUploads<F extends { name: string; size: number }>(files: re
   for (const f of files) {
     if (!UPLOAD_RULES.exts.includes(ext(f.name))) rejected.push({ name: f.name, reason: 'không đúng loại tệp cho phép' });
     else if (f.size > UPLOAD_RULES.maxBytes) rejected.push({ name: f.name, reason: 'vượt quá 10 MB' });
-    else if (already + accepted.length >= UPLOAD_RULES.maxFiles) rejected.push({ name: f.name, reason: `đã đủ ${UPLOAD_RULES.maxFiles} tệp cho lần cập nhật này` });
+    else if (already + accepted.length >= UPLOAD_RULES.maxFiles)
+      rejected.push({ name: f.name, reason: `đã đủ ${UPLOAD_RULES.maxFiles} tệp cho lần cập nhật này` });
     else accepted.push(f);
   }
   return { accepted, rejected };

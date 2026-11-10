@@ -160,7 +160,9 @@ export default function MaintenancePage() {
         userName={user?.name}
         flash={flash}
         onOpenChecklist={(id) => navigate(`/maintenance/${id}#checklist`, { state: { from: listUrl } })}
-        onCreated={() => setExtra({ create: null, device: null, from: null, tab: null, q: null, area: null, priority: null, type: null, sort: null, page: null })}
+        onCreated={() =>
+          setExtra({ create: null, device: null, from: null, tab: null, q: null, area: null, priority: null, type: null, sort: null, page: null })
+        }
       />
     </Page>
   );

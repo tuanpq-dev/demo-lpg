@@ -30,7 +30,10 @@ vi.mock('@/data/checkpointRecord', async (importOriginal) => {
   };
 });
 
-const state: AuthState = { status: 'authenticated', user: { id: 'u1', email: 'op@example.com', name: 'Kỹ sư A', role: 'operator', status: 'active' } };
+const state: AuthState = {
+  status: 'authenticated',
+  user: { id: 'u1', email: 'op@example.com', name: 'Kỹ sư A', role: 'operator', status: 'active' },
+};
 const service: AuthService = {
   getState: () => state,
   subscribe: () => () => {},
@@ -44,7 +47,9 @@ const service: AuthService = {
 
 const CODE = reportCode('daily', dayFromNumber(dayNumber(plantDayKey(new Date())) - 3));
 async function open(key = '16:00') {
-  const router = createMemoryRouter([{ path: '/reports/daily/:code', element: <DailyReportDetailPage /> }], { initialEntries: [`/reports/daily/${CODE}?record=${key}`] });
+  const router = createMemoryRouter([{ path: '/reports/daily/:code', element: <DailyReportDetailPage /> }], {
+    initialEntries: [`/reports/daily/${CODE}?record=${key}`],
+  });
   render(
     <AuthProvider service={service}>
       <RouterProvider router={router} />
@@ -103,7 +108,8 @@ describe('CheckpointRecordModal – form', () => {
     expect(section('Cảm biến rò rỉ LPG')).toHaveTextContent(/\* Ngưỡng PLC: cảnh báo .+% LEL · nguy hiểm .+% LEL/);
     expect(within(section('Hệ thống báo cháy')).getAllByRole('term').length).toBeGreaterThan(0);
     const plc = section('PLC và SCADA');
-    for (const t of ['PLC Heartbeat:', 'Communication:', 'SCADA Connection:', 'System Mode:', 'E-Stop/Shutdown:', 'Update Time:']) expect(plc).toHaveTextContent(t);
+    for (const t of ['PLC Heartbeat:', 'Communication:', 'SCADA Connection:', 'System Mode:', 'E-Stop/Shutdown:', 'Update Time:'])
+      expect(plc).toHaveTextContent(t);
     const sensors = section('Trạng thái cảm biến');
     for (const t of ['Tổng cảm biến:', 'Bình thường:', 'Lỗi:', 'Mất kết nối:', 'Dữ liệu cũ:']) expect(sensors).toHaveTextContent(t);
   });

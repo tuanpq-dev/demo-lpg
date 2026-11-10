@@ -31,7 +31,9 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
       open
       size="xl"
       title={a.reassign ? 'Đổi người xử lý' : 'Phân công người xử lý'}
-      description={a.reassign ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử xử lý' : 'Chọn nhân sự phù hợp để tiếp nhận và xử lý yêu cầu bảo trì'}
+      description={
+        a.reassign ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử xử lý' : 'Chọn nhân sự phù hợp để tiếp nhận và xử lý yêu cầu bảo trì'
+      }
       onClose={requestClose}
       dismissOnBackdrop={false}
       onSubmit={(e) => {
@@ -64,7 +66,12 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
             <Button variant="outline" onClick={a.saveDraft}>
               Lưu tạm
             </Button>
-            <Button type="submit" variant="primary" aria-disabled={a.blocked || submitting || undefined} aria-describedby={a.blocked ? blockId : undefined}>
+            <Button
+              type="submit"
+              variant="primary"
+              aria-disabled={a.blocked || submitting || undefined}
+              aria-describedby={a.blocked ? blockId : undefined}
+            >
               {a.reassign ? 'Xác nhận đổi người' : 'Xác nhận phân công'}
             </Button>
           </>

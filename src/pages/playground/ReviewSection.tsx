@@ -14,9 +14,15 @@ import { Demo } from './Demo';
 const REF_SUBMIT = import.meta.env.DEV ? '/scratch/figma-ref/mt-submit-review-modal-design.png' : undefined;
 const REF_REVIEW = import.meta.env.DEV ? '/scratch/figma-ref/mt-review-modal-design.png' : undefined;
 
-const CHECKLIST = ['Kiểm tra trực quan', 'Kiểm tra rò rỉ siêu âm', 'Ghi nhận áp suất', 'Tín hiệu cảm biến ZSO/ZSC', 'Vệ sinh hệ thống làm mát', 'Chụp ảnh nhật ký', 'Đề xuất xử lý'].map(
-  (text, i) => ({ id: `c${i + 1}`, text, done: true }),
-);
+const CHECKLIST = [
+  'Kiểm tra trực quan',
+  'Kiểm tra rò rỉ siêu âm',
+  'Ghi nhận áp suất',
+  'Tín hiệu cảm biến ZSO/ZSC',
+  'Vệ sinh hệ thống làm mát',
+  'Chụp ảnh nhật ký',
+  'Đề xuất xử lý',
+].map((text, i) => ({ id: `c${i + 1}`, text, done: true }));
 
 const base = (): MaintenanceRecord => ({
   id: 'PG-REVIEW',
@@ -45,7 +51,11 @@ const submitted = (): MaintenanceRecord => ({
     cause: 'Trễ tín hiệu cảm biến hành trình và mất ổn định hệ thống làm mát cục bộ.',
     remedy: 'Vệ sinh tiếp điểm cảm biến, hiệu chỉnh thông số PID làm mát.',
     deviceCondition: 'normal',
-    readings: { pressure: { tag: 'PT-101', value: 9.8, warn: 10.5 }, temperature: { tag: 'TT-101', value: 29.4, warn: 40 }, at: `${isoDay(0)}T14:30` },
+    readings: {
+      pressure: { tag: 'PT-101', value: 9.8, warn: 10.5 },
+      temperature: { tag: 'TT-101', value: 29.4, warn: 40 },
+      at: `${isoDay(0)}T14:30`,
+    },
     sensorStatus: 'normal',
     valveStatus: 'stable',
     reviewer: 'Trần Hoàng Nam',
@@ -97,11 +107,21 @@ export function ReviewSection() {
         <StatusOptionGroup label="Kết quả nghiệm thu" layout="inline" columns={3} options={RESULT_OPTIONS} value={result} onChange={setResult} />
       </Demo>
       <Demo title="StatusOptionGroup 3 cột có icon (tình trạng thiết bị)">
-        <StatusOptionGroup label="Tình trạng thiết bị sau bảo trì" columns={3} options={CONDITION_OPTIONS} value={condition} onChange={setCondition} />
+        <StatusOptionGroup
+          label="Tình trạng thiết bị sau bảo trì"
+          columns={3}
+          options={CONDITION_OPTIONS}
+          value={condition}
+          onChange={setCondition}
+        />
       </Demo>
       <Demo title="Checklist variant summary (chỉ đọc) · Badge tag success/danger · KpiCard sm align center + footnote">
         <div className="grid gap-6 md:grid-cols-3">
-          <Checklist variant="summary" items={[...partial.slice(0, 6), { id: 'na', text: 'Mục không áp dụng', done: false, na: true }]} progress={checklistProgress(partial)} />
+          <Checklist
+            variant="summary"
+            items={[...partial.slice(0, 6), { id: 'na', text: 'Mục không áp dụng', done: false, na: true }]}
+            progress={checklistProgress(partial)}
+          />
           <div className="flex flex-col items-start gap-2">
             <Badge variant="tag" size="md" tone="success">
               Đủ điều kiện gửi nghiệm thu
@@ -123,7 +143,9 @@ export function ReviewSection() {
           onClose={() => setOpen(null)}
           onSubmit={async (input) => {
             setOpen(null);
-            setLog(`Gửi: người nghiệm thu ${input.reviewer}, áp suất ${input.readings.pressure?.value ?? '—'} (chụp lúc ${input.readings.at.slice(11)})`);
+            setLog(
+              `Gửi: người nghiệm thu ${input.reviewer}, áp suất ${input.readings.pressure?.value ?? '—'} (chụp lúc ${input.readings.at.slice(11)})`,
+            );
           }}
         />
       )}

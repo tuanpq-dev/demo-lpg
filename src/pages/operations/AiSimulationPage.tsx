@@ -153,7 +153,12 @@ export default function AiSimulationPage() {
   }
 
   const filterDefs: FilterDef[] = [
-    { id: 'group', label: 'Nhóm kịch bản', allLabel: 'Tất cả nhóm', options: SCENARIO_GROUPS.map((g) => ({ value: g, label: SCENARIO_GROUP_LABEL[g] })) },
+    {
+      id: 'group',
+      label: 'Nhóm kịch bản',
+      allLabel: 'Tất cả nhóm',
+      options: SCENARIO_GROUPS.map((g) => ({ value: g, label: SCENARIO_GROUP_LABEL[g] })),
+    },
     { id: 'risk', label: 'Mức độ rủi ro', allLabel: 'Tất cả', options: SCENARIO_RISKS.map((r) => ({ value: r, label: SCENARIO_RISK_LABEL[r] })) },
     { id: 'status', label: 'Trạng thái', allLabel: 'Tất cả', options: SCENARIO_STATUSES.map((s) => ({ value: s, label: SCENARIO_STATUS_LABEL[s] })) },
     {
@@ -221,7 +226,9 @@ export default function AiSimulationPage() {
           </Card>
           <section aria-label={`Danh sách kịch bản (${table.filtered.length})`} className="flex flex-col gap-3">
             {table.filtered.length === 0 ? (
-              <p className="rounded-lg border border-line/30 bg-surface p-6 text-center text-base text-fg-secondary">Không có kịch bản phù hợp với bộ lọc.</p>
+              <p className="rounded-lg border border-line/30 bg-surface p-6 text-center text-base text-fg-secondary">
+                Không có kịch bản phù hợp với bộ lọc.
+              </p>
             ) : (
               table.filtered.map((s) => (
                 <ScenarioCard

@@ -22,10 +22,28 @@ export function ReportsSection() {
       <Demo title="KpiCard compact dense outlined – 5 tone" refImg={REF('reports-kpi.png')}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <KpiCard variant="compact" dense outlined label="Tổng báo cáo" value={186} sub="Ngày, tháng, quý và năm" subTone="muted" />
-          <KpiCard variant="compact" dense outlined tone="primary" label="Đang thực hiện" value={4} sub="Còn thiếu mốc hoặc chưa hoàn tất" subTone="muted" />
+          <KpiCard
+            variant="compact"
+            dense
+            outlined
+            tone="primary"
+            label="Đang thực hiện"
+            value={4}
+            sub="Còn thiếu mốc hoặc chưa hoàn tất"
+            subTone="muted"
+          />
           <KpiCard variant="compact" dense outlined tone="warning" label="Chờ xác nhận" value={6} sub="Chờ một hoặc nhiều chữ ký" subTone="muted" />
           <KpiCard variant="compact" dense outlined tone="success" label="Đã ký đầy đủ" value={168} sub="Đã hoàn thành quy trình" subTone="muted" />
-          <KpiCard variant="compact" dense outlined tone="danger" label="Có dữ liệu thiếu" value={8} sub="Cần kiểm tra hoặc bổ sung" subTone="muted" />
+          <KpiCard
+            variant="compact"
+            dense
+            outlined
+            tone="danger"
+            label="Có dữ liệu thiếu"
+            value={8}
+            sub="Cần kiểm tra hoặc bổ sung"
+            subTone="muted"
+          />
         </div>
       </Demo>
 

@@ -70,7 +70,13 @@ describe('advanceRecord', () => {
     expect(r.status).toBe('assigned');
     expect(r.assignee).toBe('Lê Thị C');
     expect(r.history).toHaveLength(2);
-    expect(r.history!.at(-1)).toEqual({ id: 'h2', at: '2026-10-26T11:45', kind: 'accept', text: 'Tiếp nhận yêu cầu – phụ trách: Lê Thị C', actor: 'Lê Thị C' });
+    expect(r.history!.at(-1)).toEqual({
+      id: 'h2',
+      at: '2026-10-26T11:45',
+      kind: 'accept',
+      text: 'Tiếp nhận yêu cầu – phụ trách: Lê Thị C',
+      actor: 'Lê Thị C',
+    });
     expect(workflowPosition(r).current).toBe(2);
   });
   test('đã có người phụ trách → giữ người đó', () => {

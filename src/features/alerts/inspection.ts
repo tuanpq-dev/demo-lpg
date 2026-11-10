@@ -42,7 +42,12 @@ export function inspectionItems(steps: readonly { id: string; text: string }[], 
 export const inspectedCount = (items: readonly Pick<InspectionEntry, 'status'>[]) => items.filter((i) => i.status !== 'pending').length;
 
 /** Ghi một hạng mục về dạng lưu (pending không ghi chú → xoá khỏi guide). */
-export function writeInspection(guide: AlertGuideProgress | undefined, id: string, e: InspectionEntry, ctx: { by: string; at: Date }): AlertGuideProgress {
+export function writeInspection(
+  guide: AlertGuideProgress | undefined,
+  id: string,
+  e: InspectionEntry,
+  ctx: { by: string; at: Date },
+): AlertGuideProgress {
   const next: Record<string, AlertGuideEntry> = { ...(guide ?? {}) };
   const note = e.note.trim();
   if (e.status === 'pending' && !note) delete next[id];

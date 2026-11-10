@@ -93,7 +93,9 @@ export function AlertUpdateSection() {
           </Button>
           <Button onClick={() => liveSimulator.rampTo(V101_TAGS.pressure, 9.2)}>PT-101 về 9.2 bar (dưới ngưỡng)</Button>
           <Button onClick={() => liveSimulator.rampTo(V101_TAGS.pressure, 11.2)}>PT-101 tăng tới 11.2 bar</Button>
-          <Button onClick={() => liveSimulator.setBad([V101_TAGS.pressure], !liveSimulator.state.bad.includes(V101_TAGS.pressure))}>Bật/tắt mất tín hiệu PT-101</Button>
+          <Button onClick={() => liveSimulator.setBad([V101_TAGS.pressure], !liveSimulator.state.bad.includes(V101_TAGS.pressure))}>
+            Bật/tắt mất tín hiệu PT-101
+          </Button>
         </div>
         {log && (
           <p role="status" className="text-sm text-fg-secondary">
@@ -163,13 +165,20 @@ export function AlertUpdateSection() {
         />
       )}
 
-      <Demo title="InspectionTable – trạng thái theo hạng mục, ghi chú inline, lỗi &quot;Có vấn đề&quot; thiếu ghi chú">
+      <Demo title='InspectionTable – trạng thái theo hạng mục, ghi chú inline, lỗi "Có vấn đề" thiếu ghi chú'>
         <InspectionTable<InspectionStatus>
           caption="Bảng mẫu hạng mục kiểm tra"
           statusOptions={STATUS_OPTIONS}
           rows={[
             { id: 'a', text: 'Đối chiếu PT-101 với đồng hồ cơ', by: 'Nguyễn Văn A', time: '10:50', ...rows.a! },
-            { id: 'b', text: 'Kiểm tra bộ điều áp PR-101', by: 'Nguyễn Văn A', time: '10:55', ...rows.b!, error: rows.b!.status === 'issue' && !rows.b!.note ? 'Nhập ghi chú cho hạng mục có vấn đề.' : undefined },
+            {
+              id: 'b',
+              text: 'Kiểm tra bộ điều áp PR-101',
+              by: 'Nguyễn Văn A',
+              time: '10:55',
+              ...rows.b!,
+              error: rows.b!.status === 'issue' && !rows.b!.note ? 'Nhập ghi chú cho hạng mục có vấn đề.' : undefined,
+            },
           ]}
           onStatusChange={(id, status) => setRows((r) => ({ ...r, [id]: { ...r[id]!, status } }))}
           onNoteChange={(id, note) => setRows((r) => ({ ...r, [id]: { ...r[id]!, note } }))}
@@ -180,7 +189,17 @@ export function AlertUpdateSection() {
         <BeforeAfterReadings
           label="Thông số mẫu"
           rows={[
-            { id: 'p', label: 'Áp suất V-101', limit: 'Giới hạn: 10.5 bar', unit: 'bar', before: 11.8, after, beforeTone: 'warning', afterTone: after !== undefined && after >= 10.5 ? 'warning' : 'normal', editable: true },
+            {
+              id: 'p',
+              label: 'Áp suất V-101',
+              limit: 'Giới hạn: 10.5 bar',
+              unit: 'bar',
+              before: 11.8,
+              after,
+              beforeTone: 'warning',
+              afterTone: after !== undefined && after >= 10.5 ? 'warning' : 'normal',
+              editable: true,
+            },
             { id: 'r', label: 'Áp suất sau PR-101', unit: 'bar', after: 4.2, editable: false },
             { id: 't', label: 'Nhiệt độ bồn', unit: '°C', before: 31.6, editable: false, afterPlaceholder: 'Mất tín hiệu' },
           ]}
@@ -188,7 +207,7 @@ export function AlertUpdateSection() {
         />
       </Demo>
 
-      <Demo title="Checkbox variant=&quot;card&quot; – chọn nhiều, mục khoá bằng aria-disabled">
+      <Demo title='Checkbox variant="card" – chọn nhiều, mục khoá bằng aria-disabled'>
         <div className="flex max-w-xl flex-col gap-3">
           {[
             { id: 'a', label: 'Xác nhận áp suất thực tế vượt ngưỡng' },

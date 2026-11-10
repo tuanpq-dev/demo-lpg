@@ -1,6 +1,18 @@
 import { Suspense, lazy, useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangleIcon, Badge, Button, Checklist, Drawer, EventTimeline, Icon, Textarea, WorkflowStepper, buttonClass, type TimelineEvent } from '@/components';
+import {
+  AlertTriangleIcon,
+  Badge,
+  Button,
+  Checklist,
+  Drawer,
+  EventTimeline,
+  Icon,
+  Textarea,
+  WorkflowStepper,
+  buttonClass,
+  type TimelineEvent,
+} from '@/components';
 import { assetPath } from '@/app/assetRoutes';
 import { actionErrorText, runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
@@ -8,7 +20,16 @@ import { cn } from '@/lib/cn';
 import { resolveAssetId } from '@/data/assetDetail';
 import { alertDateTimeLabel, alertKind, alertPlaybook, fillPlaybookText } from '@/data/alertDetail';
 import { INSPECTION_STATUS_LABEL, inspectedCount, inspectionItems } from '@/features/alerts/inspection';
-import { ALERT_HOLD_LABEL, FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel, isResolvedState, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
+import {
+  ALERT_HOLD_LABEL,
+  FOLLOW_UP_DUE_LABEL,
+  followUpDue,
+  followUpLabel,
+  isResolvedState,
+  type AlertUpdateInput,
+  type AlertUpdateResult,
+  type UpdateCheck,
+} from '@/features/alerts/update';
 import type { CloseCondition, CloseInput, CloseResult, MonitorResult } from '@/features/alerts/close';
 import { areaLabel } from '@/features/plant/areas';
 import { alertBadgeStatus, type AlertRecord } from '@/data/alerts';
@@ -190,7 +211,14 @@ function DrawerHeader({ alert: a, titleId, now }: { alert: AlertRecord; titleId:
   );
 }
 
-function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: { alert: AlertRecord; note: NoteDraft } & Omit<AlertDetailDrawerProps, 'alert' | 'onClose'>) {
+function DrawerBody({
+  alert: a,
+  note,
+  canAct,
+  onToggleGuide,
+  onAddNote,
+  now,
+}: { alert: AlertRecord; note: NoteDraft } & Omit<AlertDetailDrawerProps, 'alert' | 'onClose'>) {
   const cfg = alertKind(a);
   const playbook = alertPlaybook(a);
   const steps = alertSteps(a);
@@ -201,7 +229,14 @@ function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: {
   const collapsed = new Set(cfg.collapsed ?? []);
   const progress = (
     <>
-      <WorkflowStepper orientation="vertical" steps={steps.steps} completed={steps.completed} current={steps.current} label={`Tiến trình xử lý ${a.code}`} className="pl-2.5" />
+      <WorkflowStepper
+        orientation="vertical"
+        steps={steps.steps}
+        completed={steps.completed}
+        current={steps.current}
+        label={`Tiến trình xử lý ${a.code}`}
+        className="pl-2.5"
+      />
       <AlertLog alert={a} />
     </>
   );
@@ -218,11 +253,17 @@ function DrawerBody({ alert: a, note, canAct, onToggleGuide, onAddNote, now }: {
               text: it.text,
               done: it.status === 'pass',
               time: it.status === 'pass' && it.at ? fmtAt(it.at).slice(0, 5) : undefined,
-              flag: flagged ? { label: INSPECTION_STATUS_LABEL[it.status], tone: it.status === 'issue' ? ('warning' as const) : ('muted' as const) } : undefined,
+              flag: flagged
+                ? { label: INSPECTION_STATUS_LABEL[it.status], tone: it.status === 'issue' ? ('warning' as const) : ('muted' as const) }
+                : undefined,
               lockedHint: flagged ? 'Đổi trạng thái trong "Cập nhật xử lý"' : undefined,
             };
           })}
-          progress={{ done: guideDone, total: playbook.steps.length, percent: playbook.steps.length ? Math.round((guideDone / playbook.steps.length) * 100) : 0 }}
+          progress={{
+            done: guideDone,
+            total: playbook.steps.length,
+            percent: playbook.steps.length ? Math.round((guideDone / playbook.steps.length) * 100) : 0,
+          }}
           onToggle={
             canAct
               ? (id) => {
@@ -249,7 +290,12 @@ function AlertLog({ alert: a }: { alert: AlertRecord }) {
       id: h.id,
       title: h.actor ? `${h.text} – ${h.actor}` : h.text,
       time: fmtAt(h.at),
-      tone: h.kind === 'resolve' || h.kind === 'close' ? ('success' as const) : h.kind === 'acknowledge' || h.kind === 'assign' || h.kind === 'support' ? ('info' as const) : ('neutral' as const),
+      tone:
+        h.kind === 'resolve' || h.kind === 'close'
+          ? ('success' as const)
+          : h.kind === 'acknowledge' || h.kind === 'assign' || h.kind === 'support'
+            ? ('info' as const)
+            : ('neutral' as const),
     })),
   ];
   return (
@@ -297,7 +343,11 @@ function NotesSection({
   }
   const showHeading = notes.length > 0 || !editable;
   return (
-    <section aria-labelledby={showHeading ? headingId : undefined} aria-label={showHeading ? undefined : 'Ghi chú xử lý'} className="flex flex-col gap-3">
+    <section
+      aria-labelledby={showHeading ? headingId : undefined}
+      aria-label={showHeading ? undefined : 'Ghi chú xử lý'}
+      className="flex flex-col gap-3"
+    >
       {showHeading && (
         <h3 id={headingId} className="text-lg font-semibold text-fg-secondary">
           Ghi chú xử lý
@@ -349,7 +399,11 @@ function NotesBody({
             maxLength={1000}
             placeholder="Nhập tình trạng kiểm tra..."
             error={note.error}
-            hint={a.status === 'in-progress' && alertKind(a).update.kind === 'resolve-note' ? 'Bắt buộc khi đánh dấu đã xử lý – nội dung trong ô được lưu kèm.' : undefined}
+            hint={
+              a.status === 'in-progress' && alertKind(a).update.kind === 'resolve-note'
+                ? 'Bắt buộc khi đánh dấu đã xử lý – nội dung trong ô được lưu kèm.'
+                : undefined
+            }
           />
           <Button
             variant="subtle"
@@ -460,18 +514,18 @@ function DrawerFooter({
           Xem {maintenance.code}
         </Link>
       ) : (
-        canCreateMaintenance &&
-          a.status !== 'done' && (
-            <Button key="create" variant="subtle" className="w-full" onClick={() => onCreateMaintenance(a)}>
-              Tạo yêu cầu bảo trì
-            </Button>
-          )
+        canCreateMaintenance && a.status !== 'done' && (
+          <Button key="create" variant="subtle" className="w-full" onClick={() => onCreateMaintenance(a)}>
+            Tạo yêu cầu bảo trì
+          </Button>
+        )
       );
     })
     .filter(Boolean);
 
   // Báo cháy đóng là "Báo động giả" → kiểm tra đầu báo: "Tạo yêu cầu bảo trì" điền sẵn tên (không tạo trùng → "Xem MT-…").
-  const falseAlarmTitle = cfg.falseAlarmMaintenance && a.resolution?.kind === 'false-alarm' ? fillPlaybookText(cfg.falseAlarmMaintenance.title, a.device) : null;
+  const falseAlarmTitle =
+    cfg.falseAlarmMaintenance && a.resolution?.kind === 'false-alarm' ? fillPlaybookText(cfg.falseAlarmMaintenance.title, a.device) : null;
   if (falseAlarmTitle && !cfg.actions.includes('maintenance')) {
     secondary.unshift(
       maintenance ? (
@@ -524,8 +578,7 @@ function DrawerFooter({
       <p className="text-center text-base text-fg">
         {a.resolution?.kind === 'false-alarm' ? 'Đã đóng – báo động giả' : 'Cảnh báo đã hoàn thành'}
         {a.closedAt ? ` lúc ${fmtAt(a.closedAt).slice(0, 5)}` : a.resolvedAt ? ` lúc ${fmtAt(a.resolvedAt).slice(0, 5)}` : ''}
-        {a.closedBy ? ` – ${a.closedBy}` : ''}.
-        {follow && <span className="block text-sm text-info">{follow}.</span>}
+        {a.closedBy ? ` – ${a.closedBy}` : ''}.{follow && <span className="block text-sm text-info">{follow}.</span>}
       </p>
     ) : null;
 

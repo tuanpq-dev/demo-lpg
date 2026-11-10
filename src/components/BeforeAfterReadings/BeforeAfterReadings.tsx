@@ -46,7 +46,10 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
   return (
     <div role="group" aria-label={label} className={cn('flex flex-col gap-4 rounded-lg border border-line/30 bg-surface-sunken/30 p-4', className)}>
       {rows.map((r) => (
-        <div key={r.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <div
+          key={r.id}
+          className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_minmax(0,1fr)]"
+        >
           <div className="col-span-3 min-w-0 sm:col-span-1">
             <p className="text-md text-fg-secondary">{r.label}</p>
             {r.limit && <p className="text-xs text-danger-text">{r.limit}</p>}

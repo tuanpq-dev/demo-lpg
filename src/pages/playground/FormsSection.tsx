@@ -23,7 +23,7 @@ import { Demo } from './Demo';
 /** Ảnh Figma chỉ ở máy dev (`scratch/figma-ref/`, gitignore); bản build: undefined (không đóng gói). */
 const REF_MT_CREATE_MODAL_DESIGN = import.meta.env.DEV ? '/scratch/figma-ref/mt-create-modal-design.png' : undefined;
 
-const MAINT = (import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined);
+const MAINT = import.meta.env.DEV ? '/scratch/figma-ref/70-3964-maintenance.png' : undefined;
 
 const statuses: WorkStatus[] = ['pending', 'assigned', 'in-progress', 'review', 'done'];
 
@@ -68,13 +68,22 @@ export function FormsSection() {
         </Demo>
       </div>
 
-      <Demo title="Modal Tạo yêu cầu bảo trì – thành phần (Combobox · SegmentedControl field · ChecklistEditor · FileDropzone · TempIcons)" node="ảnh thiết kế người dùng gửi">
+      <Demo
+        title="Modal Tạo yêu cầu bảo trì – thành phần (Combobox · SegmentedControl field · ChecklistEditor · FileDropzone · TempIcons)"
+        node="ảnh thiết kế người dùng gửi"
+      >
         <div className="flex flex-wrap items-start gap-6">
-          <a href="/maintenance?create=1" className="rounded-sm text-sm text-accent underline">Mở modal thật trên /maintenance →</a>
+          <a href="/maintenance?create=1" className="rounded-sm text-sm text-accent underline">
+            Mở modal thật trên /maintenance →
+          </a>
           {REF_MT_CREATE_MODAL_DESIGN && (
             <figure className="flex flex-col gap-2">
               <figcaption className="text-xs text-fg-muted/65">Thiết kế (tham chiếu)</figcaption>
-              <img src={REF_MT_CREATE_MODAL_DESIGN} alt="Thiết kế modal tạo yêu cầu bảo trì" className="max-w-[660px] rounded-sm border border-dashed border-line/30" />
+              <img
+                src={REF_MT_CREATE_MODAL_DESIGN}
+                alt="Thiết kế modal tạo yêu cầu bảo trì"
+                className="max-w-[660px] rounded-sm border border-dashed border-line/30"
+              />
             </figure>
           )}
         </div>
@@ -165,7 +174,11 @@ export function FormsSection() {
           { label: 'Thiết bị', value: 'V-101' },
           { label: 'Khu vực', value: 'Bồn chứa' },
         ]}
-        actions={<Button variant="primary" onClick={() => setDrawer(false)}>Đóng</Button>}
+        actions={
+          <Button variant="primary" onClick={() => setDrawer(false)}>
+            Đóng
+          </Button>
+        }
       />
     </div>
   );

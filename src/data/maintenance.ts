@@ -11,9 +11,31 @@ import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { daysFromToday, plantDateTimeKey, plantMonthKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
-import { CHECKLIST_TEMPLATES, MAINTENANCE_ASSIGNEES, PEOPLE, ASSIGNABLE_STAFF, REVIEWERS, SOURCE_OPTIONS, STAFF, isoDay, staffByName, maintenanceRecords } from '@/mocks/maintenance';
+import {
+  CHECKLIST_TEMPLATES,
+  MAINTENANCE_ASSIGNEES,
+  PEOPLE,
+  ASSIGNABLE_STAFF,
+  REVIEWERS,
+  SOURCE_OPTIONS,
+  STAFF,
+  isoDay,
+  staffByName,
+  maintenanceRecords,
+} from '@/mocks/maintenance';
 import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
-import type { MaintenanceAttachment, MaintenanceChecklistItem, MaintenanceHistoryEntry, MaintenanceHold, MaintenanceNote, MaintenanceRecord, MaintenanceSource, MaintenanceStatus, MaintenanceType, ShiftId } from '@/features/maintenance/types';
+import type {
+  MaintenanceAttachment,
+  MaintenanceChecklistItem,
+  MaintenanceHistoryEntry,
+  MaintenanceHold,
+  MaintenanceNote,
+  MaintenanceRecord,
+  MaintenanceSource,
+  MaintenanceStatus,
+  MaintenanceType,
+  ShiftId,
+} from '@/features/maintenance/types';
 import type { KpiMock } from '@/mocks/types';
 
 export type {
@@ -62,7 +84,8 @@ export const isOverdue = (r: MaintenanceRecord, now: Date) => isOpen(r) && isPas
 export function dueLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
   if (d < 0) return `Quá hạn ${-d} ngày`;
-  if (d === 0) return isPastDue(r.dueAt, now, dueHasTime(r)) ? (dueHasTime(r) ? `Quá hạn từ ${dueTimeLabel(r)}` : 'Quá hạn hôm nay') : 'Hết hạn hôm nay';
+  if (d === 0)
+    return isPastDue(r.dueAt, now, dueHasTime(r)) ? (dueHasTime(r) ? `Quá hạn từ ${dueTimeLabel(r)}` : 'Quá hạn hôm nay') : 'Hết hạn hôm nay';
   if (d === 1) return 'Hết hạn ngày mai';
   return `Còn ${d} ngày`;
 }
@@ -177,9 +200,7 @@ export function matchMaintenance(r: MaintenanceRecord, f: Filters, now: Date) {
 
 /** created: mới tạo trước (rồi mã giảm dần) · due: hạn gần nhất trước. */
 export function sortMaintenance(a: MaintenanceRecord, b: MaintenanceRecord, f: Pick<Filters, 'sort'>) {
-  return f.sort === 'due'
-    ? a.dueAt.localeCompare(b.dueAt)
-    : b.createdAt.localeCompare(a.createdAt) || b.code.localeCompare(a.code);
+  return f.sort === 'due' ? a.dueAt.localeCompare(b.dueAt) : b.createdAt.localeCompare(a.createdAt) || b.code.localeCompare(a.code);
 }
 
 // ============================================================================
@@ -239,12 +260,60 @@ export function deriveMaintenanceKpis(all: readonly MaintenanceRecord[], now: Da
   const base = { variant: 'compact', strongBorder: true, iconBox: 24 } as const;
   const pad2 = (n: number) => String(n).padStart(2, '0');
   return [
-    { ...base, id: 'total', label: 'Tổng yêu cầu', icon: 'kpiMtTotal', value: String(thisMonth), sub: `${trend >= 0 ? '+' : ''}${trend}% vs tháng trước`, subTone: trend >= 0 ? 'success' : 'danger', subIcon: trend >= 0 ? 'kpiTrendUp' : undefined },
-    { ...base, id: 'pending', label: 'Chờ tiếp nhận', icon: 'kpiMtPending', value: pad2(count('pending')), sub: 'Cần phân công', subTone: 'muted', tone: 'warning' },
-    { ...base, id: 'in-progress', label: 'Đang thực hiện', icon: 'kpiMtTimer', value: pad2(inProgress), progress: Math.round(ratio), progressTone: 'info' },
+    {
+      ...base,
+      id: 'total',
+      label: 'Tổng yêu cầu',
+      icon: 'kpiMtTotal',
+      value: String(thisMonth),
+      sub: `${trend >= 0 ? '+' : ''}${trend}% vs tháng trước`,
+      subTone: trend >= 0 ? 'success' : 'danger',
+      subIcon: trend >= 0 ? 'kpiTrendUp' : undefined,
+    },
+    {
+      ...base,
+      id: 'pending',
+      label: 'Chờ tiếp nhận',
+      icon: 'kpiMtPending',
+      value: pad2(count('pending')),
+      sub: 'Cần phân công',
+      subTone: 'muted',
+      tone: 'warning',
+    },
+    {
+      ...base,
+      id: 'in-progress',
+      label: 'Đang thực hiện',
+      icon: 'kpiMtTimer',
+      value: pad2(inProgress),
+      progress: Math.round(ratio),
+      progressTone: 'info',
+    },
     { ...base, id: 'review', label: 'Chờ nghiệm thu', icon: 'kpiMtReview', value: pad2(review), sub: 'Đã hoàn tất thi công', subTone: 'muted' },
-    { ...base, id: 'overdue', label: 'Quá hạn', icon: 'kpiMtOverdue', value: pad2(overdue), sub: 'Cần xử lý ngay', subTone: 'danger', subIcon: 'kpiMtOverdueSm', tone: 'danger', outlined: true, strongBorder: false },
-    { ...base, id: 'done', label: 'Đã hoàn thành', icon: 'kpiMtDone', value: pad2(doneMonth), sub: 'Trong tháng', subTone: 'success', subIcon: 'kpiMtDoneSm', tone: 'success' },
+    {
+      ...base,
+      id: 'overdue',
+      label: 'Quá hạn',
+      icon: 'kpiMtOverdue',
+      value: pad2(overdue),
+      sub: 'Cần xử lý ngay',
+      subTone: 'danger',
+      subIcon: 'kpiMtOverdueSm',
+      tone: 'danger',
+      outlined: true,
+      strongBorder: false,
+    },
+    {
+      ...base,
+      id: 'done',
+      label: 'Đã hoàn thành',
+      icon: 'kpiMtDone',
+      value: pad2(doneMonth),
+      sub: 'Trong tháng',
+      subTone: 'success',
+      subIcon: 'kpiMtDoneSm',
+      tone: 'success',
+    },
   ];
 }
 
@@ -366,7 +435,8 @@ const ctx = (actor?: string) => ({ actor: actor || DEFAULT_ACTOR, now: appNow() 
  * Modal "Phân công người xử lý": phân công (Chờ tiếp nhận → Đã phân công) hoặc đổi người (Đã phân công / Đang thực hiện,
  * lý do bắt buộc) – `applyAssignment` (features/maintenance/assign.ts).
  */
-export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) => patch([id], (r) => applyAssignment(r, form, ctx(actor), staffByName));
+export const assignMaintenance = async (id: string, form: AssignForm, actor?: string) =>
+  patch([id], (r) => applyAssignment(r, form, ctx(actor), staffByName));
 
 /**
  * Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt), mỗi dòng qua `validateAssign` với hạn sẵn có.
@@ -411,8 +481,7 @@ export const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
   });
 
 /** Thêm ghi chú kỹ thuật. */
-export const addMaintenanceNote = async (id: string, text: string, actor?: string) =>
-  patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
+export const addMaintenanceNote = async (id: string, text: string, actor?: string) => patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
 
 /** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, updateProgress, submitForReview, review, toggleChecklist, addNote }`. */
 export function useMaintenance() {
@@ -504,7 +573,11 @@ export function suggestForRequest({ device, alert }: { device: string | null; al
   if (alert && /áp suất/i.test(alert.message)) {
     return {
       assessment: `Áp suất ${alert.device.startsWith('V-') ? 'bồn ' : ''}${alert.device} tăng bất thường trong 2 giờ gần nhất và có khả năng liên quan đến van an toàn PSV-${alert.device.replace(/\D/g, '') || '101'} hoặc hệ thống làm mát.`,
-      checks: [`Kiểm tra trạng thái van PSV-${alert.device.replace(/\D/g, '') || '101'}`, 'Đối chiếu áp suất tại hiện trường', 'Kiểm tra hệ thống làm mát và tín hiệu cảm biến liên quan'],
+      checks: [
+        `Kiểm tra trạng thái van PSV-${alert.device.replace(/\D/g, '') || '101'}`,
+        'Đối chiếu áp suất tại hiện trường',
+        'Kiểm tra hệ thống làm mát và tín hiệu cảm biến liên quan',
+      ],
     };
   }
   if (/^GS-/i.test(d) || (alert && /gas|LEL/i.test(alert.message + alert.unit))) {

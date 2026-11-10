@@ -1,8 +1,23 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
 import type { AlertRecord } from '@/data/alerts';
-import { clearMaintenanceDraft, loadMaintenanceDraft, saveMaintenanceDraft, suggestForRequest, type NewMaintenanceInput, type ShiftId } from '@/data/maintenance';
+import {
+  clearMaintenanceDraft,
+  loadMaintenanceDraft,
+  saveMaintenanceDraft,
+  suggestForRequest,
+  type NewMaintenanceInput,
+  type ShiftId,
+} from '@/data/maintenance';
 import { actionErrorText } from '@/lib/actionError';
-import { blankForm, createFormReducer, formFromAlert, toCreateInput, validateCreate, type CreateFormState, type CreateFormValues } from './createForm';
+import {
+  blankForm,
+  createFormReducer,
+  formFromAlert,
+  toCreateInput,
+  validateCreate,
+  type CreateFormState,
+  type CreateFormValues,
+} from './createForm';
 
 export type UseCreateMaintenanceFormOptions = {
   devices: readonly { device: string; area: string }[];
@@ -20,7 +35,8 @@ function initialState(alert: AlertRecord | undefined, defaultTitle: string | und
   const base = { errors: {}, submitting: false, submitError: '', touched: { department: false, shift: false }, errorTick: 0 };
   if (alert) return { ...base, form: formFromAlert(alert, defaultTitle), draftInfo: null };
   const draft = loadMaintenanceDraft<CreateFormValues>();
-  if (draft && !defaultDevice) return { ...base, form: { ...blankForm(null), ...draft.draft, attachments: draft.draft.attachments ?? [] }, draftInfo: draftTime(draft.savedAt) };
+  if (draft && !defaultDevice)
+    return { ...base, form: { ...blankForm(null), ...draft.draft, attachments: draft.draft.attachments ?? [] }, draftInfo: draftTime(draft.savedAt) };
   return { ...base, form: blankForm(defaultDevice ?? null), draftInfo: null };
 }
 

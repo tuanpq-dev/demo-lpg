@@ -22,8 +22,6 @@ const HEIGHT_STEP = 0.5;
 /** Click (không kéo) nếu chuột đi < 4 px giữa down và up – kéo thì để OrbitControls xoay camera. */
 const CLICK_PX = 4;
 
-
-
 const DOT = new SphereGeometry(1, 12, 8);
 
 /** Chấm cổng (toạ độ thế giới); cổng đang bắt to hơn, màu primary. */
@@ -42,7 +40,13 @@ export function PortMarkers({ ports, active, palette }: { ports: WorldPort[]; ac
             renderOrder={5}
             userData={{ noEdges: true, noShadow: true, portRef: p.ref }}
           >
-            <meshBasicMaterial color={on ? palette.primary : palette.neutral} depthTest={false} transparent opacity={on ? 1 : 0.8} toneMapped={false} />
+            <meshBasicMaterial
+              color={on ? palette.primary : palette.neutral}
+              depthTest={false}
+              transparent
+              opacity={on ? 1 : 0.8}
+              toneMapped={false}
+            />
           </mesh>
         );
       })}
@@ -114,7 +118,9 @@ export function PipeDrawTool({ edit, config, palette }: { edit: SceneEditState; 
       const hit = planeHit(rc.ray, height);
       if (!hit) return null;
       const snap = edit.snap !== false && !e.altKey;
-      return { at: snap ? [snapTo(hit.x, EDIT_SNAP.translate), height, snapTo(hit.z, EDIT_SNAP.translate)] : [+hit.x.toFixed(3), height, +hit.z.toFixed(3)] };
+      return {
+        at: snap ? [snapTo(hit.x, EDIT_SNAP.translate), height, snapTo(hit.z, EDIT_SNAP.translate)] : [+hit.x.toFixed(3), height, +hit.z.toFixed(3)],
+      };
     };
     const reset = () => {
       setNodes([]);
@@ -205,9 +211,7 @@ export function PipeDrawTool({ edit, config, palette }: { edit: SceneEditState; 
   return (
     <>
       <PortMarkers ports={ports} active={hover?.port} palette={palette} />
-      {path.length > 1 && (
-        <Line points={path} color={palette.primary} lineWidth={2.5} transparent opacity={0.9} depthTest={false} renderOrder={6} />
-      )}
+      {path.length > 1 && <Line points={path} color={palette.primary} lineWidth={2.5} transparent opacity={0.9} depthTest={false} renderOrder={6} />}
       {path.length > 0 && (
         <group userData={{ drawPoints: path.length }}>
           {path.map((p, i) => (
@@ -223,7 +227,16 @@ export function PipeDrawTool({ edit, config, palette }: { edit: SceneEditState; 
             <meshBasicMaterial color={palette.primary} depthTest={false} transparent opacity={0.85} toneMapped={false} />
           </mesh>
           {hover.at[1] > 0.05 && (
-            <Line points={[hover.at, [hover.at[0], 0.02, hover.at[2]]]} color={palette.primary} lineWidth={1} dashed dashSize={0.15} gapSize={0.1} transparent opacity={0.6} />
+            <Line
+              points={[hover.at, [hover.at[0], 0.02, hover.at[2]]]}
+              color={palette.primary}
+              lineWidth={1}
+              dashed
+              dashSize={0.15}
+              gapSize={0.1}
+              transparent
+              opacity={0.6}
+            />
           )}
           <Html position={hover.at} zIndexRange={[16, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
             <span
@@ -327,7 +340,8 @@ export function startPointDrag({
     window.removeEventListener('keydown', key, true);
     picker.orbit(true);
     onPreview(null);
-    if (commit && moved && !same3(next, base)) edit.onUpdatePipe!(pipe.id, (p) => ({ ...p, points: p.points.map((q, i) => (i === index ? next : q)) }));
+    if (commit && moved && !same3(next, base))
+      edit.onUpdatePipe!(pipe.id, (p) => ({ ...p, points: p.points.map((q, i) => (i === index ? next : q)) }));
     onState?.(false, moved);
   };
   const up = () => finish(true);

@@ -4,7 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { ScheduleList } from './ScheduleList';
 
-const items = [{ id: 'w', date: '2026-06-26', weekday: 'T6', day: '26', title: 'Báo cáo tuần 4 - Tháng 6', meta: 'Hạn chót: 17:00', dateLabel: 'Thứ 6, 26/06/2026' }];
+const items = [
+  {
+    id: 'w',
+    date: '2026-06-26',
+    weekday: 'T6',
+    day: '26',
+    title: 'Báo cáo tuần 4 - Tháng 6',
+    meta: 'Hạn chót: 17:00',
+    dateLabel: 'Thứ 6, 26/06/2026',
+  },
+];
 
 describe('ScheduleList', () => {
   test('danh sách có <time dateTime>, ô ngày rút gọn được thay bằng nhãn đầy đủ cho trình đọc màn hình', () => {

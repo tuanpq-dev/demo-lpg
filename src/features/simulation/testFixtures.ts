@@ -46,7 +46,10 @@ export const GAS_SETUP: ScenarioSetup = {
     recoveryDetail: 'Nhờ đóng van ESD ảo, lượng rò rỉ giảm dần. Xu hướng giảm được AI ghi nhận.',
     recoveredTitle: 'Nồng độ dưới ngưỡng nguy hiểm',
     reviewArea: 'khu vực bồn LPG',
-    recommendations: ['[Mô phỏng] Hạn chế tiếp cận khu vực bồn theo quy trình an toàn', '[Mô phỏng] Gợi ý quy trình ESD mô phỏng nếu vượt mức nguy hiểm'],
+    recommendations: [
+      '[Mô phỏng] Hạn chế tiếp cận khu vực bồn theo quy trình an toàn',
+      '[Mô phỏng] Gợi ý quy trình ESD mô phỏng nếu vượt mức nguy hiểm',
+    ],
     result: {
       peakLabel: 'Gas cao nhất',
       aiCriterion: 'Gợi ý AI (Virtual ESD)',

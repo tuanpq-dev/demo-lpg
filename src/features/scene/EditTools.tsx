@@ -476,13 +476,16 @@ export function EditGizmo({
     const group = d.items.length > 1;
     for (const it of d.items) {
       if (edit.mode === 'rotate') {
-        it.node.position.copy(it.pos).sub(d.pivot).applyAxisAngle(new Vector3(0, 1, 0), angle).add(d.pivot);
+        it.node.position
+          .copy(it.pos)
+          .sub(d.pivot)
+          .applyAxisAngle(new Vector3(0, 1, 0), angle)
+          .add(d.pivot);
         it.node.rotation.set(it.rot.x, it.rot.y + angle, it.rot.z);
       } else {
         // Gốc = tâm đáy → scale không làm lún/nổi; nhóm chỉ giãn khoảng cách theo X/Z, y (= elevation) giữ nguyên.
         it.node.scale.copy(it.scale).multiply(k);
-        if (group)
-          it.node.position.set(d.pivot.x + (it.pos.x - d.pivot.x) * k.x, it.pos.y, d.pivot.z + (it.pos.z - d.pivot.z) * k.z);
+        if (group) it.node.position.set(d.pivot.x + (it.pos.x - d.pivot.x) * k.x, it.pos.y, d.pivot.z + (it.pos.z - d.pivot.z) * k.z);
       }
     }
     invalidate();
@@ -492,9 +495,7 @@ export function EditGizmo({
     const d = drag.current;
     drag.current = null;
     if (!d) return;
-    const changed = d.items.some(
-      (it) => !it.node.position.equals(it.pos) || !it.node.rotation.equals(it.rot) || !it.node.scale.equals(it.scale),
-    );
+    const changed = d.items.some((it) => !it.node.position.equals(it.pos) || !it.node.rotation.equals(it.rot) || !it.node.scale.equals(it.scale));
     if (!changed) return;
     edit.onTransform(
       d.items.map((it) => ({
@@ -537,8 +538,28 @@ function MoveHandle({ x, z, color }: { x: number; z: number; color: ScenePalette
         <ringGeometry args={[0.85, 1, 40]} />
         <meshBasicMaterial color={color} transparent opacity={0.75} depthTest={false} side={DoubleSide} toneMapped={false} />
       </mesh>
-      <Line points={[[-1.6, 0, 0], [1.6, 0, 0]]} color={color} lineWidth={1.5} transparent opacity={0.75} depthTest={false} />
-      <Line points={[[0, 0, -1.6], [0, 0, 1.6]]} color={color} lineWidth={1.5} transparent opacity={0.75} depthTest={false} />
+      <Line
+        points={[
+          [-1.6, 0, 0],
+          [1.6, 0, 0],
+        ]}
+        color={color}
+        lineWidth={1.5}
+        transparent
+        opacity={0.75}
+        depthTest={false}
+      />
+      <Line
+        points={[
+          [0, 0, -1.6],
+          [0, 0, 1.6],
+        ]}
+        color={color}
+        lineWidth={1.5}
+        transparent
+        opacity={0.75}
+        depthTest={false}
+      />
     </group>
   );
 }
@@ -563,7 +584,10 @@ export function SelectionFootprints({ objects, palette }: { objects: ResolvedObj
             <Line points={foot} color={tone} lineWidth={1} dashed dashSize={0.4} gapSize={0.25} transparent opacity={0.8} />
             {gap && (
               <Line
-                points={[[o.position[0], base, o.position[2]], [o.position[0], 0.03, o.position[2]]]}
+                points={[
+                  [o.position[0], base, o.position[2]],
+                  [o.position[0], 0.03, o.position[2]],
+                ]}
                 color={tone}
                 lineWidth={1.5}
                 dashed
@@ -572,7 +596,12 @@ export function SelectionFootprints({ objects, palette }: { objects: ResolvedObj
                 depthTest={false}
               />
             )}
-            <Html position={[o.position[0], Math.max(base, 0), o.position[2]]} zIndexRange={[15, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
+            <Html
+              position={[o.position[0], Math.max(base, 0), o.position[2]]}
+              zIndexRange={[15, 0]}
+              pointerEvents="none"
+              style={{ pointerEvents: 'none' }}
+            >
               <span
                 data-ground-gap={o.id}
                 className={

@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  dayFromNumber,
-  daysInMonth,
-  periodContains,
-  periodKeyOf,
-  periodLabel,
-  periodRange,
-  reportCode,
-  weekdayVi,
-} from './period';
+import { dayFromNumber, daysInMonth, periodContains, periodKeyOf, periodLabel, periodRange, reportCode, weekdayVi } from './period';
 import { dayNumber } from '@/lib/plantTime';
 
 describe('periodRange', () => {

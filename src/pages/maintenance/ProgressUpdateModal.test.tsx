@@ -182,7 +182,9 @@ describe('ProgressUpdateModal', () => {
     await user.click(screen.getByRole('button', { name: 'Đóng xem trước' }));
     expect(screen.queryByText('Dữ liệu mẫu')).toBeNull();
 
-    fireEvent.change(document.querySelector<HTMLInputElement>('input[type="file"]')!, { target: { files: [new File(['x'], 'anh.png', { type: 'image/png' })] } });
+    fireEvent.change(document.querySelector<HTMLInputElement>('input[type="file"]')!, {
+      target: { files: [new File(['x'], 'anh.png', { type: 'image/png' })] },
+    });
     await user.click(screen.getByRole('button', { name: 'Xem anh.png' }));
     expect(screen.getByRole('img', { name: 'Xem trước anh.png' })).toHaveAttribute('src', 'blob:mock/1');
     await user.click(screen.getByRole('button', { name: 'Bỏ tệp anh.png' }));

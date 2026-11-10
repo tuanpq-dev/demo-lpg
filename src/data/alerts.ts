@@ -40,7 +40,6 @@ import type { KpiMock } from '@/mocks/types';
 
 export type { AlertRecord, AlertStatus };
 
-
 // ============================================================================
 // Bộ lọc
 // ============================================================================
@@ -149,7 +148,6 @@ export const uniqueOptions = (values: string[]): SelectOption[] =>
 // Hiển thị
 // ============================================================================
 
-
 /** Thẻ ưu tiên: "11.8 bar" / "10.5 bar", "25% LEL" / "20% LEL" (70:2923). */
 export const cardValue = (a: AlertRecord) => ({ value: withUnit(a.value, a.unit), threshold: withUnit(a.threshold, a.unit) });
 
@@ -193,7 +191,8 @@ export function deriveAlertKpis(alerts: readonly AlertRecord[], range: AlertRang
   const scoped = alerts.filter((a) => inRange(a, range));
   const c = countByStatus(scoped);
   const critical = scoped.filter((a) => a.severity === 'critical').length;
-  const totalLabel = range === 'today' ? 'Tổng cảnh báo hôm nay' : `Tổng cảnh báo ${RANGE_OPTIONS.find((r) => r.value === range)?.label.toLowerCase()}`;
+  const totalLabel =
+    range === 'today' ? 'Tổng cảnh báo hôm nay' : `Tổng cảnh báo ${RANGE_OPTIONS.find((r) => r.value === range)?.label.toLowerCase()}`;
   const base = { variant: 'compact', iconBox: 18, iconPosition: 'start', toneLabel: true } as const;
   return [
     { id: 'total', label: totalLabel, value: String(c.all), variant: 'compact' },
@@ -242,7 +241,8 @@ export type BulkAssignResult = BulkResult & { reassigned: number; message: strin
  */
 export async function assignAlerts(ids: readonly string[], form: AlertAssignForm, by = 'Admin'): Promise<BulkAssignResult> {
   const plan = planBulkAlertAssign(currentAlerts(), ids, form.assignee);
-  if (validateBulkAlertAssign(plan, form).length) return { done: 0, skipped: ids.length, reassigned: 0, message: 'Chưa phân công – thiếu thông tin.' };
+  if (validateBulkAlertAssign(plan, form).length)
+    return { done: 0, skipped: ids.length, reassigned: 0, message: 'Chưa phân công – thiếu thông tin.' };
   const ctx = ctxOf(by);
   const rows = [...plan.assign, ...plan.reassign];
   mutateAlerts(
@@ -274,7 +274,13 @@ export async function closeAlerts(
 }
 
 /** "Xác nhận đóng cảnh báo" một cảnh báo – `conditions` = 3 điều kiện hệ thống đọc lúc bấm (hàm thuần kiểm lại). */
-export async function closeOneAlert(id: string, input: CloseInput, conditions: readonly CloseCondition[], follow: FollowUpConfig, by = 'Admin'): Promise<CloseResult> {
+export async function closeOneAlert(
+  id: string,
+  input: CloseInput,
+  conditions: readonly CloseCondition[],
+  follow: FollowUpConfig,
+  by = 'Admin',
+): Promise<CloseResult> {
   const a = currentAlerts().find((x) => x.id === id);
   if (!a) return { ok: false, reason: 'status', message: 'Không tìm thấy cảnh báo.' };
   const res = closeAlert(a, input, conditions, follow, ctxOf(by));
@@ -283,7 +289,12 @@ export async function closeOneAlert(id: string, input: CloseInput, conditions: r
 }
 
 /** "Tiếp tục theo dõi" – giữ Đã xử lý + một giá trị theo dõi. */
-export async function monitorAlert(id: string, input: { minutes: number; note: string }, follow: FollowUpConfig, by = 'Admin'): Promise<MonitorResult> {
+export async function monitorAlert(
+  id: string,
+  input: { minutes: number; note: string },
+  follow: FollowUpConfig,
+  by = 'Admin',
+): Promise<MonitorResult> {
   const a = currentAlerts().find((x) => x.id === id);
   if (!a) return { ok: false, reason: 'status', message: 'Không tìm thấy cảnh báo.' };
   const res = continueMonitoring(a, input, follow, ctxOf(by));

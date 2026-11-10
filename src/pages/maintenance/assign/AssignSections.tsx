@@ -1,5 +1,19 @@
 import { useId } from 'react';
-import { AssignNotices, Badge, Button, Combobox, DatePicker, DeviceArmIcon, FormField, MapIcon, SearchInput, Select, StaffList, Switch, Textarea } from '@/components';
+import {
+  AssignNotices,
+  Badge,
+  Button,
+  Combobox,
+  DatePicker,
+  DeviceArmIcon,
+  FormField,
+  MapIcon,
+  SearchInput,
+  Select,
+  StaffList,
+  Switch,
+  Textarea,
+} from '@/components';
 import { ASSIGNABLE_STAFF, DEPARTMENTS, SHIFTS, STATUS_LABEL, type MaintenanceRecord } from '@/data/maintenance';
 import { shiftShortLabel } from '@/features/maintenance/assign';
 import { SHIFT_SHORT, type AssignFormModel } from './useAssignForm';
@@ -7,7 +21,10 @@ import { SHIFT_SHORT, type AssignFormModel } from './useAssignForm';
 /** Dải thông tin yêu cầu (trải hết bề ngang thân modal): mã, tiêu đề, thiết bị, khu vực, mức độ, trạng thái hiện tại. */
 export function AssignRequestBand({ record: r }: { record: MaintenanceRecord }) {
   return (
-    <section aria-label={`Yêu cầu ${r.code}`} className="-mx-5 -mt-4 flex flex-wrap items-start justify-between gap-3 border-b border-line/30 bg-surface-raised/50 px-5 py-3">
+    <section
+      aria-label={`Yêu cầu ${r.code}`}
+      className="-mx-5 -mt-4 flex flex-wrap items-start justify-between gap-3 border-b border-line/30 bg-surface-raised/50 px-5 py-3"
+    >
       <div className="flex min-w-0 flex-col gap-2">
         <p className="flex flex-wrap items-center gap-3">
           <Badge variant="tag" size="md">
@@ -113,7 +130,16 @@ export function AssignDetailsColumn({ a, record: r, blockId }: { a: AssignFormMo
       )}
       <FormField label="Người xử lý chính" required>
         {({ id, labelId, describedBy }) => (
-          <Combobox id={id} labelledBy={labelId} describedBy={describedBy} showAvatar options={a.comboOptions} value={f.assignee} onChange={a.chooseAssignee} placeholder="Chọn ở danh sách bên trái hoặc gõ tên…" />
+          <Combobox
+            id={id}
+            labelledBy={labelId}
+            describedBy={describedBy}
+            showAvatar
+            options={a.comboOptions}
+            value={f.assignee}
+            onChange={a.chooseAssignee}
+            placeholder="Chọn ở danh sách bên trái hoặc gõ tên…"
+          />
         )}
       </FormField>
       <FormField label="Người phối hợp">
@@ -137,10 +163,28 @@ export function AssignDetailsColumn({ a, record: r, blockId }: { a: AssignFormMo
       </div>
       <FormField label="Ca làm việc">
         {({ id, labelId, describedBy }) => (
-          <Select variant="field" id={id} labelledBy={labelId} describedBy={describedBy} label="Ca làm việc" placeholder="Chọn ca" options={SHIFTS} value={f.shift} onChange={a.setShift} />
+          <Select
+            variant="field"
+            id={id}
+            labelledBy={labelId}
+            describedBy={describedBy}
+            label="Ca làm việc"
+            placeholder="Chọn ca"
+            options={SHIFTS}
+            value={f.shift}
+            onChange={a.setShift}
+          />
         )}
       </FormField>
-      <Textarea label="Ghi chú phân công" value={f.note} onChange={(v) => a.set({ note: v })} rows={2} maxLength={500} placeholder="Lưu ý cho người xử lý…" hint='Ghi vào ghi chú kỹ thuật với nhãn "Phân công".' />
+      <Textarea
+        label="Ghi chú phân công"
+        value={f.note}
+        onChange={(v) => a.set({ note: v })}
+        rows={2}
+        maxLength={500}
+        placeholder="Lưu ý cho người xử lý…"
+        hint='Ghi vào ghi chú kỹ thuật với nhãn "Phân công".'
+      />
       <div className="border-t border-line/30 pt-4">
         <Switch
           label="Gửi thông báo đẩy và SMS cho người được phân công"

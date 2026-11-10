@@ -88,7 +88,9 @@ describe('SubmitReviewModal', () => {
     await fill(user);
     expect(screen.getByText('Đủ điều kiện gửi nghiệm thu')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Gửi nghiệm thu' }));
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ deviceCondition: 'unresolved', reviewer: 'Trần Hoàng Nam', summary: 'Đã kiểm tra', remedy: 'Vệ sinh' }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceCondition: 'unresolved', reviewer: 'Trần Hoàng Nam', summary: 'Đã kiểm tra', remedy: 'Vệ sinh' }),
+    );
   });
 
   test('người nghiệm thu: không có người thực hiện trong danh sách', async () => {

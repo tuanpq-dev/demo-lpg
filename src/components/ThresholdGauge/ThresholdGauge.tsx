@@ -37,7 +37,18 @@ const BAND_CLASS: Record<GaugeBand['tone'], string> = {
 /** Vị trí mốc trục: đầu/cuối canh mép, còn lại canh giữa. */
 const tickAlign = (i: number, n: number) => (i === 0 ? 'translate-x-0' : i === n - 1 ? '-translate-x-full' : '-translate-x-1/2');
 
-function BandGauge({ label, value, min, max, valueText, valueLabel, bands, ticks = [], stale, className }: ThresholdGaugeProps & { bands: readonly GaugeBand[] }) {
+function BandGauge({
+  label,
+  value,
+  min,
+  max,
+  valueText,
+  valueLabel,
+  bands,
+  ticks = [],
+  stale,
+  className,
+}: ThresholdGaugeProps & { bands: readonly GaugeBand[] }) {
   const v = pct(value, min, max);
   return (
     <div
@@ -74,7 +85,11 @@ function BandGauge({ label, value, min, max, valueText, valueLabel, bands, ticks
         {ticks.map((t, i) => (
           <span
             key={t.value}
-            className={cn('absolute bottom-0 whitespace-nowrap text-xs leading-4 tabular-nums', tickAlign(i, ticks.length), t.danger ? 'text-danger-text' : 'text-fg-secondary')}
+            className={cn(
+              'absolute bottom-0 whitespace-nowrap text-xs leading-4 tabular-nums',
+              tickAlign(i, ticks.length),
+              t.danger ? 'text-danger-text' : 'text-fg-secondary',
+            )}
             style={{ left: pct(t.value, min, max) }}
           >
             {t.label}

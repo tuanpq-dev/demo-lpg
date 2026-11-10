@@ -38,8 +38,24 @@ function Where() {
 function renderAt(url: string) {
   const router = createMemoryRouter(
     [
-      { path: '/maintenance', element: <><MaintenancePage /><Where /></> },
-      { path: '/maintenance/:id', element: <><MaintenanceDetailPage /><Where /></> },
+      {
+        path: '/maintenance',
+        element: (
+          <>
+            <MaintenancePage />
+            <Where />
+          </>
+        ),
+      },
+      {
+        path: '/maintenance/:id',
+        element: (
+          <>
+            <MaintenanceDetailPage />
+            <Where />
+          </>
+        ),
+      },
       { path: '*', element: <Where /> },
     ],
     { initialEntries: [url] },
@@ -59,7 +75,11 @@ describe('routing /maintenance/:id', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Kiểm tra van an toàn V-101' })).toBeInTheDocument();
     expect(screen.getByText('Bảo trì khẩn cấp')).toBeInTheDocument();
     const stepper = screen.getByRole('navigation', { name: 'Tiến trình xử lý MT-00128' });
-    expect(within(stepper).getByText(/Tiếp nhận/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(stepper)
+        .getByText(/Tiếp nhận/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText('2/6 công việc hoàn thành · 33%')).toBeInTheDocument();
     for (const cb of screen.getAllByRole('checkbox')) expect(cb).toBeDisabled();
     expect(screen.getByText('Tiếp nhận yêu cầu trước khi cập nhật checklist.')).toBeInTheDocument();
@@ -116,7 +136,13 @@ describe('luồng xử lý trên trang chi tiết (đổi dữ liệu – để 
     // Tiếp nhận: không nhảy bước (pending → assigned), người nhận = người đăng nhập, thêm 1 dòng lịch sử
     await user.click(screen.getByRole('button', { name: 'Tiếp nhận ngay' }));
     const stepper = screen.getByRole('navigation', { name: 'Tiến trình xử lý MT-00128' });
-    await waitFor(() => expect(within(stepper).getByText(/Đang thực hiện/).closest('li')).toHaveAttribute('aria-current', 'step'));
+    await waitFor(() =>
+      expect(
+        within(stepper)
+          .getByText(/Đang thực hiện/)
+          .closest('li'),
+      ).toHaveAttribute('aria-current', 'step'),
+    );
     expect(screen.getByText('Tiếp nhận yêu cầu – phụ trách: Kỹ sư A')).toBeInTheDocument();
     // Đã phân công: nút bước kế tiếp nay là "Cập nhật tiến độ" (modal) – không còn "Bắt đầu thực hiện"
     expect(screen.getByRole('button', { name: 'Cập nhật tiến độ' })).toBeInTheDocument();
@@ -188,7 +214,11 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     await user.keyboard('{ArrowRight}{ArrowRight}');
     await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(stepper())
+        .getByText(/Chờ nghiệm thu/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText('Bắt đầu thực hiện · 0% → 10%')).toBeInTheDocument();
 
     // 2. Tạm dừng (lý do bắt buộc) → vẫn bước 3, nhãn phụ ở stepper
@@ -200,7 +230,11 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     await user.click(within(d).getByRole('button', { name: 'Cập nhật tiến độ' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(within(stepper()).getByText('Tạm dừng')).toBeInTheDocument();
-    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(stepper())
+        .getByText(/Chờ nghiệm thu/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText('Tạm dừng – lý do: Chờ nước nóng · tiến độ 10%')).toBeInTheDocument();
 
     // 3. Hoàn thành → "Tiếp tục gửi nghiệm thu" → modal Gửi (nội dung điền sẵn vào Tóm tắt); chưa đủ điều kiện → nút khoá có lý do
@@ -209,7 +243,11 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     await user.type(within(d).getByRole('textbox', { name: /Nội dung đã hoàn thành/ }), 'Đã vệ sinh bộ trao đổi nhiệt');
     await user.click(within(d).getByRole('button', { name: 'Tiếp tục gửi nghiệm thu' }));
     d = await screen.findByRole('dialog', { name: 'Gửi yêu cầu nghiệm thu' });
-    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step'); // chưa đổi trạng thái
+    expect(
+      within(stepper())
+        .getByText(/Chờ nghiệm thu/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step'); // chưa đổi trạng thái
     expect(within(d).getByRole('textbox', { name: /Tóm tắt công việc/ })).toHaveValue('Đã vệ sinh bộ trao đổi nhiệt');
     expect(within(d).getByText('Chưa đủ điều kiện')).toBeInTheDocument();
     const send = within(d).getByRole('button', { name: 'Gửi nghiệm thu' });
@@ -217,7 +255,11 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     expect(send).toHaveAccessibleDescription(/Chưa nhập nguyên nhân xác định.*Chưa nhập biện pháp.*Chưa chọn người nghiệm thu/);
     await user.click(send); // nút khoá: không gửi, modal vẫn mở, trạng thái chưa đổi
     expect(screen.getByRole('dialog', { name: 'Gửi yêu cầu nghiệm thu' })).toBeInTheDocument();
-    expect(within(stepper()).getByText(/Chờ nghiệm thu/).closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(
+      within(stepper())
+        .getByText(/Chờ nghiệm thu/)
+        .closest('li'),
+    ).toHaveAttribute('aria-current', 'step');
 
     await user.type(within(d).getByRole('textbox', { name: /Nguyên nhân xác định/ }), 'Cặn bám');
     await user.type(within(d).getByRole('textbox', { name: /Biện pháp/ }), 'Súc rửa hóa chất');
@@ -366,7 +408,11 @@ describe('cập nhật tiến độ + nghiệm thu (đổi dữ liệu – để
     await screen.findByRole('heading', { level: 1, name: 'Kiểm tra cảm biến gas GS-01' });
     await user.click(screen.getByRole('button', { name: 'Phân công người xử lý' }));
     const d = screen.getByRole('dialog', { name: 'Phân công người xử lý' });
-    expect(within(d).getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    expect(
+      within(d)
+        .getAllByRole('radio')
+        .every((r) => r.getAttribute('aria-checked') === 'false'),
+    ).toBe(true);
     await user.click(within(d).getByRole('radio', { name: /Lê Thị C/ }));
     await user.type(within(d).getByRole('textbox', { name: /Ghi chú phân công/ }), 'Mang máy đo cầm tay');
     await act(async () => {

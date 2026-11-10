@@ -1,5 +1,18 @@
 import { useId, useMemo, useState } from 'react';
-import { AssignNotices, Badge, Button, Checkbox, Combobox, FormField, Modal, SearchInput, StaffFilters, StaffList, Textarea, type StaffPickerItem } from '@/components';
+import {
+  AssignNotices,
+  Badge,
+  Button,
+  Checkbox,
+  Combobox,
+  FormField,
+  Modal,
+  SearchInput,
+  StaffFilters,
+  StaffList,
+  Textarea,
+  type StaffPickerItem,
+} from '@/components';
 import { ALERT_STAFF, alertKind, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
 import {
@@ -70,7 +83,8 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
     draft: single
       ? {
           exists: !!initial.draft,
-          save: ({ notify: _notify, ...rest }) => saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() }),
+          save: ({ notify: _notify, ...rest }) =>
+            saveAlertAssignDraft(single.id, { ...rest, collaborators: [...rest.collaborators], savedAt: new Date().toISOString() }),
           clear: () => clearAlertAssignDraft(single.id),
         }
       : undefined,
@@ -135,7 +149,11 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       availability,
       suggestion: match.length ? match.map((m) => MATCH_LABEL[m]).join(' · ') : undefined,
     }));
-  const collabOptions = ALERT_STAFF.filter((p) => p.name !== f.assignee).map((p) => ({ value: p.name, label: p.name, meta: `${p.title} · ${p.department}` }));
+  const collabOptions = ALERT_STAFF.filter((p) => p.name !== f.assignee).map((p) => ({
+    value: p.name,
+    label: p.name,
+    meta: `${p.title} · ${p.department}`,
+  }));
 
   const submit = async () => {
     if (blocked || submitting) return;
@@ -161,7 +179,9 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
       open
       size="xl"
       title={reassignMode ? 'Đổi người xử lý' : 'Phân công xử lý cảnh báo'}
-      description={reassignMode ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử cảnh báo' : 'Chọn người chịu trách nhiệm xác minh và theo dõi cảnh báo'}
+      description={
+        reassignMode ? 'Chọn người xử lý mới – lý do đổi được ghi vào lịch sử cảnh báo' : 'Chọn người chịu trách nhiệm xác minh và theo dõi cảnh báo'
+      }
       onClose={requestClose}
       dismissOnBackdrop={false}
       onSubmit={(e) => {
@@ -196,7 +216,12 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
                 Nháp
               </Button>
             )}
-            <Button type="submit" variant="primary" aria-disabled={blocked || submitting || undefined} aria-describedby={blocked ? blockId : undefined}>
+            <Button
+              type="submit"
+              variant="primary"
+              aria-disabled={blocked || submitting || undefined}
+              aria-describedby={blocked ? blockId : undefined}
+            >
               {confirmLabel}
             </Button>
           </>
@@ -229,7 +254,9 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
             onShiftOnly={onShiftOnly}
             onShiftOnlyChange={setOnShiftOnly}
           />
-          <p className="text-sm text-fg-secondary">Người cùng khu hoặc đúng chuyên môn xếp trước, rồi Sẵn sàng → Bận → Ngoài ca. Người ngoài ca vẫn chọn được.</p>
+          <p className="text-sm text-fg-secondary">
+            Người cùng khu hoặc đúng chuyên môn xếp trước, rồi Sẵn sàng → Bận → Ngoài ca. Người ngoài ca vẫn chọn được.
+          </p>
           <StaffList
             label="Chọn nhân sự"
             labelledBy={listLabelId}
@@ -256,7 +283,10 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm, now: n
         </section>
 
         {/* Phải: chi tiết phân công */}
-        <section aria-labelledby={`${uid}-detail`} className="flex min-w-0 flex-col gap-4 self-start rounded-lg border border-line/30 bg-surface-raised/40 p-5">
+        <section
+          aria-labelledby={`${uid}-detail`}
+          className="flex min-w-0 flex-col gap-4 self-start rounded-lg border border-line/30 bg-surface-raised/40 p-5"
+        >
           <h3 id={`${uid}-detail`} className="text-lg font-semibold text-fg">
             Chi tiết phân công
           </h3>

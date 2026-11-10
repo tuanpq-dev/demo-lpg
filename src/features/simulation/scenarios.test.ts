@@ -71,7 +71,14 @@ describe('tagHealth', () => {
       C: tv({ ts: T - 10_000 }),
       D: tv({ quality: 'uncertain', ts: T - 9_999 }),
     };
-    expect(tagHealth(['A', 'B', 'C', 'D', 'E', 'A'], live, T)).toEqual<TagHealth>({ total: 5, ok: 2, bad: 1, missing: 1, stale: 1, lastUpdate: T - 200 });
+    expect(tagHealth(['A', 'B', 'C', 'D', 'E', 'A'], live, T)).toEqual<TagHealth>({
+      total: 5,
+      ok: 2,
+      bad: 1,
+      missing: 1,
+      stale: 1,
+      lastUpdate: T - 200,
+    });
   });
 });
 
@@ -83,7 +90,10 @@ describe('runBlocker', () => {
   });
   it('chưa có số liệu → pending; tag mất tín hiệu → signal (nêu tên tag); đủ → null', () => {
     expect(runBlocker(sc({ id: 'S' }), undefined, T)?.kind).toBe('pending');
-    expect(runBlocker(sc({ id: 'S', tags: ['PT-101', 'TT-101'] }), live, T)).toEqual({ kind: 'signal', text: 'Thiếu dữ liệu tham chiếu: TT-101 mất tín hiệu.' });
+    expect(runBlocker(sc({ id: 'S', tags: ['PT-101', 'TT-101'] }), live, T)).toEqual({
+      kind: 'signal',
+      text: 'Thiếu dữ liệu tham chiếu: TT-101 mất tín hiệu.',
+    });
     expect(runBlocker(sc({ id: 'S' }), { 'PT-101': tv({ ts: T - 10_000 }) }, T)?.kind).toBe('signal');
     expect(runBlocker(sc({ id: 'S' }), live, T)).toBeNull();
   });
@@ -91,7 +101,13 @@ describe('runBlocker', () => {
 
 describe('simulateScenario', () => {
   it('tổng bước = mục tiêu → Đạt; vượt 1 s → Cần cải thiện', () => {
-    expect(simulateScenario(sc({ id: 'S' }), NOW, 'A', 'r1')).toMatchObject({ result: 'pass', responseSeconds: 60, targetSeconds: 60, at: NOW.toISOString(), by: 'A' });
+    expect(simulateScenario(sc({ id: 'S' }), NOW, 'A', 'r1')).toMatchObject({
+      result: 'pass',
+      responseSeconds: 60,
+      targetSeconds: 60,
+      at: NOW.toISOString(),
+      by: 'A',
+    });
     expect(simulateScenario(sc({ id: 'S', targetSeconds: 59 }), NOW, 'A', 'r2').result).toBe('improve');
   });
 
@@ -128,7 +144,11 @@ describe('lịch sử', () => {
 describe('deriveSimulationKpis', () => {
   it('tổng / sẵn sàng / cần cấu hình; lượt hôm nay gồm cả lượt vừa chạy sau `now` vài giây', () => {
     const scenarios = [sc({ id: 'A' }), sc({ id: 'B' }), sc({ id: 'C', status: 'needs-config' })];
-    const runs = [run('A', '2026-11-02T00:10'), run('B', '2026-11-01T23:59'), { ...run('A', '2026-11-02T18:13'), at: new Date(T + 5000).toISOString() }];
+    const runs = [
+      run('A', '2026-11-02T00:10'),
+      run('B', '2026-11-01T23:59'),
+      { ...run('A', '2026-11-02T18:13'), at: new Date(T + 5000).toISOString() },
+    ];
     expect(deriveSimulationKpis(scenarios, runs, undefined, NOW)).toEqual({ total: 3, ready: 2, runsToday: 2, needsConfig: 1, health: undefined });
   });
 });
@@ -173,7 +193,14 @@ describe('aiSuggestion', () => {
 });
 
 describe('matchScenario', () => {
-  const s = sc({ id: 'SC-004', title: 'Mất kết nối PLC/SCADA', group: 'communication', area: 'Phòng điều khiển', tags: ['PLC-01.HEARTBEAT'], plcVariables: ['PLC_Heartbeat'] });
+  const s = sc({
+    id: 'SC-004',
+    title: 'Mất kết nối PLC/SCADA',
+    group: 'communication',
+    area: 'Phòng điều khiển',
+    tags: ['PLC-01.HEARTBEAT'],
+    plcVariables: ['PLC_Heartbeat'],
+  });
   const ALL: ScenarioFilterValues = { q: '', group: null, risk: null, status: null, area: null };
   it('tìm không dấu theo tên / mã / tag / biến PLC', () => {
     expect(matchScenario(s, { ...ALL, q: 'mat ket noi' })).toBe(true);

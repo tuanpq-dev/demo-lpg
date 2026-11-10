@@ -95,33 +95,33 @@ export function Modal({
       >
         <header className="flex flex-col gap-4 border-b border-line/30 bg-surface-raised px-5 py-4">
           <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-          {icon && (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/30 bg-surface-muted text-primary">
-              {icon}
-            </span>
-          )}
-          <div className="flex flex-col gap-1">
-            <h2 id={titleId} className={cn('text-xl font-semibold', titleTone === 'primary' ? 'text-primary' : 'text-fg')}>
-              {title}
-            </h2>
-            {description && (
-              <p id={descId} className="text-sm text-fg-secondary">
-                {description}
-              </p>
-            )}
-          </div>
-          </div>
-          <button
-            type="button"
-            aria-label="Đóng"
-            onClick={onClose}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-muted hover:text-fg"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </button>
+            <div className="flex items-center gap-3">
+              {icon && (
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/30 bg-surface-muted text-primary">
+                  {icon}
+                </span>
+              )}
+              <div className="flex flex-col gap-1">
+                <h2 id={titleId} className={cn('text-xl font-semibold', titleTone === 'primary' ? 'text-primary' : 'text-fg')}>
+                  {title}
+                </h2>
+                {description && (
+                  <p id={descId} className="text-sm text-fg-secondary">
+                    {description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Đóng"
+              onClick={onClose}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-muted hover:text-fg"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
           {headerExtra}
         </header>

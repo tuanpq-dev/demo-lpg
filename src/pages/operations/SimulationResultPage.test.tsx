@@ -65,14 +65,18 @@ describe('/operations/ai-simulation/:id/result', () => {
     await loaded();
     expect(screen.getByRole('heading', { level: 1, name: 'Kết quả mô phỏng' })).toBeInTheDocument();
     expect(screen.getByText('Tổng kết phiên mô phỏng rò rỉ LPG tại khu vực bồn và đánh giá phản ứng của hệ thống.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Quay lại theo dõi' })).toHaveAttribute('href', '/operations/ai-simulation/SC-001/monitor?session=SES-0000');
+    expect(screen.getByRole('link', { name: 'Quay lại theo dõi' })).toHaveAttribute(
+      'href',
+      '/operations/ai-simulation/SC-001/monitor?session=SES-0000',
+    );
     expect(info('Mã phiên')).toMatch(/^SIM-RUN-\d{8}-001$/);
     expect(info('Khu vực / Tài sản chính')).toBe('Khu bồn LPG / Bồn V-101');
     expect(info('Người chạy')).toBe('Nguyễn Văn A');
     expect(info('Trạng thái')).toBe('Đã hoàn thành');
 
     const kpis = region('Chỉ số kết quả');
-    for (const t of ['Đạt', '10:00', '35% LEL', 'Hệ thống phản ứng đúng kịch bản', 'Đã tạo đúng ngưỡng']) expect(within(kpis).getByText(t)).toBeInTheDocument();
+    for (const t of ['Đạt', '10:00', '35% LEL', 'Hệ thống phản ứng đúng kịch bản', 'Đã tạo đúng ngưỡng'])
+      expect(within(kpis).getByText(t)).toBeInTheDocument();
 
     const overview = region('Đánh giá tổng quan');
     expect(within(overview).getByText('Kết quả : Đạt')).toBeInTheDocument();

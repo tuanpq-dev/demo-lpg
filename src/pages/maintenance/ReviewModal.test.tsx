@@ -64,7 +64,11 @@ describe('ReviewModal', () => {
   test('3 kết quả trong radiogroup có nhãn; nhãn nút đổi theo kết quả; ý kiến bắt buộc khi Cần bổ sung / Không đạt', async () => {
     const { user, onSubmit } = setup();
     const group = screen.getByRole('radiogroup', { name: 'Kết quả nghiệm thu' });
-    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Đạt yêu cầu', 'Cần bổ sung', 'Không đạt']);
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['Đạt yêu cầu', 'Cần bổ sung', 'Không đạt']);
     expect(within(group).getByRole('radio', { name: 'Đạt yêu cầu' })).toHaveAttribute('aria-checked', 'true');
     // phím mũi tên chuyển + chọn
     within(group).getByRole('radio', { name: 'Đạt yêu cầu' }).focus();

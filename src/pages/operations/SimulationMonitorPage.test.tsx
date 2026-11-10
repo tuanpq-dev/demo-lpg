@@ -139,11 +139,16 @@ describe('/operations/ai-simulation/:id/monitor', () => {
     await user.click(await screen.findByRole('button', { name: 'Dừng mô phỏng' }));
     expect(await screen.findByText('Đã dừng')).toBeInTheDocument();
     expect(kpi('Thời gian chạy')).toMatch(/\(Đã dừng\)$/);
-    expect(screen.getByText(/^Kết quả lượt:/)).toHaveTextContent(/Kết quả lượt: Đạt – Dừng thủ công lúc 06:\d\d\. Phản ứng 38 s, trong mục tiêu 60 s\./);
+    expect(screen.getByText(/^Kết quả lượt:/)).toHaveTextContent(
+      /Kết quả lượt: Đạt – Dừng thủ công lúc 06:\d\d\. Phản ứng 38 s, trong mục tiêu 60 s\./,
+    );
     expect(within(region('Timeline diễn biến')).getAllByRole('listitem')[0]).toHaveTextContent(/\(Dừng\)Dừng mô phỏng – nồng độ đạt/);
     expect(screen.queryByRole('button', { name: 'Dừng mô phỏng' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Cấu hình và chạy lại' })).toHaveAttribute('href', '/operations/ai-simulation/SC-001/config');
-    expect(screen.getByRole('link', { name: 'Xem kết quả mô phỏng' })).toHaveAttribute('href', '/operations/ai-simulation/SC-001/result?session=SES-0001');
+    expect(screen.getByRole('link', { name: 'Xem kết quả mô phỏng' })).toHaveAttribute(
+      'href',
+      '/operations/ai-simulation/SC-001/result?session=SES-0001',
+    );
 
     const runs = await fetchSimulationRuns();
     expect(runs).toHaveLength(runsBefore + 1);

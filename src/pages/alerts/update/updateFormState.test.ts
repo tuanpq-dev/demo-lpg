@@ -16,7 +16,16 @@ const values: UpdateFormValues = {
   manualAfter: {},
   customAtLocal: '',
 };
-const s0 = (over: Partial<FormState> = {}): FormState => ({ values, saved: values, files: [], uploadError: '', errors: {}, submitError: '', triedSubmit: false, ...over });
+const s0 = (over: Partial<FormState> = {}): FormState => ({
+  values,
+  saved: values,
+  files: [],
+  uploadError: '',
+  errors: {},
+  submitError: '',
+  triedSubmit: false,
+  ...over,
+});
 
 describe('updateFormReducer', () => {
   test('sửa giá trị (set / inspection / verification) → bỏ lỗi trả về lúc lưu và lỗi mạng', () => {
@@ -30,7 +39,10 @@ describe('updateFormReducer', () => {
   });
 
   test('tệp: thêm (id theo số tệp đang có) / bỏ; không đụng lỗi', () => {
-    const one = updateFormReducer(s0({ errors: { state: 'x' }, submitError: 'mạng' }), { type: 'files-added', files: [{ name: 'a.png', size: 1, kind: 'image' }] });
+    const one = updateFormReducer(s0({ errors: { state: 'x' }, submitError: 'mạng' }), {
+      type: 'files-added',
+      files: [{ name: 'a.png', size: 1, kind: 'image' }],
+    });
     const two = updateFormReducer(one, { type: 'files-added', files: [{ name: 'b.pdf', size: 2, kind: 'document' }] });
     expect(two.files.map((f) => f.id)).toEqual(['tmp-0-a.png', 'tmp-1-b.pdf']);
     expect(two.errors).toEqual({ state: 'x' });

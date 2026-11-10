@@ -1,12 +1,25 @@
 import { describe, expect, test } from 'vitest';
 import { GAS_BANDS } from '@/mocks/alertKinds';
-import { canCloseFire, crossConfirm, crossConfirmText, detectorStatus, equipmentStateView, fireSignalView, type FireSignalKind, type TagReading } from './fire';
+import {
+  canCloseFire,
+  crossConfirm,
+  crossConfirmText,
+  detectorStatus,
+  equipmentStateView,
+  fireSignalView,
+  type FireSignalKind,
+  type TagReading,
+} from './fire';
 
 const ok = (value: number | string): TagReading => ({ state: 'ok', value });
 const LOST: TagReading = { state: 'lost' };
 const PENDING: TagReading = { state: 'pending' };
 const gas = { bands: GAS_BANDS, unit: '% LEL' };
-const view = (kind: FireSignalKind, r: TagReading, label = kind === 'gas' ? 'GS-05' : kind === 'smoke' ? 'Đầu báo khói SD-02' : 'Nút nhấn khẩn cấp') => ({
+const view = (
+  kind: FireSignalKind,
+  r: TagReading,
+  label = kind === 'gas' ? 'GS-05' : kind === 'smoke' ? 'Đầu báo khói SD-02' : 'Nút nhấn khẩn cấp',
+) => ({
   kind,
   ...fireSignalView(kind, label, r, gas),
 });

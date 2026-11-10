@@ -16,7 +16,18 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/editor?edit=1')).toBe('/editor?edit=1');
   });
   test('chặn chuyển hướng mở + rỗng', () => {
-    for (const bad of [null, undefined, '', 'https://evil.com', '//evil.com', '/\\evil.com', 'javascript:alert(1)', 'alerts', '/\t/evil.com', '/\n/evil.com']) {
+    for (const bad of [
+      null,
+      undefined,
+      '',
+      'https://evil.com',
+      '//evil.com',
+      '/\\evil.com',
+      'javascript:alert(1)',
+      'alerts',
+      '/\t/evil.com',
+      '/\n/evil.com',
+    ]) {
       expect(safeRedirect(bad)).toBe('/overview');
     }
   });

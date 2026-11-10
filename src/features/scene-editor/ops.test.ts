@@ -30,7 +30,17 @@ const scene = (): SceneConfig => ({
     { id: 'P-101', asset: 'pump', position: [6, 0, 0] },
     { id: 'XV-101', asset: 'valve', attach: { pipe: 'PL-01', t: 0.25 } },
   ],
-  pipes: [{ id: 'PL-01', from: 'V-101.out', to: 'P-101.suction', points: [[0, 3, 0], [0, 0.8, 0]] }],
+  pipes: [
+    {
+      id: 'PL-01',
+      from: 'V-101.out',
+      to: 'P-101.suction',
+      points: [
+        [0, 3, 0],
+        [0, 0.8, 0],
+      ],
+    },
+  ],
 });
 
 describe('id + tạo object', () => {
@@ -55,7 +65,11 @@ describe('độ cao + căn hàng', () => {
     expect(setElevation(s, ['P-101'], 0)).toBe(s);
   });
   test('alignObjects theo X: cùng Z + elevation của mốc, cách đều', () => {
-    const s = setElevation({ ...scene(), objects: [...scene().objects.slice(0, 2), { id: 'F-1', asset: 'filter', position: [20, 0, 7] }] }, ['P-101'], 1);
+    const s = setElevation(
+      { ...scene(), objects: [...scene().objects.slice(0, 2), { id: 'F-1', asset: 'filter', position: [20, 0, 7] }] },
+      ['P-101'],
+      1,
+    );
     const r = alignObjects(s, ['P-101', 'V-101', 'F-1'], 'x');
     expect(r.objects.map((o) => o.position)).toEqual([
       [-10, 1, 0],
@@ -90,7 +104,11 @@ describe('xoá / đổi id / nhân bản', () => {
     expect(c2).toMatchObject({ id: 'XV-102', attach: { pipe: 'PL-01', t: 0.3 } });
   });
   test('cleanObject bỏ giá trị mặc định', () => {
-    expect(cleanObject({ id: 'a', asset: 'pump', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], params: {}, label: '' })).toEqual({ id: 'a', asset: 'pump', position: [0, 0, 0] });
+    expect(cleanObject({ id: 'a', asset: 'pump', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], params: {}, label: '' })).toEqual({
+      id: 'a',
+      asset: 'pump',
+      position: [0, 0, 0],
+    });
   });
 });
 
@@ -102,13 +120,24 @@ describe('ống', () => {
   });
   test('insertPipePoint chèn vào đoạn gần nhất (tính cả cổng đầu)', () => {
     const r = insertPipePoint(scene(), 'PL-01', [0, 2, 0]);
-    expect(r.pipes[0]!.points).toEqual([[0, 3, 0], [0, 2, 0], [0, 0.8, 0]]);
+    expect(r.pipes[0]!.points).toEqual([
+      [0, 3, 0],
+      [0, 2, 0],
+      [0, 0.8, 0],
+    ]);
     const r2 = insertPipePoint(scene(), 'PL-01', [-1, 3, 0]);
     expect(r2.pipes[0]!.points[0]).toEqual([-1, 3, 0]);
   });
   test('reversePipe đảo from/to, điểm và t của object gắn', () => {
     const r = reversePipe(scene(), 'PL-01');
-    expect(r.pipes[0]).toMatchObject({ from: 'P-101.suction', to: 'V-101.out', points: [[0, 0.8, 0], [0, 3, 0]] });
+    expect(r.pipes[0]).toMatchObject({
+      from: 'P-101.suction',
+      to: 'V-101.out',
+      points: [
+        [0, 0.8, 0],
+        [0, 3, 0],
+      ],
+    });
     expect(r.objects[2]!.attach!.t).toBe(0.75);
   });
   test('renamePipe cập nhật attach.pipe; removePipes xoá object gắn', () => {

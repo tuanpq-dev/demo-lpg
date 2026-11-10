@@ -115,7 +115,12 @@ export function simulationResult(s: Scenario, session: SimulationSession, run: S
       result: aiDone ? 'pass' : 'fail',
       comment: aiDone ? `AI ${lowerFirst(m.peakAdvice)}` : 'Lượt kết thúc trước khi AI đưa gợi ý xử lý.',
     },
-    { id: 'flag', label: 'Phân biệt Mô phỏng/Thật', result: 'pass', comment: 'Cờ (flag) mô phỏng hoạt động tốt 100%. PLC thực tế vẫn vận hành bình thường.' },
+    {
+      id: 'flag',
+      label: 'Phân biệt Mô phỏng/Thật',
+      result: 'pass',
+      comment: 'Cờ (flag) mô phỏng hoạt động tốt 100%. PLC thực tế vẫn vận hành bình thường.',
+    },
     {
       id: 'history',
       label: 'Ghi nhận lịch sử',
@@ -150,7 +155,13 @@ export function simulationResult(s: Scenario, session: SimulationSession, run: S
       sub: result === 'pass' ? 'Hệ thống phản ứng đúng kịch bản' : `Phản ứng ${run?.responseSeconds} s > mục tiêu ${run?.targetSeconds} s`,
       tone: result === 'pass' ? 'success' : 'warning',
     },
-    { id: 'time', label: 'Thời gian chạy', value: clockText(elapsed), sub: fullDuration ? 'Hoàn thành đủ thời lượng' : 'Dừng trước thời lượng', tone: 'primary' },
+    {
+      id: 'time',
+      label: 'Thời gian chạy',
+      value: clockText(elapsed),
+      sub: fullDuration ? 'Hoàn thành đủ thời lượng' : 'Dừng trước thời lượng',
+      tone: 'primary',
+    },
     {
       id: 'peak',
       label: m.result.peakLabel,
@@ -158,11 +169,37 @@ export function simulationResult(s: Scenario, session: SimulationSession, run: S
       sub: peakReached ? 'Đạt giá trị mục tiêu mô phỏng' : 'Chưa chạm giá trị mục tiêu',
       tone: 'primary',
     },
-    { id: 'alerts', label: 'Cảnh báo mô phỏng', value: String(alerts.length), sub: alerts.length ? 'Đã tạo đúng ngưỡng' : 'Không phát sinh', tone: 'warning' },
-    { id: 'ai', label: 'Gợi ý AI', value: String(aiDone ? m.recommendations.length : 0), sub: aiDone ? 'Đã ghi nhận' : 'Chưa có gợi ý', tone: 'primary' },
+    {
+      id: 'alerts',
+      label: 'Cảnh báo mô phỏng',
+      value: String(alerts.length),
+      sub: alerts.length ? 'Đã tạo đúng ngưỡng' : 'Không phát sinh',
+      tone: 'warning',
+    },
+    {
+      id: 'ai',
+      label: 'Gợi ý AI',
+      value: String(aiDone ? m.recommendations.length : 0),
+      sub: aiDone ? 'Đã ghi nhận' : 'Chưa có gợi ý',
+      tone: 'primary',
+    },
   ];
 
-  return { result, stopped, elapsed, peak, peakReached, alerts, events, kpis, summary, tiles, criteria, advice, points: resultPoints(session, elapsed) };
+  return {
+    result,
+    stopped,
+    elapsed,
+    peak,
+    peakReached,
+    alerts,
+    events,
+    kpis,
+    summary,
+    tiles,
+    criteria,
+    advice,
+    points: resultPoints(session, elapsed),
+  };
 }
 
 /** Nhãn "Khu vực / Tài sản chính": "Khu bồn LPG / Bồn V-101". */
@@ -181,12 +218,7 @@ export function reportStatusText(session: Pick<SimulationSession, 'report'>, tim
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
 /** Báo cáo dạng CSV (Excel mở được, BOM do nơi gọi thêm): thông tin lượt · KPI · tiêu chí · sự kiện · cảnh báo · gợi ý AI (nếu thêm). */
-export function resultCsv(
-  s: Scenario,
-  session: SimulationSession,
-  code: string,
-  r: SimulationResult,
-): string {
+export function resultCsv(s: Scenario, session: SimulationSession, code: string, r: SimulationResult): string {
   const rows: string[][] = [
     ['Báo cáo mô phỏng', code],
     ['Kịch bản', `${s.code} – ${s.title}`],

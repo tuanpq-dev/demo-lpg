@@ -88,7 +88,11 @@ export function applyLive(data: OverviewData, live: LiveData | undefined, now: n
     if (tagSignal(tv, now) === 'lost') return { ...r, statusLabel: SIGNAL_LOST_LABEL, tone: 'offline', signalLost: true };
     const st = fieldStatus(r.live.field, tv, {}, now);
     if (st === 'danger' || st === 'warning')
-      return { ...r, statusLabel: typeof tv!.value === 'string' ? (FIELD_META[r.live.field]?.states?.[tv!.value]?.label ?? tv!.value) : r.statusLabel, tone: st };
+      return {
+        ...r,
+        statusLabel: typeof tv!.value === 'string' ? (FIELD_META[r.live.field]?.states?.[tv!.value]?.label ?? tv!.value) : r.statusLabel,
+        tone: st,
+      };
     return r;
   });
   const markers = data.map.markers.map((m): MapMarkerLive => {

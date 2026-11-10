@@ -47,7 +47,8 @@ function renderAt(url = '/editor') {
 const status = () => screen.getByRole('contentinfo', { name: 'Trạng thái' });
 const toolbar = () => screen.getByRole('toolbar', { name: 'Tệp cảnh' });
 /** Tệp JSON có `text()` (jsdom chưa có Blob.text). */
-const jsonFile = (content: string, name: string) => Object.assign(new File([content], name, { type: 'application/json' }), { text: async () => content });
+const jsonFile = (content: string, name: string) =>
+  Object.assign(new File([content], name, { type: 'application/json' }), { text: async () => content });
 /** Sửa cảnh như người dùng (qua store có lịch sử) → "Chưa lưu". */
 const edit = () => act(() => useSceneDoc.getState().setScene((s) => ({ ...s, name: `${s.name} (sửa)` })));
 
@@ -105,7 +106,13 @@ describe('EditorPage', () => {
     const user = userEvent.setup();
     renderAt();
     await waitFor(() => expect(status()).toHaveTextContent('canh-moi'));
-    for (const [k, tool] of [['e', 'rotate'], ['r', 'scale'], ['p', 'pipe'], ['q', 'select'], ['w', 'translate']] as const) {
+    for (const [k, tool] of [
+      ['e', 'rotate'],
+      ['r', 'scale'],
+      ['p', 'pipe'],
+      ['q', 'select'],
+      ['w', 'translate'],
+    ] as const) {
       await user.keyboard(k);
       expect(useEditorUi.getState().tool).toBe(tool);
     }

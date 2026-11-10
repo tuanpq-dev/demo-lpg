@@ -8,7 +8,15 @@
  * Không nhảy bước: chỉ đi tới bước kế tiếp. Hủy được khi chưa hoàn thành / chưa hủy.
  */
 import { plantDateTimeKey } from '@/lib/plantTime';
-import type { ApiMaintenanceStatus, MaintenanceHistoryEntry, MaintenanceHistoryKind, MaintenanceNote, MaintenanceRecord, MaintenanceStatus, ShiftId } from '@/features/maintenance/types';
+import type {
+  ApiMaintenanceStatus,
+  MaintenanceHistoryEntry,
+  MaintenanceHistoryKind,
+  MaintenanceNote,
+  MaintenanceRecord,
+  MaintenanceStatus,
+  ShiftId,
+} from '@/features/maintenance/types';
 
 /** 5 bước của stepper – thứ tự = thứ tự trạng thái API. */
 export const WORKFLOW_STEPS: readonly { status: ApiMaintenanceStatus; label: string }[] = [

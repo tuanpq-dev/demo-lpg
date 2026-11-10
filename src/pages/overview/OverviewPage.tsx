@@ -86,7 +86,9 @@ export default function OverviewPage() {
 
   const view = data ? applyLive(data, liveData) : undefined;
   const lostCount = view
-    ? view.kpis.filter((k) => k.signalLost).length + view.watchlist.filter((r) => r.signalLost).length + view.map.markers.filter((m) => m.showSignalLostIcon).length
+    ? view.kpis.filter((k) => k.signalLost).length +
+      view.watchlist.filter((r) => r.signalLost).length +
+      view.map.markers.filter((m) => m.showSignalLostIcon).length
     : 0;
   useAnnounceChange(lostCount, (n, prev) =>
     n > 0 ? `Mất tín hiệu ở ${n} điểm đo trên Tổng quan.` : prev > 0 ? 'Các điểm đo trên Tổng quan đã có tín hiệu trở lại.' : '',
@@ -117,7 +119,9 @@ export default function OverviewPage() {
       <Page
         variant="sidebar"
         pageHeader={header}
-        sidebar={[235, 239, 234, 197].map((h) => <Placeholder key={h} label="Đang tải…" height={h} />)}
+        sidebar={[235, 239, 234, 197].map((h) => (
+          <Placeholder key={h} label="Đang tải…" height={h} />
+        ))}
       >
         <Placeholder label="Đang tải…" height={128} />
         <Placeholder label="Đang tải…" height={591} />
@@ -143,13 +147,7 @@ export default function OverviewPage() {
             padding="none"
           >
             {priorityAlarms.map((a, i) => (
-              <AlertItem
-                key={a.id}
-                {...a}
-                highlighted={i === 0}
-                last={i === priorityAlarms.length - 1}
-                onClick={() => navigate('/alerts')}
-              />
+              <AlertItem key={a.id} {...a} highlighted={i === 0} last={i === priorityAlarms.length - 1} onClick={() => navigate('/alerts')} />
             ))}
           </Card>
           <AssetWatchlist assets={watchlist} onAssetClick={openAsset} canOpen={canOpenAsset} />

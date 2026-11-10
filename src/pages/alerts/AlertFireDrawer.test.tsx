@@ -16,7 +16,10 @@ import AlertsPage from './AlertsPage';
  * Các test dùng chung store theo thứ tự (Chưa xác nhận → Đang xử lý → Đã xử lý).
  */
 
-const state: AuthState = { status: 'authenticated', user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' } };
+const state: AuthState = {
+  status: 'authenticated',
+  user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' },
+};
 const service: AuthService = {
   getState: () => state,
   subscribe: () => () => {},
@@ -64,7 +67,9 @@ describe('drawer báo cháy (FIR-00018)', () => {
     expect(d).toHaveTextContent('Khu vực: Trạm hóa hơi (FZ-02)');
     expect(d).toHaveTextContent('Người phụ trách: Trực ca (chưa phân công cá nhân)');
     const info = within(d).getByRole('heading', { name: 'Thông tin báo cháy' }).parentElement!;
-    await waitFor(() => expect(within(info).getByText('Nhiệt độ ghi nhận').nextElementSibling!.textContent).toMatch(/^6[78](\.\d)?°CLúc cảnh báo: 68°C$/));
+    await waitFor(() =>
+      expect(within(info).getByText('Nhiệt độ ghi nhận').nextElementSibling!.textContent).toMatch(/^6[78](\.\d)?°CLúc cảnh báo: 68°C$/),
+    );
     expect(within(info).getByText('Loại tín hiệu').nextElementSibling).toHaveTextContent('Đầu báo nhiệt');
     expect(within(info).getByText('Trạng thái đầu báo').nextElementSibling).toHaveTextContent('Đang báo độngThiết bị:Trực tuyến');
     expect(within(info).getByText('Cập nhật cuối').nextElementSibling!.textContent).toMatch(/^\d{2}:\d{2}:\d{2}$/);
@@ -120,7 +125,10 @@ describe('drawer báo cháy (FIR-00018)', () => {
     const banner = await within(d).findByRole('alert', {}, LONG);
     expect(banner).toHaveTextContent('Nhiều tín hiệu cùng báo, nguy cơ cháy cao. Đầu báo khói SD-02 đang báo động.');
     liveSimulator.setBase(T.callPoint, 'activated');
-    await waitFor(() => expect(within(d).getByRole('alert')).toHaveTextContent('Nút nhấn khẩn cấp đã được kích hoạt · Đầu báo khói SD-02 đang báo động'), LONG);
+    await waitFor(
+      () => expect(within(d).getByRole('alert')).toHaveTextContent('Nút nhấn khẩn cấp đã được kích hoạt · Đầu báo khói SD-02 đang báo động'),
+      LONG,
+    );
     expect(within(d).getAllByRole('alert')).toHaveLength(1);
   }, 15_000);
 
@@ -135,9 +143,19 @@ describe('drawer báo cháy (FIR-00018)', () => {
     await user.click(await within(d).findByRole('button', { name: 'Cập nhật xử lý' }));
     let m = await screen.findByRole('dialog', { name: FIRE_MODAL }, MODAL_WAIT);
     const group = within(m).getByRole('radiogroup', { name: 'Trạng thái xử lý' });
-    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Đang kiểm tra', 'Đang xử lý', 'Tạm dừng', 'Cần hỗ trợ', 'Đã xử lý sự cố', 'Báo động giả']);
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['Đang kiểm tra', 'Đang xử lý', 'Tạm dừng', 'Cần hỗ trợ', 'Đã xử lý sự cố', 'Báo động giả']);
     // Còn báo động → 2 ô đóng khoá + lý do
-    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Đã xử lý sự cố' })).toHaveAccessibleDescription(/Đầu báo HD-02 vẫn đang báo động – chỉ đóng khi đầu báo đã phục hồi\./), LONG);
+    await waitFor(
+      () =>
+        expect(within(group).getByRole('radio', { name: 'Đã xử lý sự cố' })).toHaveAccessibleDescription(
+          /Đầu báo HD-02 vẫn đang báo động – chỉ đóng khi đầu báo đã phục hồi\./,
+        ),
+      LONG,
+    );
     expect(within(group).getByRole('radio', { name: 'Báo động giả' })).toHaveAttribute('aria-disabled', 'true');
     // Thông số: nhiệt độ HD-02, khói SD-02 (chữ trạng thái), gas GS-05; theo dõi không có mục tiêu số
     const readings = within(m).getByRole('group', { name: 'Thông số trước và sau xử lý' });

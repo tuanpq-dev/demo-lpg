@@ -149,7 +149,9 @@ export function StatusOptionCard({
       className={cn(
         'flex min-w-0 items-center justify-center rounded-md border transition-colors',
         inline && size === 'sm' ? 'px-2.5' : 'px-3',
-        inline ? cn('min-h-[50px] flex-row py-2', size === 'sm' ? 'gap-2 text-base' : 'gap-2.5 text-md') : 'min-h-[76px] flex-col gap-2 py-3 text-base',
+        inline
+          ? cn('min-h-[50px] flex-row py-2', size === 'sm' ? 'gap-2 text-base' : 'gap-2.5 text-md')
+          : 'min-h-[76px] flex-col gap-2 py-3 text-base',
         checked ? cn('border-[1.5px] font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary',
         disabled ? 'cursor-not-allowed opacity-50' : !checked && 'hover:border-line hover:text-fg',
         className,
@@ -205,7 +207,18 @@ export type StatusOptionGroupProps<T extends string> = {
  * Nhóm ô trạng thái = `role="radiogroup"`; ←/→ (↑/↓) chuyển + chọn luôn, Home/End, bỏ qua ô disabled (useRovingFocus auto).
  * Bố cục: 4 cột ở ≥ md, 2 cột dưới đó.
  */
-export function StatusOptionGroup<T extends string>({ label, labelledBy, options, value, onChange, layout, columns = 4, describedBy, size = 'md', className }: StatusOptionGroupProps<T>) {
+export function StatusOptionGroup<T extends string>({
+  label,
+  labelledBy,
+  options,
+  value,
+  onChange,
+  layout,
+  columns = 4,
+  describedBy,
+  size = 'md',
+  className,
+}: StatusOptionGroupProps<T>) {
   const roving = useRovingFocus({ items: options, value, onChange: (id) => onChange(id as T) });
   return (
     <div
@@ -220,12 +233,12 @@ export function StatusOptionGroup<T extends string>({ label, labelledBy, options
           : columns === 1
             ? 'grid-cols-1 gap-2.5'
             : columns === 5
-            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
-            : columns === 3
-              ? cn('grid-cols-1 sm:grid-cols-3', size === 'md' && 'sm:gap-6 lg:gap-12')
-              : columns === 2
-                ? 'grid-cols-2'
-                : 'grid-cols-2 md:grid-cols-4',
+              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+              : columns === 3
+                ? cn('grid-cols-1 sm:grid-cols-3', size === 'md' && 'sm:gap-6 lg:gap-12')
+                : columns === 2
+                  ? 'grid-cols-2'
+                  : 'grid-cols-2 md:grid-cols-4',
         className,
       )}
     >

@@ -84,7 +84,11 @@ function VerticalStepper({ steps, completed, current, label, className }: Omit<W
                 aria-hidden="true"
                 className={cn(
                   'relative z-[1] mt-[3px] grid size-[18px] shrink-0 place-items-center rounded-full border-2',
-                  isCurrent ? 'border-primary bg-surface shadow-[0_0_8px_rgb(var(--color-primary)/0.6)]' : done ? 'border-line bg-surface' : 'border-line/60 bg-surface',
+                  isCurrent
+                    ? 'border-primary bg-surface shadow-[0_0_8px_rgb(var(--color-primary)/0.6)]'
+                    : done
+                      ? 'border-line bg-surface'
+                      : 'border-line/60 bg-surface',
                 )}
               >
                 {done && <span className="size-2 rounded-full bg-line" />}
@@ -122,8 +126,10 @@ function VerticalStepper({ steps, completed, current, label, className }: Omit<W
  * bước chưa tới = vòng line có chấm giữa, nhãn chữ phụ. Ảnh không phân biệt bước đang chờ ngoài vạch → giữ như ảnh.
  */
 export function WorkflowStepper({ steps, completed, current, label, orientation = 'horizontal', marker = 'ring', className }: WorkflowStepperProps) {
-  if (orientation === 'vertical' && marker === 'dot') return <DotStepper steps={steps} completed={completed} current={current} label={label} className={className} />;
-  if (orientation === 'vertical') return <VerticalStepper steps={steps} completed={completed} current={current} label={label} className={className} />;
+  if (orientation === 'vertical' && marker === 'dot')
+    return <DotStepper steps={steps} completed={completed} current={current} label={label} className={className} />;
+  if (orientation === 'vertical')
+    return <VerticalStepper steps={steps} completed={completed} current={current} label={label} className={className} />;
   const n = steps.length;
   // Vạch tô tới tâm bước đang chờ; không còn bước chờ → tới tâm bước cuối đã xong (xong hết = 100 %).
   const fill = completed >= n ? 1 : current !== null ? (current + 0.5) / n : Math.max(0, (completed - 0.5) / n);
@@ -162,12 +168,7 @@ export function WorkflowStepper({ steps, completed, current, label, orientation 
                   <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước đang chờ' : ' – chưa tới'}</span>
                 </span>
                 {s.note && (
-                  <span
-                    className={cn(
-                      'rounded-sm border px-1.5 text-xs leading-[18px]',
-                      NOTE_CLASS[s.noteTone ?? 'warning'],
-                    )}
-                  >
+                  <span className={cn('rounded-sm border px-1.5 text-xs leading-[18px]', NOTE_CLASS[s.noteTone ?? 'warning'])}>
                     <span className="sr-only">, </span>
                     {s.note}
                   </span>

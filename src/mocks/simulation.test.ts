@@ -50,7 +50,14 @@ describe('mock AI mô phỏng sự cố', () => {
     const session = sessions.find((x) => x.id === 'SES-0001')!;
     const sc = scenarios.find((s) => s.id === 'SC-001')!;
     const snap = monitorSnapshot(sc, sc.setup.monitor, session, NOW.getTime());
-    expect(snap).toMatchObject({ phase: 'running', elapsed: SEED_SESSION_ELAPSED_SEC, durationSec: 600, valueText: '28% LEL', exceeded: true, trend: 'up' });
+    expect(snap).toMatchObject({
+      phase: 'running',
+      elapsed: SEED_SESSION_ELAPSED_SEC,
+      durationSec: 600,
+      valueText: '28% LEL',
+      exceeded: true,
+      trend: 'up',
+    });
     expect(snap.alerts.map((a) => a.id)).toEqual(['SIM-AL-001']);
     expect(snap.recommendations).toHaveLength(5);
     expect(session.reference.map((r) => `${r.label}: ${r.valueText}`)).toEqual([

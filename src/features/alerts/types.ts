@@ -17,7 +17,18 @@ export type AlertDirection = 'above' | 'below';
 
 export type AlertNote = { id: string; author: string; /** ISO */ at: string; text: string };
 
-export type AlertHistoryKind = 'acknowledge' | 'assign' | 'guide' | 'note' | 'resolve' | 'maintenance' | 'support' | 'update' | 'hold' | 'close' | 'monitor';
+export type AlertHistoryKind =
+  | 'acknowledge'
+  | 'assign'
+  | 'guide'
+  | 'note'
+  | 'resolve'
+  | 'maintenance'
+  | 'support'
+  | 'update'
+  | 'hold'
+  | 'close'
+  | 'monitor';
 export type AlertHistoryEntry = { id: string; /** ISO */ at: string; kind: AlertHistoryKind; text: string; actor?: string };
 
 /** Trạng thái một hạng mục kiểm tra (= bước hướng dẫn của drawer – MỘT danh sách theo loại). */
@@ -34,13 +45,28 @@ export type AlertGuideProgress = Readonly<Record<string, AlertGuideEntry>>;
 export type AlertPhase = 'inspecting' | 'resolving';
 /** Tạm dừng (lý do) / cần hỗ trợ (lý do + người phối hợp) – chỉ khi Đang xử lý. */
 export type AlertHold = { kind: 'paused' | 'needs-support'; reason: string; at: string };
-export type AlertAttachment = { name: string; size: number; kind: 'image' | 'document' | 'manual'; /** Chưa upload (chỉ tên/kích thước/loại – không lưu object URL). */ isTemp?: boolean };
+export type AlertAttachment = {
+  name: string;
+  size: number;
+  kind: 'image' | 'document' | 'manual';
+  /** Chưa upload (chỉ tên/kích thước/loại – không lưu object URL). */ isTemp?: boolean;
+};
 /** Nguồn xác minh số liệu sau xử lý. */
 export type VerificationSource = 'sensor' | 'gauge' | 'both';
 /** Thông số trước/sau xử lý đã lưu (modal áp suất). `before` = số lúc cảnh báo, `after` = số sau xử lý (live hoặc đo tay). */
-export type AlertReadings = { source: VerificationSource; at: string; rows: readonly { id: string; before?: number; after?: number; manual?: boolean }[] };
+export type AlertReadings = {
+  source: VerificationSource;
+  at: string;
+  rows: readonly { id: string; before?: number; after?: number; manual?: boolean }[];
+};
 /** Theo dõi sau xử lý: đến `until`, mục tiêu `< target unit`, người chịu trách nhiệm. TODO(backend): tự tạo lại cảnh báo khi vượt mục tiêu. */
-export type AlertFollowUp = { minutes: number; until: string; /** Thiếu = theo dõi không có giá trị mục tiêu số (báo cháy). */ target?: number; unit: string; owner: string };
+export type AlertFollowUp = {
+  minutes: number;
+  until: string;
+  /** Thiếu = theo dõi không có giá trị mục tiêu số (báo cháy). */ target?: number;
+  unit: string;
+  owner: string;
+};
 
 /**
  * Cảnh báo trong mock = hợp đồng API `Alert` (packages/shared/src/alerts.ts) nhưng thời điểm ghi TƯƠNG ĐỐI

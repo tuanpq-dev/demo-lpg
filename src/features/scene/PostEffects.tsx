@@ -64,11 +64,7 @@ export default function PostEffects({
   const selectedSel = useMemo(() => meshesOf([...selected]), [meshesOf, selectedKey, shapeKey]);
 
   return (
-    <EffectComposer
-      multisampling={preset.multisampling}
-      frameBufferType={preset.hdr ? HalfFloatType : UnsignedByteType}
-      enableNormalPass={false}
-    >
+    <EffectComposer multisampling={preset.multisampling} frameBufferType={preset.hdr ? HalfFloatType : UnsignedByteType} enableNormalPass={false}>
       <Bloom
         mipmapBlur
         levels={preset.bloomLevels}

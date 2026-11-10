@@ -14,7 +14,10 @@ import AlertsPage from './AlertsPage';
  * File riêng → store cảnh báo riêng (không ảnh hưởng AlertsPage.test). Test đổi dữ liệu đặt sau.
  */
 
-const state: AuthState = { status: 'authenticated', user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' } };
+const state: AuthState = {
+  status: 'authenticated',
+  user: { id: 'u1', email: 'op@example.com', name: 'Vận hành A', role: 'operator', status: 'active' },
+};
 const service: AuthService = {
   getState: () => state,
   subscribe: () => () => {},
@@ -101,7 +104,10 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     await act(() => new Promise((r) => setTimeout(r, 2300))); // một nhịp live
     expect(within(d).getByRole('alert')).toBe(first);
     act(() => liveSimulator.setBase('GS-04', 45));
-    await waitFor(() => expect(within(d).getByRole('alert')).toHaveTextContent('Đã vượt ngưỡng ESD (40% LEL), thực hiện quy trình ESD và sơ tán ngay.'), LONG);
+    await waitFor(
+      () => expect(within(d).getByRole('alert')).toHaveTextContent('Đã vượt ngưỡng ESD (40% LEL), thực hiện quy trình ESD và sơ tán ngay.'),
+      LONG,
+    );
     expect(within(d).getByRole('alert')).not.toBe(first);
     expect(within(d).getAllByText('ESD').length).toBeGreaterThan(0);
   });
@@ -123,12 +129,11 @@ describe('drawer cảnh báo khí gas (ALT-00127)', () => {
     expect(readings).toHaveTextContent('Nồng độ GS-01');
     expect(readings).toHaveTextContent('Giới hạn: 10% LEL');
     const ver = within(m).getByRole('group', { name: 'Kết quả xác minh (Chọn nhiều)' });
-    expect(within(ver).getAllByRole('checkbox').map((c) => c.closest('label')?.textContent)).toEqual([
-      'Đã xác định nguồn rò rỉ',
-      'Đã cách ly nguồn rò rỉ',
-      'Khu vực đã thông gió',
-      'Cảm biến cùng khu bình thường',
-    ]);
+    expect(
+      within(ver)
+        .getAllByRole('checkbox')
+        .map((c) => c.closest('label')?.textContent),
+    ).toEqual(['Đã xác định nguồn rò rỉ', 'Đã cách ly nguồn rò rỉ', 'Khu vực đã thông gió', 'Cảm biến cùng khu bình thường']);
     expect(within(m).getByRole('textbox', { name: /Giá trị mục tiêu/ })).toHaveValue('10');
     await user.click(done);
     expect(within(m).getByRole('radio', { name: 'Đang kiểm tra' })).toHaveAttribute('aria-checked', 'true');

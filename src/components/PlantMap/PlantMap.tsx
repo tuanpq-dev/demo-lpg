@@ -11,16 +11,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import type {
-  LiveData,
-  SceneConfig,
-  SceneEditState,
-  SceneQuality,
-  SceneView,
-  SceneViewerHandle,
-  Vec3,
-  ZoomLimits,
-} from '@/features/scene';
+import type { LiveData, SceneConfig, SceneEditState, SceneQuality, SceneView, SceneViewerHandle, Vec3, ZoomLimits } from '@/features/scene';
 import { cn } from '@/lib/cn';
 import { useElementSize } from '@/lib/useElementSize';
 import { useFullscreen } from '@/lib/useFullscreen';
@@ -112,7 +103,6 @@ export function PlantMap(props: PlantMapProps) {
 // ---------------------------------------------------------------------------
 // Khung + điều khiển dùng chung
 
-
 type MapShellProps = Pick<CommonProps, 'onRendererChange' | 'height' | 'notice' | 'className'> & {
   views: readonly { id: string; label: string }[];
   view: string;
@@ -149,39 +139,17 @@ function MapShell({
   return (
     <div
       ref={rootRef}
-      className={cn(
-        'relative overflow-clip rounded-xl border border-line/30 bg-surface p-px shadow-card',
-        isFullscreen && 'rounded-none',
-        className,
-      )}
+      className={cn('relative overflow-clip rounded-xl border border-line/30 bg-surface p-px shadow-card', isFullscreen && 'rounded-none', className)}
       style={{ height: isFullscreen ? '100vh' : height + 2 }}
     >
       {children}
 
       {/* Controls – Figma 53:301 (cách mép 16px). z-30: nằm trên nhãn 3D (zIndexRange 0–21). */}
       <div className="pointer-events-none absolute inset-x-[17px] top-[17px] z-30 flex items-start justify-between gap-3">
-        <SegmentedControl
-          label="Chế độ xem bản đồ"
-          options={views}
-          value={view}
-          onChange={onViewChange}
-          className="pointer-events-auto"
-        />
+        <SegmentedControl label="Chế độ xem bản đồ" options={views} value={view} onChange={onViewChange} className="pointer-events-auto" />
         <div className="pointer-events-auto flex gap-2">
-          <Button
-            variant="overlay"
-            aria-label="Phóng to"
-            disabled={!canZoomIn}
-            onClick={onZoomIn}
-            icon={<Icon name="mapZoomIn" box={16} />}
-          />
-          <Button
-            variant="overlay"
-            aria-label="Thu nhỏ"
-            disabled={!canZoomOut}
-            onClick={onZoomOut}
-            icon={<Icon name="mapZoomOut" box={16} />}
-          />
+          <Button variant="overlay" aria-label="Phóng to" disabled={!canZoomIn} onClick={onZoomIn} icon={<Icon name="mapZoomIn" box={16} />} />
+          <Button variant="overlay" aria-label="Thu nhỏ" disabled={!canZoomOut} onClick={onZoomOut} icon={<Icon name="mapZoomOut" box={16} />} />
           <Button
             variant="overlay"
             aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
@@ -354,8 +322,7 @@ function PlantMapThree({
         className="relative h-full w-full overflow-hidden bg-bg-canvas focus-visible:outline-offset-[-2px]"
       >
         <span id={hintId} className="sr-only">
-          Kéo để xoay, chuột phải để di chuyển, cuộn để phóng to. Phím cộng/trừ để phóng to/thu nhỏ, phím 0 để về khung
-          của chế độ xem.
+          Kéo để xoay, chuột phải để di chuyển, cuộn để phóng to. Phím cộng/trừ để phóng to/thu nhỏ, phím 0 để về khung của chế độ xem.
         </span>
         <Suspense fallback={loading}>
           <SceneViewer

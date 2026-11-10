@@ -30,7 +30,16 @@ import { GAS_CONFIG, GAS_SETUP } from './testFixtures';
 const T = parsePlantDateTime('2026-11-02T18:13:00')!.getTime();
 const tv = (value: TagValue['value'], p: Partial<TagValue> = {}): TagValue => ({ value, unit: '', ts: T - 1000, quality: 'good', ...p });
 const H = (p: Partial<TagHealth> = {}): TagHealth => ({ total: 21, ok: 21, bad: 0, missing: 0, stale: 0, ...p });
-const BELOW = { ...GAS_SETUP.variable, noun: 'nhiệt độ ra', unit: '°C' as const, qualifier: undefined, min: 20, max: 70, threshold: 50, direction: 'below' as const };
+const BELOW = {
+  ...GAS_SETUP.variable,
+  noun: 'nhiệt độ ra',
+  unit: '°C' as const,
+  qualifier: undefined,
+  min: 20,
+  max: 70,
+  threshold: 50,
+  direction: 'below' as const,
+};
 
 describe('nhãn lựa chọn', () => {
   it('tốc độ theo chiều biến; điều kiện "về dưới/trên ngưỡng" theo biến', () => {

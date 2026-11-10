@@ -29,7 +29,14 @@ const alert = (patch: Partial<AlertRecord> = {}): AlertRecord => ({
   assignee: null,
   ...patch,
 });
-const form = (patch: Partial<AlertAssignForm> = {}): AlertAssignForm => ({ assignee: null, collaborators: [], note: '', notify: false, reason: '', ...patch });
+const form = (patch: Partial<AlertAssignForm> = {}): AlertAssignForm => ({
+  assignee: null,
+  collaborators: [],
+  note: '',
+  notify: false,
+  reason: '',
+  ...patch,
+});
 
 describe('form mặc định', () => {
   test('một cảnh báo: chọn sẵn người hiện tại + người phối hợp; tick thông báo chỉ khi Nghiêm trọng', () => {
@@ -39,7 +46,9 @@ describe('form mặc định', () => {
     );
   });
   test('hàng loạt: không chọn sẵn; tick khi có ít nhất một Nghiêm trọng', () => {
-    expect(initialAlertAssignForm([alert({ id: 'x', assignee: 'Lê Thị C', severity: 'low' }), alert({ id: 'y', severity: 'medium' })])).toEqual(form());
+    expect(initialAlertAssignForm([alert({ id: 'x', assignee: 'Lê Thị C', severity: 'low' }), alert({ id: 'y', severity: 'medium' })])).toEqual(
+      form(),
+    );
     expect(initialAlertAssignForm([alert({ id: 'x', severity: 'low' }), alert({ id: 'y' })]).notify).toBe(true);
   });
 });

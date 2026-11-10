@@ -17,7 +17,8 @@ const param = (id: string) => d.params.find((p) => p.id === id)!;
 
 describe('E-101A – một nguồn', () => {
   it('mọi tag tham số / PLC / trạng thái có trong nguồn số liệu giả lập', () => {
-    for (const t of [...d.params.map((p) => p.tag), ...d.plcSignals.map((s) => s.tag), d.stateTag, d.standby.stateTag]) expect(liveBase, t).toHaveProperty([t]);
+    for (const t of [...d.params.map((p) => p.tag), ...d.plcSignals.map((s) => s.tag), d.stateTag, d.standby.stateTag])
+      expect(liveBase, t).toHaveProperty([t]);
   });
   it('tag lấy từ VAPORIZER_TAGS', () => {
     expect(param('outletTemperature').tag).toBe(VAPORIZER_TAGS.temperature);
@@ -61,4 +62,3 @@ describe('PLC-SCADA – một nguồn', () => {
     expect(plc.limits).toEqual({ latency: { warn: 3 }, packetLoss: { warn: 5 }, minAvailableTags: 18 });
   });
 });
-

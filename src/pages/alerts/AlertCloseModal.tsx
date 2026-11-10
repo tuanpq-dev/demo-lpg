@@ -59,10 +59,15 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
   const [message, setMessage] = useState('');
 
   const optionMinutes = [...new Set([...follow.options, ...(a.followUp ? [a.followUp.minutes] : [])])].sort((x, y) => x - y);
-  const followOptions = optionMinutes.map((m) => ({ value: String(m), label: `${followUpDurationLabel(m)}${m === follow.defaultMinutes ? ' (Mặc định)' : ''}` }));
+  const followOptions = optionMinutes.map((m) => ({
+    value: String(m),
+    label: `${followUpDurationLabel(m)}${m === follow.defaultMinutes ? ' (Mặc định)' : ''}`,
+  }));
 
   const condOk = allConditionsOk(conditions);
-  const closeIssues = [!closer.ok && closer.reason, !condOk && 'Chưa đủ 3 điều kiện hệ thống.', !note.trim() && 'Nhập ghi chú kết luận.'].filter(Boolean) as string[];
+  const closeIssues = [!closer.ok && closer.reason, !condOk && 'Chưa đủ 3 điều kiện hệ thống.', !note.trim() && 'Nhập ghi chú kết luận.'].filter(
+    Boolean,
+  ) as string[];
   const closeLocked = closeIssues.length > 0;
   const monitorLocked = minutes <= 0;
 
@@ -124,10 +129,22 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
           <Button variant="plain" onClick={onClose}>
             Hủy
           </Button>
-          <Button variant="subtle" disabled={busy} onClick={monitor} aria-disabled={monitorLocked || undefined} aria-describedby={monitorLocked ? ids.monitorBlock : undefined}>
+          <Button
+            variant="subtle"
+            disabled={busy}
+            onClick={monitor}
+            aria-disabled={monitorLocked || undefined}
+            aria-describedby={monitorLocked ? ids.monitorBlock : undefined}
+          >
             Tiếp tục theo dõi
           </Button>
-          <Button type="submit" variant="primary" disabled={busy} aria-disabled={closeLocked || undefined} aria-describedby={closeLocked ? ids.closeBlock : undefined}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={busy}
+            aria-disabled={closeLocked || undefined}
+            aria-describedby={closeLocked ? ids.closeBlock : undefined}
+          >
             <CheckCircle />
             Xác nhận đóng cảnh báo
           </Button>
@@ -238,7 +255,15 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
           <span id={`${uid}-follow`} className="text-lg font-semibold text-fg-secondary">
             Thời gian theo dõi sau xử lý
           </span>
-          <Select variant="field" label="Thời gian theo dõi sau xử lý" labelledBy={`${uid}-follow`} options={followOptions} value={String(minutes)} onChange={(m) => m && setMinutes(Number(m))} side="top" />
+          <Select
+            variant="field"
+            label="Thời gian theo dõi sau xử lý"
+            labelledBy={`${uid}-follow`}
+            options={followOptions}
+            value={String(minutes)}
+            onChange={(m) => m && setMinutes(Number(m))}
+            side="top"
+          />
           <p className="text-sm text-fg-secondary">Điền sẵn từ lần cập nhật xử lý. Tiếp tục theo dõi: tính lại từ lúc lưu nếu đổi thời gian.</p>
         </div>
       </div>
@@ -307,7 +332,10 @@ function SystemCondition({ uid, condition: c }: { uid: string; condition: CloseC
       </span>
       <div className="flex min-w-0 flex-col gap-1">
         <label htmlFor={id} className="text-md text-fg">
-          {label} <span aria-hidden="true" className="text-danger-text">*</span>
+          {label}{' '}
+          <span aria-hidden="true" className="text-danger-text">
+            *
+          </span>
         </label>
         {c.reason && (
           <p id={reasonId} className={c.ok ? 'text-sm text-fg-secondary' : 'text-sm text-warning'}>

@@ -2,8 +2,25 @@ import { describe, expect, test } from 'vitest';
 import type { AssignForm } from '@/features/maintenance/assign';
 import { assignFormReducer, type AssignFormState } from './assignFormReducer';
 
-const form: AssignForm = { assignee: null, collaborators: ['Nguyễn Văn A', 'Võ Thị F'], startAt: '', dueAt: '2099-10-26T16:00', shift: null, note: '', notify: true, reason: '' };
-const s0 = (over: Partial<AssignFormState> = {}): AssignFormState => ({ form, shiftTouched: false, query: '', dept: null, shiftFilter: null, error: '', ...over });
+const form: AssignForm = {
+  assignee: null,
+  collaborators: ['Nguyễn Văn A', 'Võ Thị F'],
+  startAt: '',
+  dueAt: '2099-10-26T16:00',
+  shift: null,
+  note: '',
+  notify: true,
+  reason: '',
+};
+const s0 = (over: Partial<AssignFormState> = {}): AssignFormState => ({
+  form,
+  shiftTouched: false,
+  query: '',
+  dept: null,
+  shiftFilter: null,
+  error: '',
+  ...over,
+});
 
 describe('assignFormReducer', () => {
   test('set: đổi trường + bỏ lỗi', () => {
@@ -21,7 +38,11 @@ describe('assignFormReducer', () => {
   test('bộ lọc: đổi / xoá không đụng form và lỗi', () => {
     const f = assignFormReducer(assignFormReducer(s0({ error: 'x' }), { type: 'query', value: 'điện' }), { type: 'dept', value: 'Bảo trì Điện' });
     expect(f).toMatchObject({ query: 'điện', dept: 'Bảo trì Điện', error: 'x', form });
-    expect(assignFormReducer(assignFormReducer(f, { type: 'shift-filter', value: 'shift-1' }), { type: 'clear-filters' })).toMatchObject({ query: '', dept: null, shiftFilter: null });
+    expect(assignFormReducer(assignFormReducer(f, { type: 'shift-filter', value: 'shift-1' }), { type: 'clear-filters' })).toMatchObject({
+      query: '',
+      dept: null,
+      shiftFilter: null,
+    });
   });
   test('error ghi lỗi', () => {
     expect(assignFormReducer(s0(), { type: 'error', text: 'mạng' }).error).toBe('mạng');

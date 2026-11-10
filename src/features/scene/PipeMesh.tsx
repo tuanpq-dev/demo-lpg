@@ -1,15 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import {
-  AdditiveBlending,
-  CanvasTexture,
-  Matrix4,
-  Quaternion,
-  RepeatWrapping,
-  Vector3,
-  type CatmullRomCurve3,
-  type InstancedMesh,
-} from 'three';
+import { AdditiveBlending, CanvasTexture, Matrix4, Quaternion, RepeatWrapping, Vector3, type CatmullRomCurve3, type InstancedMesh } from 'three';
 import type { ScenePalette } from './colors';
 
 /** Lưu lượng tham chiếu: tại giá trị này vệt sáng chạy `BASE_SPEED` m/s. */

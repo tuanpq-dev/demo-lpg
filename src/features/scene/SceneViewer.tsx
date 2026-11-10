@@ -161,8 +161,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
 
   const [autoLevel, setAutoLevel] = useState<SceneQuality>('high');
   const level = quality === 'auto' ? autoLevel : quality;
-  const stepLevel = (d: 1 | -1) =>
-    setAutoLevel((l) => SCENE_QUALITIES[Math.min(2, Math.max(0, SCENE_QUALITIES.indexOf(l) + d))]!);
+  const stepLevel = (d: 1 | -1) => setAutoLevel((l) => SCENE_QUALITIES[Math.min(2, Math.max(0, SCENE_QUALITIES.indexOf(l) + d))]!);
   const palette = useMemo(readScenePalette, []);
   const preset = QUALITY_PRESETS[level];
   const groundBehindToneMap = useMemo(() => inverseToneMap(palette.ground, SCENE_EXPOSURE), [palette]);
@@ -268,7 +267,16 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     if (handle && selectedPipe?.id === handle.pipe) {
       setActivePoint(handle);
       const pipe = config.pipes.find((p) => p.id === handle.pipe)!;
-      startPointDrag({ picker: picker.current, edit, pipe, index: handle.index, clientX: e.clientX, clientY: e.clientY, onPreview: setPreview, onState: dragState });
+      startPointDrag({
+        picker: picker.current,
+        edit,
+        pipe,
+        index: handle.index,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        onPreview: setPreview,
+        onState: dragState,
+      });
       return;
     }
     // Di chuyển: nắm object (không phím bổ trợ) → kéo trên mặt sàn. Không chặn sự kiện (R3F vẫn ghi pointerdown cho click);
@@ -282,7 +290,16 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
       if (grabbed?.attach) {
         const ok =
           !!curve &&
-          startAttachDrag({ picker: picker.current, edit, obj: grabbed, curve, clientX: e.clientX, clientY: e.clientY, onPreview: setPreview, onState: dragState });
+          startAttachDrag({
+            picker: picker.current,
+            edit,
+            obj: grabbed,
+            curve,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            onPreview: setPreview,
+            onState: dragState,
+          });
         if (ok && !selected.has(id)) edit.onSelect([id], 'replace');
         return;
       }
@@ -337,10 +354,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
     edit.onDropAsset(asset, [Math.round(p.x / step) * step, 0, Math.round(p.z / step) * step]);
   };
   const statuses = new Map(
-    visible.map((o) => [
-      o.id,
-      ASSETS[o.asset].category === 'equipment' ? objectStatus(o, liveData, thresholds) : ('normal' as ObjectStatus),
-    ]),
+    visible.map((o) => [o.id, ASSETS[o.asset].category === 'equipment' ? objectStatus(o, liveData, thresholds) : ('normal' as ObjectStatus)]),
   );
 
   // Lưu lượng tươi (mất tín hiệu → không chạy vệt sáng, không giữ số cũ).
@@ -348,8 +362,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   // Render liên tục khi có ống đang chảy hoặc object danger (pulse); còn lại render theo yêu cầu.
   // prefers-reduced-motion: không vệt chảy/không pulse → không cần vẽ liên tục.
   const reducedMotion = useReducedMotion();
-  const animated =
-    !reducedMotion && (config.pipes.some((p) => (flowOf(p.flowTag) ?? 0) > 0) || [...statuses.values()].includes('danger'));
+  const animated = !reducedMotion && (config.pipes.some((p) => (flowOf(p.flowTag) ?? 0) > 0) || [...statuses.values()].includes('danger'));
   const cam = config.camera ?? DEFAULT_CAMERA;
   const hoveredObj = hovered ? byId.get(hovered) : undefined;
 
@@ -411,23 +424,13 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           {/* Có composer: ToneMapping effect áp cả lên màu nền → dùng màu đã bù để nền vẫn đúng token. */}
           <color attach="background" args={[composerOn ? groundBehindToneMap : palette.ground]} />
           <OrthographicCamera makeDefault position={cam.position} zoom={cam.zoom} near={0.1} far={600} />
-          <CameraRig
-            rigRef={rig}
-            cam={cam}
-            autoHome={!config.camera}
-            sceneId={config.id}
-            view={view}
-            byId={byId}
-            onZoomLimits={onZoomLimits}
-          />
+          <CameraRig rigRef={rig} cam={cam} autoHome={!config.camera} sceneId={config.id} view={view} byId={byId} onZoomLimits={onZoomLimits} />
           {edit && <PickerBridge pickerRef={picker} byId={byId} />}
 
           <SceneLights palette={palette} preset={preset} />
           <Ground palette={palette} grid={edit?.grid !== false} color={composerOn ? groundBehindToneMap : palette.ground} />
           {edit?.floor && <FloorOutline half={edit.floor} palette={palette} />}
-          {edit && edit.grid !== false && (
-            <SelectionFootprints objects={edit.selected.flatMap((id) => byId.get(id) ?? [])} palette={palette} />
-          )}
+          {edit && edit.grid !== false && <SelectionFootprints objects={edit.selected.flatMap((id) => byId.get(id) ?? [])} palette={palette} />}
 
           <MaterialsProvider palette={palette}>
             {visible.map((obj) => (
@@ -440,11 +443,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
                 palette={palette}
                 onHover={setHovered}
                 onSelect={
-                  edit
-                    ? locked.has(obj.id) || drawing
-                      ? undefined
-                      : (id, toggle) => edit.onSelect([id], toggle ? 'toggle' : 'replace')
-                    : onSelect
+                  edit ? (locked.has(obj.id) || drawing ? undefined : (id, toggle) => edit.onSelect([id], toggle ? 'toggle' : 'replace')) : onSelect
                 }
                 editing={!!edit}
               />
@@ -492,11 +491,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           {edit && drawing && <PipeDrawTool edit={edit} config={effective} palette={palette} />}
 
           {labels.map(({ obj, marker }) => {
-            const pick = edit
-              ? (id: string) => edit.onSelect([id], 'replace')
-              : ASSETS[obj.asset].category === 'equipment'
-                ? onSelect
-                : undefined;
+            const pick = edit ? (id: string) => edit.onSelect([id], 'replace') : ASSETS[obj.asset].category === 'equipment' ? onSelect : undefined;
             return (
               // Đang vẽ ống: nhãn mờ + click xuyên qua (không che điểm cần đặt).
               <Html
@@ -514,9 +509,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
 
           {edit && <EditGizmo edit={edit} byId={byId} state={gizmo} palette={palette} />}
 
-          {hoveredObj && !markedIds.has(hoveredObj.id) && (
-            <ObjectTooltip obj={hoveredObj} liveData={liveData} thresholds={thresholds} />
-          )}
+          {hoveredObj && !markedIds.has(hoveredObj.id) && <ObjectTooltip obj={hoveredObj} liveData={liveData} thresholds={thresholds} />}
 
           {preset.postprocessing && (
             <Suspense fallback={null}>
@@ -704,14 +697,7 @@ function Ground({ palette, grid = true, color }: { palette: ScenePalette; grid?:
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position={[0, -0.03, 0]} renderOrder={-2} raycast={noRaycast}>
         <planeGeometry args={[150, 150]} />
-        <meshBasicMaterial
-          color={palette.grid}
-          map={falloff}
-          transparent
-          opacity={0.22}
-          blending={AdditiveBlending}
-          depthWrite={false}
-        />
+        <meshBasicMaterial color={palette.grid} map={falloff} transparent opacity={0.22} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
       {grid && (
         <Grid
@@ -775,26 +761,26 @@ function CameraRig({
     (objs: ResolvedObject[]): Goal => {
       if (!objs.length) return { target: new Vector3(...cam.target), zoom: homeZoom, offset: homeOffset.clone() };
 
-    const back = homeOffset.clone().normalize();
-    const right = new Vector3(0, 1, 0).cross(back).normalize();
-    const up = back.clone().cross(right);
-    let [u0, u1, v0, v1, dSum, n] = [Infinity, -Infinity, Infinity, -Infinity, 0, 0];
-    for (const c of objs.flatMap(worldCorners)) {
-      const u = c.dot(right);
-      const v = c.dot(up);
-      [u0, u1, v0, v1] = [Math.min(u0, u), Math.max(u1, u), Math.min(v0, v), Math.max(v1, v)];
-      dSum += c.dot(back);
-      n++;
-    }
-    v1 += LABEL_HEADROOM;
-    const target = right
-      .clone()
-      .multiplyScalar((u0 + u1) / 2)
-      .addScaledVector(up, (v0 + v1) / 2)
-      .addScaledVector(back, dSum / n);
-    const fit = Math.min(size.width / ((u1 - u0) * 1.15), size.height / ((v1 - v0) * 1.15));
-    const zoom = clampZoom(Math.min(fit, homeZoom * FOCUS_ZOOM_MAX));
-    return { target, zoom, offset: homeOffset.clone() };
+      const back = homeOffset.clone().normalize();
+      const right = new Vector3(0, 1, 0).cross(back).normalize();
+      const up = back.clone().cross(right);
+      let [u0, u1, v0, v1, dSum, n] = [Infinity, -Infinity, Infinity, -Infinity, 0, 0];
+      for (const c of objs.flatMap(worldCorners)) {
+        const u = c.dot(right);
+        const v = c.dot(up);
+        [u0, u1, v0, v1] = [Math.min(u0, u), Math.max(u1, u), Math.min(v0, v), Math.max(v1, v)];
+        dSum += c.dot(back);
+        n++;
+      }
+      v1 += LABEL_HEADROOM;
+      const target = right
+        .clone()
+        .multiplyScalar((u0 + u1) / 2)
+        .addScaledVector(up, (v0 + v1) / 2)
+        .addScaledVector(back, dSum / n);
+      const fit = Math.min(size.width / ((u1 - u0) * 1.15), size.height / ((v1 - v0) * 1.15));
+      const zoom = clampZoom(Math.min(fit, homeZoom * FOCUS_ZOOM_MAX));
+      return { target, zoom, offset: homeOffset.clone() };
     },
     [cam, homeZoom, homeOffset, clampZoom, size.width, size.height],
   );
@@ -846,45 +832,41 @@ function CameraRig({
     invalidate();
   }, [frameKey, camera, invalidate, reportLimits]);
 
-  useImperativeHandle(
-    rigRef,
-    () => {
-      const zoomBy = (f: number) => {
-        const c = controls.current;
-        if (!c) return;
-        goal.current = {
-          target: c.target.clone(),
-          offset: camera.position.clone().sub(c.target),
-          zoom: clampZoom(camera.zoom * f),
-        };
+  useImperativeHandle(rigRef, () => {
+    const zoomBy = (f: number) => {
+      const c = controls.current;
+      if (!c) return;
+      goal.current = {
+        target: c.target.clone(),
+        offset: camera.position.clone().sub(c.target),
+        zoom: clampZoom(camera.zoom * f),
+      };
+      invalidate();
+    };
+    return {
+      zoomIn: () => zoomBy(ZOOM_STEP),
+      zoomOut: () => zoomBy(1 / ZOOM_STEP),
+      reset: () => {
+        goal.current = viewGoal();
         invalidate();
-      };
-      return {
-        zoomIn: () => zoomBy(ZOOM_STEP),
-        zoomOut: () => zoomBy(1 / ZOOM_STEP),
-        reset: () => {
-          goal.current = viewGoal();
-          invalidate();
-        },
-        fit: (ids) => {
-          const objs = ids?.length ? ids.map((id) => byId.get(id)).filter((o): o is ResolvedObject => !!o) : [...byId.values()];
-          goal.current = fitGoal(objs);
-          invalidate();
-        },
-        getCamera: () => {
-          const c = controls.current;
-          if (!c) return null;
-          const r = (v: number) => +v.toFixed(2);
-          return {
-            position: camera.position.toArray().map(r) as Vec3,
-            target: c.target.toArray().map(r) as Vec3,
-            zoom: r(camera.zoom / (size.width / REF_WIDTH)),
-          };
-        },
-      };
-    },
-    [camera, clampZoom, invalidate, viewGoal, fitGoal, byId, size.width],
-  );
+      },
+      fit: (ids) => {
+        const objs = ids?.length ? ids.map((id) => byId.get(id)).filter((o): o is ResolvedObject => !!o) : [...byId.values()];
+        goal.current = fitGoal(objs);
+        invalidate();
+      },
+      getCamera: () => {
+        const c = controls.current;
+        if (!c) return null;
+        const r = (v: number) => +v.toFixed(2);
+        return {
+          position: camera.position.toArray().map(r) as Vec3,
+          target: c.target.toArray().map(r) as Vec3,
+          zoom: r(camera.zoom / (size.width / REF_WIDTH)),
+        };
+      },
+    };
+  }, [camera, clampZoom, invalidate, viewGoal, fitGoal, byId, size.width]);
 
   useFrame((_, dt) => {
     const g = goal.current;
@@ -895,8 +877,7 @@ function CameraRig({
     const offset = camera.position.clone().sub(c.target).lerp(g.offset, k);
     c.target.lerp(g.target, k);
     camera.zoom += (g.zoom - camera.zoom) * k;
-    const done =
-      c.target.distanceTo(g.target) < 0.01 && Math.abs(camera.zoom - g.zoom) < g.zoom * 0.002 && offset.distanceTo(g.offset) < 0.05;
+    const done = c.target.distanceTo(g.target) < 0.01 && Math.abs(camera.zoom - g.zoom) < g.zoom * 0.002 && offset.distanceTo(g.offset) < 0.05;
     if (done) {
       c.target.copy(g.target);
       camera.zoom = g.zoom;
@@ -961,13 +942,7 @@ function ObjectNode({
   const params = useMemo(() => resolveParams(obj), [obj]);
   const group = useRef<Group>(null);
   const state = useMemo(() => ({ status, hovered: hovered || selected }), [status, hovered, selected]);
-  const edgeTone: EdgeTone = selected
-    ? 'selected'
-    : hovered
-      ? 'hover'
-      : status === 'normal'
-        ? 'normal'
-        : status;
+  const edgeTone: EdgeTone = selected ? 'selected' : hovered ? 'hover' : status === 'normal' ? 'normal' : status;
   // Dựng lại bóng/nét viền khi hình dạng có thể đổi (asset, params, path).
   const shapeKey = `${obj.asset}|${JSON.stringify(params)}|${JSON.stringify(obj.path ?? null)}`;
   useInkEdges(group, useEdgeMaterials()[edgeTone], shapeKey);
@@ -1115,15 +1090,7 @@ function DangerGlow({ obj, color }: { obj: ResolvedObject; color: Color }) {
       userData={HELPER}
     >
       <planeGeometry args={[size, size]} />
-      <meshBasicMaterial
-        ref={material}
-        color={color}
-        map={texture}
-        transparent
-        opacity={0.4}
-        blending={AdditiveBlending}
-        depthWrite={false}
-      />
+      <meshBasicMaterial ref={material} color={color} map={texture} transparent opacity={0.4} blending={AdditiveBlending} depthWrite={false} />
     </mesh>
   );
 }
@@ -1203,15 +1170,7 @@ function DeviceList({
 }
 
 /** Tooltip khi hover object không có marker: tên + loại + số liệu theo bindings. */
-function ObjectTooltip({
-  obj,
-  liveData,
-  thresholds,
-}: {
-  obj: ResolvedObject;
-  liveData?: LiveData;
-  thresholds?: Record<string, Thresholds>;
-}) {
+function ObjectTooltip({ obj, liveData, thresholds }: { obj: ResolvedObject; liveData?: LiveData; thresholds?: Record<string, Thresholds> }) {
   const readings = objectReadings(obj, liveData, thresholds);
   return (
     <Html position={labelAnchor(obj)} zIndexRange={[21, 0]} pointerEvents="none">

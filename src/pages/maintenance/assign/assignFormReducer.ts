@@ -36,7 +36,12 @@ export function assignFormReducer(s: AssignFormState, a: AssignFormAction): Assi
       const cur = s.form;
       return {
         ...s,
-        form: { ...cur, assignee: a.name, collaborators: cur.collaborators.filter((c) => c !== a.name), shift: !s.shiftTouched && staff ? staff.defaultShift : cur.shift },
+        form: {
+          ...cur,
+          assignee: a.name,
+          collaborators: cur.collaborators.filter((c) => c !== a.name),
+          shift: !s.shiftTouched && staff ? staff.defaultShift : cur.shift,
+        },
         error: '',
       };
     }

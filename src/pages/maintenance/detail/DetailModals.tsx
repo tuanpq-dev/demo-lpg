@@ -82,7 +82,11 @@ export function DetailModals({ record: r, dialogs: d, ops, allRecords, actor, re
             }
             d.close();
             // TODO(backend): gửi thông báo đẩy/SMS cho người được phân công (công tắc trong modal chỉ là giao diện).
-            announce(before && before !== form.assignee ? `${r.code}: đã đổi người xử lý sang ${form.assignee}.` : `Đã phân công ${r.code} cho ${form.assignee}.`);
+            announce(
+              before && before !== form.assignee
+                ? `${r.code}: đã đổi người xử lý sang ${form.assignee}.`
+                : `Đã phân công ${r.code} cho ${form.assignee}.`,
+            );
           }}
         />
       )}

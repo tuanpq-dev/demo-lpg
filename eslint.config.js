@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint';
 
 const RED = {
   bare: 'Chữ đỏ dùng `text-danger-text` (tương phản AA). `text-danger` chỉ cho icon – ghi eslint-disable-next-line kèm lý do.',
-  strong: '`text-danger-strong` chỉ cho CHỮ LỚN (≥ 24px / ≥ 18.66px đậm) hoặc icon – ghi eslint-disable-next-line kèm lý do; chữ thường dùng `text-danger-text`.',
+  strong:
+    '`text-danger-strong` chỉ cho CHỮ LỚN (≥ 24px / ≥ 18.66px đậm) hoặc icon – ghi eslint-disable-next-line kèm lý do; chữ thường dùng `text-danger-text`.',
   alpha: 'Không làm mờ chữ đỏ (`text-danger*/NN` dưới 4.5:1) – dùng `text-danger-text` và tạo thứ bậc bằng cỡ/độ đậm/gạch chân.',
 };
 const redRule = (re, message) => [
@@ -52,12 +53,25 @@ export default tseslint.config(
   // `src/data/*` (lớp dữ liệu, chỗ thay API); kiểu dữ liệu ở `src/features/<miền>/types.ts`. Ngoại lệ: playground
   // (trưng bày component với dữ liệu mẫu) và test.
   {
-    files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/pages/**/*.{ts,tsx}'],
+    files: [
+      'src/features/**/*.{ts,tsx}',
+      'src/components/**/*.{ts,tsx}',
+      'src/app/**/*.{ts,tsx}',
+      'src/lib/**/*.{ts,tsx}',
+      'src/pages/**/*.{ts,tsx}',
+    ],
     ignores: ['src/pages/playground/**', '**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [{ group: ['@/mocks', '@/mocks/*'], message: 'Không import src/mocks ngoài lớp dữ liệu – đọc qua src/data/*, kiểu ở src/features/<miền>/types.ts.' }] },
+        {
+          patterns: [
+            {
+              group: ['@/mocks', '@/mocks/*'],
+              message: 'Không import src/mocks ngoài lớp dữ liệu – đọc qua src/data/*, kiểu ở src/features/<miền>/types.ts.',
+            },
+          ],
+        },
       ],
     },
   },

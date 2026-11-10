@@ -199,7 +199,9 @@ function DailyReportView({
         />
         <DailyReadingsTable rows={table.filtered} checkpoints={checkpoints} label={`Số liệu kiểm tra ${r.code}`} />
       </Card>
-      {recordOpen && <CheckpointRecordModal key={`${r.id}@${recordOpen}`} report={r} checkpoint={recordOpen} onClose={() => table.setExtra({ record: null })} />}
+      {recordOpen && (
+        <CheckpointRecordModal key={`${r.id}@${recordOpen}`} report={r} checkpoint={recordOpen} onClose={() => table.setExtra({ record: null })} />
+      )}
     </Page>
   );
 }

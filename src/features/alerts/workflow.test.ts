@@ -62,7 +62,12 @@ describe('quy trình chỉ đi tiến', () => {
     const res = resolveAlert(ip, '  Đã xả áp, áp suất về 9.8 bar ', ctx);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(res.record).toMatchObject({ status: 'resolved', resolvedAt: ctx.at.toISOString(), resolvedBy: 'Nguyễn Văn A', actionTaken: 'Đã xả áp, áp suất về 9.8 bar' });
+    expect(res.record).toMatchObject({
+      status: 'resolved',
+      resolvedAt: ctx.at.toISOString(),
+      resolvedBy: 'Nguyễn Văn A',
+      actionTaken: 'Đã xả áp, áp suất về 9.8 bar',
+    });
     expect(res.record.notes).toEqual([{ id: 'A1-n1', author: 'Nguyễn Văn A', at: ctx.at.toISOString(), text: 'Đã xả áp, áp suất về 9.8 bar' }]);
     expect(res.record.history!.at(-1)).toMatchObject({ kind: 'resolve' });
     expect(resolveAlert(res.record, 'lại', ctx)).toEqual({ ok: false, reason: 'status' });
@@ -137,7 +142,10 @@ describe('yêu cầu bảo trì từ cảnh báo – không tạo trùng', () =>
     expect(linkedMaintenance('A1', [...recs, { id: 'm3', code: 'MT-3', status: 'done', sourceAlertId: 'A1' }])?.code).toBe('MT-3');
   });
   test('ghi lịch sử tạo yêu cầu', () => {
-    expect(recordMaintenanceCreated(alert(), 'MT-00129', ctx).history![0]).toMatchObject({ kind: 'maintenance', text: 'Tạo yêu cầu bảo trì MT-00129' });
+    expect(recordMaintenanceCreated(alert(), 'MT-00129', ctx).history![0]).toMatchObject({
+      kind: 'maintenance',
+      text: 'Tạo yêu cầu bảo trì MT-00129',
+    });
   });
 });
 

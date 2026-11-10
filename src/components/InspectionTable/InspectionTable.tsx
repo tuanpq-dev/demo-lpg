@@ -34,7 +34,15 @@ export type InspectionTableProps<S extends string = string> = {
  * "Ghi chú: <hạng mục>"). Ảnh có cột checkbox – bỏ (trạng thái đã đủ nghĩa). `<caption>` + `th scope`; khung tự cuộn ngang
  * dưới ~760 px (role=region có tên, Tab tới được) – trang/modal không tràn.
  */
-export function InspectionTable<S extends string = string>({ caption, rows, statusOptions, onStatusChange, onNoteChange, readOnly, className }: InspectionTableProps<S>) {
+export function InspectionTable<S extends string = string>({
+  caption,
+  rows,
+  statusOptions,
+  onStatusChange,
+  onNoteChange,
+  readOnly,
+  className,
+}: InspectionTableProps<S>) {
   const uid = useId();
   return (
     <div role="region" aria-label={caption} tabIndex={0} className={cn('overflow-x-auto rounded-lg border border-line/30', className)}>

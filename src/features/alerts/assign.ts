@@ -87,7 +87,8 @@ export function applyAlertAssignment(a: AlertRecord, f: AlertAssignForm, ctx: Al
         ? `Đổi người xử lý: ${a.assignee} → ${assignee} – lý do: ${f.reason.trim()}`
         : `Cập nhật phân công (${assignee})`;
   const details: string[] = [];
-  if (!sameSet(collaborators, before) || (change === 'assign' && collaborators.length)) details.push(`phối hợp: ${collaborators.length ? collaborators.join(', ') : 'không'}`);
+  if (!sameSet(collaborators, before) || (change === 'assign' && collaborators.length))
+    details.push(`phối hợp: ${collaborators.length ? collaborators.join(', ') : 'không'}`);
   if (note) details.push('kèm ghi chú chỉ đạo');
   const next: AlertRecord = {
     ...a,
@@ -137,12 +138,16 @@ export function validateBulkAlertAssign(plan: BulkAlertAssignPlan, f: AlertAssig
   if (!f.assignee?.trim()) return [{ id: 'assignee', label: 'Chưa chọn người phụ trách' }];
   const out: AlertAssignIssue[] = [];
   if (!plan.assign.length && !plan.reassign.length) out.push({ id: 'none-eligible', label: 'Không còn cảnh báo nào cần phân công cho người này' });
-  if (plan.reassign.length && !f.reason.trim()) out.push({ id: 'reason', label: `Chưa nhập lý do đổi người (${plan.reassign.length} cảnh báo đang giao cho người khác)` });
+  if (plan.reassign.length && !f.reason.trim())
+    out.push({ id: 'reason', label: `Chưa nhập lý do đổi người (${plan.reassign.length} cảnh báo đang giao cho người khác)` });
   return out;
 }
 
 /** Form cho từng dòng của lô: người phối hợp GỘP với người đang có (không xoá người phối hợp cũ của từng cảnh báo). */
-export const bulkRowForm = (a: AlertRecord, f: AlertAssignForm): AlertAssignForm => ({ ...f, collaborators: [...(a.collaborators ?? []), ...f.collaborators] });
+export const bulkRowForm = (a: AlertRecord, f: AlertAssignForm): AlertAssignForm => ({
+  ...f,
+  collaborators: [...(a.collaborators ?? []), ...f.collaborators],
+});
 
 /** "Đã phân công 3 (đổi người 1) · bỏ qua 2 (1 đã hoàn thành, 1 đã giao đúng người)". */
 export function bulkAlertAssignMessage(plan: BulkAlertAssignPlan): string {

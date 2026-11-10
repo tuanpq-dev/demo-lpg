@@ -40,7 +40,11 @@ const rd = (id: string, value: number | null, patch: Partial<RecordReading> = {}
 
 const snap = (patch: Partial<CheckpointSnapshot> = {}): CheckpointSnapshot => ({
   checkpoint: '18:00',
-  tank: [rd('level', 76, { unit: '%', dailyItemId: 'v101-level', limits: { lowWarn: 10, warn: 90 } }), rd('pressure', 6.8, { dailyItemId: 'v101-pressure' }), rd('gas', 2, { unit: '%LEL', digits: 0, limits: { warn: 10, danger: 20 }, safeLabel: true })],
+  tank: [
+    rd('level', 76, { unit: '%', dailyItemId: 'v101-level', limits: { lowWarn: 10, warn: 90 } }),
+    rd('pressure', 6.8, { dailyItemId: 'v101-pressure' }),
+    rd('gas', 2, { unit: '%LEL', digits: 0, limits: { warn: 10, danger: 20 }, safeLabel: true }),
+  ],
   vaporizers: [{ id: 'E-101A', state: 'running', readings: [rd('vap-gas', 1, { limits: { warn: 10 } })] }],
   regulators: [rd('reg', 2.4, { limits: {} })],
   flowLines: [{ id: 'l0', label: 'Line 0', sensor: 'normal', readings: [rd('flow', 145, { limits: {} }), rd('total', 2038, { limits: {} })] }],
@@ -59,7 +63,13 @@ const report = (patch: Partial<ReportRecord> = {}): ReportRecord => ({
   period: 'daily',
   periodKey: DAY,
   shift: 'Ca 1',
-  checkpoints: DAILY_CHECKPOINTS.map((t) => ({ key: t, label: t, dueAt: `${DAY}T${t}`, done: t !== '18:00', ...(t === '14:00' ? { needsVerify: true } : {}) })),
+  checkpoints: DAILY_CHECKPOINTS.map((t) => ({
+    key: t,
+    label: t,
+    dueAt: `${DAY}T${t}`,
+    done: t !== '18:00',
+    ...(t === '14:00' ? { needsVerify: true } : {}),
+  })),
   inspector: 'Nguyễn Văn A',
   signature: { status: 'not-sent' },
   updatedAt: `${DAY}T16:05`,
@@ -162,11 +172,19 @@ describe('mở modal + ghi mốc', () => {
   });
 
   it('xác nhận: mốc có dữ liệu, giữ cờ mốc khác, giờ cập nhật + nhật ký (nhận xét cắt khoảng trắng)', () => {
-    const r = applyCheckpointRecord(report(), '18:00', { by: 'Nguyễn Văn A', remark: ' Ổn định ', manual: { 'v101-pressure': 7.1 }, files: ['a.jpg'], at: NOW });
+    const r = applyCheckpointRecord(report(), '18:00', {
+      by: 'Nguyễn Văn A',
+      remark: ' Ổn định ',
+      manual: { 'v101-pressure': 7.1 },
+      files: ['a.jpg'],
+      at: NOW,
+    });
     expect(r.checkpoints.find((c) => c.key === '18:00')).toEqual({ key: '18:00', label: '18:00', dueAt: `${DAY}T18:00`, done: true });
     expect(r.checkpoints.find((c) => c.key === '14:00')?.needsVerify).toBe(true);
     expect(r.updatedAt).toBe('2026-06-24T18:30');
-    expect(r.checkpointLog).toEqual({ '18:00': { by: 'Nguyễn Văn A', at: '2026-06-24T18:30', remark: 'Ổn định', manual: { 'v101-pressure': 7.1 }, files: ['a.jpg'] } });
+    expect(r.checkpointLog).toEqual({
+      '18:00': { by: 'Nguyễn Văn A', at: '2026-06-24T18:30', remark: 'Ổn định', manual: { 'v101-pressure': 7.1 }, files: ['a.jpg'] },
+    });
   });
 
   it('không nhập tay / không tệp → không lưu trường đó; giữ nhật ký mốc khác', () => {

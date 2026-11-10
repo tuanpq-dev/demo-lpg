@@ -272,9 +272,7 @@ export function DataTable<T>({
                         {col.cell ? col.cell(row) : String((row as Record<string, unknown>)[col.id] ?? '')}
                       </td>
                     ))}
-                    {rowActions && (
-                      <td className={cn('pr-4 text-center', stickyActions && 'sticky right-0 z-[1] bg-surface')}>{rowActions(row)}</td>
-                    )}
+                    {rowActions && <td className={cn('pr-4 text-center', stickyActions && 'sticky right-0 z-[1] bg-surface')}>{rowActions(row)}</td>}
                   </tr>,
                 ];
               })
@@ -286,19 +284,13 @@ export function DataTable<T>({
       {pagination && pagination.total > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/30 bg-surface-raised px-4 py-3">
           <span className="text-md text-fg-secondary">
-            {pagination.summary
-              ? pagination.summary(from, to, pagination.total)
-              : `Hiển thị ${from}-${to} của ${pagination.total} mục`}
+            {pagination.summary ? pagination.summary(from, to, pagination.total) : `Hiển thị ${from}-${to} của ${pagination.total} mục`}
           </span>
           <div className="flex flex-wrap items-center gap-4">
             {pagination.pageSizeOptions && pagination.onPageSizeChange && (
               <PageSizeSelect value={pagination.pageSize} options={pagination.pageSizeOptions} onChange={pagination.onPageSizeChange} />
             )}
-            <Pagination
-              page={pagination.page}
-              pageCount={Math.ceil(pagination.total / pagination.pageSize)}
-              onPageChange={pagination.onPageChange}
-            />
+            <Pagination page={pagination.page} pageCount={Math.ceil(pagination.total / pagination.pageSize)} onPageChange={pagination.onPageChange} />
           </div>
         </div>
       )}
@@ -331,22 +323,9 @@ function PageSizeSelect({ value, options, onChange }: { value: number; options: 
 }
 
 /** Nút icon cuối hàng (mặc định icon "eye" – Figma 70:3082). */
-export function TableActionButton({
-  label,
-  onClick,
-  icon = 'eye',
-}: {
-  label: string;
-  onClick?: () => void;
-  icon?: 'eye';
-}) {
+export function TableActionButton({ label, onClick, icon = 'eye' }: { label: string; onClick?: () => void; icon?: 'eye' }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="inline-flex rounded-sm p-1 opacity-90 transition-opacity hover:opacity-100"
-    >
+    <button type="button" aria-label={label} onClick={onClick} className="inline-flex rounded-sm p-1 opacity-90 transition-opacity hover:opacity-100">
       <Icon name={icon} box={18} />
     </button>
   );

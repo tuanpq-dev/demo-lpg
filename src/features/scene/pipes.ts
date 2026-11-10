@@ -27,11 +27,7 @@ export const portRef = (objectId: string, port: string) => `${objectId}.${port}`
 function rotate([x, y, z]: Vec3, [rx, ry, rz]: Vec3): Vec3 {
   const [a, b, c, d, e, f] = [Math.cos(rx), Math.sin(rx), Math.cos(ry), Math.sin(ry), Math.cos(rz), Math.sin(rz)];
   const [ae, af, be, bf] = [a * e, a * f, b * e, b * f];
-  return [
-    c * e * x - c * f * y + d * z,
-    (af + be * d) * x + (ae - bf * d) * y - b * c * z,
-    (bf - ae * d) * x + (be + af * d) * y + a * c * z,
-  ];
+  return [c * e * x - c * f * y + d * z, (af + be * d) * x + (ae - bf * d) * y - b * c * z, (bf - ae * d) * x + (be + af * d) * y + a * c * z];
 }
 
 /** Điểm cục bộ → thế giới của object đặt tự do (position X/Z + elevation, rotation, scale). */

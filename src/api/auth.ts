@@ -6,14 +6,7 @@
  * - VITE_AUTH=off: `createOfflineAuthService` – phiên giả admin, không gọi backend (demo tĩnh).
  */
 import { api as defaultApi, type ApiClient } from './client';
-import {
-  LoginResponseSchema,
-  RegisterResponseSchema,
-  UserSchema,
-  type LoginRequest,
-  type RegisterRequest,
-  type User,
-} from './types';
+import { LoginResponseSchema, RegisterResponseSchema, UserSchema, type LoginRequest, type RegisterRequest, type User } from './types';
 import { tokenExpiresAt } from '@/features/auth/session';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous';

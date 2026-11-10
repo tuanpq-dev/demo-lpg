@@ -3,15 +3,7 @@
  */
 import { foldSearch } from '@/lib/foldSearch';
 import { REPORT_PERIODS, periodContains, periodLabel, periodRange, type ReportPeriod } from './period';
-import {
-  COMPLETION_STATUSES,
-  SIGNATURE_STATUSES,
-  completionOf,
-  reportState,
-  signatureOf,
-  type CompletionStatus,
-  type ReportRecord,
-} from './status';
+import { COMPLETION_STATUSES, SIGNATURE_STATUSES, completionOf, reportState, signatureOf, type CompletionStatus, type ReportRecord } from './status';
 
 /** Tab: tất cả · theo kỳ · "Biểu mẫu đã ký" (đã ký đầy đủ, mọi kỳ). */
 export const REPORT_TABS = ['all', ...REPORT_PERIODS, 'signed'] as const;

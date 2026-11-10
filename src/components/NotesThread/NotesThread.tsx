@@ -59,7 +59,10 @@ export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', cla
         <ol aria-label={label} className="flex flex-col gap-3">
           {notes.map((n) => (
             <li key={n.id} className="flex items-start gap-2.5">
-              <span aria-hidden="true" className="grid size-[var(--note-avatar-size)] shrink-0 place-items-center rounded-full bg-info/20 text-2xs font-semibold text-info">
+              <span
+                aria-hidden="true"
+                className="grid size-[var(--note-avatar-size)] shrink-0 place-items-center rounded-full bg-info/20 text-2xs font-semibold text-info"
+              >
                 {initials(n.author)}
               </span>
               <article className="flex min-w-0 flex-1 flex-col gap-1 rounded-md border border-line/30 bg-surface-muted/60 px-3 py-2.5">
@@ -78,7 +81,10 @@ export function NotesThread({ notes, onAdd, label = 'Ghi chú kỹ thuật', cla
       {onAdd && (
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
           <div className="flex items-start gap-2.5">
-            <span aria-hidden="true" className="grid size-[var(--note-avatar-size)] shrink-0 place-items-center rounded-md bg-surface-muted text-fg-secondary">
+            <span
+              aria-hidden="true"
+              className="grid size-[var(--note-avatar-size)] shrink-0 place-items-center rounded-md bg-surface-muted text-fg-secondary"
+            >
               <UserIcon size={14} />
             </span>
             <label htmlFor={inputId} className="sr-only">

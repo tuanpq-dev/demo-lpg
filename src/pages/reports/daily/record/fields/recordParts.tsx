@@ -89,7 +89,13 @@ export function ManualInput({ reading: r, manual, onManual }: { reading: RecordR
 }
 
 /** Giá trị hiển thị; ô nhập khi đang nhập đồng hồ cơ hoặc IoT không có số. */
-export function ValueCell({ reading: r, editing, manual, onManual, className }: { reading: RecordReading; editing: boolean; className?: string } & ManualProps) {
+export function ValueCell({
+  reading: r,
+  editing,
+  manual,
+  onManual,
+  className,
+}: { reading: RecordReading; editing: boolean; className?: string } & ManualProps) {
   if (editing || r.value === null) {
     return (
       <span className="block w-28">

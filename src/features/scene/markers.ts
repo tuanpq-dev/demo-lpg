@@ -41,9 +41,6 @@ export function objectMarker(
   if (!live) return base;
   const lost = !!field && variant !== 'tag' && tagSignal(tag ? live[tag] : undefined, now) === 'lost';
   const alarmTone = STATUS_TONE[objectStatus(obj, live, thresholds, now)];
-  if (lost && alarmTone !== 'danger' && alarmTone !== 'warning')
-    return { ...base, tone: 'neutral', showDot: false, showSignalLostIcon: true };
-  return alarmTone
-    ? { ...base, tone: alarmTone, showDot: false, showWarningIcon: alarmTone !== 'neutral', showSignalLostIcon: lost }
-    : base;
+  if (lost && alarmTone !== 'danger' && alarmTone !== 'warning') return { ...base, tone: 'neutral', showDot: false, showSignalLostIcon: true };
+  return alarmTone ? { ...base, tone: alarmTone, showDot: false, showWarningIcon: alarmTone !== 'neutral', showSignalLostIcon: lost } : base;
 }

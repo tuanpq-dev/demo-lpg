@@ -51,4 +51,3 @@ export { SENSOR_TAGS } from './live';
 export function useSceneConfig(sceneId: string) {
   return useQuery<SceneConfig>(sceneId, () => fetchScene(sceneId));
 }
-

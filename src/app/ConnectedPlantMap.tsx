@@ -14,7 +14,13 @@ export function ConnectedPlantMap({ sceneId, height = 589, ...props }: Connected
   if (status === 'loading') return <Placeholder label="Đang tải cảnh 3D…" height={height + 2} />;
   if (status === 'error') {
     return (
-      <PageError title="Không tải được cảnh 3D" error={error} onRetry={refetch} preformatted actions={props.onRendererChange && <Button onClick={() => props.onRendererChange?.('image')}>Về bản đồ 2.5D</Button>} />
+      <PageError
+        title="Không tải được cảnh 3D"
+        error={error}
+        onRetry={refetch}
+        preformatted
+        actions={props.onRendererChange && <Button onClick={() => props.onRendererChange?.('image')}>Về bản đồ 2.5D</Button>}
+      />
     );
   }
   return <PlantMap renderer="three" scene={data} height={height} {...props} />;
