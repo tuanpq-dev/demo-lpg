@@ -28,7 +28,7 @@ export function exportMaintenanceCsv(rows: readonly MaintenanceRecord[], now: Da
     'Quá hạn',
   ];
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
-  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const esc = (v: string | undefined) => `"${(v ?? '').replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
     [
       r.code,
@@ -48,7 +48,7 @@ export function exportMaintenanceCsv(rows: readonly MaintenanceRecord[], now: Da
       .map(esc)
       .join(','),
   );
-  const blob = new Blob(['﻿' + [head.map(esc).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['\uFEFF' + [head.map(esc).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

@@ -37,6 +37,7 @@ export * from './Modal';
 export * from './NavTabs';
 export * from './NotesThread';
 export * from './PageHeader';
+export * from './ResponsiveImage';
 export * from './Pagination';
 export * from './PlantMap';
 export * from './PriorityTaskCard';

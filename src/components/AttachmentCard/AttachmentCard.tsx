@@ -20,7 +20,7 @@ export type AttachmentCardProps = {
   className?: string;
 };
 
-export const attachmentKind = (name: string, kind?: AttachmentKind): AttachmentKind =>
+const attachmentKind = (name: string, kind?: AttachmentKind): AttachmentKind =>
   kind ?? (/\.(png|jpe?g|gif|webp|avif|bmp|heic)$/i.test(name) ? 'image' : 'document');
 
 const ICONS = { image: ImageIcon, document: FileIcon, manual: BookIcon } as const;

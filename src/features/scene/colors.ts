@@ -5,7 +5,7 @@ import type { ColorToken } from '@/lib/tokens';
  * Token màu → THREE.Color (đọc CSS var dạng kênh "R G B").
  * Không dùng chuỗi rgb() vì parser của three chưa hiểu cú pháp cách khoảng trắng.
  */
-export function sceneColor(name: ColorToken): Color {
+function sceneColor(name: ColorToken): Color {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim();
   const [r = 0, g = 0, b = 0] = raw.split(/\s+/).map(Number);
   return new Color().setRGB(r / 255, g / 255, b / 255, SRGBColorSpace);

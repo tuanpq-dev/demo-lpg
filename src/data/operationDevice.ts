@@ -41,7 +41,7 @@ export function resolveOperationDeviceId(raw: string | null | undefined): string
 }
 
 /** GET /api/devices/:id – mock hôm nay. */
-export async function fetchOperationDevice(id: string): Promise<AnyOperationDevice> {
+async function fetchOperationDevice(id: string): Promise<AnyOperationDevice> {
   const d = allDevices[id];
   if (!d) throw new Error(`Không có thiết bị "${id}" (có: ${OPERATION_DEVICE_IDS.join(', ')})`);
   return d;
@@ -161,7 +161,7 @@ export function plcLatencyHistory(device: PlcScadaDeviceMock, now: number): numb
 }
 
 /** Tag cần theo dõi trực tiếp của thiết bị (tham số / tín hiệu PLC / trạng thái chạy / tag giám sát). */
-export function deviceLiveTags(d: AnyOperationDevice): string[] {
+function deviceLiveTags(d: AnyOperationDevice): string[] {
   const common = d.plcSignals.map((s) => s.tag);
   const own =
     d.kind === 'vaporizer' ? [...d.params.map((p) => p.tag), d.stateTag, d.standby.stateTag] : [...Object.values(d.tags), ...d.monitoredTags];

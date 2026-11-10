@@ -44,7 +44,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login({ email: email.trim(), password });
-      navigate(next, { replace: true });
+      void navigate(next, { replace: true });
     } catch (err) {
       setPassword('');
       setError({ text: authErrorMessage(err), pending: err instanceof ApiError && err.code === 'ACCOUNT_PENDING' });
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <form ref={formRef} onSubmit={submit} noValidate aria-labelledby="login-title" className="flex flex-col gap-4">
+      <form ref={formRef} onSubmit={(e) => void submit(e)} noValidate aria-labelledby="login-title" className="flex flex-col gap-4">
         <div>
           <h1 id="login-title" className="text-xl font-semibold text-fg">
             Đăng nhập

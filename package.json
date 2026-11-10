@@ -14,53 +14,48 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:node20": "npx -y -p node@20 node node_modules/vitest/vitest.mjs run",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint .",
-    "build:shared": "npm run build -w @demo-lpg/shared"
+    "lint": "eslint . && prettier --check .",
+    "build:shared": "npm run build -w @demo-lpg/shared",
+    "format": "prettier --write ."
   },
   "dependencies": {
+    "@demo-lpg/shared": "*",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@react-three/postprocessing": "^2.19.1",
     "clsx": "^2.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
+    "react-router-dom": "^7.18.5",
     "recharts": "^2.13.3",
     "three": "^0.170.0",
-    "zod": "^3.23.8",
+    "zod": "^4.6.7",
     "zundo": "^2.3.0",
-    "zustand": "^5.0.14",
-    "@demo-lpg/shared": "*"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
     "@eslint/js": "^9.29.0",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/coverage-v8": "^3.2.4",
     "autoprefixer": "^10.4.20",
-    "axe-core": "^4.10.3",
     "eslint": "^9.29.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.2.0",
-    "jsdom": "^26.1.0",
     "postcss": "^8.4.49",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.34.1",
-    "vite": "^5.4.11",
-    "vitest": "^3.2.4",
-    "vitest-axe": "^0.1.0"
+    "vite": "^6.4.6"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

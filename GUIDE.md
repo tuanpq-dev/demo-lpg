@@ -1,14 +1,16 @@
 # GUIDE – Đọc code demo-lpg theo luồng
 
 Tài liệu cho người mới: đọc theo **luồng** (URL → dữ liệu → màn hình) thay vì mở file ngẫu nhiên.
-GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi mỗi luồng 1–2 dòng + link tới `docs/guide/<luồng>.md`. **Chỉ mở file của luồng đang làm**, không đọc hết. Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
+GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi mỗi luồng 1–2 dòng + link tới `docs/guide/<luồng>.md`. **Chỉ mở file của luồng đang làm**, không đọc hết.
+
+> **10/11/2026 (nhánh `chore/fe-hardening`)**: đã xoá toàn bộ unit test (`*.test.ts(x)`, vitest), trang `/playground`, mã giả lập `liveSimulator`/`devScenarios` và cấu hình Netlify. Các nhắc tới `#playground`, file test hay `npm test` trong `docs/guide/*` là **lịch sử** – không còn trong repo. Chi tiết: `docs/decisions.md` mục "FE hardening". Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
 
 ---
 
 ## 1. Dự án làm gì
 
 - Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**, **Chi tiết tài sản** (`/map/:assetId` – tab "Bản đồ nội khu", hiện có V-101).
-- Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `scratch/figma-ref/` – **chỉ ở máy dev** (gitignore). KHÔNG đặt ảnh thiết kế trong `public/` (bị deploy công khai); playground chỉ tham chiếu ảnh khi `import.meta.env.DEV`.
+- Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `scratch/figma-ref/` – **chỉ ở máy dev** (gitignore). KHÔNG đặt ảnh thiết kế trong `public/` (bị deploy công khai).
 - Dữ liệu hiện là **mock** (`src/mocks/`), đi qua lớp `src/data/` để sau thay bằng API mà không sửa UI.
 - Bản đồ nhà máy có 2 kiểu: ảnh 2.5D (mặc định) và cảnh 3D (three.js) dựng từ JSON `SceneConfig`.
 - Có **Scene Editor** (`/editor`) để dựng/sửa cảnh 3D, lưu tạm trong localStorage.
@@ -30,9 +32,8 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 | `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
 | `/operations` · `/operations/devices/E-101A` | Menu "Vận hành": chi tiết máy hóa hơi E-101A (ảnh op-device-*.png); mã khác kiểu chữ → mã chuẩn; mã lạ → "Không tìm thấy thiết bị" – docs/guide/operations.md |
 | `/reports?now=2026-06-24T18:30` | Báo cáo vận hành định kỳ, dữ liệu gần đúng ảnh thiết kế (`?now=` chỉ dev) – docs/guide/reports.md |
-| `/playground` | Xem mọi component và biến thể, đặt cạnh ảnh Figma |
 
-- Deploy (Netlify): `netlify.toml` (build `npm run build`, publish `dist`, Node 20, chuyển `/*` → `/index.html` status 200) – không thêm file `_redirects` vào `public/` để tránh 2 nguồn cấu hình.
+- Deploy (**chỉ Vercel**): `vercel.json` (build `npm run build`, publish `dist`, `VITE_AUTH=off` trong `buildCommand`, mọi route trừ `/assets/*` → `/index.html`, `/assets/*` cache immutable) – không thêm file `_redirects` vào `public/`.
 - Deploy (Vercel): `vercel.json` – build `VITE_AUTH=off npm run build`, output `dist`, rewrite `/(.*)` → `/index.html` (vào thẳng route / F5 không 404). Node: theo Project Settings của Vercel (20.x hoặc 22.x; khi package.json có `engines` thì theo `engines`).
 - Lý do: app là SPA dùng history router (`createBrowserRouter` trong `src/main.tsx`), host tĩnh không có file `/alerts` nên gõ thẳng URL hoặc F5 sẽ 404 nếu thiếu luật trả `index.html` cho React Router xử lý; vì vậy `base` trong `vite.config.ts` phải để mặc định `/`.
 
@@ -44,7 +45,7 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 src/
 ├─ main.tsx            khai báo route (createBrowserRouter)
 ├─ app/                "keo" nối router + dữ liệu vào component
-├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, editor, playground)
+├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, operations, reports, editor, errors, shared)
 ├─ components/         component THUẦN (không import router/data), barrel index.ts
 ├─ data/               hook + hàm dữ liệu theo màn (bọc mock, chỗ thay API)
 ├─ mocks/              dữ liệu giả từ Figma; mocks/scenes/*.json = cảnh 3D
@@ -92,6 +93,6 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Vận hành – thiết bị, nhật ký, AI mô phỏng | `/operations/devices/E-101A`: URL, luồng dữ liệu (tag/ngưỡng một nguồn, số tạm), vùng ↔ component, thêm thiết bị · `/operations/logs` Nhật ký vận hành (mục 7) · `/operations/ai-simulation` AI mô phỏng sự cố (mục 8) | [docs/guide/operations.md](docs/guide/operations.md) |
 | Báo cáo định kỳ | `/reports`: tách lớp dùng chung ngày/tháng/quý/năm (5O-1), quy tắc trạng thái (5O-2), **URL thử với `?now=`** (5O-3), chưa làm (5O-4) | [docs/guide/reports.md](docs/guide/reports.md) |
 | Đăng nhập + backend | Biến môi trường, chạy cùng backend, hợp đồng API, luồng đăng nhập, gọi endpoint mới (9a–9f, Phụ lục D) | [docs/guide/backend-auth.md](docs/guide/backend-auth.md) |
-| Test + chất lượng | Lệnh, nơi đặt test, thêm test, axe/accessibility (7b) | [docs/guide/testing.md](docs/guide/testing.md) |
+| Chất lượng code | `npm run lint` (ESLint + Prettier), `npm run typecheck`, `npm run build`; smoke test trình duyệt ngoài repo | [CLAUDE.md](CLAUDE.md) mục 2 + 5 |
 
 Tham chiếu cũ dạng "GUIDE 4m" / "GUIDE mục 6" vẫn tìm được: số mục giữ nguyên trong file của luồng. Đổi luồng nào → cập nhật file của luồng đó (và dòng tương ứng ở bảng trên nếu phạm vi đổi).

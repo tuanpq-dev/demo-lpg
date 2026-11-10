@@ -83,7 +83,7 @@ function VerticalStepper({ steps, completed, current, label, className }: Omit<W
               <span
                 aria-hidden="true"
                 className={cn(
-                  'relative z-[1] mt-[3px] grid size-[18px] shrink-0 place-items-center rounded-full border-2',
+                  'relative z-[1] mt-[3px] grid size-4.5 shrink-0 place-items-center rounded-full border-2',
                   isCurrent
                     ? 'border-primary bg-surface shadow-[0_0_8px_rgb(var(--color-primary)/0.6)]'
                     : done
@@ -105,7 +105,7 @@ function VerticalStepper({ steps, completed, current, label, className }: Omit<W
                   <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước hiện tại' : ' – chưa tới'}</span>
                 </span>
                 {s.note && (
-                  <span className={cn('rounded-sm border px-1.5 text-xs font-normal leading-[18px]', NOTE_CLASS[s.noteTone ?? 'warning'])}>
+                  <span className={cn('rounded-sm border px-1.5 text-xs font-normal leading-4.5', NOTE_CLASS[s.noteTone ?? 'warning'])}>
                     <span className="sr-only">, </span>
                     {s.note}
                   </span>
@@ -168,7 +168,7 @@ export function WorkflowStepper({ steps, completed, current, label, orientation 
                   <span className="sr-only">{done ? ' – đã xong' : isCurrent ? ' – bước đang chờ' : ' – chưa tới'}</span>
                 </span>
                 {s.note && (
-                  <span className={cn('rounded-sm border px-1.5 text-xs leading-[18px]', NOTE_CLASS[s.noteTone ?? 'warning'])}>
+                  <span className={cn('rounded-sm border px-1.5 text-xs leading-4.5', NOTE_CLASS[s.noteTone ?? 'warning'])}>
                     <span className="sr-only">, </span>
                     {s.note}
                   </span>

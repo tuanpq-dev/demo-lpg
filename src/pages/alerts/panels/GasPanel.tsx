@@ -135,8 +135,8 @@ export function GasPanel({ alert: a, now }: { alert: AlertRecord; now: Date }) {
               <p className="text-sm text-fg-secondary">Lúc cảnh báo: {formatMeasure(recordVal, unit)}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5">
-              {/* eslint-disable-next-line no-restricted-syntax -- icon */}
               {lv && lv.tone !== 'success' && (
+                // eslint-disable-next-line no-restricted-syntax -- icon
                 <AlertCircleIcon size={22} aria-hidden="true" className={lv.tone === 'danger' ? 'text-danger-strong' : 'text-warning'} />
               )}
               {lv ? (

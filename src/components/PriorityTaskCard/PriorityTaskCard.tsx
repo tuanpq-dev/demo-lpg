@@ -84,7 +84,7 @@ export function PriorityTaskCard({
             type="button"
             onClick={() => onDetail(id)}
             aria-label={`Chi tiết ${code}`}
-            className="shrink-0 rounded-sm text-sm font-semibold leading-[18px] text-info underline hover:text-accent"
+            className="shrink-0 rounded-sm text-sm font-semibold leading-4.5 text-info underline hover:text-accent"
           >
             Chi tiết
           </button>

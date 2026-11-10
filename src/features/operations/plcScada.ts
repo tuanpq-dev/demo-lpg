@@ -39,7 +39,7 @@ export const HEARTBEAT_VIEW: Record<string, StateView> = {
   ok: { value: 'OK', status: 'Ổn định', tone: 'success' },
   lost: { value: 'Không nhận', status: 'Mất heartbeat', tone: 'danger' },
 };
-export const LINK_VIEW: Record<string, StateView> = {
+const LINK_VIEW: Record<string, StateView> = {
   active: { value: 'Đang hoạt động', status: 'Bình thường', tone: 'success' },
   down: { value: 'Mất kết nối', status: 'Mất kết nối', tone: 'danger' },
 };

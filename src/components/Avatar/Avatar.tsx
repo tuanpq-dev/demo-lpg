@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 /** "Nguyễn Văn A" → "NA" (chữ đầu họ + chữ đầu tên). */
 export function initials(name: string) {
   const w = name.trim().split(/\s+/);
-  return ((w[0]?.[0] ?? '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase();
+  return ((w[0]?.[0] ?? '') + (w.length > 1 ? (w[w.length - 1]?.[0] ?? '') : '')).toUpperCase();
 }
 
 const sizeClass = { sm: 'size-6 text-2xs', md: 'size-8 text-xs', lg: 'size-10 text-sm' } as const;

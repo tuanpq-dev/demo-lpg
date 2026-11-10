@@ -9,6 +9,12 @@ const STATUS_TONE: Partial<Record<ObjectStatus, MapMarkerTone>> = {
   offline: 'neutral',
 };
 
+/** Giá trị trên nhãn: không hiện (variant tag / không có trường) · "—" khi chưa có liveData · số đã định dạng. */
+function markerValue(shows: boolean, field: string | undefined, live: LiveData | undefined, reading: LiveData[string] | undefined, now: number) {
+  if (!shows || !field) return undefined;
+  return live ? formatField(field, reading, now) : '—';
+}
+
 /**
  * Nhãn tự sinh cho object có `marker`:
  * - Tiêu đề = `marker.title ?? label ?? id`; giá trị = trường `marker.field` (mặc định binding đầu tiên) từ liveData.
@@ -27,19 +33,20 @@ export function objectMarker(
   const variant = m.variant ?? 'callout';
   const tone = m.tone ?? 'accent';
   const field = m.field ?? Object.keys(obj.bindings ?? {})[0];
-  const tag = field ? bindingTag(obj, field) : undefined;
+  const reading = field && live ? live[bindingTag(obj, field) ?? ''] : undefined;
+  const showsValue = variant !== 'tag' && !!field;
   const base: MapMarkerData = {
     id: obj.id,
     variant,
     tone,
     title: m.title ?? obj.label ?? obj.id,
-    value: variant === 'tag' || !field ? undefined : live ? formatField(field, tag ? live[tag] : undefined, now) : '—',
+    value: markerValue(showsValue, field, live, reading, now),
     showDot: tone === 'success',
     x: 0,
     y: 0,
   };
   if (!live) return base;
-  const lost = !!field && variant !== 'tag' && tagSignal(tag ? live[tag] : undefined, now) === 'lost';
+  const lost = showsValue && tagSignal(reading, now) === 'lost';
   const alarmTone = STATUS_TONE[objectStatus(obj, live, thresholds, now)];
   if (lost && alarmTone !== 'danger' && alarmTone !== 'warning') return { ...base, tone: 'neutral', showDot: false, showSignalLostIcon: true };
   return alarmTone ? { ...base, tone: alarmTone, showDot: false, showWarningIcon: alarmTone !== 'neutral', showSignalLostIcon: lost } : base;

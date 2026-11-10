@@ -46,7 +46,7 @@ export type OverviewData = {
 /**
  * Nguồn dữ liệu. Thay thân hàm bằng `fetch('/api/overview')` khi có API – UI không cần sửa.
  */
-export async function fetchOverview(): Promise<OverviewData> {
+async function fetchOverview(): Promise<OverviewData> {
   return {
     systemStatus: mock.systemStatus,
     kpis: mock.overviewKpis,

@@ -25,7 +25,7 @@ export type AlertAssignForm = {
 };
 
 /** Ô thông báo tick sẵn khi có ít nhất một cảnh báo Nghiêm trọng. */
-export const defaultNotify = (alerts: readonly Pick<AlertRecord, 'severity'>[]) => alerts.some((a) => a.severity === 'critical');
+const defaultNotify = (alerts: readonly Pick<AlertRecord, 'severity'>[]) => alerts.some((a) => a.severity === 'critical');
 
 /** Form mặc định. Một cảnh báo: chọn sẵn người hiện tại + người phối hợp đang có. Hàng loạt: chưa chọn ai. */
 export function initialAlertAssignForm(alerts: readonly AlertRecord[]): AlertAssignForm {

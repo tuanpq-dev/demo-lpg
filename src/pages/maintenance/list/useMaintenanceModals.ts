@@ -33,7 +33,7 @@ export function useMaintenanceModals({ all, alerts, search, setExtra, canWrite, 
   const linkedFromAlert = fromAlert ? linkedMaintenance(fromAlert, all) : undefined;
   const createOpen = canWrite && search.get('create') === '1' && !linkedFromAlert;
   useEffect(() => {
-    if (linkedFromAlert && search.get('create') === '1') navigate(`/maintenance/${linkedFromAlert.id}`, { replace: true });
+    if (linkedFromAlert && search.get('create') === '1') void navigate(`/maintenance/${linkedFromAlert.id}`, { replace: true });
   }, [linkedFromAlert, search, navigate]);
 
   // ---- Cập nhật tiến độ (badge của dòng Đã phân công / Đang thực hiện).

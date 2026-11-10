@@ -36,7 +36,7 @@ const RANK: Record<ObjectStatus, number> = { normal: 0, offline: 1, warning: 2, 
 export type ResolvedBinding = { field: string; tag: string; thresholds: Thresholds };
 
 /** Bindings của object → (trường, tag, ngưỡng). Ngưỡng: binding > `defaults[field]`. */
-export function resolveBindings(obj: SceneObject, defaults: Record<string, Thresholds> = {}): ResolvedBinding[] {
+function resolveBindings(obj: SceneObject, defaults: Record<string, Thresholds> = {}): ResolvedBinding[] {
   return Object.entries(obj.bindings ?? {}).map(([field, b]: [string, Binding]) => {
     if (typeof b === 'string') return { field, tag: b, thresholds: defaults[field] ?? {} };
     const { tag, ...own } = b;
@@ -97,7 +97,7 @@ export function objectReadings(obj: SceneObject, live: LiveData | undefined, def
     tag,
     label: FIELD_META[field]?.label ?? field,
     text: live ? formatField(field, live[tag], now) : '—',
-    status: live ? fieldStatus(field, live[tag], thresholds, now) : ('normal' as ObjectStatus),
+    status: live ? fieldStatus(field, live[tag], thresholds, now) : 'normal',
     lost: !!live && tagSignal(live[tag], now) === 'lost',
   }));
 }

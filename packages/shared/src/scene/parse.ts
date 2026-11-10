@@ -39,10 +39,10 @@ const objectSchema = z
       .strict()
       .optional(),
     path: z.array(vec3).optional(),
-    params: z.record(z.number()).optional(),
+    params: z.record(z.string(), z.number()).optional(),
     label: z.string().optional(),
     marker: marker.optional(),
-    bindings: z.record(binding).optional(),
+    bindings: z.record(z.string(), binding).optional(),
   })
   .strict();
 
@@ -65,7 +65,7 @@ const sceneSchema = z
     schemaVersion: z.literal(SCENE_SCHEMA_VERSION),
     camera: camera.optional(),
     views: z.array(view).optional(),
-    thresholds: z.record(thresholds).optional(),
+    thresholds: z.record(z.string(), thresholds).optional(),
     objects: z.array(objectSchema),
     pipes: z.array(pipeSchema),
   })
@@ -170,10 +170,13 @@ export type SceneIssue = {
   message: string;
 };
 
+/** Đường dẫn lỗi zod (zod 4: PropertyKey[] – symbol đổi thành chuỗi). */
+const keyPath = (path: readonly PropertyKey[]): (string | number)[] => path.map((k) => (typeof k === 'symbol' ? String(k) : k));
+
 /** Validate không ném lỗi (Editor: bảng kiểm tra, Import JSON). Rỗng = hợp lệ. */
 export function validateSceneConfig(raw: unknown): SceneIssue[] {
   const r = sceneSchema.safeParse(migrateScene(raw));
-  return r.success ? [] : r.error.issues.map((i) => ({ path: i.path, where: fmtPath(i.path), message: i.message }));
+  return r.success ? [] : r.error.issues.map((i) => ({ path: keyPath(i.path), where: fmtPath(keyPath(i.path)), message: i.message }));
 }
 
 /** JSON (file mock hoặc API, định dạng cũ được migrate) → SceneConfig; sai → ném SceneConfigError liệt kê đủ lỗi. */
@@ -182,7 +185,7 @@ export function parseSceneConfig(raw: unknown, sceneId = (raw as { id?: string }
   if (!r.success)
     throw new SceneConfigError(
       sceneId,
-      r.error.issues.map((i) => `${fmtPath(i.path)}: ${i.message}`),
+      r.error.issues.map((i) => `${fmtPath(keyPath(i.path))}: ${i.message}`),
     );
   return r.data as SceneConfig;
 }

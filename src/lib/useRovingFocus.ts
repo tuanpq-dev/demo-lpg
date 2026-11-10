@@ -60,6 +60,7 @@ export function useRovingFocus<T extends Item>({ items, value, onChange, activat
       default:
         return;
     }
+    if (!target) return;
     e.preventDefault();
     refs.current.get(target.id)?.focus();
     if (activation === 'auto') onChange(target.id);

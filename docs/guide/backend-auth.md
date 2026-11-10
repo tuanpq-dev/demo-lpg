@@ -12,8 +12,8 @@ Backend (NestJS + Prisma/PostgreSQL) ở **repo riêng** `../demo-lpg-server` (c
 
 | Biến | Ở đâu | Giá trị |
 |---|---|---|
-| `VITE_API_URL` | `.env.development` (commit sẵn) · Netlify: Site settings → Environment variables · ghi đè cục bộ: `.env.development.local` | Gốc URL backend, không "/" cuối. Dev: `http://localhost:3000` |
-| `VITE_AUTH` | `.env` / `.env.local` / `netlify.toml` / `vercel.json` (`buildCommand`) | `api` (mặc định) · `off` = không đăng nhập, phiên giả admin (demo tĩnh) |
+| `VITE_API_URL` | `.env.development` (commit sẵn) · Vercel: Project Settings → Environment Variables · ghi đè cục bộ: `.env.development.local` | Gốc URL backend, không "/" cuối. Dev: `http://localhost:3000` |
+| `VITE_AUTH` | `.env` / `.env.local` / `vercel.json` (`buildCommand`) | `api` (mặc định) · `off` = không đăng nhập, phiên giả admin (demo tĩnh) |
 
 Mẫu: `.env.example`. Thiếu `VITE_API_URL` khi `VITE_AUTH=api` → mọi gọi API báo `CONFIG_ERROR` ("Chưa cấu hình địa chỉ máy chủ").
 
@@ -117,11 +117,11 @@ Khi thêm tính năng mới, cập nhật mục 4–6 (đăng nhập: mục 9; b
 
 ### Phụ lục D – Gọi backend + đăng nhập phía FE (CLAUDE.md mục 9 cũ)
 
-- **Backend**: repo riêng `../demo-lpg-server` (quy ước BE trong CLAUDE.md của repo đó). FE gọi **trực tiếp** `VITE_API_URL` qua CORS (`.env.development` = `http://localhost:3000`; production = biến môi trường Netlify) – không proxy Vite.
+- **Backend**: repo riêng `../demo-lpg-server` (quy ước BE trong CLAUDE.md của repo đó). FE gọi **trực tiếp** `VITE_API_URL` qua CORS (`.env.development` = `http://localhost:3000`; production = biến môi trường trên Vercel) – không proxy Vite.
 - **Hợp đồng API do FE tự định nghĩa** (`src/api/types.ts`, zod), KHÔNG import `@demo-lpg/shared` cho phần API/auth. Mọi response validate bằng zod; sai → `ApiError('CONTRACT_ERROR')` nêu trường sai. Backend đổi hợp đồng → sửa `types.ts` + test; lệch giữa backend và hợp đồng đã chốt thì báo người dùng, không tự đoán. (Backend nhắc tới `docs/API.md` làm nguồn đối chiếu – chưa có file.)
 - **Gọi API**: chỉ qua `api.request(path, { schema, method, body, auth })` (`src/api/client.ts`); không `fetch` trực tiếp trong trang/data. Lỗi luôn là `ApiError` có `code` – UI rẽ nhánh theo `code`, không theo câu chữ (`authErrorMessage`); `VALIDATION_ERROR` hiện `details`/`message` của backend.
 - **Phiên**: access token chỉ trong bộ nhớ (closure của client), không localStorage/sessionStorage; refresh chỉ qua `api.refresh()` (gộp một luồng + Web Locks – backend thu hồi cả chuỗi nếu một refresh token bị dùng hai lần). Mở app: refresh → `/auth/me`. 401 → refresh một lần → gọi lại → thất bại thì `onSessionLost` → về `/login`.
 - **Quyền ở FE chỉ là UX**: `useCan('<quyền>')` / `can()` từ `src/features/auth/permissions.ts` (bản riêng của FE, phải khớp vai trò backend). Trang mới mặc định nằm trong `RequireAuth`; chỉ `/login`, `/register`, `/pending` công khai.
-- **`VITE_AUTH=off`**: phiên giả admin, không gọi backend (demo tĩnh, Netlify, script e2e cũ). Đừng dùng cho môi trường có dữ liệu thật.
+- **`VITE_AUTH=off`**: phiên giả admin, không gọi backend (demo tĩnh trên Vercel). Đừng dùng cho môi trường có dữ liệu thật.
 - **`packages/shared`** vẫn còn cho cảnh 3D/live/mock (`src/features/scene/*` re-export, `src/mocks/contracts.test.ts`) và repo backend cũ phụ thuộc qua `file:` – backend đang sửa đã bỏ phụ thuộc này; quyết định giữ/bỏ hẳn: chờ người dùng.
-- **Chờ duyệt (phía FE)**: `/editor` theo vai trò (engineer/admin) không cần `?edit=1`; `netlify.toml` đặt `VITE_AUTH=off`; header giữ đúng Figma – email/vai trò chỉ hiện trong menu tài khoản; zod trong bundle chính (+14.5 KB gzip).
+- **Chờ duyệt (phía FE)**: `/editor` theo vai trò (engineer/admin) không cần `?edit=1`; `vercel.json` đặt `VITE_AUTH=off`; header giữ đúng Figma – email/vai trò chỉ hiện trong menu tài khoản; zod trong bundle chính (+14.5 KB gzip).

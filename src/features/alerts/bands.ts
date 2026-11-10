@@ -5,9 +5,6 @@
 import type { AlertBand, AlertKindConfig, AlertLevel } from '@/features/alerts/kinds';
 import { formatMeasure } from './gauge';
 
-export const LEVEL_ORDER: readonly AlertLevel[] = ['normal', 'level-1', 'level-2', 'esd'];
-export const levelRank = (l: AlertLevel) => LEVEL_ORDER.indexOf(l);
-
 /** Đoạn chứa giá trị: đoạn cuối có `from ≤ value` (đúng bằng mốc = mức cao hơn); dưới đoạn đầu → đoạn đầu. */
 export function bandOf(value: number, bands: readonly AlertBand[]): AlertBand {
   let hit = bands[0]!;

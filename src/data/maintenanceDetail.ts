@@ -216,13 +216,13 @@ const assignDraft = createSessionDraft<AssignDraft>('demo-lpg:mt-assign-draft:',
   const shift = SHIFT_VALUES.includes(d.shift as ShiftId) ? (d.shift as ShiftId) : null;
   return {
     assignee: d.assignee ?? null,
-    collaborators: d.collaborators.filter(str) as string[],
-    startAt: d.startAt!,
-    dueAt: d.dueAt!,
+    collaborators: d.collaborators.filter(str),
+    startAt: d.startAt,
+    dueAt: d.dueAt,
     shift,
-    note: d.note!,
-    reason: d.reason!,
-    savedAt: str(d.savedAt) ? d.savedAt! : '',
+    note: d.note,
+    reason: d.reason,
+    savedAt: str(d.savedAt) ? d.savedAt : '',
   };
 });
 
@@ -290,7 +290,7 @@ export type RelatedDeviceView =
 const RANK = { normal: 0, offline: 1, warning: 2, danger: 3 } as const;
 
 /** Trạng thái xấu nhất của các số liệu (dùng cho chấm cạnh tên thiết bị). */
-export function worstReading(readings: readonly Reading[]): 'danger' | 'warning' | 'offline' | 'normal' {
+function worstReading(readings: readonly Reading[]): 'danger' | 'warning' | 'offline' | 'normal' {
   return readings.reduce<'danger' | 'warning' | 'offline' | 'normal'>((w, r) => (RANK[r.status] > RANK[w] ? r.status : w), 'normal');
 }
 

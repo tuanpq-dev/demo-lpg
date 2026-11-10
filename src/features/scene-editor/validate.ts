@@ -69,7 +69,7 @@ export function checkScene(scene: SceneConfig, tags: readonly string[]): EditorI
  * - warning: cổng trùng điểm kề (điểm trùng liên tiếp), đầu hở (không nối cổng và không nằm trên ống khác – nhánh
  *   chữ T hợp lệ), ống xuyên thiết bị (đoạn cắt hộp bao thu nhỏ 0.15 m của equipment không phải 2 đầu nối – cảnh báo nhẹ).
  */
-export function pipeIssues(scene: SceneConfig): EditorIssue[] {
+function pipeIssues(scene: SceneConfig): EditorIssue[] {
   const out: EditorIssue[] = [];
   const byId = objectsById(scene);
   const paths = new Map(scene.pipes.map((p) => [p.id, pipePath(p, byId)]));

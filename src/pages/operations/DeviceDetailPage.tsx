@@ -17,7 +17,7 @@ import {
 } from '@/data/operationDevice';
 import { connectionView } from '@/features/operations/device';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { PlcScadaView, plcHeaderStatus } from './PlcScadaView';
 import { VaporizerView, vaporizerRun } from './VaporizerView';
 
@@ -38,7 +38,7 @@ export default function DeviceDetailRoute() {
         title="Không tìm thấy thiết bị"
         breadcrumb={[...BREADCRUMB_BASE, { label: raw || '—' }]}
         message={`Chưa có trang giám sát cho "${raw}". Thiết bị đang có: ${OPERATION_DEVICE_IDS.join(', ')}.`}
-        actions={<Button onClick={() => navigate(operationDevicePath(DEFAULT_OPERATION_DEVICE))}>Mở {DEFAULT_OPERATION_DEVICE}</Button>}
+        actions={<Button onClick={() => void navigate(operationDevicePath(DEFAULT_OPERATION_DEVICE))}>Mở {DEFAULT_OPERATION_DEVICE}</Button>}
       />
     );
   }
@@ -80,7 +80,9 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
           className="w-[200px]"
           options={OPERATION_DEVICE_OPTIONS}
           value={deviceId}
-          onChange={(id) => id && id !== deviceId && navigate(`${operationDevicePath(id)}${search}`)}
+          onChange={(id) => {
+            if (id && id !== deviceId) void navigate(`${operationDevicePath(id)}${search}`);
+          }}
         />
       }
       // TODO: đổi sang `actionItems` (gom Tên/Khu vực/PLC vào "Thêm" < md) khi nhánh fix/header-mobile vào main.
@@ -107,7 +109,7 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
           title="Không tải được thiết bị"
           error={error}
           onRetry={refetch}
-          actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>}
+          actions={<Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>}
         />
       </Page>
     );

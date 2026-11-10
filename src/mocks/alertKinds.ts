@@ -12,7 +12,7 @@ import type { AlertBand, AlertKind, AlertKindConfig, AlertUpdateConfig, FollowUp
 import type { StaffSkill } from '@/features/staff/skills';
 
 /** Van an toàn theo bồn (ảnh ghi "van PR-101" – dữ liệu dùng PSV-101, docs/figma-diffs.md). */
-export const SAFETY_VALVES: Readonly<Record<string, string>> = { 'V-101': 'PSV-101', 'V-102': 'PSV-102' };
+const SAFETY_VALVES: Readonly<Record<string, string>> = { 'V-101': 'PSV-101', 'V-102': 'PSV-102' };
 /** Bộ điều áp sau bồn (ảnh modal cập nhật xử lý áp suất: "PR-101"). PR-102 giả định. */
 export const REGULATORS: Readonly<Record<string, string>> = { 'V-101': 'PR-101', 'V-102': 'PR-102' };
 

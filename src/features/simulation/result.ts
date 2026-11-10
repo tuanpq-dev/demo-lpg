@@ -3,7 +3,7 @@
  * kết thúc: KPI, đánh giá tổng quan + 4 ô, bảng tiêu chí, gợi ý AI sau lượt, điểm biểu đồ, nội dung báo cáo (CSV).
  * Mọi số suy từ lượt (`SimulationSession`) + bản ghi lịch sử (`SimulationRun`) + mô hình diễn biến (`monitor.ts`).
  */
-import { formatQty, formatVariable, lowerFirst } from './config';
+import { formatVariable, lowerFirst } from './config';
 import {
   clockText,
   elapsedSec,
@@ -45,7 +45,7 @@ export type SimulationResult = {
 };
 
 /** Điểm biểu đồ kết quả – `count` khoảng đều (ảnh: mỗi phút một chấm, 0m → 10m). Dừng sớm → chỉ tới lúc dừng. */
-export function resultPoints(session: SimulationSession, elapsed: number, count = 10): { sec: number; value: number }[] {
+function resultPoints(session: SimulationSession, elapsed: number, count = 10): { sec: number; value: number }[] {
   const p = profileOf(session);
   const out: { sec: number; value: number }[] = [];
   for (let i = 0; i <= count; i++) {
@@ -246,6 +246,3 @@ export function resultCsv(s: Scenario, session: SimulationSession, code: string,
 
 /** "sim-run-24062026-001.csv" */
 export const resultFileName = (code: string, ext: 'pdf' | 'csv') => (ext === 'pdf' ? `${code}.pdf` : `${code.toLowerCase()}.csv`);
-
-/** Giá trị theo đơn vị không qualifier – trục biểu đồ ("35%"). */
-export const qtyText = (x: number, s: Pick<Scenario, 'setup'>) => formatQty(x, s.setup.variable.unit, s.setup.variable.digits);

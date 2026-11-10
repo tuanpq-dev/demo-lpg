@@ -18,8 +18,8 @@ import {
   type StoredSignature,
 } from '@/features/reports';
 
-export const REPORT_INSPECTORS = ['Nguyễn Văn A', 'Lê Thị B', 'Phạm Văn D'] as const;
-export const REPORT_APPROVERS = ['Trần Văn C', 'Hoàng Thị E'] as const;
+const REPORT_INSPECTORS = ['Nguyễn Văn A', 'Lê Thị B', 'Phạm Văn D'] as const;
+const REPORT_APPROVERS = ['Trần Văn C', 'Hoàng Thị E'] as const;
 
 /** Kịch bản theo số ngày LÙI từ hôm nay (0 = hôm nay). Ngày không có ở đây = đủ mốc + đã ký. */
 const AWAITING: Record<number, SignatureStep | 'rejected'> = {

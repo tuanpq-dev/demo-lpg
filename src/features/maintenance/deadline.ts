@@ -21,7 +21,7 @@ export type DeadlineCountdown = {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Độ dài → "HH:MM:SS" (≥ 24 giờ: "N ngày HH:MM:SS"). Làm tròn xuống tới giây. */
-export function formatClock(ms: number): string {
+function formatClock(ms: number): string {
   const total = Math.floor(Math.abs(ms) / 1000);
   const days = Math.floor(total / 86_400);
   const h = Math.floor((total % 86_400) / 3600);
@@ -32,7 +32,7 @@ export function formatClock(ms: number): string {
 }
 
 /** Độ dài → "4 giờ 15 phút" (độ phân giải phút, bỏ phần bằng 0; < 1 phút → "dưới 1 phút"). */
-export function speakDuration(ms: number): string {
+function speakDuration(ms: number): string {
   const totalMin = Math.floor(Math.abs(ms) / 60_000);
   if (totalMin === 0) return 'dưới 1 phút';
   const days = Math.floor(totalMin / 1440);

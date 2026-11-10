@@ -54,7 +54,7 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
             <p className="text-md text-fg-secondary">{r.label}</p>
             {r.limit && <p className="text-xs text-danger-text">{r.limit}</p>}
           </div>
-          <div className="flex h-[35px] items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
+          <div className="flex h-field items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
             <span className="sr-only">{r.label} trước xử lý: </span>
             {r.before !== undefined ? (
               <span className={toneClass[r.beforeTone ?? 'normal']}>
@@ -86,7 +86,7 @@ export function BeforeAfterReadings({ label, rows, onAfterChange, footer, classN
               tone={r.afterTone === 'danger' ? 'danger' : r.afterTone === 'warning' ? 'warning' : 'default'}
             />
           ) : (
-            <div className="flex h-[35px] items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
+            <div className="flex h-field items-center justify-center rounded-md border border-line/30 bg-surface-sunken text-base font-semibold tabular-nums">
               <span className="sr-only">{r.label} sau xử lý: </span>
               {r.afterText !== undefined ? (
                 <span className={toneClass[r.afterTone ?? 'normal']}>{r.afterText}</span>

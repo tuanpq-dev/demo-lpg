@@ -29,7 +29,7 @@ export function useQuery<T>(key: string, fetcher: () => Promise<T>): QueryState<
     let cancelled = false;
     setSnap({ status: 'loading', key, attempt });
     const done = (next: QueryState<T>) => {
-      if (!cancelled) setSnap({ ...next, key, attempt } as Snapshot<T>);
+      if (!cancelled) setSnap({ ...next, key, attempt });
     };
     let pending: Promise<T>;
     try {

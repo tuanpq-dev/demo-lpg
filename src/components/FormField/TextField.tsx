@@ -26,7 +26,7 @@ export function TextField({ label, value, onChange, required, hint, error, class
           required={required}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
-          className={cn(inputClass(invalid), 'h-[35px]')}
+          className={cn(inputClass(invalid), 'h-field')}
           {...rest}
         />
       )}
@@ -131,7 +131,7 @@ export function DatePicker({
           disabled={disabled}
           required={required}
           onChange={(e) => onChange(e.target.value)}
-          className={cn(inputClass(false), 'h-[35px] [color-scheme:dark]')}
+          className={cn(inputClass(false), 'h-field [color-scheme:dark]')}
         />
       </div>
     );
@@ -150,7 +150,7 @@ export function DatePicker({
           required={required}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
-          className={cn(inputClass(invalid), 'h-[35px] [color-scheme:dark]')}
+          className={cn(inputClass(invalid), 'h-field [color-scheme:dark]')}
         />
       )}
     </FormField>

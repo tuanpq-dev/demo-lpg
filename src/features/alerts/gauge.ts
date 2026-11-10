@@ -7,7 +7,7 @@
  */
 import type { AlertDirection } from '@/features/alerts/types';
 
-export const GAUGE_HEADROOM = 1.2;
+const GAUGE_HEADROOM = 1.2;
 
 /** Đơn vị dính số: "25% LEL", "45°C"; còn lại cách một khoảng: "11.8 bar". */
 export const withUnit = (v: string, unit: string) => (/^[%°]/.test(unit) ? `${v}${unit}` : `${v} ${unit}`);
@@ -51,9 +51,6 @@ export function gaugeScale({
   if (!(max > 0)) return null;
   return { min: 0, max: Math.round(max * 1000) / 1000, value, threshold, direction, breached: isBreached(value, threshold, direction) };
 }
-
-/** Vị trí (0..1) của `v` trên thang. */
-export const gaugeFraction = (s: Pick<GaugeScale, 'min' | 'max'>, v: number) => Math.min(1, Math.max(0, (v - s.min) / (s.max - s.min)));
 
 /** aria-valuetext: "11.8 bar, vượt ngưỡng 10.5 bar" · "45°C, dưới ngưỡng 50°C" · "9.6 bar, trong giới hạn (ngưỡng 10.5 bar)". */
 export function gaugeValueText(s: Pick<GaugeScale, 'value' | 'threshold' | 'direction' | 'breached'>, unit: string): string {

@@ -15,16 +15,21 @@ const CORE = 0.6;
  * Mặt nạ độ sáng cho vệt dòng chảy (không phải màu – màu lấy từ token qua material).
  * Nền tối vừa + một vệt sáng mềm theo chiều u (dọc ống); đỉnh vệt vượt ngưỡng bloom.
  */
+/** Mức xám của vệt sáng dọc ống (mặt nạ độ sáng nhân với màu token, không phải màu giao diện). */
+const STRIPE_STOPS: readonly [offset: number, gray: number][] = [
+  [0, 70], // nền tối
+  [0.55, 85],
+  [0.82, 255], // đỉnh vệt – vượt ngưỡng bloom
+  [1, 70],
+];
+
 function createStripeTexture() {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 2;
   const g = c.getContext('2d')!;
   const grad = g.createLinearGradient(0, 0, c.width, 0);
-  grad.addColorStop(0, 'rgb(70 70 70)');
-  grad.addColorStop(0.55, 'rgb(85 85 85)');
-  grad.addColorStop(0.82, 'rgb(255 255 255)');
-  grad.addColorStop(1, 'rgb(70 70 70)');
+  for (const [offset, gray] of STRIPE_STOPS) grad.addColorStop(offset, `rgb(${gray} ${gray} ${gray})`);
   g.fillStyle = grad;
   g.fillRect(0, 0, c.width, c.height);
   const tex = new CanvasTexture(c);

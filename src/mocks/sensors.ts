@@ -10,7 +10,7 @@ import type { Area } from '@/features/plant/areas';
 
 export type AreaSensor = { tag: string; area: Area; kind: 'gas' };
 
-export const AREA_SENSORS: readonly AreaSensor[] = [
+const AREA_SENSORS: readonly AreaSensor[] = [
   ...GAS_TAGS.map((tag): AreaSensor => ({ tag, area: 'Khu nạp xuất', kind: 'gas' })),
   { tag: VAPORIZER_AREA_TAGS.gas, area: 'Trạm hóa hơi', kind: 'gas' },
 ];

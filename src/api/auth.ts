@@ -29,7 +29,7 @@ export interface AuthService {
   expiresAt(): number | null;
 }
 
-export function createAuthService(client: ApiClient = defaultApi, channel?: Channel): AuthService {
+function createAuthService(client: ApiClient = defaultApi, channel?: Channel): AuthService {
   let state: AuthState = { status: 'loading', user: null };
   let initialized: Promise<void> | null = null;
   const listeners = new Set<() => void>();
@@ -110,7 +110,7 @@ export function createAuthService(client: ApiClient = defaultApi, channel?: Chan
 }
 
 /** Phiên giả admin (VITE_AUTH=off) – không gọi backend. */
-export function createOfflineAuthService(user: User): AuthService {
+function createOfflineAuthService(user: User): AuthService {
   const state: AuthState = { status: 'authenticated', user };
   return {
     getState: () => state,
@@ -126,7 +126,7 @@ export function createOfflineAuthService(user: User): AuthService {
 
 export const AUTH_MODE: 'api' | 'off' = import.meta.env.VITE_AUTH === 'off' ? 'off' : 'api';
 
-export const OFFLINE_USER: User = { id: 'demo', email: 'demo@localhost', name: 'Admin', role: 'admin', status: 'active' };
+const OFFLINE_USER: User = { id: 'demo', email: 'demo@localhost', name: 'Admin', role: 'admin', status: 'active' };
 
 export const authService: AuthService =
   AUTH_MODE === 'off'

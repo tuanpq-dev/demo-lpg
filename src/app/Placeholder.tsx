@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ApiError } from '@/api/client';
 import { Button, Card } from '@/components';
 import { cn } from '@/lib/cn';
 
@@ -28,24 +29,40 @@ export type PageErrorProps = {
   preformatted?: boolean;
 };
 
-/** Trạng thái lỗi chung của trang / khối dữ liệu: Card danger + thông điệp lỗi + "Thử lại" (+ nút phụ). */
+/** Câu thay cho `error.message` theo mã lỗi API (403, mất mạng); undefined = dùng message gốc. */
+function errorText(error: Error): string | undefined {
+  if (!(error instanceof ApiError)) return undefined;
+  if (error.code === 'FORBIDDEN') return 'Tài khoản của bạn không có quyền xem nội dung này. Liên hệ quản trị viên nếu cần quyền.';
+  if (error.code === 'NETWORK_ERROR') return 'Không kết nối được máy chủ. Kiểm tra mạng rồi bấm "Thử lại".';
+  return undefined;
+}
+
+/**
+ * Trạng thái lỗi chung của trang / khối dữ liệu: Card danger + thông điệp lỗi + "Thử lại" (+ nút phụ).
+ * API trả FORBIDDEN → không hiện "Thử lại" (thử lại vẫn bị từ chối).
+ */
 export function PageError({ title, error, onRetry, actions, preformatted }: PageErrorProps) {
+  const forbidden = error instanceof ApiError && error.code === 'FORBIDDEN';
+  const text = errorText(error) ?? error.message;
+  const retry = forbidden ? null : (
+    <Button onClick={onRetry} className={actions ? undefined : 'self-start'}>
+      Thử lại
+    </Button>
+  );
   return (
     <Card title={title} headerVariant="plain" tone="danger">
-      {preformatted ? (
-        <pre className="mb-4 whitespace-pre-wrap font-mono text-sm text-fg-secondary">{error.message}</pre>
+      {preformatted && !errorText(error) ? (
+        <pre className="mb-4 whitespace-pre-wrap font-mono text-sm text-fg-secondary">{text}</pre>
       ) : (
-        <p className="mb-4 text-base text-fg-secondary">{error.message}</p>
+        <p className="mb-4 text-base text-fg-secondary">{text}</p>
       )}
       {actions ? (
         <div className="flex gap-2">
-          <Button onClick={onRetry}>Thử lại</Button>
+          {retry}
           {actions}
         </div>
       ) : (
-        <Button onClick={onRetry} className="self-start">
-          Thử lại
-        </Button>
+        retry
       )}
     </Card>
   );

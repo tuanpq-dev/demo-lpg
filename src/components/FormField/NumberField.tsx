@@ -146,7 +146,7 @@ export function NumberField({
           inputClass(invalid, tone === 'warning' ? 'text-warning' : tone === 'danger' ? 'text-danger-text' : 'text-fg'),
           'tabular-nums',
           align === 'center' && 'text-center font-semibold',
-          size === 'sm' ? 'h-7 px-2 text-sm' : 'h-[35px]',
+          size === 'sm' ? 'h-7 px-2 text-sm' : 'h-field',
           prefix && (size === 'sm' ? 'pl-6' : 'pl-7'),
           unit && 'pr-9',
         )}

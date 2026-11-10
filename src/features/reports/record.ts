@@ -77,7 +77,7 @@ export type ManualValues = Readonly<Record<string, number>>;
 // ============================================================================
 
 /** Mọi thông số (không trùng) – gồm thông số trong thẻ máy hóa hơi và đường cấp. */
-export function allReadings(s: CheckpointSnapshot): RecordReading[] {
+function allReadings(s: CheckpointSnapshot): RecordReading[] {
   return [...s.tank, ...s.vaporizers.flatMap((v) => v.readings), ...s.regulators, ...s.flowLines.flatMap((l) => l.readings)];
 }
 
@@ -87,7 +87,7 @@ export const findReading = (s: CheckpointSnapshot, id: string) => allReadings(s)
 export const effectiveValue = (r: RecordReading, manual: ManualValues): number | null => (r.id in manual ? manual[r.id]! : r.value);
 
 export type ValueState = ReadingLevel | 'missing';
-export const VALUE_STATE_LABEL: Record<ValueState, string> = {
+const VALUE_STATE_LABEL: Record<ValueState, string> = {
   normal: 'Bình thường',
   warning: 'Cảnh báo',
   abnormal: 'Bất thường',
@@ -168,7 +168,7 @@ export function sensorSummary(s: CheckpointSnapshot): SensorSummary {
 // Nhóm đã kiểm tra + điều kiện xác nhận
 // ============================================================================
 
-export const RECORD_GROUPS = [
+const RECORD_GROUPS = [
   { id: 'tank', label: 'Bồn chứa LPG' },
   { id: 'vaporizer', label: 'Máy hóa hơi' },
   { id: 'regulator', label: 'Bộ điều áp' },
@@ -231,7 +231,7 @@ export function appendRemark(text: string, suggestion: string): string {
  * Hệ số quy đổi tồn kho (Nm³ khí / m³ LPG lỏng) – GIẢ ĐỊNH suy từ Figma (10,3 m³ → 151,5 Nm³), chưa có công thức của khách
  * (docs/questions.md 12.18; trang chi tiết tài sản cũng ghi "Chưa rõ cách quy đổi tồn kho Nm³").
  */
-export const INVENTORY_NM3_PER_M3 = 14.7;
+const INVENTORY_NM3_PER_M3 = 14.7;
 export const inventoryNm3 = (volumeM3: number) => volumeM3 * INVENTORY_NM3_PER_M3;
 
 // ============================================================================

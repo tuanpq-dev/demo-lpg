@@ -1,6 +1,6 @@
 import { Button, Card, DataTable, type DataTableColumn } from '@/components';
 import {
-  EVENT_PARAMS,
+  type EVENT_PARAMS,
   EVENT_STATUS_LABEL,
   EVENT_TYPES,
   EVENT_TYPE_META,

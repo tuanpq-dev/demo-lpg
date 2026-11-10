@@ -9,7 +9,7 @@ const SCENE_FILES = import.meta.glob<unknown>('../mocks/scenes/*.json', { import
 const idOf = (path: string) => path.slice(path.lastIndexOf('/') + 1, -'.json'.length);
 
 /** Cảnh mẫu (chỉ đọc) – Editor mở được nhưng phải "Lưu thành bản mới". */
-export const SCENE_IDS = Object.keys(SCENE_FILES).map(idOf);
+const SCENE_IDS = Object.keys(SCENE_FILES).map(idOf);
 export const isSampleScene = (id: string) => SCENE_IDS.includes(id);
 
 /**

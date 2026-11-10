@@ -39,7 +39,7 @@ export function StatusPill({ tone = 'success', size = 'md', children, pulse, cla
     <span
       role="status"
       className={cn(
-        'inline-flex shrink-0 items-center whitespace-nowrap border font-semibold leading-4 backdrop-blur-[4px]',
+        'inline-flex shrink-0 items-center whitespace-nowrap border font-semibold leading-4 backdrop-blur-sm',
         size === 'md' ? 'h-9 gap-2 rounded-lg px-4 text-base tracking-label' : 'h-6 gap-1.5 rounded-xl px-2.5 text-xs',
         toneClass[tone],
         className,

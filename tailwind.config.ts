@@ -98,6 +98,22 @@ export default {
         gutter: 'var(--space-gutter)',
         page: 'var(--space-page)',
         header: 'var(--header-height)',
+        /** Chiều cao ô nhập form (TextField, Select field, Combobox… – Figma 35px). */
+        field: '35px',
+        /** Cột phụ bên phải (Tổng quan 53:164, panel chi tiết). */
+        sidebar: '326px',
+        /** 18px – icon / ô vuông nhỏ hay dùng trong Figma. */
+        '4.5': '1.125rem',
+      },
+      lineHeight: {
+        '4.5': '18px',
+      },
+      borderWidth: {
+        '1.5': '1.5px',
+      },
+      backdropBlur: {
+        /** 3px – nền mờ nhẹ của chip/thẻ nổi trên bản đồ. */
+        xs: '3px',
       },
       boxShadow: {
         card: 'var(--shadow-card)',

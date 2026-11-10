@@ -33,22 +33,8 @@ export type ColorToken =
   | 'scene-asset'
   | 'scene-flow';
 
-/** Giá trị hex "#RRGGBB" của token màu (đọc biến CSS `--color-<name>`, kể cả alias var()). Chỉ gọi phía client. */
-export function tokenHex(name: string): string {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim();
-  const rgb = raw.split(/\s+/).map(Number);
-  if (rgb.length !== 3 || rgb.some((v) => !Number.isFinite(v))) return raw || '—';
-  return (
-    '#' +
-    rgb
-      .map((v) => v.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase()
-  );
-}
-
 /** Đọc token → chuỗi màu CSS "rgb(r g b / a)". Chỉ gọi phía client. */
-export function tokenColor(name: ColorToken, alpha = 1): string {
+function tokenColor(name: ColorToken, alpha = 1): string {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim();
   return alpha === 1 ? `rgb(${raw})` : `rgb(${raw} / ${alpha})`;
 }

@@ -60,7 +60,7 @@ export type DeadlineKind = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
  * Quy tắc hạn nộp (GIẢ ĐỊNH theo ảnh "Lịch báo cáo sắp tới": tuần – thứ Sáu 17:00, tháng – ngày cuối tháng 12:00,
  * quý – ngày cuối quý 17:00; năm – 31/12 17:00). Chờ khách xác nhận (docs/questions.md).
  */
-export const DEADLINE_RULES: Record<DeadlineKind, { time: string }> = {
+const DEADLINE_RULES: Record<DeadlineKind, { time: string }> = {
   weekly: { time: '17:00' },
   monthly: { time: '12:00' },
   quarterly: { time: '17:00' },

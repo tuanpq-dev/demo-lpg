@@ -31,10 +31,10 @@ export const WORK_STATE_OPTIONS: readonly { id: WorkState; label: string }[] = [
 export const HOLD_LABEL = { paused: 'Tạm dừng', blocked: 'Gặp sự cố' } as const;
 
 /** "Gần hạn" = còn ≤ 2 giờ tới giờ hạn (ô Hạn chót trong modal tô đỏ). */
-export const NEAR_DUE_MS = 2 * 60 * 60 * 1000;
+const NEAR_DUE_MS = 2 * 60 * 60 * 1000;
 
 /** Bước của thanh trượt tiến độ (%). */
-export const PROGRESS_STEP = 5;
+const PROGRESS_STEP = 5;
 
 /** Mở modal cập nhật tiến độ được khi đã phân công / đang thực hiện. */
 export const canUpdateProgress = (s: MaintenanceStatus) => s === 'assigned' || s === 'in-progress';
@@ -49,7 +49,7 @@ export function workStateOf(r: Pick<MaintenanceRecord, 'status' | 'hold'>): Work
 export const workStateDisabled = (status: MaintenanceStatus, s: WorkState) => s === 'completed' && status === 'assigned';
 
 /** Kẹp 0..100 và làm tròn về bội số của `PROGRESS_STEP`. NaN → 0. */
-export function clampProgress(v: number): number {
+function clampProgress(v: number): number {
   if (!Number.isFinite(v)) return 0;
   return Math.min(100, Math.max(0, Math.round(v / PROGRESS_STEP) * PROGRESS_STEP));
 }
@@ -178,7 +178,7 @@ export function isNearOrPastDue(dueAt: string, now: Date, hasTime = true): boole
 
 // ---- Tệp tải lên trong modal (chỉ trong phiên – TODO(backend): upload thật qua API lưu trữ) ----
 
-export const UPLOAD_RULES = {
+const UPLOAD_RULES = {
   /** Đuôi tệp cho phép (chữ thường). */
   exts: ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx', 'xlsx', 'txt'] as readonly string[],
   /** Tối đa mỗi tệp. */

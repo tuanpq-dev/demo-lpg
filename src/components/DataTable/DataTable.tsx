@@ -218,7 +218,7 @@ export function DataTable<T>({
                         type="button"
                         aria-expanded={groupOpen}
                         onClick={() => toggleGroup(group.id)}
-                        className="sticky left-3 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold leading-[18px] text-primary"
+                        className="sticky left-3 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold leading-4.5 text-primary"
                       >
                         <Icon
                           name="tableGroupChevron"

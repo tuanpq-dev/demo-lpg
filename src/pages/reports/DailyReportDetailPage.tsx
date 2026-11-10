@@ -29,7 +29,7 @@ import {
 } from '@/features/reports';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { CheckpointRecordModal } from './daily/CheckpointRecordModal';
 import { CheckpointTimeline } from './daily/CheckpointTimeline';
 import { DailyReadingsTable, FIELD_NOTE } from './daily/DailyReadingsTable';
@@ -90,7 +90,7 @@ export default function DailyReportDetailPage() {
             Không có báo cáo ngày mã <code className="font-mono text-fg">{code}</code>. Báo cáo ngày chỉ có từ 01/01 năm nay tới hôm nay.
           </>
         }
-        actions={<Button onClick={() => navigate(LIST_PATH)}>Về danh sách báo cáo</Button>}
+        actions={<Button onClick={() => void navigate(LIST_PATH)}>Về danh sách báo cáo</Button>}
       />
     );
   }
@@ -114,7 +114,7 @@ export default function DailyReportDetailPage() {
   }
 
   const goToDay = (day: string) => {
-    if (day) navigate(`/reports/daily/${reportCode('daily', day)}${search}`);
+    if (day) void navigate(`/reports/daily/${reportCode('daily', day)}${search}`);
   };
 
   return <DailyReportView report={state.report} readings={state.readings} now={now} onDayChange={goToDay} />;

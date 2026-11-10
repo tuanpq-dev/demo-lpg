@@ -21,8 +21,9 @@ import {
 import { useMaintenance } from '@/data/maintenance';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
+import type { ImageAsset } from '@/lib/imageAsset';
 import { useNow } from '@/lib/useNow';
-import { CreateMaintenanceModal } from '../../maintenance/CreateMaintenanceModal';
+import { CreateMaintenanceModal } from '../../shared/maintenance/CreateMaintenanceModal';
 import { AssetAside } from './AssetAside';
 import { AssetEventsCard, getEventId } from './AssetEventsCard';
 import { AssetKpiSection } from './AssetKpiSection';
@@ -31,7 +32,7 @@ import { StorageCard } from './StorageCard';
 import { CreatedNotice, useAssetCreateRequest } from './useAssetCreateRequest';
 
 /** Ảnh tĩnh dự phòng theo tài sản (chụp từ cảnh 3D riêng). */
-const FALLBACK_IMAGE: Record<string, string> = { 'V-101': assetV101Image };
+const FALLBACK_IMAGE: Record<string, ImageAsset> = { 'V-101': assetV101Image };
 const matchEvent = (e: AssetEvent, v: { hide: string | null }) => !parseHiddenTypes(v.hide).includes(e.type);
 const sortEvents = (a: AssetEvent, b: AssetEvent) => newestEventFirst(a, b);
 const EVENT_ROWS = 5;
@@ -70,11 +71,11 @@ export function AssetDetail({ assetId }: { assetId: string }) {
           {data && <StatusPill tone={data.systemStatus.tone}>{data.systemStatus.label}</StatusPill>}
           <ClockButton />
           <LiveDataButton />
-          <Button icon={<MapIcon size={16} />} onClick={() => navigate(`/overview?map=3d&focus=${encodeURIComponent(assetId)}`)}>
+          <Button icon={<MapIcon size={16} />} onClick={() => void navigate(`/overview?map=3d&focus=${encodeURIComponent(assetId)}`)}>
             Xem trên bản đồ
           </Button>
           {/* q (không phải device): khớp cả cảnh báo của tag/van an toàn thuộc bồn, giống thẻ "Cảnh báo liên quan". */}
-          <Button icon={<HistoryIcon size={16} />} onClick={() => navigate(alertsUrl)}>
+          <Button icon={<HistoryIcon size={16} />} onClick={() => void navigate(alertsUrl)}>
             Lịch sử cảnh báo
           </Button>
           {canWrite && (
@@ -94,7 +95,7 @@ export function AssetDetail({ assetId }: { assetId: string }) {
           title="Không tải được tài sản"
           error={error}
           onRetry={refetch}
-          actions={<Button onClick={() => navigate('/overview')}>Về Tổng quan</Button>}
+          actions={<Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>}
         />
       </Page>
     );
@@ -141,8 +142,8 @@ export function AssetDetail({ assetId }: { assetId: string }) {
           data={data}
           related={deriveRelatedAlerts(alerts.data ?? [], data.relatedDevices, now)}
           summary={deriveMaintenanceSummary(maintenance.data ?? [], data.id, now)}
-          onOpenAlert={(id) => navigate(`/alerts?alert=${id}&range=30d`)}
-          onAllAlerts={() => navigate(`/alerts?q=${encodeURIComponent(data.id)}&range=30d`)}
+          onOpenAlert={(id) => void navigate(`/alerts?alert=${id}&range=30d`)}
+          onAllAlerts={() => void navigate(`/alerts?q=${encodeURIComponent(data.id)}&range=30d`)}
         />
       </div>
 

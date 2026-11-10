@@ -101,12 +101,9 @@ export function useTableFilters<Row, S extends ParamSpec>({
   }, [rows, values, match, sort]);
 
   const tabCounts = useMemo(() => {
-    if (!tabKey) return {} as Record<string, number>;
+    if (!tabKey) return {};
     const tabs = spec[tabKey]?.values ?? [];
-    return Object.fromEntries(tabs.map((t) => [t, rows.filter((r) => match(r, { ...values, [tabKey]: t })).length])) as Record<
-      ValueOf<S[typeof tabKey]>,
-      number
-    >;
+    return Object.fromEntries(tabs.map((t) => [t, rows.filter((r) => match(r, { ...values, [tabKey]: t })).length]));
   }, [rows, values, match, spec, tabKey]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));

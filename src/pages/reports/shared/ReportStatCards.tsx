@@ -36,7 +36,7 @@ export function ReportStatCards({ cards, label = 'Tóm tắt báo cáo' }: { car
             {c.icon}
             <span className={cn('text-lg font-bold leading-[27px] tabular-nums', VALUE_TONE[c.tone])}>{c.value}</span>
           </div>
-          <h3 className="pt-1 text-base font-semibold leading-[18px] text-fg-label">{c.title}</h3>
+          <h3 className="pt-1 text-base font-semibold leading-4.5 text-fg-label">{c.title}</h3>
           {c.percent !== undefined && (
             <>
               <span className={cn('text-xs font-semibold tabular-nums', VALUE_TONE[c.tone])}>{c.percent}%</span>

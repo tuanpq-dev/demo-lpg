@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn';
-import { AlertCircleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '../Icon/TempIcons';
+import { AlertCircleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '../Icon/StatusIcons';
 
 export type ToastListItem = { id: number; text: string; tone: 'info' | 'success' | 'error' };
 

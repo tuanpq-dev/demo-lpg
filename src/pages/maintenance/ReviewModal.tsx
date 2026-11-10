@@ -66,7 +66,7 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
   const title = REVIEWERS.find((p) => p.name === reviewer)?.title;
   const reviewerLabel = reviewer ? `${reviewer}${title ? ` (${title})` : ''}` : '—';
   const form = useFormModal({
-    initial: { result: 'pass' as ReviewResult, followUp: String(DEFAULT_FOLLOW_UP_HOURS), comment: '' },
+    initial: { result: 'pass', followUp: String(DEFAULT_FOLLOW_UP_HOURS), comment: '' },
     values: { result, followUp, comment },
     // Ý kiến chỉ có khoảng trắng = chưa sửa.
     isDirty: (v, i) => v.result !== i.result || v.comment.trim() !== '' || v.followUp !== i.followUp,
@@ -262,7 +262,7 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
                   value={reviewerLabel}
                   aria-invalid={invalid || undefined}
                   aria-describedby={describedBy}
-                  className={cn(inputClass(invalid), 'h-[35px] bg-surface-muted/60')}
+                  className={cn(inputClass(invalid), 'h-field bg-surface-muted/60')}
                 />
                 {selfReview && (
                   <span id={blockId} className="sr-only">

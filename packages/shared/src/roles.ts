@@ -25,6 +25,16 @@ export const PERMISSIONS = {
   'alert:acknowledge': 'operator',
   'maintenance:read': 'viewer',
   'maintenance:write': 'operator',
+  // Nghiệm thu đạt / Yêu cầu làm lại (chi tiết bảo trì).
+  'maintenance:review': 'engineer',
+  // Ký xác nhận báo cáo vận hành (bước Người kiểm tra) – máy chủ kiểm thêm đúng người kiểm tra của báo cáo.
+  'report:sign': 'operator',
+  // Ghi nhận mốc kiểm tra báo cáo ngày.
+  'report:record': 'operator',
+  // Chạy kịch bản AI mô phỏng sự cố (chỉ tính trên dữ liệu tham chiếu, không tác động thiết bị).
+  'simulation:run': 'operator',
+  // Lưu tham số đầu vào của kịch bản mô phỏng (chỉ lớp mô phỏng).
+  'simulation:configure': 'operator',
   'scene:read': 'viewer',
   'scene:write': 'engineer',
   'user:manage': 'admin',

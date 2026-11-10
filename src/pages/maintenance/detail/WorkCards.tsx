@@ -17,7 +17,7 @@ import {
 import { formatDate, type MaintenanceAttachment, type MaintenanceRecord } from '@/data/maintenance';
 import { formatFileSize, historyEvents, relativeDayTime } from '@/data/maintenanceDetail';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
-import { downloadSampleAttachment } from '../attachments';
+import { downloadSampleAttachment } from '../../shared/attachments';
 import { ViewAttachmentModal } from '../MaintenanceDetailDialogs';
 import { MaintenanceResult } from '../MaintenanceResult';
 

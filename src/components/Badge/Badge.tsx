@@ -190,70 +190,77 @@ export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   monitoring: 'Đang theo dõi',
 };
 
-export function Badge(props: BadgeProps) {
-  const { children, className } = props;
+type SeverityProps = Extract<BadgeProps, { variant: 'severity' }>;
+type CountProps = Extract<BadgeProps, { variant: 'count' }>;
+type StatusProps = Exclude<BadgeProps, { variant: 'severity' | 'tag' | 'count' }>;
 
-  if (props.variant === 'severity') {
-    const md = props.size === 'md';
-    const chip = props.size === 'chip';
-    return (
-      <span
-        className={cn(
-          'inline-flex shrink-0 items-center justify-center whitespace-nowrap',
-          chip
-            ? cn('h-7 gap-1.5 rounded-md border px-2.5 text-base font-normal', severityOutline[props.value], severityClass[props.value])
-            : md
-              ? cn('rounded-xs border px-[9px] py-[3px] text-md font-bold leading-[15px]', severityBorder[props.value])
-              : cn('h-5 rounded-sm px-2.5 text-2xs font-bold leading-5', !props.compact && 'min-w-[87px]'),
-          chip ? null : !md && props.outline ? cn('border bg-transparent', severityOutline[props.value]) : severityClass[props.value],
-          className,
-        )}
-      >
-        {(md || chip) && props.withIcon && <AlertTriangleIcon size={16} className={cn('shrink-0', md && 'mr-2')} />}
-        {children ?? severityLabel[props.value]}
-      </span>
-    );
-  }
+/** Lớp cỡ/màu của badge mức độ: chip (bộ lọc) · md (tiêu đề drawer) · sm (bảng, viền tuỳ chọn). */
+function severityClasses({ size, value, compact, outline }: SeverityProps) {
+  if (size === 'chip') return cn('h-7 gap-1.5 rounded-md border px-2.5 text-base font-normal', severityOutline[value], severityClass[value]);
+  if (size === 'md') return cn('rounded-xs border px-[9px] py-[3px] text-md font-bold leading-[15px]', severityBorder[value], severityClass[value]);
+  return cn(
+    'h-5 rounded-sm px-2.5 text-2xs font-bold leading-5',
+    !compact && 'min-w-[87px]',
+    outline ? cn('border bg-transparent', severityOutline[value]) : severityClass[value],
+  );
+}
 
-  if (props.variant === 'tag') {
-    const { tone = 'neutral', size = 'sm' } = props;
-    return (
-      <span className={cn('inline-flex shrink-0 items-center whitespace-nowrap border', tagSize[size], tagClass[tone], className)}>{children}</span>
-    );
-  }
+function SeverityBadge(props: SeverityProps) {
+  const big = props.size === 'md' || props.size === 'chip';
+  return (
+    <span className={cn('inline-flex shrink-0 items-center justify-center whitespace-nowrap', severityClasses(props), props.className)}>
+      {big && props.withIcon && <AlertTriangleIcon size={16} className={cn('shrink-0', props.size === 'md' && 'mr-2')} />}
+      {props.children ?? severityLabel[props.value]}
+    </span>
+  );
+}
 
-  if (props.variant === 'count') {
-    const { value, tone = 'neutral', size = 'sm', max = 99, outlined } = props;
-    return (
-      <span
-        className={cn(
-          'inline-flex shrink-0 items-center justify-center whitespace-nowrap text-2xs tabular-nums',
-          size === 'sm' ? 'h-[18px] min-w-[18px] rounded-xl px-1.5' : 'size-6 rounded-full',
-          countClass[size][tone],
-          outlined && cn('border', countBorder[tone]),
-          className,
-        )}
-      >
-        {children ?? (value > max ? `${max}+` : value)}
-      </span>
-    );
-  }
+function CountBadge({ value, tone = 'neutral', size = 'sm', max = 99, outlined, children, className }: CountProps) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center whitespace-nowrap text-2xs tabular-nums',
+        size === 'sm' ? 'h-[18px] min-w-[18px] rounded-xl px-1.5' : 'size-6 rounded-full',
+        countClass[size][tone],
+        outlined && cn('border', countBorder[tone]),
+        className,
+      )}
+    >
+      {children ?? (value > max ? `${max}+` : value)}
+    </span>
+  );
+}
 
-  let icon: ReactNode = null;
-  if (props.withIcon && props.value === 'pending') icon = <StatusDot status="warning" />;
-  if (props.withIcon && props.value === 'done') icon = <Icon name="check" box={12} className="w-2" />;
+function statusIcon({ withIcon, value }: StatusProps): ReactNode {
+  if (withIcon && value === 'pending') return <StatusDot status="warning" />;
+  if (withIcon && value === 'done') return <Icon name="check" box={12} className="w-2" />;
+  return null;
+}
 
+function StatusBadge(props: StatusProps) {
   return (
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center whitespace-nowrap border',
         props.size === 'md' ? 'h-7 gap-1.5 rounded-md px-2.5 text-base' : 'gap-1 rounded-xl px-3 py-[3px] text-2xs leading-4',
         statusClass[props.value],
-        className,
+        props.className,
       )}
     >
-      {icon}
-      {children ?? WORK_STATUS_LABEL[props.value]}
+      {statusIcon(props)}
+      {props.children ?? WORK_STATUS_LABEL[props.value]}
     </span>
   );
+}
+
+export function Badge(props: BadgeProps) {
+  if (props.variant === 'severity') return <SeverityBadge {...props} />;
+  if (props.variant === 'count') return <CountBadge {...props} />;
+  if (props.variant === 'tag') {
+    const { tone = 'neutral', size = 'sm', children, className } = props;
+    return (
+      <span className={cn('inline-flex shrink-0 items-center whitespace-nowrap border', tagSize[size], tagClass[tone], className)}>{children}</span>
+    );
+  }
+  return <StatusBadge {...props} />;
 }

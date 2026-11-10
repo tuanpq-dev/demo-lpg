@@ -13,8 +13,14 @@ import { z } from 'zod';
 import { ROLES } from '@/features/auth/permissions';
 
 /** Mã lỗi backend theo hợp đồng. */
-export const API_ERROR_CODES = ['INVALID_CREDENTIALS', 'ACCOUNT_PENDING', 'VALIDATION_ERROR', 'RATE_LIMITED', 'UNAUTHORIZED'] as const;
-export type BackendErrorCode = (typeof API_ERROR_CODES)[number];
+export type BackendErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'ACCOUNT_PENDING'
+  | 'VALIDATION_ERROR'
+  | 'RATE_LIMITED'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND';
 
 /**
  * Mã lỗi phía FE (không do backend trả):

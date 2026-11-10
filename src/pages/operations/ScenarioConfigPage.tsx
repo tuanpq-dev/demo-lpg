@@ -24,7 +24,7 @@ import {
 import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import { ExpectedOutcomesCard, InputParamsCard, ReferenceDataCard, ScenarioInfoCard } from './simulation/ConfigCards';
 import { ConfigSuggestionCard, ConfigSummaryCard, ReadinessCard, ScenarioHistoryCard } from './simulation/ConfigSideCards';
 import { CONFIG_SAFETY_RULES, SafetyRulesCard } from './simulation/SimulationSideCards';
@@ -196,7 +196,7 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
     try {
       await startSimulation(s.id, actor, live);
       announce(`Đã bắt đầu mô phỏng ${s.code}.`);
-      navigate(simulationMonitorPath(s.id));
+      void navigate(simulationMonitorPath(s.id));
     } catch (e) {
       announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
       setBusy(null);

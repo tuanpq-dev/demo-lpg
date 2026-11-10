@@ -197,7 +197,7 @@ export type DualTrendChartProps = {
 function lastValue(data: readonly DualTrendPoint[], id: string): { label: string; value: number } | undefined {
   const last = data[data.length - 1];
   const v = last?.[id];
-  return typeof v === 'number' ? { label: last.label, value: v } : undefined;
+  return last && typeof v === 'number' ? { label: last.label, value: v } : undefined;
 }
 
 /**

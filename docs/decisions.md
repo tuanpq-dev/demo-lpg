@@ -332,3 +332,61 @@ Luồng chi tiết: `docs/guide/alerts.md` (4o). Sai khác ảnh: `docs/figma-di
   - axe (tag wcag21a): nút chuông "Thông báo (2 chưa đọc)" ở header lỗi `label-content-name-mismatch` (serious) trên MỌI trang – có từ trước 5F, chưa sửa (ngoài phạm vi). Sửa: tên truy cập bắt đầu bằng chữ hiển thị, hoặc bỏ `aria-label` và dùng chữ ẩn như nút badge trạng thái ở danh sách bảo trì.
   - Môi trường test: máy hiện chạy Node 26 → 10 test có router lỗi `AbortSignal` (undici ↔ jsdom); chạy vitest bằng Node 20 (bản Netlify) như mục 5F. `npm ci` khi dev server đang chạy sẽ hỏng giữa chừng (esbuild.exe bị khoá) – dừng dev server trước, hoặc dùng `npm install`.
   - knip không chạy được trong môi trường (lỗi tương thích TypeScript của knip); đã dùng ts-prune + script tìm file không đến được từ `main.tsx`.
+
+## FE hardening (10/11/2026, nhánh `chore/fe-hardening`, chưa commit)
+Theo review FE (route, bundle, lint, trang lỗi, ảnh, convention). Code không còn nghiệp vụ mới – chỉ cấu trúc/chất lượng.
+- **Route & lỗi**: `errorElement` (`pages/errors/RouteError`) ở tầng gốc + nhánh `RequireAuth`; trang 403/404/500; lỗi tải chunk sau deploy → tải lại 1 lần (chặn vòng lặp 30 s, `lib/chunkReload.ts`, cả sự kiện `vite:preloadError`); `/editor` thiếu quyền → 403 (trước: âm thầm về Tổng quan); `ApiError` thêm FORBIDDEN / NOT_FOUND; title theo `handle.title`; `ScrollRestoration` theo pathname; `OfflineBanner`; số chuông + tab Cảnh báo = số cảnh báo chưa xác nhận (bỏ `2` cứng). `/playground` đã xoá.
+- **Bundle**: `manualChunks` vendor-react / vendor-three / vendor-charts; helper ảo `\0vite/preload-helper.js`, `\0commonjsHelpers.js` ép vào vendor-react (nếu không Rollup đặt vào vendor-three → mọi trang preload 3D + charts). SVG không inline. `PlantMap` dùng `/* @__PURE__ */ lazy()`; icon Toast tách khỏi `TempIcons`. Kết quả: tải đầu 41 + 71 KB gzip (trước 133 KB một chunk), chỉ preload `vendor-react`.
+- **Ảnh**: `plant-map.png` 7,2 MB → AVIF/WebP 1600 + 2730 px (100–283 KB; sharp, AVIF q55 / WebP q78), `<picture>` + `sizes`, LCP `fetchpriority=high`.
+- **Lint/format**: Prettier 3 + `.editorconfig` + `.gitattributes` (LF); ESLint thêm rule dựa trên type, `consistent-type-imports`, `no-console`, `eqeqeq`, `eslint-comments/require-description`, `reportUnusedDisableDirectives`; ngưỡng kích thước/độ phức tạp mức warn (58 warning = backlog). `noUncheckedIndexedAccess` bật ở root + `packages/shared`.
+- **Tách file**: SceneViewer (→ SceneEnvironment, CameraRig, ObjectNode, SceneOverlays), PropertiesPanel (→ `editor/properties/*`), KpiCard (nội bộ), DrawerFooter (file riêng), AlertsPage (`alerts/list/*`), AlertAssignModal (`alerts/assign/*`), SubmitReviewModal (`maintenance/submit/SubmitParts`), ReportSignModal (`reports/sign/SignParts`), Select. `CreateMaintenanceModal` + `create/` + `attachments.ts` chuyển sang `pages/shared/` (hết import chéo giữa trang).
+- **Quyền**: một nguồn `packages/shared/src/roles.ts` (thêm `maintenance:review`, `report:sign`, `report:record`, `simulation:run`, `simulation:configure`); `features/auth/permissions.ts` chỉ re-export. Backend cần `npm run build:shared`.
+- **Xoá**: 141 file test + vitest/testing-library/jsdom/axe (sau khi 1165/1165 test pass – harness `colorRules.test.ts` phải đổi sang lint file thật vì rule dựa trên type), `/playground`, `liveSimulator`/`devScenarios`/hàm giả lập sự cố của `MockLiveSource`, hook `window.__*` cho playwright, prop `now`/`fixedNow` chỉ test dùng, `DetailDrawer`, `SimplePage`, ~240 export và ~30 khai báo không còn dùng (knip), `netlify.toml`.
+- **Kiểm**: typecheck sạch, lint 0 lỗi, build pass; smoke test Edge trên `vite preview` – 16 route, 0 lỗi console; mô phỏng chunk bị xoá → tải lại 1 lần rồi trang 500 giữ header.
+- **Còn lại**: 58 warning kích thước/độ phức tạp (GasPanel, PlcScadaView, simulation/monitor…); Overview không có `h1` (có sẵn từ trước); zod/react-router còn lỗ hổng `npm audit` (ngoài phạm vi đợt này).
+
+### FE hardening – đợt 2 (10–11/11/2026, cùng nhánh, chưa commit)
+- **npm audit: 0 lỗ hổng** (trước 15 / 6 high). `npm audit fix`: react-router-dom 6.30.6, postcss 8.5.32. Nâng major: **vite 5 → 6.4.6** (8 lỗi high dev server + esbuild), **react-router-dom 6 → 7.18.5** (open redirect), **zod 3 → 4.6.7** (cả `packages/shared`). `overrides` ép `minimatch ^11.0.1` cho `@typescript-eslint/typescript-estree` (chưa có bản typescript-eslint vá).
+  - zod 4: `z.record(z.string(), …)` (bắt buộc schema khoá), `issue.path` là `PropertyKey[]` → `keyPath()` trong `scene/parse.ts`, `ZodType<T>` thay `ZodType<T, ZodTypeDef, unknown>`. Đã chạy 3 cảnh mẫu qua validate mới: hợp lệ, lỗi vẫn có đường dẫn. ⚠ Backend dùng `packages/shared` → nay kéo zod 4; nếu BE ghép schema shared với zod 3 của BE thì phải nâng BE.
+  - React Router 7: `navigate()` trả Promise → gọi `void navigate(…)` (34 chỗ); RouterProvider bỏ `future` (startTransition mặc định).
+  - ⚠ Bundle tải đầu tăng **114 → 137 KB gzip** (index 55 + vendor-react 83): zod 4 ~95 KB chưa nén (zod 3: 53), react-router 7 ~96 KB (bản 6: 63). Hướng giảm: `zod/mini` cho schema API (`src/api/types.ts`) hoặc tải schema lười; kiểm vì sao `vendor-react` lẫn ~8 KB `@react-three/fiber` / `react-reconciler`.
+- **Overview h1**: `PageHeader` thêm `srTitle` (h1 chỉ cho trình đọc màn hình khi thiết kế không có tiêu đề) – Tổng quan: "Tổng quan hệ thống LPG".
+- **Warning kích thước/độ phức tạp: 58 → 37.** Đã tách: mock bảo trì (`maintenanceDates/Seeds/Details`), `TempIcons` (+ `OperationIcons`), `PlantMap` (+ `types`, `MapShell`, `PlantMapImage`), `EditTools` (+ `editDrag`, `EditGizmo`), `structures` (+ `loadingYard`), `simulation/monitor` (+ `monitorCore`, `session`, `timeline`, `monitorChart`), `ResultCards` (+ `ResultDetailCards`), `data/alertDetail` (+ `alertBase`, `alertLive`, `alertUpdateData`, `alertClose`), `data/maintenance` (+ `maintenanceView`, `maintenanceForm`), `SceneViewer` (+ `useEditPointer`, `useSceneModel`, `SceneContent`; hàm chính hết cảnh báo), `geometry.resolveScene`, `markers.objectMarker`, `AlertItem`, `Badge`, `Card`, `Combobox`. Các file cũ re-export nên đường import không đổi. `src/mocks/**` tắt `max-lines` (bảng dữ liệu tạm).
+- Kiểm: typecheck sạch, lint 0 lỗi, Prettier sạch, build pass (chỉ preload `vendor-react`), smoke test Edge 19 route gồm bản đồ 3D + Editor – 0 lỗi console.
+- **Còn lại (37 warning, làm tiếp 12/11)** – cách làm như trên: tách biến thể thành component con, đưa nhánh class/điều kiện ra hàm nhỏ, chạy `npm run typecheck` + smoke test sau mỗi nhóm:
+- `packages/shared/src/scene/parse.ts` (complexity)
+- `src/components/DataTable/DataTable.tsx` (complexity)
+- `src/components/NavTabs/NavTabs.tsx` (complexity)
+- `src/components/ProgressSlider/ProgressSlider.tsx` (complexity)
+- `src/components/StatusOptionCard/StatusOptionCard.tsx` (complexity)
+- `src/components/TreeView/TreeView.tsx` (complexity)
+- `src/data/alertUpdateData.ts` (complexity)
+- `src/data/maintenance.ts` (complexity)
+- `src/features/alerts/update.ts` (complexity)
+- `src/features/scene-editor/validate.ts` (complexity)
+- `src/features/simulation/result.ts` (complexity)
+- `src/features/simulation/timeline.ts` (complexity)
+- `src/pages/alerts/AlertAssignModal.tsx` (complexity)
+- `src/pages/alerts/AlertCloseModal.tsx` (max-lines-per-function)
+- `src/pages/alerts/AlertsPage.tsx` (max-lines-per-function)
+- `src/pages/alerts/panels/FirePanel.tsx` (complexity)
+- `src/pages/alerts/panels/GasPanel.tsx` (complexity)
+- `src/pages/alerts/update/useAlertUpdateForm.ts` (complexity)
+- `src/pages/asset/detail/AssetDetail.tsx` (complexity)
+- `src/pages/editor/EditorDialogs.tsx` (complexity)
+- `src/pages/editor/useEditorShortcuts.ts` (complexity)
+- `src/pages/maintenance/ReviewModal.tsx` (complexity)
+- `src/pages/maintenance/ReviewModal.tsx` (max-lines-per-function)
+- `src/pages/maintenance/detail/GeneralInfoCard.tsx` (complexity)
+- `src/pages/operations/AiSimulationPage.tsx` (complexity)
+- `src/pages/operations/OperationLogsPage.tsx` (max-lines-per-function)
+- `src/pages/operations/PlcScadaView.tsx` (complexity)
+- `src/pages/operations/PlcScadaView.tsx` (max-lines-per-function)
+- `src/pages/operations/ScenarioConfigPage.tsx` (complexity)
+- `src/pages/operations/SimulationResultPage.tsx` (complexity)
+- `src/pages/operations/VaporizerView.tsx` (complexity)
+- `src/pages/operations/VaporizerView.tsx` (max-lines-per-function)
+- `src/pages/operations/simulation/ConfigSideCards.tsx` (complexity)
+- `src/pages/operations/simulation/ScenarioCard.tsx` (complexity)
+- `src/pages/reports/shared/ReportTableSection.tsx` (max-lines-per-function)
+- `src/pages/shared/maintenance/create/createForm.ts` (complexity)

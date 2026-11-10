@@ -25,7 +25,7 @@ export type NavTabItem = {
 export type NavSubItem = { id: string; label: string; disabled?: boolean };
 
 /** id mục cấp 1 đang sáng: chính `value` hoặc mục cha chứa `value`. */
-export function navTopId(items: readonly NavTabItem[], value: string): string {
+function navTopId(items: readonly NavTabItem[], value: string): string {
   return items.find((i) => i.id === value || i.children?.some((c) => c.id === value))?.id ?? value;
 }
 
@@ -198,8 +198,7 @@ function SubMenu({
   useEffect(() => {
     const target = initialFocus === 'last' ? enabled[enabled.length - 1] : enabled[0];
     if (target !== undefined) refs.current[target]?.focus();
-    // Chỉ khi vừa mở.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Chỉ khi vừa mở.
   }, []);
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {

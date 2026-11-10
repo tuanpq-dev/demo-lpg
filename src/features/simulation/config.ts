@@ -160,12 +160,6 @@ export function reachesThreshold(variable: Pick<SimVariable, 'threshold' | 'dire
   return variable.direction === 'above' ? value >= variable.threshold : value <= variable.threshold;
 }
 
-/** Vị trí (0–100 %) của giá trị trên thang [min, max] – vạch ngưỡng, nút kéo. */
-export function scalePercent(value: number, min: number, max: number): number {
-  if (max <= min) return 0;
-  return ((Math.min(max, Math.max(min, value)) - min) / (max - min)) * 100;
-}
-
 // ---------------------------------------------------------------------------
 // Kiểm tra cấu hình
 

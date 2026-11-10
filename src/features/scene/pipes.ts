@@ -9,7 +9,7 @@ import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 export const DEFAULT_PIPE_RADIUS = 0.18;
 /** Khoảng cách coi như trùng điểm (m). */
-export const POINT_EPS = 1e-3;
+const POINT_EPS = 1e-3;
 /** Bán kính bắt cổng khi vẽ/kéo (m, đo từ tia chuột tới tâm cổng). */
 export const PORT_SNAP_RADIUS = 0.5;
 
@@ -21,7 +21,7 @@ export function parsePortRef(ref: string | undefined): PortRef | null {
   return dot > 0 ? { objectId: ref.slice(0, dot), port: ref.slice(dot + 1) } : null;
 }
 
-export const portRef = (objectId: string, port: string) => `${objectId}.${port}`;
+const portRef = (objectId: string, port: string) => `${objectId}.${port}`;
 
 /** Ma trận Euler XYZ (giống three) áp lên vector. */
 function rotate([x, y, z]: Vec3, [rx, ry, rz]: Vec3): Vec3 {
@@ -31,7 +31,7 @@ function rotate([x, y, z]: Vec3, [rx, ry, rz]: Vec3): Vec3 {
 }
 
 /** Điểm cục bộ → thế giới của object đặt tự do (position X/Z + elevation, rotation, scale). */
-export function localToWorld(o: SceneObject, p: Vec3): Vec3 {
+function localToWorld(o: SceneObject, p: Vec3): Vec3 {
   const s = o.scale ?? [1, 1, 1];
   const r = rotate([p[0] * s[0], p[1] * s[1], p[2] * s[2]], o.rotation ?? [0, 0, 0]);
   const [x, , z] = o.position ?? [0, 0, 0];
@@ -39,7 +39,7 @@ export function localToWorld(o: SceneObject, p: Vec3): Vec3 {
 }
 
 /** Điểm thế giới → cục bộ (ngược localToWorld). */
-export function worldToLocal(o: SceneObject, p: Vec3): Vec3 {
+function worldToLocal(o: SceneObject, p: Vec3): Vec3 {
   const [x, , z] = o.position ?? [0, 0, 0];
   const d: Vec3 = [p[0] - x, p[1] - objectElevation(o), p[2] - z];
   const [rx, ry, rz] = o.rotation ?? [0, 0, 0];
@@ -91,17 +91,17 @@ export const objectsById = (scene: Pick<SceneConfig, 'objects'>) => new Map(scen
 // ---------------------------------------------------------------------------
 // Vector nhỏ
 
-export const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-export const add3 = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-export const scale3 = (a: Vec3, k: number): Vec3 => [a[0] * k, a[1] * k, a[2] * k];
-export const dot3 = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const add3 = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const scale3 = (a: Vec3, k: number): Vec3 => [a[0] * k, a[1] * k, a[2] * k];
+const dot3 = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const dist3 = (a: Vec3, b: Vec3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 export const same3 = (a: Vec3, b: Vec3, eps = POINT_EPS) => dist3(a, b) < eps;
 const round3 = (v: number) => +v.toFixed(3) || 0;
 export const roundVec = (p: Vec3): Vec3 => [round3(p[0]), round3(p[1]), round3(p[2])];
 
 /** Hình chiếu điểm lên đoạn ab: tham số u ∈ [0, 1], điểm, khoảng cách. */
-export function projectOnSegment(p: Vec3, a: Vec3, b: Vec3) {
+function projectOnSegment(p: Vec3, a: Vec3, b: Vec3) {
   const ab = sub3(b, a);
   const len2 = dot3(ab, ab);
   const u = len2 ? Math.min(1, Math.max(0, dot3(sub3(p, a), ab) / len2)) : 0;

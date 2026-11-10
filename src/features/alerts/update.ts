@@ -10,22 +10,22 @@
  *   Đã xử lý (cháy: Đã xử lý sự cố / Báo động giả) = resolved (chờ xác nhận đóng) – CHỈ khi đủ điều kiện của loại
  *   (`updateCloseCheck`: áp suất / gas / cháy giữ nguyên như modal cũ). Hoàn thành chỉ qua `close.ts`.
  */
-import type { AlertFollowUp, AlertPhase, AlertRecord, VerificationSource } from '@/features/alerts/types';
+import type { AlertFollowUp, AlertRecord, VerificationSource } from '@/features/alerts/types';
 import type { AlertUpdateConfig, UpdateStateId } from '@/features/alerts/kinds';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { canCloseGas } from './bands';
 import { canCloseFire, type DetectorAlarm, type DetectorDevice } from './fire';
 import { formatMeasure } from './gauge';
-import { INSPECTION_STATUS_LABEL, inspectionErrors, writeInspection, type InspectionEntry } from './inspection';
+import { inspectionErrors, writeInspection, type InspectionEntry } from './inspection';
 import { canClosePressure, hasGauge, type LiveState } from './pressure';
 import { canResolve, newNote, withHistory, type AlertActionCtx } from './workflow';
 
 export type { VerificationSource, LiveState };
-export { hasGauge, INSPECTION_STATUS_LABEL };
+export { hasGauge };
 
 export type UpdateState = UpdateStateId;
 
-export const UPDATE_STATES: readonly UpdateState[] = ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved', 'false-alarm'];
+const UPDATE_STATES: readonly UpdateState[] = ['inspecting', 'resolving', 'paused', 'needs-support', 'resolved', 'false-alarm'];
 const DEFAULT_STATE_LABEL: Record<UpdateState, string> = {
   inspecting: 'Đang kiểm tra',
   resolving: 'Đang xử lý',
@@ -52,12 +52,12 @@ export function updateStateOf(a: Pick<AlertRecord, 'status' | 'phase' | 'hold' |
 }
 
 /** Trường bản ghi theo ô chọn (`phase` không có → giữ phase cũ khi tạm dừng / cần hỗ trợ). */
-export function updateStateFields(
+function updateStateFields(
   state: UpdateState,
   reason: string,
   at: string,
 ): Pick<AlertRecord, 'status' | 'phase' | 'hold'> | Pick<AlertRecord, 'status' | 'hold'> {
-  if (state === 'inspecting' || state === 'resolving') return { status: 'in-progress', phase: state as AlertPhase, hold: undefined };
+  if (state === 'inspecting' || state === 'resolving') return { status: 'in-progress', phase: state, hold: undefined };
   if (state === 'paused' || state === 'needs-support') return { status: 'in-progress', hold: { kind: state, reason: reason.trim(), at } };
   return { status: 'resolved', hold: undefined };
 }
@@ -122,7 +122,7 @@ export const fieldItemId = (cfg: Pick<AlertUpdateConfig, 'verification'>) => rol
  * Mâu thuẫn bị chặn: mục role normal khi chưa đủ điều kiện · normal cùng lúc với over · chọn Đã xử lý mà chưa chọn mục normal
  * bắt buộc (`required`) · "Có cháy thật" (real-fire) cùng lúc với ô "Báo động giả".
  */
-export function verificationErrors(
+function verificationErrors(
   selected: readonly string[],
   cfg: Pick<AlertUpdateConfig, 'verification' | 'normalHint' | 'stateLabels'>,
   closeOk: boolean,

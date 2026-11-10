@@ -77,7 +77,7 @@ const AVAILABILITY_CHIP: Record<Availability, { tone: 'success' | 'warning' | 'n
  * (có quá hạn → chip danger).
  * `role="radio"` trong `StaffList` (radiogroup). Được chọn = viền primary + nền primary/10.
  */
-export function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, buttonRef, compact }: StaffPickerCardProps) {
+function StaffPickerCard({ item, checked, tabIndex, onSelect, onKeyDown, buttonRef, compact }: StaffPickerCardProps) {
   const descId = useId();
   if (compact) {
     return (

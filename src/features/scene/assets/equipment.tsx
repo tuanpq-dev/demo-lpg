@@ -102,12 +102,14 @@ export function Filter() {
   const r = 0.55;
   return (
     <group>
-      {[
-        [-0.35, -0.35],
-        [0.35, -0.35],
-        [-0.35, 0.35],
-        [0.35, 0.35],
-      ].map(([x, z]) => (
+      {(
+        [
+          [-0.35, -0.35],
+          [0.35, -0.35],
+          [-0.35, 0.35],
+          [0.35, 0.35],
+        ] as const
+      ).map(([x, z]) => (
         <mesh key={`${x}${z}`} position={[x, 0.3, z]} material={m.metal}>
           <cylinderGeometry args={[0.05, 0.05, 0.6, 8]} />
         </mesh>

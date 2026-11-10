@@ -45,7 +45,7 @@ export function workflowPosition(r: Pick<MaintenanceRecord, 'status' | 'cancelle
 }
 
 /** Trạng thái kế tiếp (null = không còn bước). */
-export const NEXT_STATUS: Record<MaintenanceStatus, ApiMaintenanceStatus | null> = {
+const NEXT_STATUS: Record<MaintenanceStatus, ApiMaintenanceStatus | null> = {
   pending: 'assigned',
   assigned: 'in-progress',
   'in-progress': 'review',
@@ -66,12 +66,6 @@ export const NEXT_ACTION_LABEL: Partial<Record<MaintenanceStatus, string>> = {
 };
 
 export const canCancel = (s: MaintenanceStatus) => s !== 'done' && s !== 'cancelled';
-
-/** Chỉ cho đi đúng bước kế tiếp, hoặc hủy khi chưa xong. */
-export function canTransition(from: MaintenanceStatus, to: MaintenanceStatus): boolean {
-  if (to === 'cancelled') return canCancel(from);
-  return NEXT_STATUS[from] === to;
-}
 
 export type ActionContext = { actor: string; now: Date };
 
@@ -108,7 +102,7 @@ export function cancelRecord(r: MaintenanceRecord, ctx: ActionContext & { reason
   if (!canCancel(r.status)) return r;
   const reason = ctx.reason?.trim() || undefined;
   return withHistory(
-    { ...r, status: 'cancelled', cancelledFrom: r.status as ApiMaintenanceStatus, cancelReason: reason },
+    { ...r, status: 'cancelled', cancelledFrom: r.status, cancelReason: reason },
     'cancel',
     reason ? `Hủy yêu cầu – lý do: ${reason}` : 'Hủy yêu cầu',
     ctx,

@@ -17,7 +17,7 @@ function range(from: number, to: number) {
 }
 
 /** Dải số trang dạng 1 … 4 5 6 … 20. */
-export function getPageItems(page: number, pageCount: number, siblingCount = 1): Item[] {
+function getPageItems(page: number, pageCount: number, siblingCount = 1): Item[] {
   const total = siblingCount * 2 + 5; // first, last, current, 2 ellipsis
   if (pageCount <= total) return range(1, pageCount);
   const left = Math.max(page - siblingCount, 1);

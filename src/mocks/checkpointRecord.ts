@@ -46,7 +46,7 @@ export function buildCheckpointSnapshot(report: Pick<ReportRecord, 'periodKey'>,
   const fromDaily = (itemId: string) => dailyItemReading(itemId, day, index, now)?.value ?? null;
 
   const level = fromDaily('v101-level');
-  const tankDims = assetMocks['V-101']!.tank!;
+  const tankDims = assetMocks['V-101']!.tank;
   const volume = level === null ? null : (cylinderCapacity(tankDims) * levelPercentToVolumePercent(level)) / 100;
   const lpgTemp = fromDaily('v101-temp');
 

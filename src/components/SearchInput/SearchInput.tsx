@@ -54,7 +54,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         className={cn(
-          'h-[35px] w-full rounded-lg border border-line bg-surface-sunken pl-[33px] text-base text-fg',
+          'h-field w-full rounded-lg border border-line bg-surface-sunken pl-[33px] text-base text-fg',
           'placeholder:text-fg-secondary/60 focus-visible:border-accent/60 focus-visible:outline-none',
           '[&::-webkit-search-cancel-button]:appearance-none',
           value ? 'pr-9' : 'pr-[13px]',

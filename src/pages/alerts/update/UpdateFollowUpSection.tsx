@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { DatePicker, NumberField, Select, StatusOptionGroup, TextField, type StatusOption } from '@/components';
 import { STAFF } from '@/data/staff';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
-import { followUpChoiceLabel, type AlertUpdateInput, type FollowUpChoice } from '@/features/alerts/update';
+import { followUpChoiceLabel, type AlertUpdateInput } from '@/features/alerts/update';
 import { plantTimeOfDay } from '@/lib/plantTime';
 
 const OWNER_OPTIONS = STAFF.map((p) => ({ value: p.name, label: p.name }));
@@ -58,7 +58,7 @@ export function UpdateFollowUpSection({
         label="Theo dõi sau xử lý"
         options={options}
         value={String(value.choice)}
-        onChange={(c) => onChange({ ...value, choice: (c === 'custom' ? 'custom' : Number(c)) as FollowUpChoice })}
+        onChange={(c) => onChange({ ...value, choice: c === 'custom' ? 'custom' : Number(c) })}
         layout="inline"
         size="sm"
         columns="auto"

@@ -130,7 +130,7 @@ export function closerCheck(
  * Theo dõi theo lựa chọn ở modal đóng: 0 → không theo dõi · giữ số phút cũ và chưa hết giờ → giữ nguyên · còn lại → khoảng
  * mới tính từ lúc lưu (mục tiêu + người theo dõi giữ như cũ, thiếu → cấu hình loại / người xử lý).
  */
-export function followUpFor(
+function followUpFor(
   a: Pick<AlertRecord, 'followUp' | 'unit' | 'resolvedBy' | 'assignee'>,
   minutes: number,
   at: Date,
@@ -157,7 +157,7 @@ export type CloseResult = { ok: true; record: AlertRecord } | CloseFail;
 const hhmm = (iso: string) => plantTimeOfDay(new Date(iso)).slice(0, 5);
 
 /** Kiểm tra trước khi đóng (dùng chung modal + hàm ghi). */
-export function closeBlock(a: AlertRecord, conditions: readonly CloseCondition[], closer: string, note: string | null): CloseFail | null {
+function closeBlock(a: AlertRecord, conditions: readonly CloseCondition[], closer: string, note: string | null): CloseFail | null {
   if (a.status !== 'resolved') return { ok: false, reason: 'status', message: 'Chỉ đóng được cảnh báo Đã xử lý (chờ đóng).' };
   const c = closerCheck(a, closer);
   if (!c.ok) return { ok: false, reason: 'closer', message: c.reason };

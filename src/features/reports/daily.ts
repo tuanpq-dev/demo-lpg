@@ -17,7 +17,7 @@ export const DAILY_GROUPS = [
   { id: 'GS', label: 'Đầu dò khí gas – GS-01…GS-04' },
 ] as const;
 export type DailyGroupId = (typeof DAILY_GROUPS)[number]['id'];
-export const DAILY_GROUP_IDS = DAILY_GROUPS.map((g) => g.id) as readonly DailyGroupId[];
+const DAILY_GROUP_IDS = DAILY_GROUPS.map((g) => g.id) as readonly DailyGroupId[];
 
 /** Cùng dạng `ParamLimits` (mocks/operations): cảnh báo dưới/trên, nguy hiểm dưới/trên. Không có → chưa cấu hình ngưỡng. */
 export type ReadingLimits = { lowDanger?: number; lowWarn?: number; warn?: number; danger?: number };

@@ -44,14 +44,14 @@ export function RelatedAlertsCard({ alerts, state, query }: { alerts: DeviceAler
         <ul className="flex flex-col gap-2">
           {alerts.items.map((a) => (
             <li key={a.id}>
-              <AlertItem layout="bar" {...a} onClick={() => navigate(`/alerts?alert=${encodeURIComponent(a.id)}&range=30d`)} />
+              <AlertItem layout="bar" {...a} onClick={() => void navigate(`/alerts?alert=${encodeURIComponent(a.id)}&range=30d`)} />
             </li>
           ))}
         </ul>
       ) : (
         <p className="py-4 text-sm text-fg-secondary">Không có cảnh báo liên quan.</p>
       )}
-      <Button variant="subtle" className="mt-2 w-full" onClick={() => navigate(`/alerts?q=${encodeURIComponent(query)}&range=30d`)}>
+      <Button variant="subtle" className="mt-2 w-full" onClick={() => void navigate(`/alerts?q=${encodeURIComponent(query)}&range=30d`)}>
         Xem tất cả cảnh báo
       </Button>
     </Card>
@@ -116,7 +116,7 @@ export function DeviceMaintenanceCard({
           </span>
         </p>
       )}
-      <Button variant="subtle" className="w-full" onClick={() => navigate(`/maintenance?q=${encodeURIComponent(deviceId)}`)}>
+      <Button variant="subtle" className="w-full" onClick={() => void navigate(`/maintenance?q=${encodeURIComponent(deviceId)}`)}>
         Xem lịch sử bảo trì
       </Button>
     </Card>

@@ -85,7 +85,7 @@ export default function AiSimulationPage() {
       try {
         await startSimulation(s.id, actor, liveData);
         announce(`Đã bắt đầu mô phỏng ${s.code}.`);
-        navigate(simulationMonitorPath(s.id));
+        void navigate(simulationMonitorPath(s.id));
       } catch (e) {
         announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
         setRunning((cur) => {

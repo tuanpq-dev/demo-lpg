@@ -41,7 +41,7 @@ export function computeAlertLoads(alerts: readonly AlertRecord[]): Map<string, A
   return map;
 }
 
-export const alertLoadOf = (map: ReadonlyMap<string, AlertLoad>, name: string | null | undefined): AlertLoad => (name && map.get(name)) || EMPTY;
+const alertLoadOf = (map: ReadonlyMap<string, AlertLoad>, name: string | null | undefined): AlertLoad => (name && map.get(name)) || EMPTY;
 
 /** "1 cảnh báo đang xử lý" · "3 cảnh báo đang xử lý (1 nghiêm trọng)". */
 export const alertLoadLabel = (l: AlertLoad) => `${l.active} cảnh báo đang xử lý${l.critical ? ` (${l.critical} nghiêm trọng)` : ''}`;

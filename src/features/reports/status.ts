@@ -100,7 +100,7 @@ export const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
 export type ReportState = 'in-progress' | 'missing-data' | 'awaiting' | 'signed';
 
 /** Kỳ đã kết thúc (hôm nay theo giờ nhà máy > ngày cuối kỳ). */
-export function isPeriodClosed(r: Pick<ReportRecord, 'period' | 'periodKey'>, now: Date): boolean {
+function isPeriodClosed(r: Pick<ReportRecord, 'period' | 'periodKey'>, now: Date): boolean {
   return plantDayKey(now) > periodRange(r.period, r.periodKey).end;
 }
 

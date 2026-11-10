@@ -2,7 +2,8 @@ import type { ComponentType } from 'react';
 import type { AssetType, Vec3 } from '../types';
 import { Filter, FlowMeter, Pump, Valve, Vaporizer } from './equipment';
 import { ASSET_SPECS, type AssetParams, type AssetSpec } from './specs';
-import { Building, Canopy, Fence, LoadingStation, TankerTruck } from './structures';
+import { LoadingStation, TankerTruck } from './loadingYard';
+import { Building, Canopy, Fence } from './structures';
 import { TankHorizontal, TankVertical } from './tanks';
 
 export type AssetComponentProps = {

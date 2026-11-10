@@ -13,7 +13,7 @@ import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } fr
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import {
   CriteriaCard,
   OverviewCard,
@@ -184,7 +184,7 @@ function ResultView({ scenario: s, session, sessions, scenarios, runs, live, now
   };
 
   const onExcel = () => {
-    const blob = new Blob(['﻿' + resultCsv(s, session, code, r)], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob(['\uFEFF' + resultCsv(s, session, code, r)], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

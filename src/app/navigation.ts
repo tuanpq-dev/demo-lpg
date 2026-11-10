@@ -24,7 +24,7 @@ export const NAV_ROUTES: readonly NavRoute[] = [
       { id: 'operation-ai-simulation', label: 'AI mô phỏng sự cố', path: '/operations/ai-simulation' },
     ],
   },
-  { id: 'alerts', label: 'Cảnh báo', path: '/alerts', icon: 'navAlert', activeIcon: 'navAlertActive', count: 2 },
+  { id: 'alerts', label: 'Cảnh báo', path: '/alerts', icon: 'navAlert', activeIcon: 'navAlertActive' },
   { id: 'maintenance', label: 'Bảo trì', path: '/maintenance', icon: 'navMaintenance', activeIcon: 'navMaintenanceActive' },
   { id: 'reports', label: 'Báo cáo', path: '/reports', icon: 'navReport' },
 ];

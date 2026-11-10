@@ -35,7 +35,7 @@ export type RecordFormAction =
   | { type: 'error'; text: string };
 
 /** Sửa nhận xét / số nhập tay → bỏ lỗi; chèn câu gợi ý, đổi tệp, bật ô đồng hồ cơ → giữ lỗi (như trước khi tách). */
-export function recordFormReducer(s: RecordFormState, a: RecordFormAction): RecordFormState {
+function recordFormReducer(s: RecordFormState, a: RecordFormAction): RecordFormState {
   switch (a.type) {
     case 'remark':
       return { ...s, remark: a.value, error: '' };
@@ -78,7 +78,7 @@ export function useCheckpointRecordForm(r: ReportRecord, checkpoint: string, onC
   const ready = blockers.length === 0;
 
   const modal = useFormModal({
-    initial: { remark: '', manual: {} as ManualValues, files: 0 },
+    initial: { remark: '', manual: {}, files: 0 },
     values: { remark, manual, files: files.length },
     // Nhận xét chỉ có khoảng trắng = chưa sửa; có nhập tay hoặc tệp = đã sửa (kể cả sau khi lưu nháp).
     isDirty: (v) => !!v.remark.trim() || Object.keys(v.manual).length > 0 || v.files > 0,

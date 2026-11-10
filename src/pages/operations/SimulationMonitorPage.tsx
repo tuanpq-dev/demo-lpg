@@ -12,7 +12,7 @@ import { RUN_RESULT_LABEL, suggestionConfidence, tagHealth, type Scenario, type 
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../NotFoundPage';
+import NotFoundPage from '../errors/NotFoundPage';
 import {
   MonitorHeaderMeta,
   MonitorKpis,

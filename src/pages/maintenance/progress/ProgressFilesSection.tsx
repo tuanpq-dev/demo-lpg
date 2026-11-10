@@ -2,7 +2,7 @@ import { AttachmentCard, Badge, Button, UploadTile } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
 import { formatFileSize } from '@/data/maintenanceDetail';
 import { UPLOAD_ACCEPT, UPLOAD_HINT } from '@/features/maintenance/progress';
-import { downloadSampleAttachment } from '../attachments';
+import { downloadSampleAttachment } from '../../shared/attachments';
 import type { ProgressUpdateForm } from './useProgressUpdateForm';
 
 /** "Ảnh và tài liệu": tệp có sẵn (xem / tải bản mẫu) + tệp tạm (xem / bỏ) + "Tải tệp lên" + lỗi tệp + khung xem trước. */

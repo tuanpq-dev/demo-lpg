@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { AttachmentCard, Modal, UploadTile, formatFileSize } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
 import { UPLOAD_ACCEPT, UPLOAD_HINT } from '@/features/maintenance/progress';
-import { downloadSampleAttachment } from '../../maintenance/attachments';
+import { downloadSampleAttachment } from '../../shared/attachments';
 import type { TempFile } from './useAlertUpdateForm';
 
 export type UpdateFilesSectionProps = {

@@ -60,7 +60,7 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
             {it.done ? (
               <CheckCircleIcon size={18} className="mt-px shrink-0 text-success" />
             ) : (
-              <span aria-hidden="true" className="mt-px size-[18px] shrink-0 rounded-full border-[1.5px] border-fg-secondary/60" />
+              <span aria-hidden="true" className="mt-px size-4.5 shrink-0 rounded-full border-1.5 border-fg-secondary/60" />
             )}
             <span className="min-w-0">
               {it.text}
@@ -114,7 +114,7 @@ export function Checklist({ items, progress, onToggle, lockHint, variant = 'defa
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] peer-aria-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
+                    'grid size-4.5 shrink-0 place-items-center rounded-full border-1.5 peer-aria-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
                     it.done ? 'border-primary bg-primary text-fg-inverse' : 'border-line',
                   )}
                 >

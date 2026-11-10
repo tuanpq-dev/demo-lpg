@@ -146,7 +146,7 @@ export const signReady = (conditions: readonly SignCondition[]) => conditions.ev
 export type SensorAlertLike = { code: string; kind?: string; status: string; day: string };
 
 /** Loại cảnh báo tính là "lỗi cảm biến" (mocks/alertKinds.ts). */
-export const SENSOR_FAULT_KINDS: readonly string[] = ['sensor-signal-lost'];
+const SENSOR_FAULT_KINDS: readonly string[] = ['sensor-signal-lost'];
 /** Đã xử lý (chờ đóng) hoặc đã đóng → không chặn ký. */
 const HANDLED_STATUSES: readonly string[] = ['resolved', 'done'];
 
@@ -168,7 +168,7 @@ export function inspectorSignStatus(r: ReportRecord): { label: string; short: st
     : { label: 'Chờ người kiểm tra ký', short: 'Chờ ký', tone: 'warning' };
 }
 
-export const APPROVAL_STEP_LABEL: Record<SignatureStep, string> = {
+const APPROVAL_STEP_LABEL: Record<SignatureStep, string> = {
   inspector: 'Người kiểm tra ký',
   approver: 'Người duyệt ký',
   tap: 'TAP vận hành xác nhận',

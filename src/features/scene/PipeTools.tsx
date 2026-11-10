@@ -16,7 +16,7 @@ import type { Pipe, SceneConfig, Vec3 } from './types';
  */
 
 /** Cao độ mặt phẳng vẽ mặc định (m) – bằng tâm cổng bơm/van thường gặp. */
-export const DEFAULT_PIPE_HEIGHT = 1.2;
+const DEFAULT_PIPE_HEIGHT = 1.2;
 /** Bước đổi cao độ bằng PageUp/PageDown (m). */
 const HEIGHT_STEP = 0.5;
 /** Click (không kéo) nếu chuột đi < 4 px giữa down và up – kéo thì để OrbitControls xoay camera. */
@@ -25,7 +25,7 @@ const CLICK_PX = 4;
 const DOT = new SphereGeometry(1, 12, 8);
 
 /** Chấm cổng (toạ độ thế giới); cổng đang bắt to hơn, màu primary. */
-export function PortMarkers({ ports, active, palette }: { ports: WorldPort[]; active?: string; palette: ScenePalette }) {
+function PortMarkers({ ports, active, palette }: { ports: WorldPort[]; active?: string; palette: ScenePalette }) {
   return (
     <>
       {ports.map((p) => {
@@ -87,7 +87,7 @@ export function PipeDrawTool({ edit, config, palette }: { edit: SceneEditState; 
   const hiddenKey = (edit.hidden ?? []).join('|');
   const ports = useMemo(
     () => allPorts(config.objects, new Set(edit.hidden)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `hiddenKey` đại diện `edit.hidden` (mảng mới mỗi render)
     [config.objects, hiddenKey],
   );
   const height = edit.pipeHeight ?? DEFAULT_PIPE_HEIGHT;

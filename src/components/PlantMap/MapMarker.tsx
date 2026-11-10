@@ -81,7 +81,7 @@ export function MapMarker({
   translucent,
   onClick,
 }: MapMarkerProps) {
-  const glass = translucent && 'backdrop-blur-[3px]';
+  const glass = translucent && 'backdrop-blur-xs';
   const a = anchor[variant];
   const style: CSSProperties = {
     left: `${x * 100}%`,

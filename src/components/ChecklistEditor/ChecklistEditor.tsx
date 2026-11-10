@@ -52,6 +52,7 @@ export function ChecklistEditor({
     if (to < 0 || to >= items.length || from === to) return;
     const next = [...items];
     const [it] = next.splice(from, 1);
+    if (!it) return;
     next.splice(to, 0, it);
     onChange(next);
   };
@@ -77,7 +78,10 @@ export function ChecklistEditor({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (index === items.length - 1) add();
-      else inputs.current.get(items[index + 1].id)?.focus();
+      else {
+        const following = items[index + 1];
+        if (following) inputs.current.get(following.id)?.focus();
+      }
     }
   };
 

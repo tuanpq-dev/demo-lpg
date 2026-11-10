@@ -179,10 +179,10 @@ function baseSnapshot(at: number): LiveData {
 }
 
 /** Lượt mẫu ĐANG CHẠY: SC-001 bắt đầu 06:32 trước `now` (như ảnh "Theo dõi diễn biến": 06:32 / 10:00, gas 28 % LEL). */
-export const SEED_SESSION_ELAPSED_SEC = 6 * 60 + 32;
+const SEED_SESSION_ELAPSED_SEC = 6 * 60 + 32;
 /** Lượt mẫu ĐÃ XONG (ảnh "Kết quả mô phỏng"): SC-001, 6 ngày trước lúc 18:14:00 giờ nhà máy. */
-export const SEED_RESULT_DAYS_AGO = 6;
-export const SEED_RESULT_TIME = '18:14:00';
+const SEED_RESULT_DAYS_AGO = 6;
+const SEED_RESULT_TIME = '18:14:00';
 
 const FULL_HEALTH = { ok: 21, total: 21 };
 

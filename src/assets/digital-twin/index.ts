@@ -2,6 +2,12 @@
  * Icon tải từ Figma (Digital-Twin_2026_Foxconn) qua MCP.
  * Giữ nguyên file SVG gốc – không vẽ lại, không sửa path. Màu nằm sẵn trong SVG.
  */
+import type { ImageAsset } from '@/lib/imageAsset';
+import assetV101Webp from './asset-v101.webp';
+import plantMap1600Avif from './plant-map-1600.avif';
+import plantMap1600Webp from './plant-map-1600.webp';
+import plantMap2730Avif from './plant-map-2730.avif';
+import plantMap2730Webp from './plant-map-2730.webp';
 import add from './icon-add-circle.svg';
 import bell from './icon-bell.svg';
 import dangerLg from './icon-danger-lg.svg';
@@ -77,10 +83,19 @@ import logAlert from './log-alert.svg';
 import logLinkOff from './log-link-off.svg';
 
 export { default as avatarAdmin } from './avatar-admin.png';
-/** 53:244 – ảnh bản đồ 2.5D (2730×1536, KHÔNG có nhãn – nhãn là overlay HTML). */
-export { default as plantMapImage } from './plant-map.png';
+/**
+ * 53:244 – ảnh bản đồ 2.5D (gốc 2730×1536, KHÔNG có nhãn – nhãn là overlay HTML). Bản gốc PNG 7,2 MB → AVIF/WebP
+ * 1600 + 2730 px (100–283 KB; chuyển bằng sharp, AVIF q55 / WebP q78).
+ */
+export const plantMapImage: ImageAsset = {
+  src: plantMap1600Webp,
+  srcSet: `${plantMap1600Webp} 1600w, ${plantMap2730Webp} 2730w`,
+  avifSrcSet: `${plantMap1600Avif} 1600w, ${plantMap2730Avif} 2730w`,
+  width: 2730,
+  height: 1536,
+};
 /** Ảnh tĩnh bồn V-101 (chụp từ SceneViewer cảnh v-101, góc isometric) – dự phòng khi WebGL lỗi ở trang chi tiết. */
-export { default as assetV101Image } from './asset-v101.webp';
+export const assetV101Image: ImageAsset = { src: assetV101Webp, width: 812, height: 1332 };
 
 export const icons = {
   /** 70:5215 – nút "Tạo yêu cầu bảo trì", 16.125×16.125 trong khung 18 */

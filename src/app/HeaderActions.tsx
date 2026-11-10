@@ -6,14 +6,6 @@ import { formatDateTime, useNow } from '@/lib/useNow';
 
 type ActionProps = { onClick?: () => void };
 
-export function TodayButton({ onClick }: ActionProps) {
-  return (
-    <Button icon={<Icon name="calendar" />} onClick={onClick}>
-      Hôm nay
-    </Button>
-  );
-}
-
 /** "Hôm nay" dạng chọn khoảng thời gian (Select variant="button", 70:2883). */
 export function DateRangeSelect<V extends string>({
   value,

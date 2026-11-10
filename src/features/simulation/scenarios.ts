@@ -130,7 +130,7 @@ export const healthSynced = (h: TagHealth | undefined) => !!h && h.ok === h.tota
 export type RunBlocker = { kind: 'config' | 'pending' | 'signal'; text: string };
 
 /** Tag của kịch bản đang mất tín hiệu (thiếu / lỗi / cũ). */
-export function lostScenarioTags(s: Pick<Scenario, 'tags'>, live: LiveMap, now: number): string[] {
+function lostScenarioTags(s: Pick<Scenario, 'tags'>, live: LiveMap, now: number): string[] {
   if (!live) return [];
   return s.tags.filter((t) => {
     const tv = live[t];
@@ -153,7 +153,7 @@ export function runBlocker(s: Scenario, live: LiveMap, now: number): RunBlocker 
 // ---------------------------------------------------------------------------
 // Mô phỏng (xác định – cùng cấu hình → cùng kết quả)
 
-export const responseSeconds = (s: Pick<Scenario, 'steps'>) => s.steps.reduce((sum, x) => sum + x.seconds, 0);
+const responseSeconds = (s: Pick<Scenario, 'steps'>) => s.steps.reduce((sum, x) => sum + x.seconds, 0);
 
 /** Đạt khi thời gian phản ứng ≤ mục tiêu. */
 export const runResult = (seconds: number, target: number): RunResult => (seconds <= target ? 'pass' : 'improve');
@@ -173,9 +173,6 @@ export function simulateScenario(s: Scenario, at: Date, by: string, id: string, 
     ...(s.config ? { config: { ...s.config, areas: [...s.config.areas] } } : {}),
   };
 }
-
-/** "Đạt – phản ứng 38 s / mục tiêu 60 s" */
-export const runSummary = (r: SimulationRun) => `${RUN_RESULT_LABEL[r.result]} – phản ứng ${r.responseSeconds} s / mục tiêu ${r.targetSeconds} s`;
 
 // ---------------------------------------------------------------------------
 // Lịch sử

@@ -80,7 +80,7 @@ const iconTone: Record<StatusOptionTone, string> = {
  * icon 20px trên nhãn 14px, cao ~76px, viền line/30 bo 6px; được chọn = viền 1.5px theo tone + nền gradient nhạt, chữ đậm.
  * Dùng trong `StatusOptionGroup` (radiogroup + roving tabindex).
  */
-export function StatusOptionCard({
+function StatusOptionCard({
   label,
   icon,
   checked,
@@ -121,7 +121,7 @@ export function StatusOptionCard({
         <span
           aria-hidden="true"
           className={cn(
-            'grid size-[18px] shrink-0 place-items-center rounded-full border-[1.5px] transition-colors',
+            'grid size-4.5 shrink-0 place-items-center rounded-full border-1.5 transition-colors',
             checked ? dotTone[tone] : 'border-fg-secondary/50',
           )}
         >
@@ -152,7 +152,7 @@ export function StatusOptionCard({
         inline
           ? cn('min-h-[50px] flex-row py-2', size === 'sm' ? 'gap-2 text-base' : 'gap-2.5 text-md')
           : 'min-h-[76px] flex-col gap-2 py-3 text-base',
-        checked ? cn('border-[1.5px] font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary',
+        checked ? cn('border-1.5 font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary',
         disabled ? 'cursor-not-allowed opacity-50' : !checked && 'hover:border-line hover:text-fg',
         className,
       )}
@@ -161,8 +161,8 @@ export function StatusOptionCard({
         <span
           aria-hidden="true"
           className={cn(
-            'grid shrink-0 place-items-center rounded-full border-[1.5px]',
-            size === 'sm' ? 'size-4' : 'size-[18px]',
+            'grid shrink-0 place-items-center rounded-full border-1.5',
+            size === 'sm' ? 'size-4' : 'size-4.5',
             checked ? dotTone[tone] : 'border-fg-secondary/70',
           )}
         >

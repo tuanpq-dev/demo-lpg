@@ -153,7 +153,7 @@ export function ProgressSlider({
           onKeyDown={onKeyDown}
           className={cn(
             'absolute -translate-x-1/2 rounded-full bg-primary shadow-card',
-            threshold ? 'size-[18px] border-2 border-primary' : 'size-4 border-2 border-surface',
+            threshold ? 'size-4.5 border-2 border-primary' : 'size-4 border-2 border-surface',
           )}
           style={{ left: `${pct}%` }}
         />
