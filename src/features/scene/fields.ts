@@ -1,5 +1,6 @@
 import { freshValue, SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { Binding, LiveData, ObjectStatus, SceneObject, TagValue, Thresholds } from './types';
+import { formatNumber } from '@/lib/number';
 
 type StateMeta = { label: string; status: ObjectStatus };
 
@@ -59,7 +60,7 @@ export function formatField(field: string, tv: TagValue | undefined, now: number
   const meta = FIELD_META[field];
   if (typeof value === 'string') return meta?.states?.[value]?.label ?? value;
   const d = meta?.digits ?? 1;
-  const n = value.toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const n = formatNumber(value, d);
   return meta?.unit ? `${n} ${meta.unit}` : n;
 }
 

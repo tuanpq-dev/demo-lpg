@@ -1,4 +1,4 @@
-import { OrthographicCamera, PerformanceMonitor } from '@react-three/drei';
+import { OrthographicCamera } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import {
   forwardRef,
@@ -13,6 +13,7 @@ import {
   type DragEvent,
   type RefObject,
 } from 'react';
+import { SceneLoading } from '@/components/SceneLoading';
 import { cn } from '@/lib/cn';
 import { MaterialsProvider } from './assets/materials';
 import { ASSETS } from './assets/registry';
@@ -29,6 +30,7 @@ import { SceneLabels, ScenePipes } from './SceneContent';
 import { Ground, RendererLook, SceneLights, ShadowUpdates, WebGLErrorBoundary } from './SceneEnvironment';
 import { DeviceList, ObjectTooltip } from './SceneOverlays';
 import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, SceneView, Vec3 } from './types';
+import { QualityMonitor, ReadySignal, useSceneReady } from './sceneReady';
 import { useEditPointer, type Marquee } from './useEditPointer';
 import { useSceneLive, useSceneSelection } from './useSceneModel';
 
@@ -221,6 +223,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
 ) {
   const { glError, reportGlError } = useGlError(onWebGLError);
   const { level, stepLevel, fallback } = useQualityLevel(quality);
+  const { ready, monitor, markReady } = useSceneReady();
   const palette = useMemo(readScenePalette, []);
   const preset = QUALITY_PRESETS[level];
   const groundBehindToneMap = useMemo(() => inverseToneMap(palette.ground, SCENE_EXPOSURE), [palette]);
@@ -310,16 +313,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           }}
           onPointerMissed={pointer.onMissed}
         >
-          {quality === 'auto' && (
-            <PerformanceMonitor
-              // Hạ khi < 48 FPS, nâng khi > 58 FPS (mục tiêu ≥ 50 FPS) – không phụ thuộc tần số quét màn hình.
-              bounds={() => [48, 58]}
-              onDecline={() => stepLevel(-1)}
-              onIncline={() => stepLevel(1)}
-              flipflops={3}
-              onFallback={fallback}
-            />
-          )}
+          <QualityMonitor auto={quality === 'auto'} armed={monitor} onStep={stepLevel} onFallback={fallback} />
           <RendererLook exposure={SCENE_EXPOSURE} />
           {/* Có composer: ToneMapping effect áp cả lên màu nền → dùng màu đã bù để nền vẫn đúng token. */}
           <color attach="background" args={[background]} />
@@ -375,9 +369,11 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
               />
             </Suspense>
           )}
+          <ReadySignal onReady={markReady} />
         </Canvas>
       </WebGLErrorBoundary>
       <div aria-hidden className="scene-vignette pointer-events-none absolute inset-0" />
+      <SceneLoading hidden={ready} />
       <DeviceList
         sceneName={config.name}
         objects={visible.filter((o) => ASSETS[o.asset].category === 'equipment')}

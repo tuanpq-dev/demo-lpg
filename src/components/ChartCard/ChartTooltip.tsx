@@ -1,4 +1,5 @@
 import type { TooltipContentProps } from 'recharts';
+import { formatNumber } from '@/lib/number';
 
 type ValueType = number | string | Array<number | string>;
 type NameType = number | string;
@@ -7,7 +8,7 @@ type NameType = number | string;
 export type ChartTooltipProps = Partial<Pick<TooltipContentProps<ValueType, NameType>, 'active' | 'payload' | 'label'>> & {
   /** Đơn vị hiển thị sau giá trị, ví dụ "Nm³", "bar". */
   unit?: string;
-  /** Định dạng số; mặc định toLocaleString('en-US'). */
+  /** Định dạng số; mặc định `formatNumber` (12,450.5). */
   format?: (v: number) => string;
   /** Định dạng nhãn (giá trị trục X) – trục số (giây) → "06:32". */
   labelFormat?: (label: number | string) => string;
@@ -16,7 +17,7 @@ export type ChartTooltipProps = Partial<Pick<TooltipContentProps<ValueType, Name
 /** Tooltip dùng chung cho chart – nền surface-raised, viền line/30 (theo style tối của app). */
 export function ChartTooltip({ active, payload, label, unit, format, labelFormat }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
-  const fmt = format ?? ((v: number) => v.toLocaleString('en-US'));
+  const fmt = format ?? ((v: number) => formatNumber(v));
   return (
     <div className="rounded-md border border-line/30 bg-surface-raised px-3 py-2 shadow-card">
       {label !== undefined && <p className="mb-1 text-2xs text-fg-muted">{labelFormat ? labelFormat(label) : label}</p>}

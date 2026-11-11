@@ -9,7 +9,7 @@ export type AttachmentCardProps = {
   name: string;
   /** Không truyền → đoán theo đuôi tệp (ảnh → image, còn lại → document). */
   kind?: AttachmentKind;
-  /** Dòng phụ tuỳ chọn, vd "2,4 MB". */
+  /** Dòng phụ tuỳ chọn, vd "2.4 MB". */
   meta?: string;
   /** Nhãn cảnh báo nhỏ dưới tên, vd "Chưa tải lên máy chủ" (tệp tạm khi chưa có backend). */
   notice?: string;

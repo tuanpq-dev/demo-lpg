@@ -177,7 +177,7 @@ export const DAILY_ITEMS: readonly ItemDef[] = [
 const OUT_OF_RANGE: Record<number, readonly { item: string; checkpoint: string; value: number; note?: string }[]> = {
   2: [{ item: 'gas-gs-02', checkpoint: '12:00', value: 13, note: 'Rò rỉ nhỏ tại mặt bích, đã siết lại – 12:20 còn 3 % LEL.' }],
   4: [{ item: 'gas-gs-03', checkpoint: '10:00', value: 12 }],
-  9: [{ item: 'v101-pressure', checkpoint: '14:00', value: 14.3, note: 'Nắng gắt, đã bật phun nước làm mát bồn – 14:40 về 11,8 bar.' }],
+  9: [{ item: 'v101-pressure', checkpoint: '14:00', value: 14.3, note: 'Nắng gắt, đã bật phun nước làm mát bồn – 14:40 về 11.8 bar.' }],
 };
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits;

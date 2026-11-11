@@ -43,6 +43,7 @@ export * from './PlantMap';
 export * from './domain/PriorityTaskCard';
 export * from './ProgressBar';
 export * from './ProgressSlider';
+export * from './SceneLoading';
 export * from './SearchInput';
 export * from './SegmentedControl';
 export * from './Select';

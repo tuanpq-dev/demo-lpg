@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useId, useRef, useState, type KeyboardEvent 
 import type { SceneConfig, SceneEditState, SceneView, SceneViewerHandle, ZoomLimits } from '@/features/scene';
 import { useFullscreen } from '@/lib/useFullscreen';
 import { Button } from '../Button';
+import { SceneLoading } from '../SceneLoading';
 import { SegmentedControl } from '../SegmentedControl';
 import { MapShell } from './MapShell';
 import { PlantMapImage, applyTransform } from './PlantMapImage';
@@ -9,7 +10,16 @@ import { type PlantMapProps, type PlantMapThreeProps } from './types';
 
 // three + drei (~700KB) chỉ tải khi dùng renderer 3D.
 // `/* @__PURE__ */`: lời gọi lazy() ở top-level bị Rollup coi là side effect → cả module bị giữ trong chunk chính qua barrel.
-const SceneViewer = /* @__PURE__ */ lazy(() => import('@/features/scene/SceneViewer'));
+const loadSceneViewer = () => import('@/features/scene/SceneViewer');
+const SceneViewer = /* @__PURE__ */ lazy(loadSceneViewer);
+
+/**
+ * Bắt đầu tải code 3D (three.js ~240 KB gzip) NGAY – gọi song song khi đang nạp dữ liệu cảnh thay vì đợi xong mới tải
+ * (thác nước tuần tự). Gọi nhiều lần không tải lại (module cache).
+ */
+export const preloadSceneViewer = () => {
+  void loadSceneViewer();
+};
 
 /**
  * Bản đồ nhà máy (Figma 53:242): SegmentedControl (trái trên) + zoom/fullscreen (phải trên) + nhãn. Component thuần.
@@ -111,8 +121,6 @@ function PlantMapThree({
     e.preventDefault();
   };
 
-  const loading = <div className="grid h-full place-items-center text-base text-fg-muted">Đang tải cảnh 3D…</div>;
-
   return (
     <MapShell
       rootRef={rootRef}
@@ -138,12 +146,12 @@ function PlantMapThree({
         aria-describedby={hintId}
         tabIndex={0}
         onKeyDown={onKeyDown}
-        className="relative h-full w-full overflow-hidden bg-bg-canvas focus-visible:outline-offset-[-2px]"
+        className="relative h-full w-full overflow-hidden bg-bg-app focus-visible:outline-offset-[-2px]"
       >
         <span id={hintId} className="sr-only">
           Kéo để xoay, chuột phải để di chuyển, cuộn để phóng to. Phím cộng/trừ để phóng to/thu nhỏ, phím 0 để về khung của chế độ xem.
         </span>
-        <Suspense fallback={loading}>
+        <Suspense fallback={<SceneLoading />}>
           <SceneViewer
             ref={viewer}
             config={config}

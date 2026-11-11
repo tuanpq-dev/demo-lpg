@@ -43,6 +43,7 @@
 - **Không hardcode màu**: token ở `src/styles/tokens.css`, map trong `tailwind.config.ts` (palette mặc định Tailwind đã tắt; độ trong suốt `bg-danger/10`). Chart/SVG lấy màu qua `useTokenColors()`.
   - Nền `bg-app|header|canvas`, `surface[-raised|-sunken|-muted|-chip]` · viền `line` (/10, /30), `line-card`, `line-divider` · chữ `fg[-secondary|-muted|-label|-inverse|-disabled]` · `primary`, `accent`, `info` · `success[-strong]`, `live`, `warning[-soft]`, `neutral`.
   - **Bốn token đỏ**: `danger` = viền/nền mờ/chấm/icon · `danger-text` = MỌI chữ đỏ cỡ thường · `danger-strong` = số lớn (≥ 24 px / ≥ 18.66 px đậm) · `danger-solid` = nền đặc chữ trắng. ESLint chặn `text-danger` trần và độ mờ trên chữ đỏ.
+  - **Số**: dấu chấm thập phân + dấu phẩy hàng nghìn (12,450.5) qua `formatNumber` (`src/lib/number.ts`); ESLint chặn `toLocaleString('en|vi…')` cho số và `.replace('.', ',')`.
   - Cỡ chữ `2xs` 10 · `xs` 11 · `sm` 12 · `base` 14 · `md` 16 · `lg` 18 · `xl` 24 · `2xl`/`kpi` 28 · `3xl` 32. Bo góc `xs` 2 · `sm` 4 · `md` 6 · `lg` 8 · `xl` 12.
 - **Breakpoint** (`tailwind.config.ts`, không viết `min-[…px]`): `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `wide` 1520 · `3xl` 1920. ≥ `wide` như Figma 1565; nội dung tối đa `max-w-content` 1920; bảng rộng cuộn ngang trong khung.
 - **Đặt tên**: prop thống nhất `variant`, `tone`, `size: sm|md`, `label`, `className`; giá trị domain tiếng Anh kebab-case, nhãn tiếng Việt; JSDoc ghi node Figma / ảnh.

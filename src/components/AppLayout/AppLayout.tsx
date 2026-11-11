@@ -29,7 +29,7 @@ export function AppLayout({ header, variant = 'full', pageHeader, sidebar, child
     return (
       <div className={cn('flex h-screen flex-col overflow-hidden bg-bg-app', className)}>
         <div className="z-30 shrink-0">{header}</div>
-        <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3">
+        <main className="isolate flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3">
           {pageHeader}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
         </main>
@@ -39,8 +39,10 @@ export function AppLayout({ header, variant = 'full', pageHeader, sidebar, child
   return (
     <div className={cn('flex min-h-screen flex-col bg-bg-app', className)}>
       <div className="sticky top-0 z-30">{header}</div>
-      {/* max-w-content: màn rất lớn (≥ 1920 + lề) nội dung căn giữa thay vì giãn thẻ. */}
-      <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-page pb-8 pt-6">
+      {/* max-w-content: màn rất lớn (≥ 1920 + lề) nội dung căn giữa thay vì giãn thẻ.
+          `isolate`: z-index trong trang (nút bản đồ z-30, lớp 3D…) chỉ xếp TRONG main → không bao giờ đè header dính (z-30)
+          khi cuộn. Modal / Drawer render qua portal ra body nên không bị ảnh hưởng. */}
+      <main className="isolate mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-page pb-8 pt-6">
         {pageHeader}
         {variant === 'sidebar' ? (
           <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_326px]">

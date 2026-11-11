@@ -23,27 +23,32 @@ const liveSource: LiveDataSource = mock;
  */
 export function useLiveData(tags?: readonly string[], { enabled = true }: { enabled?: boolean } = {}): LiveData | undefined {
   const key = tags ? [...tags].sort().join('|') : '*';
-  const [data, setData] = useState<LiveData>();
+  // Ảnh chụp gắn với `key` của lượt đăng ký – đổi tag / vừa bật `enabled` thì ảnh cũ không còn đúng.
+  const [snap, setSnap] = useState<{ key: string; data: LiveData } | undefined>();
   const [, setTick] = useState(0);
 
   useEffect(() => {
     if (!enabled) {
-      setData(undefined);
+      setSnap(undefined);
       return;
     }
-    return liveSource.subscribe(tags ?? null, setData);
+    return liveSource.subscribe(tags ?? null, (data) => setSnap({ key, data }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện `tags`.
   }, [key, enabled]);
 
+  // Chưa có ảnh của lượt đăng ký hiện tại (trang vừa mở, vừa bật, vừa đổi tag) → đọc ĐỒNG BỘ số nguồn đang có: hiện số
+  // ngay thay vì "—" một khung rồi mới có số (nháy khi chuyển trang).
+  const data = !enabled ? undefined : snap?.key === key ? snap.data : liveSource.peek(tags ?? null);
+
   useEffect(() => {
-    if (!enabled || !data) return;
+    if (!data) return;
     const at = nextExpiry(data);
     if (at === undefined) return;
     const t = window.setTimeout(() => setTick((n) => n + 1), at - Date.now() + 50);
     return () => window.clearTimeout(t);
   });
 
-  return enabled ? data : undefined;
+  return data;
 }
 
 /** Trạng thái kết nối của nguồn (header "Dữ liệu trực tiếp"). Nghe trạng thái cũng giữ kết nối mở. */

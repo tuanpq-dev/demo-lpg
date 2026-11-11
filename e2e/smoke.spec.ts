@@ -108,6 +108,22 @@ test.describe('luồng chính', () => {
     expect(errors).toEqual([]);
   });
 
+  test('Tổng quan: cuộn trang → nút bản đồ nằm DƯỚI header dính (không đè)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto('/overview');
+    const zoom = page.getByRole('button', { name: 'Phóng to' }).first();
+    const before = (await zoom.boundingBox())!;
+    // Cuộn để nút nằm giữa chiều cao header (60 px).
+    await page.mouse.wheel(0, before.y - 30);
+    await page.waitForTimeout(300);
+    const box = (await zoom.boundingBox())!;
+    const onTop = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('header, [role="banner"]'), {
+      x: box.x + box.width / 2,
+      y: box.y + box.height / 2,
+    });
+    expect(onTop, 'header phải nằm trên nút bản đồ').toBe(true);
+  });
+
   test('chi tiết thiết bị: CLS < 0,1 khi dữ liệu + số liệu trực tiếp về (390 và 1024 px)', async ({ page }) => {
     for (const width of [390, 1024]) {
       await page.setViewportSize({ width, height: 844 });
