@@ -38,7 +38,7 @@ DeviceDetailRoute (chuẩn hoá mã / không tìm thấy) → DeviceDetailPage  
 
 | Vùng | Component | Ghi chú |
 |---|---|---|
-| Header | `PageHeader` + ô chọn "Thiết bị" cạnh tiêu đề (`titleEnd`, đổi trang) + `InfoChip` (Tên, Khu vực, PLC) + `StatusPill` (Trạng thái) + `RefreshButton accent` | PLC/SCADA = trạng thái nguồn trực tiếp (`connectionView`). Đang dùng `actions`; đổi sang `actionItems` (gom Tên/Khu vực/PLC vào "Thêm" < md) khi nhánh `fix/header-mobile` vào main |
+| Header | `PageHeader` + ô chọn "Thiết bị" cạnh tiêu đề (`titleEnd`, đổi trang) + `InfoChip` (Tên, Khu vực, PLC) + `StatusPill` (Trạng thái) + `RefreshButton accent` | PLC/SCADA = trạng thái nguồn trực tiếp (`connectionView`). Chống layout shift: chip luôn hiện (đang tải → "—"), Tên/Khu vực bề rộng cố định (< md `w-full`, từ md `w-60` = 240 px; dài thì cắt "…" + tooltip), Trạng thái/PLC bọc `StableWidth` (`HEADER_RUN_LABELS`, `PLC_CONNECTION_LABELS`); KPI số đo + KPI PLC/SCADA `reserveSub`. Ở 1565 px cả hai thiết bị vẫn một hàng như ảnh. Đang dùng `actions`; đổi sang `actionItems` (gom Tên/Khu vực/PLC vào "Thêm" < md) khi nhánh `fix/header-mobile` vào main |
 | KPI | 4 `KpiCard` icon đầu | Trạng thái thiết bị = tag `E-101A.STATE`, dòng phụ = E-101B |
 | Trái | `VaporizerDiagram` (SVG, cuộn ngang < 640 px) · `DualTrendChart` (2 thang, ngưỡng, nhãn cuối) · `DataTable` 6 tham số | Ngưỡng biểu đồ = `limits.warn` của tham số |
 | Phải | `MetricListCard` (`headerVariant="divided"`, dòng `separated`) · `AlertItem layout="bar"` · Card Bảo trì · danh sách PLC · `EventTimeline variant="schedule"` | Bấm cảnh báo → `/alerts?alert=<id>&range=30d`; "Xem tất cả" → `/alerts?q=E-101A&range=30d`; "Xem lịch sử bảo trì" → `/maintenance?q=E-101A` |

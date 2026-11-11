@@ -25,9 +25,10 @@ export type BackendErrorCode =
 /**
  * Mã lỗi phía FE (không do backend trả):
  * NETWORK_ERROR = không gọi được máy chủ · CONTRACT_ERROR = response sai hợp đồng · CONFIG_ERROR = thiếu VITE_API_URL ·
+ * TIMEOUT = quá thời gian chờ (`timeoutMs`) ·
  * UNKNOWN = lỗi HTTP không có thân {error} hoặc mã lạ.
  */
-export type ClientErrorCode = 'NETWORK_ERROR' | 'CONTRACT_ERROR' | 'CONFIG_ERROR' | 'UNKNOWN';
+export type ClientErrorCode = 'NETWORK_ERROR' | 'CONTRACT_ERROR' | 'CONFIG_ERROR' | 'TIMEOUT' | 'UNKNOWN';
 export type ApiErrorCode = BackendErrorCode | ClientErrorCode;
 
 export const ApiErrorBodySchema = z.object({

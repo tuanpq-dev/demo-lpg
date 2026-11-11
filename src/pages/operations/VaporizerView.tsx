@@ -102,6 +102,7 @@ function ParamKpi({ label, icon, row }: { label: string; icon: ReactNode; row: P
       signalLost={r.state === 'lost'}
       sub={ok ? r.label : undefined}
       subTone={kpiTone(r.tone)}
+      reserveSub
     />
   );
 }

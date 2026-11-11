@@ -178,6 +178,7 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
 - KPI không icon (như ảnh); "Trực tuyến"/"Đã kết nối" 24 px đậm (ảnh ~28).
 - Biểu đồ xu hướng cao 220 px (ảnh ~190); đường "Tag khả dụng (%)" thang 0–104 % → 100 % nằm sát ngưỡng 3,0 s như ảnh.
 - Icon nút nguồn sơ đồ, CPU, màn hình: icon tạm (`TempIcons` – `BroadcastIcon`, `NetworkIcon`, `SlidersIcon`, `PipeLineIcon`, `FlameIcon`, `MonitorIcon`).
+- **Header (11/11/2026, chống layout shift)**: chip Tên/Khu vực bề rộng cố định 240 px từ `md` (< md cả dòng) → "Khu vực: Trung tâm điều …" bị cắt (tooltip hiện đủ); chip Trạng thái/PLC rộng bằng nhãn dài nhất ("Đang hoạt động", "Đang kết nối") nên có khoảng trống khi hiện "Online". Áp dụng cả E-101A (chip rộng hơn ảnh ~30 px).
 
 ## Vận hành – Nhật ký vận hành (/operations/logs, Figma bản sao 64:418, 02/11/2026)
 
