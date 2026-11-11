@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useId, useRef, useState } from 'react';
 import { Button, Card, FocusIcon, ResponsiveImage, SceneLoading, SignalLostIcon, preloadSceneViewer } from '@/components';
 import { useSceneConfig } from '@/data/scene';
+import { sceneSnapshot } from '@/features/scene/sceneSnapshot';
 import type { LiveData } from '@/features/live/types';
 import { cn } from '@/lib/cn';
 import type { ImageAsset } from '@/lib/imageAsset';
@@ -38,6 +39,8 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
   useEffect(preloadSceneViewer, []);
   const [glError, setGlError] = useState<string | null>(null);
   const fallback = glError ?? (scene.status === 'error' ? scene.error.message : null);
+  // Mở lại trang: các bước chờ trước khi SceneViewer gắn cũng hiện ảnh cảnh lần trước (liền mạch với lớp chờ bên trong).
+  const snapshot = sceneSnapshot(sceneId);
 
   return (
     <div ref={rootRef} className={cn('flex min-h-0 flex-col bg-bg-app', className)}>
@@ -76,10 +79,10 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
               </p>
             </>
           ) : scene.status === 'loading' ? (
-            <SceneLoading />
+            <SceneLoading snapshot={snapshot} />
           ) : (
             scene.status === 'success' && (
-              <Suspense fallback={<SceneLoading />}>
+              <Suspense fallback={<SceneLoading snapshot={snapshot} />}>
                 <div className="absolute inset-0">
                   <SceneViewer config={scene.data} liveData={liveData} onWebGLError={setGlError} />
                 </div>

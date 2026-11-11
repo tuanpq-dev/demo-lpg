@@ -82,6 +82,7 @@ Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)
 | 11 | `src/features/scene/fields.ts` + `markers.ts` | Bindings → trạng thái (ngưỡng) → nhãn tự sinh `MapMarker` |
 | 12 | `src/features/scene/look.ts`, `quality.ts`, `PostEffects.tsx` | Ánh sáng/exposure, preset high/medium/low, bloom + outline |
 | 12b | `src/features/scene/sceneReady.tsx`, `src/components/SceneLoading` | Chống nháy khi tải: mọi giai đoạn (dữ liệu cảnh → chunk three → canvas) cùng một `SceneLoading`; `ReadySignal` (cuối `<Canvas>`) báo sẵn sàng sau 3 khung đã vẽ (camera canh khung, nhãn đã đặt; tối đa 5 s) rồi lớp chờ mờ đi; `QualityMonitor` (PerformanceMonitor) chỉ gắn sau khi hiện cảnh 1,5 s – khung đầu chậm do biên dịch shader không làm hạ preset (đổi preset = composer dựng lại = tắt đen một nhịp). Chunk 3D tải song song dữ liệu cảnh (`preloadSceneViewer`) |
+| 12c | `src/features/scene/sceneSnapshot.ts` | Mở lại cảnh trong phiên (rời trang rồi quay lại): `ReadySignal` chụp canvas (`toBlob`, microtask sau khung vẽ) theo mã cảnh; lớp chờ (`SceneLoading snapshot`) hiện ảnh đó thay vòng xoay rồi mờ sang canvas mới. Chỉ cảnh xem, camera mặc định (không Editor / `view`). ⚠ Còn lỗi (11/11): ảnh đôi khi chụp lúc camera chưa canh khung xong → ảnh to hơn cảnh thật, chồng hình khi mờ; khung đầu khi quay lại vẫn tối 1 nhịp (ảnh blob chưa kịp vẽ) |
 
 | Muốn sửa | Sửa ở |
 |---|---|
