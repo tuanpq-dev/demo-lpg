@@ -1,11 +1,10 @@
-import { Suspense, lazy, useId, useRef, useState } from 'react';
-import { Button, Card, FocusIcon, ResponsiveImage, SignalLostIcon } from '@/components';
+import { Suspense, lazy, useEffect, useId, useRef, useState } from 'react';
+import { Button, Card, FocusIcon, ResponsiveImage, SceneLoading, SignalLostIcon, preloadSceneViewer } from '@/components';
 import { useSceneConfig } from '@/data/scene';
 import type { LiveData } from '@/features/live/types';
 import { cn } from '@/lib/cn';
 import type { ImageAsset } from '@/lib/imageAsset';
 import { useFullscreen } from '@/lib/useFullscreen';
-import { Placeholder } from './Placeholder';
 
 // three + drei chỉ tải khi trang có mô hình 3D (chunk lazy dùng chung với Tổng quan).
 const SceneViewer = lazy(() => import('@/features/scene/SceneViewer'));
@@ -35,6 +34,8 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
   const descId = useId();
   const { isFullscreen, toggle } = useFullscreen(rootRef);
   const scene = useSceneConfig(sceneId);
+  // Tải code 3D song song với dữ liệu cảnh.
+  useEffect(preloadSceneViewer, []);
   const [glError, setGlError] = useState<string | null>(null);
   const fallback = glError ?? (scene.status === 'error' ? scene.error.message : null);
 
@@ -59,7 +60,7 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
           role="region"
           aria-label={`Mô hình 3D ${assetName}`}
           aria-describedby={descId}
-          className="relative min-h-[320px] flex-1 overflow-hidden bg-bg-canvas"
+          className="relative min-h-[320px] flex-1 overflow-hidden bg-bg-app"
         >
           <p id={descId} className="sr-only">
             {description}
@@ -75,10 +76,10 @@ export function AssetModelPanel({ sceneId, assetName, liveData, tag, description
               </p>
             </>
           ) : scene.status === 'loading' ? (
-            <Placeholder label="Đang tải mô hình 3D…" height={320} className="absolute inset-0 rounded-none border-0" />
+            <SceneLoading />
           ) : (
             scene.status === 'success' && (
-              <Suspense fallback={<div className="grid h-full place-items-center text-base text-fg-muted">Đang tải mô hình 3D…</div>}>
+              <Suspense fallback={<SceneLoading />}>
                 <div className="absolute inset-0">
                   <SceneViewer config={scene.data} liveData={liveData} onWebGLError={setGlError} />
                 </div>

@@ -81,6 +81,7 @@ Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)
 | 10b | `src/features/scene/pipes.ts` | Thuần: cổng thế giới (`portWorld`, bí danh), đường đi ống (`pipePath`), điểm gần nhất/`pointAtT`, vuông góc (`orthoSegment`), `nextPipeId`, va chạm đoạn–hộp bao |
 | 11 | `src/features/scene/fields.ts` + `markers.ts` | Bindings → trạng thái (ngưỡng) → nhãn tự sinh `MapMarker` |
 | 12 | `src/features/scene/look.ts`, `quality.ts`, `PostEffects.tsx` | Ánh sáng/exposure, preset high/medium/low, bloom + outline |
+| 12b | `src/features/scene/sceneReady.tsx`, `src/components/SceneLoading` | Chống nháy khi tải: mọi giai đoạn (dữ liệu cảnh → chunk three → canvas) cùng một `SceneLoading`; `ReadySignal` (cuối `<Canvas>`) báo sẵn sàng sau 3 khung đã vẽ (camera canh khung, nhãn đã đặt; tối đa 5 s) rồi lớp chờ mờ đi; `QualityMonitor` (PerformanceMonitor) chỉ gắn sau khi hiện cảnh 1,5 s – khung đầu chậm do biên dịch shader không làm hạ preset (đổi preset = composer dựng lại = tắt đen một nhịp). Chunk 3D tải song song dữ liệu cảnh (`preloadSceneViewer`) |
 
 | Muốn sửa | Sửa ở |
 |---|---|
