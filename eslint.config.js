@@ -15,6 +15,17 @@ const redRule = (re, message) => [
   { selector: `Literal[value=${re}]`, message },
   { selector: `TemplateElement[value.raw=${re}]`, message },
 ];
+/** Định dạng số (CLAUDE.md mục 5): một quy ước chung `formatNumber` (src/lib/number.ts) – chặn định dạng rải rác. */
+const NUMBER_FORMAT_RULES = [
+  {
+    selector: "CallExpression[callee.property.name='toLocaleString'][arguments.0.value=/^(en|vi)/]:not([callee.object.type='NewExpression'])",
+    message: 'Định dạng số dùng `formatNumber` (src/lib/number.ts) – quy ước chung 12,450.5.',
+  },
+  {
+    selector: "CallExpression[callee.property.name='replace'][arguments.0.value='.'][arguments.1.value=',']",
+    message: 'Không đổi dấu thập phân sang phẩy – quy ước chung dùng dấu chấm (`formatNumber`).',
+  },
+];
 /** Bộ luật màu chữ đỏ. */
 const DANGER_TEXT_RULES = [
   ...redRule('/(^|[\\s:"\'])text-danger(?![\\w/-])/', RED.bare),
@@ -74,7 +85,7 @@ export default tseslint.config(
       //  - `text-danger-strong`: chỉ cho CHỮ LỚN WCAG (≥ 24px thường / ≥ 18.66px đậm – số KPI, đồng hồ quá hạn) hoặc icon;
       //  - cấm độ mờ trên chữ đỏ (`text-danger*/NN`) – thứ bậc dùng cỡ/độ đậm/gạch chân thay vì làm mờ.
       // Ngoại lệ phải ghi rõ: `// eslint-disable-next-line no-restricted-syntax -- icon` / `-- chữ lớn 28px đậm`.
-      'no-restricted-syntax': ['error', ...DANGER_TEXT_RULES],
+      'no-restricted-syntax': ['error', ...DANGER_TEXT_RULES, ...NUMBER_FORMAT_RULES],
     },
   },
   // Dữ liệu mẫu (src/mocks) là bảng dữ liệu tạm – sẽ thay bằng API; giới hạn số dòng chỉ áp cho code.

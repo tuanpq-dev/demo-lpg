@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
+import { formatNumber } from '@/lib/number';
 
 export type CategoryBarItem = {
   id: string;
@@ -21,7 +22,7 @@ export type CategoryBarListProps = {
 /** "Tiêu thụ theo khu vực" – nhãn + giá trị + ProgressBar 6px (Figma 53:341). */
 export function CategoryBarList({ items, max, unit, format, className }: CategoryBarListProps) {
   const top = max ?? Math.max(...items.map((i) => i.value), 1);
-  const fmt = format ?? ((v: number) => v.toLocaleString('en-US'));
+  const fmt = format ?? ((v: number) => formatNumber(v));
   return (
     <ul className={cn('flex flex-col gap-3 pt-5', className)}>
       {items.map((item) => (

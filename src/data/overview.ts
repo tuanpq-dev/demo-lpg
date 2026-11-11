@@ -16,6 +16,7 @@ import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import { useQuery } from '@/lib/useQuery';
 import * as mock from '@/mocks/overview';
 import type { KpiMock } from '@/mocks/types';
+import { formatNumber } from '@/lib/number';
 
 /** Toàn bộ dữ liệu màn Tổng quan – hợp đồng giữa UI và nguồn dữ liệu (mock hôm nay, API sau này). */
 /** Gắn ô hiển thị với tag trực tiếp + trường (định dạng/ý nghĩa theo FIELD_META). */
@@ -64,7 +65,7 @@ async function fetchOverview(): Promise<OverviewData> {
   };
 }
 
-const kpiNumber = (v: number, digits = 0) => v.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const kpiNumber = (v: number, digits = 0) => formatNumber(v, digits);
 
 /**
  * Ghép số liệu trực tiếp vào dữ liệu màn Tổng quan (thuần – page gọi lúc render, `now` = Date.now()):

@@ -31,8 +31,9 @@ import { resolveAssetId } from '@/data/assetDetail';
 import { assetPath } from '@/app/assetRoutes';
 import { useAnnounceChange } from '@/lib/announce';
 import { parseQuality } from '@/features/scene';
+import { formatNumber } from '@/lib/number';
 
-const nf = (v: number) => v.toLocaleString('en-US');
+const nf = (v: number) => formatNumber(v);
 
 /** Cảnh 3D mặc định của bản đồ Tổng quan (src/mocks/scenes/khu-bon-lpg.json; views + nhãn nằm trong cảnh). */
 const DEFAULT_SCENE_ID = 'khu-bon-lpg';

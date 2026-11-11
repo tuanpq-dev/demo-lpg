@@ -7,6 +7,7 @@
 import { paramStatus } from '@/features/operations/device';
 import { foldSearch } from './filter';
 import { SIGNATURE_STEPS, SIGNATURE_STEP_LABEL, checkpointProgress, missingCheckpoints, signatureOf, type ReportRecord } from './status';
+import { formatNumber } from '@/lib/number';
 
 /** Nhóm thiết bị – thứ tự hiển thị trong bảng. */
 export const DAILY_GROUPS = [
@@ -103,8 +104,8 @@ export function rowResult(row: Pick<DailyReadingRow, 'values' | 'limits'>): RowR
 // Định dạng
 // ============================================================================
 
-/** "77,1" (dấu phẩy thập phân như ảnh). */
-export const formatReading = (v: number, digits: number) => v.toFixed(digits).replace('.', ',');
+/** "77.1" · "2,038" (quy ước số chung – ảnh báo cáo ngày dùng dấu phẩy, đã thống nhất về dấu chấm). */
+export const formatReading = (v: number, digits: number) => formatNumber(v, digits);
 
 /** Ghép số + đơn vị: "90%" · "45°C" · "5 bar" · "10 %LEL". */
 const withUnit = (n: string, unit: string) => (unit === '%' || unit.startsWith('°') ? `${n}${unit}` : `${n} ${unit}`);

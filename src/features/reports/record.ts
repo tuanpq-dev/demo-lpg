@@ -8,6 +8,7 @@
 import { plantDateTimeKey } from '@/lib/plantTime';
 import { readingLevel, type ReadingLevel, type ReadingLimits } from './daily';
 import { missingCheckpoints, type ReportRecord } from './status';
+import { formatNumber } from '@/lib/number';
 
 // ============================================================================
 // Kiểu dữ liệu ảnh chụp mốc
@@ -114,9 +115,9 @@ export function valueSource(r: RecordReading, manual: ManualValues): ValueSource
   return r.value === null ? 'missing' : 'iot';
 }
 
-/** "76,0" · "2" · "—" (dấu phẩy thập phân như ảnh). */
+/** "76.0" · "2" · "—" (quy ước số chung; ảnh dùng dấu phẩy). */
 export function formatRecordValue(v: number | null, digits: number): string {
-  return v === null ? '—' : v.toFixed(digits).replace('.', ',');
+  return v === null ? '—' : formatNumber(v, digits);
 }
 
 // ============================================================================

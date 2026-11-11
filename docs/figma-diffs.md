@@ -14,6 +14,9 @@ Log các chỗ code CỐ Ý khác ảnh/Figma (chuyển nguyên văn từ CLAUDE
   - Ảnh hoặc SVG người dùng gửi trong chat.
   - Khi thiếu thông số: đọc pixel từ ảnh chụp rồi map về token gần nhất, kích thước lấy từ metadata.
 
+## Chung – định dạng số (11/11/2026)
+- Figma dùng lẫn dấu chấm (Tổng quan, Cảnh báo, Vận hành: "3.8 bar", "12,450") và dấu phẩy thập phân (Báo cáo ngày, Ghi nhận mốc: "9,2 bar", "28,7 °C"). Người dùng chốt **dấu chấm thập phân + dấu phẩy hàng nghìn** cho toàn app (`formatNumber`) – các màn báo cáo, dung lượng tệp ("2.4 MB"), nhãn 3D đổi theo. Các ghi chú "dấu phẩy" bên dưới là lịch sử.
+
 ## Cảnh báo (/alerts)
 
 - **Modal "Phân công xử lý cảnh báo" (ảnh `scratch/figma-ref/alert-assign-modal-design.png`, ALT-00128, 27/10/2026):**

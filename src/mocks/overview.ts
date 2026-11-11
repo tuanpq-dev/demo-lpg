@@ -165,7 +165,7 @@ export const mapMarkers: (MapMarkerData & { live?: { tag: string; field: string 
     variant: 'callout',
     tone: 'danger',
     title: 'Hóa hơi và điều áp',
-    value: '45,6 °C',
+    value: '45.6 °C',
     showWarningIcon: true,
     x: 0.7879,
     y: 0.6387,
