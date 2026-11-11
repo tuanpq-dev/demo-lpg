@@ -133,47 +133,24 @@ export function ScenarioCard({
 
       {/* Chân thẻ */}
       <div className="flex flex-wrap items-end justify-between gap-3 sm:pl-12">
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-base text-fg-secondary">
-          <dt>Lần chạy gần nhất:</dt>
-          <dd className="tabular-nums text-fg">{lastRun ? runTimeText(lastRun.at, now) : '--'}</dd>
-          <dt>Kết quả gần nhất:</dt>
-          <dd className={lastRun ? (lastRun.result === 'pass' ? 'text-success' : 'text-warning') : 'text-fg'}>
-            {lastRun ? `${RUN_RESULT_LABEL[lastRun.result]} (${lastRun.responseSeconds} s / mục tiêu ${lastRun.targetSeconds} s)` : '--'}
-          </dd>
-        </dl>
+        <LastRun run={lastRun} now={now} />
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="link" size="lg" aria-expanded={expanded} aria-controls={expanded ? detailId : undefined} onClick={onToggle}>
             {expanded ? 'Thu gọn chi tiết' : 'Chi tiết kịch bản'}
             <span className="sr-only"> {s.code}</span>
           </Button>
-          {monitorHref ? (
-            <Link to={monitorHref} className={buttonClass('tinted')}>
-              <PlayIcon size={14} />
-              Đang chạy – Theo dõi
-              <span className="sr-only"> {s.code}</span>
-            </Link>
-          ) : (
-            canRun &&
-            (needsConfig ? (
-              <Link to={configHref} aria-describedby={reasonId} className={buttonClass('outline-warning')}>
-                <ToolsIcon size={16} />
-                Cấu hình trước khi chạy
-                <span className="sr-only"> {s.code}</span>
-              </Link>
-            ) : (
-              <Button
-                variant="primary"
-                icon={<PlayIcon size={14} />}
-                aria-disabled={locked || undefined}
-                aria-describedby={blocker ? reasonId : undefined}
-                aria-busy={running || undefined}
-                onClick={() => !locked && onRun()}
-              >
-                {running ? 'Đang khởi động…' : 'Chạy mô phỏng'}
-                <span className="sr-only"> {s.code}</span>
-              </Button>
-            ))
-          )}
+          <RunAction
+            code={s.code}
+            monitorHref={monitorHref}
+            configHref={configHref}
+            canRun={canRun}
+            needsConfig={needsConfig}
+            locked={locked}
+            running={running}
+            blocked={!!blocker}
+            reasonId={reasonId}
+            onRun={onRun}
+          />
         </div>
       </div>
       {canRun && blocker && !monitorHref && (
@@ -182,5 +159,73 @@ export function ScenarioCard({
         </p>
       )}
     </article>
+  );
+}
+
+/** Lần chạy + kết quả gần nhất (từ lịch sử). */
+function LastRun({ run, now }: { run: ScenarioCardProps['lastRun']; now: ScenarioCardProps['now'] }) {
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-base text-fg-secondary">
+      <dt>Lần chạy gần nhất:</dt>
+      <dd className="tabular-nums text-fg">{run ? runTimeText(run.at, now) : '--'}</dd>
+      <dt>Kết quả gần nhất:</dt>
+      <dd className={run ? (run.result === 'pass' ? 'text-success' : 'text-warning') : 'text-fg'}>
+        {run ? `${RUN_RESULT_LABEL[run.result]} (${run.responseSeconds} s / mục tiêu ${run.targetSeconds} s)` : '--'}
+      </dd>
+    </dl>
+  );
+}
+
+/** Nút chính: đang chạy → "Theo dõi" · thiếu mapping → "Cấu hình trước khi chạy" · còn lại → "Chạy mô phỏng" (khoá kèm lý do). */
+function RunAction({
+  code,
+  monitorHref,
+  configHref,
+  canRun,
+  needsConfig,
+  locked,
+  running,
+  blocked,
+  reasonId,
+  onRun,
+}: {
+  code: string;
+  monitorHref?: string;
+  configHref: string;
+  canRun: boolean;
+  needsConfig: boolean;
+  locked: boolean;
+  running: boolean;
+  blocked: boolean;
+  reasonId: string;
+  onRun: () => void;
+}) {
+  return monitorHref ? (
+    <Link to={monitorHref} className={buttonClass('tinted')}>
+      <PlayIcon size={14} />
+      Đang chạy – Theo dõi
+      <span className="sr-only"> {code}</span>
+    </Link>
+  ) : (
+    canRun &&
+      (needsConfig ? (
+        <Link to={configHref} aria-describedby={reasonId} className={buttonClass('outline-warning')}>
+          <ToolsIcon size={16} />
+          Cấu hình trước khi chạy
+          <span className="sr-only"> {code}</span>
+        </Link>
+      ) : (
+        <Button
+          variant="primary"
+          icon={<PlayIcon size={14} />}
+          aria-disabled={locked || undefined}
+          aria-describedby={blocked ? reasonId : undefined}
+          aria-busy={running || undefined}
+          onClick={() => !locked && onRun()}
+        >
+          {running ? 'Đang khởi động…' : 'Chạy mô phỏng'}
+          <span className="sr-only"> {code}</span>
+        </Button>
+      ))
   );
 }

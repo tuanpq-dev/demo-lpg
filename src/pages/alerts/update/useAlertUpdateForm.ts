@@ -50,6 +50,25 @@ export type UseAlertUpdateFormOptions = {
   onClose: () => void;
 };
 
+/** Lý do chặn nút "Lưu cập nhật" theo thứ tự hiển thị (trên → dưới của form). */
+function blockingIssues(err: UpdateErrors): { id: string; label: string }[] {
+  const out: { id: string; label: string }[] = [];
+  const add = (id: string, label: string | undefined) => {
+    if (label) out.push({ id, label });
+  };
+  add('state', err.state);
+  add('close', err.close);
+  add('hold', err.holdReason);
+  add('people', err.supportPeople);
+  if (err.inspection && Object.keys(err.inspection).length > 0) add('inspection', 'Hạng mục "Có vấn đề" cần ghi chú.');
+  add('verification', err.verification);
+  add('cause', err.cause);
+  add('action', err.actionTaken);
+  add('issue', err.issueNote);
+  add('follow', err.followUp);
+  return out;
+}
+
 /**
  * State + kiểm tra của modal "Cập nhật xử lý" (reducer `updateFormReducer`): giá trị form, tệp tạm, lỗi trả về lúc lưu,
  * lỗi mạng; suy ra dòng thông số, điều kiện đóng (`updateCloseCheck`), input gửi đi, lỗi / cảnh báo / lý do chặn.
@@ -147,18 +166,7 @@ export function useAlertUpdateForm({ alert: a, now, onSubmit, onClose }: UseAler
   const shown: UpdateErrors = triedSubmit ? liveErrors : { verification: liveErrors.verification };
   // Lý do chặn nút "Lưu cập nhật" (sau lần bấm đầu) – tính lại theo giá trị hiện tại (+ lỗi trả về lúc lưu, xoá khi bấm lại).
   const err: UpdateErrors = triedSubmit ? { ...errors, ...liveErrors } : shown;
-  const issues = [
-    err.state && { id: 'state', label: err.state },
-    err.close && { id: 'close', label: err.close },
-    err.holdReason && { id: 'hold', label: err.holdReason },
-    err.supportPeople && { id: 'people', label: err.supportPeople },
-    err.inspection && Object.keys(err.inspection).length > 0 && { id: 'inspection', label: 'Hạng mục "Có vấn đề" cần ghi chú.' },
-    err.verification && { id: 'verification', label: err.verification },
-    err.cause && { id: 'cause', label: err.cause },
-    err.actionTaken && { id: 'action', label: err.actionTaken },
-    err.issueNote && { id: 'issue', label: err.issueNote },
-    err.followUp && { id: 'follow', label: err.followUp },
-  ].filter(Boolean) as { id: string; label: string }[];
+  const issues = blockingIssues(err);
   const resolved = isResolvedState(v.state);
 
   // ---- Thao tác ----

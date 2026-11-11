@@ -29,6 +29,34 @@ export type AlertAssignModalProps = {
   onConfirm: (form: AlertAssignForm) => Promise<void> | void;
 };
 
+const CONFIRM_LABEL = { reassign: 'Xác nhận đổi người', update: 'Cập nhật phân công', assign: 'Xác nhận phân công' } as const;
+
+/**
+ * Trạng thái suy từ form: kế hoạch hàng loạt (dòng bỏ qua / đổi người), lý do chặn, cần lý do đổi người, cảnh báo tải việc,
+ * nhãn nút xác nhận. Cảnh báo tải việc chỉ khi CHỌN người mới (giữ người hiện tại → không nhắc lại tải việc của chính họ).
+ */
+function assignView(alerts: readonly AlertRecord[], f: AlertAssignForm, loads: Parameters<typeof alertAssignWarnings>[1]['loads'], now: Date) {
+  const single = alerts.length === 1 ? alerts[0]! : null;
+  const ids = alerts.map((a) => a.id);
+  const plan = single ? null : planBulkAlertAssign(alerts, ids, f.assignee);
+  const issues = plan ? validateBulkAlertAssign(plan, f) : validateAlertAssign(single!, f);
+  const change = single ? alertAssignChange(single, f) : null;
+  const pickedNew = !!f.assignee && (!single || f.assignee !== single.assignee);
+  return {
+    plan,
+    issues,
+    blocked: issues.length > 0,
+    needReason: plan ? plan.reassign.length > 0 && !!f.assignee : change === 'reassign',
+    warnings: pickedNew ? alertAssignWarnings(f, { staff: staffByName(f.assignee), loads, now, alertIds: ids }) : [],
+    reassignMode: !!single?.assignee,
+    confirmLabel: CONFIRM_LABEL[change === 'reassign' || change === 'update' ? change : 'assign'],
+    blockVerb: change === 'reassign' ? 'đổi người' : 'phân công',
+    reasonHint: plan
+      ? 'Một lý do chung cho mọi cảnh báo đổi người – ghi vào lịch sử từng cảnh báo.'
+      : `Người hiện tại: ${single?.assignee ?? '—'}. Trạng thái cảnh báo giữ nguyên.`,
+  };
+}
+
 /**
  * Modal "Phân công xử lý cảnh báo" – ảnh `scratch/figma-ref/alert-assign-modal-design.png` (chưa có node; lệch: CLAUDE.md
  * mục 8). Dùng chung lõi với modal phân công bảo trì: `StaffList`/`StaffPickerCard`, nhãn Sẵn sàng/Bận/Ngoài ca
@@ -84,18 +112,7 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: Aler
   const picker = useAlertStaffPicker(alerts, allAlerts, now);
   const { loads } = picker;
 
-  const ids = alerts.map((a) => a.id);
-  const plan = bulk ? planBulkAlertAssign(alerts, ids, f.assignee) : null;
-  const issues = plan ? validateBulkAlertAssign(plan, f) : validateAlertAssign(single!, f);
-  const blocked = issues.length > 0;
-  const change = single ? alertAssignChange(single, f) : null;
-  const needReason = plan ? plan.reassign.length > 0 && !!f.assignee : change === 'reassign';
-  // Cảnh báo chỉ khi CHỌN người mới (giữ nguyên người hiện tại → không nhắc lại tải việc của chính họ).
-  const warnings =
-    f.assignee && (bulk || f.assignee !== single!.assignee)
-      ? alertAssignWarnings(f, { staff: staffByName(f.assignee), loads, now, alertIds: ids })
-      : [];
-  const reassignMode = !!single?.assignee;
+  const { plan, issues, blocked, needReason, warnings, reassignMode, confirmLabel, reasonHint, blockVerb } = assignView(alerts, f, loads, now);
 
   const collabOptions = ALERT_STAFF.filter((p) => p.name !== f.assignee).map((p) => ({
     value: p.name,
@@ -116,11 +133,6 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: Aler
     }
     announce(`Đã lưu nháp phân công ${single.code} – cảnh báo chưa thay đổi.`);
   };
-
-  const confirmLabel = change === 'reassign' ? 'Xác nhận đổi người' : change === 'update' ? 'Cập nhật phân công' : 'Xác nhận phân công';
-  const reasonHint = plan
-    ? 'Một lý do chung cho mọi cảnh báo đổi người – ghi vào lịch sử từng cảnh báo.'
-    : `Người hiện tại: ${single?.assignee ?? '—'}. Trạng thái cảnh báo giữ nguyên.`;
 
   return (
     <Modal
@@ -224,12 +236,7 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: Aler
             <p className="pl-6 text-sm text-fg-secondary">Chưa gửi được – chờ backend (bản demo không gửi thông báo).</p>
           </div>
 
-          <AssignNotices
-            warnings={warnings}
-            issues={issues}
-            blockId={blockId}
-            blockTitle={`Chưa thể ${change === 'reassign' ? 'đổi người' : 'phân công'} – còn thiếu:`}
-          />
+          <AssignNotices warnings={warnings} issues={issues} blockId={blockId} blockTitle={`Chưa thể ${blockVerb} – còn thiếu:`} />
           {error && (
             <p role="alert" className="text-sm text-danger-text">
               {error}

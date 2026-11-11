@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ApiError } from '@/api/client';
 import { Button, Card } from '@/components';
 import { cn } from '@/lib/cn';
+import { Page } from './Page';
 
 /** Khối giữ chỗ cho nội dung chưa làm (GĐ sau). Chiều cao lấy theo Figma để layout đúng tỉ lệ. */
 export function Placeholder({ label, height, className }: { label: string; height: number; className?: string }) {
@@ -66,4 +67,37 @@ export function PageError({ title, error, onRetry, actions, preformatted }: Page
       )}
     </Card>
   );
+}
+
+/** Khung "Đang tải…" của trang: mỗi số = một khối cao theo Figma; truyền ReactNode khi bố cục khung đặc biệt (lưới cột). */
+export type PageSkeleton = readonly number[] | ReactNode;
+
+export type PageFallbackOptions = {
+  header: ReactNode;
+  /** "Không tải được …" */
+  errorTitle: string;
+  skeleton: PageSkeleton;
+  /** Nút phụ cạnh "Thử lại". */
+  errorActions?: ReactNode;
+};
+
+/**
+ * Hai trạng thái chờ của trang (CLAUDE.md "Dữ liệu": loading · error · success): Card lỗi + "Thử lại" hoặc khung "Đang tải…".
+ * Dùng sau mọi hook: `if (q.status !== 'success') return pageFallback(q, {...});` – TS thu hẹp `q` về success ở phần sau.
+ */
+export function pageFallback(
+  q: { status: 'loading' | 'error'; error?: Error | undefined; refetch: () => void },
+  { header, errorTitle, skeleton, errorActions }: PageFallbackOptions,
+): ReactNode {
+  if (q.status === 'error' && q.error) {
+    return (
+      <Page pageHeader={header}>
+        <PageError title={errorTitle} error={q.error} onRetry={q.refetch} actions={errorActions} />
+      </Page>
+    );
+  }
+  const blocks = Array.isArray(skeleton)
+    ? (skeleton as readonly number[]).map((h, i) => <Placeholder key={i} label="Đang tải…" height={h} />)
+    : skeleton;
+  return <Page pageHeader={header}>{blocks}</Page>;
 }

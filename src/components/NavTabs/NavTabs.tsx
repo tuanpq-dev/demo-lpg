@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useDismiss } from '@/lib/useDismiss';
 import type { IconName } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
 import { useRovingFocus } from '@/lib/useRovingFocus';
@@ -75,14 +76,18 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
   const { setRef, onKeyDown, getTabIndex } = useRovingFocus({ items, value: topValue, onChange: select, activation: 'manual' });
 
   // Click ra ngoài → đóng (không kéo focus).
-  useEffect(() => {
-    if (!openId) return;
-    const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpenId(null);
-    };
-    document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
-  }, [openId]);
+  useDismiss(!!openId, root, () => setOpenId(null));
+
+  // ↓/↑ trên tab có menu → mở menu (focus mục đầu/cuối); Esc → đóng menu; phím khác → roving focus giữa các tab.
+  const onTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, id: string, hasMenu: boolean, expanded: boolean) => {
+    if (hasMenu && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      openMenu(id, e.key === 'ArrowUp' ? 'last' : 'first');
+    } else if (hasMenu && e.key === 'Escape' && expanded) {
+      e.preventDefault();
+      closeMenu(true);
+    } else onKeyDown(e, id);
+  };
 
   const openItem = items.find((i) => i.id === openId);
 
@@ -96,7 +101,7 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
           const expanded = openId === item.id;
           // Đang ở trang con → tab hiện tên trang con (vd "Nhật ký vận hành"); tên mục cha vẫn đọc cho trình đọc màn hình.
           const currentChild = item.children?.find((c) => c.id === value);
-          const shownLabel = currentChild?.label ?? item.label;
+          const childLabel = currentChild && currentChild.label !== item.label ? currentChild.label : undefined;
           return (
             <button
               key={item.id}
@@ -115,20 +120,8 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
               disabled={item.disabled}
               tabIndex={getTabIndex(item.id)}
               onClick={() => select(item.id)}
-              onKeyDown={(e) => {
-                if (hasMenu && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-                  e.preventDefault();
-                  openMenu(item.id, e.key === 'ArrowUp' ? 'last' : 'first');
-                  return;
-                }
-                if (hasMenu && e.key === 'Escape' && expanded) {
-                  e.preventDefault();
-                  closeMenu(true);
-                  return;
-                }
-                onKeyDown(e, item.id);
-              }}
-              title={currentChild && currentChild.label !== item.label ? `${item.label} – ${currentChild.label}` : item.label}
+              onKeyDown={(e) => onTabKeyDown(e, item.id, hasMenu, expanded)}
+              title={childLabel ? `${item.label} – ${childLabel}` : item.label}
               className={cn(
                 'group flex h-[41px] shrink-0 items-center gap-2.5 rounded-md text-md font-semibold leading-normal transition-opacity',
                 active && 'text-primary',
@@ -137,15 +130,7 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
                 item.disabled && 'cursor-not-allowed text-fg-disabled opacity-70',
               )}
             >
-              <Icon
-                name={active && item.activeIcon ? item.activeIcon : item.icon}
-                box={24}
-                className={cn(!active && 'opacity-70 group-hover:opacity-100')}
-              />
-              {currentChild && currentChild.label !== item.label && <span className="sr-only">{item.label} – </span>}
-              <span className={cn(!active && 'sr-only wide:not-sr-only')}>{shownLabel}</span>
-              {!!item.count && <Badge variant="count" value={item.count} tone="danger" size="md" />}
-              {hasMenu && <Icon name="navChevronDown" box={24} className={cn('hidden transition-transform wide:block', expanded && 'rotate-180')} />}
+              <NavTabContent item={item} active={active} expanded={expanded} shownLabel={currentChild?.label ?? item.label} childLabel={childLabel} />
             </button>
           );
         })}
@@ -166,6 +151,33 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
         />
       )}
     </nav>
+  );
+}
+
+/** Nội dung một tab: icon · (tên mục cha cho trình đọc) · tên hiện · số đếm · mũi tên menu. */
+function NavTabContent({
+  item,
+  active,
+  expanded,
+  shownLabel,
+  childLabel,
+}: {
+  item: NavTabsProps['items'][number];
+  active: boolean;
+  expanded: boolean;
+  shownLabel: string;
+  childLabel?: string;
+}) {
+  return (
+    <>
+      <Icon name={active && item.activeIcon ? item.activeIcon : item.icon} box={24} className={cn(!active && 'opacity-70 group-hover:opacity-100')} />
+      {childLabel && <span className="sr-only">{item.label} – </span>}
+      <span className={cn(!active && 'sr-only wide:not-sr-only')}>{shownLabel}</span>
+      {!!item.count && <Badge variant="count" value={item.count} tone="danger" size="md" />}
+      {!!item.children?.length && (
+        <Icon name="navChevronDown" box={24} className={cn('hidden transition-transform wide:block', expanded && 'rotate-180')} />
+      )}
+    </>
   );
 }
 
@@ -281,23 +293,15 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
   const listId = useId();
   const current = items.flatMap((i) => [i, ...(i.children ?? [])]).find((i) => i.id === value);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+  useDismiss(
+    open,
+    root,
+    (reason) => {
       setOpen(false);
-      button.current?.focus();
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+      if (reason === 'escape') button.current?.focus();
+    },
+    { escape: true },
+  );
 
   return (
     <nav aria-label={label} className={cn('relative', className)} ref={root}>

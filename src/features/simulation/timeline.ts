@@ -46,25 +46,22 @@ export type SimEvent = {
 
 export const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Cảnh báo + sự kiện đã xảy ra tới `elapsed` (cũ trước). `finished` → thêm mốc kết thúc. */
-export function simTimeline(
-  s: Pick<Scenario, 'steps' | 'setup'>,
+/** Cảnh báo giả lập đã phát tới `elapsed`: High (vượt ngưỡng) rồi High-High (chạm giá trị mục tiêu). */
+function timelineAlerts(
+  s: Pick<Scenario, 'setup'>,
   monitor: MonitorSetup,
   session: SimulationSession,
-  now: number,
-): { alerts: SimAlert[]; events: SimEvent[]; marks: MonitorMarks } {
+  marks: MonitorMarks,
+  elapsed: number,
+  at: (sec: number) => string,
+  active: boolean,
+): SimAlert[] {
   const v = s.setup.variable;
   const p = profileOf(session);
-  const phase = sessionPhase(session, now);
-  const active = isActivePhase(phase);
-  const elapsed = elapsedSec(session, now);
-  const marks = monitorMarks(s, p);
   const seen = (x: number | undefined): x is number => x !== undefined && x <= elapsed;
-  const at = (sec: number) => plantTimeOfDay(new Date(Date.parse(session.startedAt) + sec * 1000));
   const fmt = (x: number) => formatVariable(x, v);
   const above = v.direction === 'above';
   const follow = active ? 'Đang theo dõi.' : 'Đã kết thúc mô phỏng.';
-
   const alerts: SimAlert[] = [];
   if (seen(marks.alert)) {
     const val = valueAt(p, marks.alert);
@@ -92,6 +89,46 @@ export function simTimeline(
     });
   }
 
+  return alerts;
+}
+
+/** Mốc kết thúc lượt: dừng thủ công · hoàn thành (chạm / chưa chạm giá trị mục tiêu). */
+function endEvent(phase: string, elapsed: number, marks: MonitorMarks, session: SimulationSession, at: (sec: number) => string): SimEvent {
+  const stopped = phase === 'stopped';
+  const reached = marks.peak !== undefined && marks.peak <= elapsed;
+  const doneTitle = reached ? 'Hoàn thành mô phỏng theo giá trị mục tiêu' : 'Hoàn thành mô phỏng – chưa chạm giá trị mục tiêu';
+  return {
+    id: 'end',
+    sec: elapsed,
+    time: at(elapsed),
+    title: stopped ? 'Dừng mô phỏng thủ công' : doneTitle,
+    detail: stopped
+      ? `Dừng lúc ${clockText(elapsed)}. Tạo báo cáo nháp.`
+      : `Kết thúc phiên chạy sau ${session.config.durationMin} phút. Tạo báo cáo nháp.`,
+    feedTitle: stopped ? 'Dừng mô phỏng' : 'Kết thúc mô phỏng',
+    tone: 'success',
+  };
+}
+
+/** Cảnh báo + sự kiện đã xảy ra tới `elapsed` (cũ trước). `finished` → thêm mốc kết thúc. */
+export function simTimeline(
+  s: Pick<Scenario, 'steps' | 'setup'>,
+  monitor: MonitorSetup,
+  session: SimulationSession,
+  now: number,
+): { alerts: SimAlert[]; events: SimEvent[]; marks: MonitorMarks } {
+  const v = s.setup.variable;
+  const p = profileOf(session);
+  const phase = sessionPhase(session, now);
+  const active = isActivePhase(phase);
+  const elapsed = elapsedSec(session, now);
+  const marks = monitorMarks(s, p);
+  const seen = (x: number | undefined): x is number => x !== undefined && x <= elapsed;
+  const at = (sec: number) => plantTimeOfDay(new Date(Date.parse(session.startedAt) + sec * 1000));
+  const fmt = (x: number) => formatVariable(x, v);
+  const above = v.direction === 'above';
+
+  const alerts = timelineAlerts(s, monitor, session, marks, elapsed, at, active);
   const trendWord = above ? 'tăng' : 'giảm';
   const events: SimEvent[] = [
     {
@@ -161,25 +198,7 @@ export function simTimeline(
       tone: 'info',
     });
   }
-  if (!active) {
-    const stopped = phase === 'stopped';
-    const reached = marks.peak !== undefined && marks.peak <= elapsed;
-    events.push({
-      id: 'end',
-      sec: elapsed,
-      time: at(elapsed),
-      title: stopped
-        ? 'Dừng mô phỏng thủ công'
-        : reached
-          ? 'Hoàn thành mô phỏng theo giá trị mục tiêu'
-          : 'Hoàn thành mô phỏng – chưa chạm giá trị mục tiêu',
-      detail: stopped
-        ? `Dừng lúc ${clockText(elapsed)}. Tạo báo cáo nháp.`
-        : `Kết thúc phiên chạy sau ${session.config.durationMin} phút. Tạo báo cáo nháp.`,
-      feedTitle: stopped ? 'Dừng mô phỏng' : 'Kết thúc mô phỏng',
-      tone: 'success',
-    });
-  }
+  if (!active) events.push(endEvent(phase, elapsed, marks, session, at));
   events.sort((a, b) => a.sec - b.sec);
   return { alerts, events, marks };
 }

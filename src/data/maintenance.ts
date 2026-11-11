@@ -105,6 +105,33 @@ export class DuplicateFromAlertError extends Error {
   }
 }
 
+/** Hạn chỉ có ngày ("2026-11-20") → cuối ngày, đánh dấu không có giờ. */
+const dueFields = (dueAt: string) => (dueAt.length === 10 ? { dueAt: `${dueAt}T23:59`, dueHasTime: false } : { dueAt, dueHasTime: undefined });
+
+/** Trường tuỳ chọn: chuỗi rỗng / danh sách rỗng → bỏ (undefined) để bản ghi gọn như dữ liệu API. */
+function optionalCreateFields(input: NewMaintenanceInput, checklist: NonNullable<NewMaintenanceInput['checklist']>, createdBy: string, at: string) {
+  const note = input.notes?.trim();
+  return {
+    description: input.description?.trim() || undefined,
+    referenceCode: input.referenceCode?.trim() || undefined,
+    startAt: input.startAt || undefined,
+    collaborators: input.collaborators?.length ? input.collaborators : undefined,
+    checklist: checklist.length ? checklist : undefined,
+    attachments: input.attachments?.length ? input.attachments.map(({ id, name, size }) => ({ id, name, size })) : undefined,
+    notes: note ? [{ id: 'n1', author: createdBy, at, text: note }] : undefined,
+    requiresPermit: input.requiresPermit || undefined,
+  };
+}
+
+/** Lịch sử lúc tạo: "Tạo yêu cầu" (+ từ cảnh báo) và "Phân công" nếu có người phụ trách. */
+function creationHistory(input: NewMaintenanceInput, createdBy: string, at: string): MaintenanceHistoryEntry[] {
+  const history: MaintenanceHistoryEntry[] = [
+    { id: 'h1', at, kind: 'create', text: input.sourceAlertId ? `Tạo yêu cầu từ cảnh báo ${input.sourceAlertId}` : 'Tạo yêu cầu', actor: createdBy },
+  ];
+  if (input.assignee) history.push({ id: 'h2', at, kind: 'assign', text: `Phân công: ${input.assignee}`, actor: createdBy });
+  return history;
+}
+
 /**
  * POST /maintenance – tạo yêu cầu mới; có người phụ trách → "Đã phân công", không → "Chờ tiếp nhận".
  * Một cảnh báo chỉ có MỘT yêu cầu đang hiệu lực (`linkedMaintenance`, bỏ yêu cầu đã hủy) – trùng → `DuplicateFromAlertError`.
@@ -114,22 +141,15 @@ async function createMaintenance(input: NewMaintenanceInput): Promise<Maintenanc
     const existing = linkedMaintenance(input.sourceAlertId, db);
     if (existing) throw new DuplicateFromAlertError(existing);
   }
-  const now = appNow();
-  const at = plantDateTimeKey(now);
+  const at = plantDateTimeKey(appNow());
   const maxNo = Math.max(0, ...db.map((r) => Number(r.code.replace(/\D/g, '')) || 0));
   const code = `MT-${String(maxNo + 1).padStart(5, '0')}`;
-  const checklist = (input.checklist ?? []).filter((c) => c.text.trim());
   const createdBy = input.createdBy ?? 'Admin';
-  const note = input.notes?.trim();
-  const history: MaintenanceHistoryEntry[] = [
-    { id: 'h1', at, kind: 'create', text: input.sourceAlertId ? `Tạo yêu cầu từ cảnh báo ${input.sourceAlertId}` : 'Tạo yêu cầu', actor: createdBy },
-  ];
-  if (input.assignee) history.push({ id: 'h2', at, kind: 'assign', text: `Phân công: ${input.assignee}`, actor: createdBy });
+  const checklist = (input.checklist ?? []).filter((c) => c.text.trim());
   const record: MaintenanceRecord = {
     id: code,
     code,
     title: input.title.trim().slice(0, 160),
-    description: input.description?.trim() || undefined,
     device: input.device,
     area: input.area || 'Khác',
     type: input.type,
@@ -138,22 +158,15 @@ async function createMaintenance(input: NewMaintenanceInput): Promise<Maintenanc
     assignee: input.assignee,
     createdAt: isoDay(0),
     createdBy,
-    dueAt: input.dueAt.length === 10 ? `${input.dueAt}T23:59` : input.dueAt,
-    dueHasTime: input.dueAt.length === 10 ? false : undefined,
+    ...dueFields(input.dueAt),
     completedAt: null,
     progress: checklistProgress(checklist).percent,
     sourceAlertId: input.sourceAlertId,
     source: input.source,
-    referenceCode: input.referenceCode?.trim() || undefined,
-    startAt: input.startAt || undefined,
     department: input.department,
     shift: input.shift,
-    collaborators: input.collaborators?.length ? input.collaborators : undefined,
-    checklist: checklist.length ? checklist : undefined,
-    attachments: input.attachments?.length ? input.attachments.map(({ id, name, size }) => ({ id, name, size })) : undefined,
-    notes: note ? [{ id: 'n1', author: createdBy, at, text: note }] : undefined,
-    history,
-    requiresPermit: input.requiresPermit || undefined,
+    ...optionalCreateFields(input, checklist, createdBy, at),
+    history: creationHistory(input, createdBy, at),
   };
   db = [record, ...db];
   commit();

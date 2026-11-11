@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, DatePicker, FilterBar, Icon, PageHeader, StatusDot, type FilterDef } from '@/components';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useDailyReport } from '@/data/dailyReport';
@@ -95,22 +95,8 @@ export default function DailyReportDetailPage() {
     );
   }
 
-  if (state.status === 'error') {
-    return (
-      <Page pageHeader={header()}>
-        <PageError title="Không tải được báo cáo" error={state.error} onRetry={state.refetch} />
-      </Page>
-    );
-  }
-
-  if (state.status === 'loading') {
-    return (
-      <Page pageHeader={header()}>
-        <Placeholder label="Đang tải…" height={133} />
-        <Placeholder label="Đang tải…" height={120} />
-        <Placeholder label="Đang tải…" height={560} />
-      </Page>
-    );
+  if (state.status !== 'success') {
+    return pageFallback(state, { header: header(), errorTitle: 'Không tải được báo cáo', skeleton: [133, 120, 560] });
   }
 
   const goToDay = (day: string) => {

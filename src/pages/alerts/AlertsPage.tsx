@@ -4,7 +4,7 @@ import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
@@ -30,7 +30,7 @@ import {
 import { CreateMaintenanceModal } from '../shared/maintenance/CreateMaintenanceModal';
 import { AlertAssignModal } from './AlertAssignModal';
 import { AlertBulkCloseModal } from './AlertBulkCloseModal';
-import { AlertDetailDrawer } from './AlertDetailDrawer';
+import { AlertDetailDrawer, type AlertDrawerHandlers } from './AlertDetailDrawer';
 import { alertColumns, alertFilterDefs, alertTabs } from './list/alertTable';
 import { BulkActionsBar, PriorityAlerts } from './list/AlertsSections';
 import { exportAlertsCsv } from './list/exportAlertsCsv';
@@ -39,6 +39,36 @@ const getAlertId = (a: AlertRecord) => a.id;
 const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
 
 const PAGE_SIZE = 5;
+
+/** Thao tác của drawer chi tiết → store cảnh báo (người thao tác = `actor`; theo dõi sau xử lý theo cấu hình loại). */
+function drawerHandlers(
+  alerts: ReturnType<typeof useAlerts>,
+  actor: string,
+  followOf: (id: string) => ReturnType<typeof followUpConfig>,
+): Omit<AlertDrawerHandlers, 'onCreateMaintenance'> {
+  return {
+    onAcknowledge: async (id) => {
+      await alerts.acknowledge([id], actor);
+      announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
+    },
+    onAssign: (id, form) => alerts.assignOne(id, form, actor),
+    onResolve: (id, note) => alerts.resolve(id, note, actor),
+    onToggleGuide: (id, step) => alerts.toggleGuide(id, step, actor),
+    onAddNote: (id, text) => alerts.addNote(id, text, actor),
+    onUpdate: (id, input, check) => alerts.update(id, input, check, actor),
+    onCloseAlert: (id, input, conditions) => alerts.close(id, input, conditions, followOf(id), actor),
+    onMonitor: (id, input) => alerts.monitor(id, input, followOf(id), actor),
+    onRequestSupport: (id, input) => alerts.requestSupport(id, input, actor),
+  };
+}
+
+/** Giá trị FilterBar → tham số lọc của bảng (rỗng = bỏ lọc). */
+const alertFilterValues = (v: Record<string, string | null | undefined>) => ({
+  severity: (v.severity as Severity | null) ?? null,
+  area: v.area ?? null,
+  device: v.device ?? null,
+  shift: (v.shift as AlertShift | null) ?? null,
+});
 
 /** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
 export default function AlertsPage() {
@@ -98,6 +128,19 @@ export default function AlertsPage() {
   const devices = useMemo(() => deriveDeviceDirectory(maintRecords ?? [], all), [maintRecords, all]);
   const followOf = (id: string) => followUpConfig(all.find((x) => x.id === id) ?? {});
 
+  // Tạo yêu cầu bảo trì từ cảnh báo → ghi chú "đã tạo MT-…" vào cảnh báo; trùng (đã có yêu cầu) → chỉ thông báo.
+  const createFromAlert = async (source: AlertRecord, input: Parameters<typeof maintenance.create>[0]) => {
+    try {
+      const rec = await maintenance.create({ ...input, createdBy: actor });
+      await alerts.noteMaintenance(source.id, rec.code, actor);
+      announce(`Đã tạo yêu cầu ${rec.code} từ ${source.code}.`);
+    } catch (e) {
+      if (!(e instanceof DuplicateFromAlertError)) throw e;
+      announce(e.message);
+    }
+    setCreateFor(null);
+  };
+
   const header = (
     <PageHeader
       breadcrumb={[{ label: 'Cảnh báo', to: '/alerts' }, { label: 'Trung tâm cảnh báo' }]}
@@ -114,23 +157,8 @@ export default function AlertsPage() {
     />
   );
 
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được danh sách cảnh báo" error={error} onRetry={refetch} />
-      </Page>
-    );
-  }
-
-  if (status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={135} />
-        <Placeholder label="Đang tải…" height={92} />
-        <Placeholder label="Đang tải…" height={528} />
-      </Page>
-    );
-  }
+  if (status !== 'success')
+    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được danh sách cảnh báo', skeleton: [135, 92, 528] });
 
   return (
     <Page pageHeader={header}>
@@ -157,14 +185,7 @@ export default function AlertsPage() {
           onSearchChange={(q) => setFilters({ q })}
           filters={alertFilterDefs(all)}
           values={{ severity: filters.severity, area: filters.area, device: filters.device, shift: filters.shift }}
-          onValuesChange={(v) =>
-            setFilters({
-              severity: (v.severity as Severity | null) ?? null,
-              area: v.area ?? null,
-              device: v.device ?? null,
-              shift: (v.shift as AlertShift | null) ?? null,
-            })
-          }
+          onValuesChange={(v) => setFilters(alertFilterValues(v))}
           advancedLabel="Xoá bộ lọc"
           advancedActive={table.isFiltered(['range'])}
           onAdvancedFilter={() => table.reset(['range'])}
@@ -219,20 +240,9 @@ export default function AlertsPage() {
         maintenance={openLinked ? { id: openLinked.id, code: openLinked.code } : null}
         canAct={canAck}
         canCreateMaintenance={canCreateMaintenance}
-        onAcknowledge={async (id) => {
-          await alerts.acknowledge([id], actor);
-          announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
-        }}
-        onAssign={(id, form) => alerts.assignOne(id, form, actor)}
-        onResolve={(id, note) => alerts.resolve(id, note, actor)}
-        onToggleGuide={(id, step) => alerts.toggleGuide(id, step, actor)}
-        onAddNote={(id, text) => alerts.addNote(id, text, actor)}
+        {...drawerHandlers(alerts, actor, followOf)}
         onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
-        onUpdate={(id, input, check) => alerts.update(id, input, check, actor)}
-        onCloseAlert={(id, input, conditions) => alerts.close(id, input, conditions, followOf(id), actor)}
-        onMonitor={(id, input) => alerts.monitor(id, input, followOf(id), actor)}
         actor={actor}
-        onRequestSupport={(id, input) => alerts.requestSupport(id, input, actor)}
       />
 
       {createFor && (
@@ -247,18 +257,7 @@ export default function AlertsPage() {
             setCreateFor(null);
             announce('Đã lưu nháp yêu cầu bảo trì.');
           }}
-          onSubmit={async (input) => {
-            const source = createFor.alert;
-            try {
-              const rec = await maintenance.create({ ...input, createdBy: actor });
-              await alerts.noteMaintenance(source.id, rec.code, actor);
-              announce(`Đã tạo yêu cầu ${rec.code} từ ${source.code}.`);
-            } catch (e) {
-              if (!(e instanceof DuplicateFromAlertError)) throw e;
-              announce(e.message);
-            }
-            setCreateFor(null);
-          }}
+          onSubmit={(input) => createFromAlert(createFor.alert, input)}
         />
       )}
 

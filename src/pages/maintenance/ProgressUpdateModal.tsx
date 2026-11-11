@@ -1,4 +1,4 @@
-import { Button, Modal } from '@/components';
+import { Button, Modal, DiscardConfirmButtons } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
 import type { ProgressFile, ProgressUpdateInput } from '@/features/maintenance/progress';
 import { useNow } from '@/lib/useNow';
@@ -34,14 +34,7 @@ export function ProgressUpdateModal({ record: r, onClose, onSubmit, onOpenCheckl
   const { confirming, submitting, hasDraft, requestClose, discard } = f.modal;
 
   const footer = confirming ? (
-    <>
-      <Button ref={f.modal.keepEditingRef} variant="subtle" onClick={f.modal.keepEditing}>
-        Tiếp tục sửa
-      </Button>
-      <Button variant="primary" onClick={discard}>
-        {hasDraft ? 'Bỏ thay đổi và xóa nháp' : 'Bỏ thay đổi'}
-      </Button>
-    </>
+    <DiscardConfirmButtons keepEditingRef={f.modal.keepEditingRef} onKeepEditing={f.modal.keepEditing} onDiscard={discard} hasDraft={hasDraft} />
   ) : (
     <>
       <Button variant="plain" onClick={requestClose}>

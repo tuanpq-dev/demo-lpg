@@ -1,32 +1,23 @@
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeftIcon, Button, Card, EmergencyBanner, Modal, PageHeader, buttonClass, type BreadcrumbItem } from '@/components';
+import { Button, Card, EmergencyBanner, Modal, PageHeader, buttonClass, type BreadcrumbItem } from '@/components';
 import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
-import { SIMULATION_REFERENCE_TAGS, updateSessionReport, useSimulation } from '@/data/simulation';
+import { pageFallback } from '@/app/Placeholder';
+import { updateSessionReport, useSimulation } from '@/data/simulation';
 import { formatVariable, lowerFirst } from '@/features/simulation/config';
 import { finishedSessionOf, isActivePhase, sessionCode, sessionPhase, type SimulationSession } from '@/features/simulation/monitor';
 import { CHECK_LABEL, areaAssetText, reportStatusText, resultCsv, resultFileName, simulationResult } from '@/features/simulation/result';
-import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import type { Scenario, SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../errors/NotFoundPage';
-import {
-  CriteriaCard,
-  OverviewCard,
-  PointsCards,
-  ReportCard,
-  ResultAdviceCard,
-  ResultAlertsCard,
-  ResultInfoStrip,
-  ResultKpis,
-  ResultReferenceCard,
-  ResultTimelineCard,
-  ResultTrendCard,
-} from './simulation/ResultCards';
+import { OverviewCard, ResultInfoStrip, ResultKpis, ResultTimelineCard, ResultTrendCard } from './simulation/ResultCards';
+import { CriteriaCard, PointsCards, ReportCard, ResultAdviceCard, ResultAlertsCard, ResultReferenceCard } from './simulation/ResultDetailCards';
+import { BackLink, ScenarioNotFound, useSuggestionConfidence } from './simulation/shared';
+import { downloadCsv } from '@/lib/download';
+import { errorMessage } from '@/lib/actionError';
 
 const TITLE = 'Kết quả mô phỏng';
 const PDF_REASON = 'Xuất PDF cần máy chủ tạo tệp – chờ backend. Dùng "Xuất Excel" hoặc "Xem trước".';
@@ -48,49 +39,20 @@ function SimulationResultPage({ scenarioId }: { scenarioId: string }) {
   const scenario = sim.scenarios?.find((s) => s.id.toUpperCase() === scenarioId.toUpperCase());
   const sessionParam = params.get('session');
   const monitorTo = `${simulationMonitorPath(scenario?.id ?? scenarioId)}${sessionParam ? `?session=${encodeURIComponent(sessionParam)}` : ''}`;
-  const back = (
-    <Link to={monitorTo} className={buttonClass('ghost')}>
-      <ArrowLeftIcon size={16} />
-      Quay lại theo dõi
-    </Link>
-  );
+  const back = <BackLink to={monitorTo} label="Quay lại theo dõi" />;
   const description = scenario ? `Tổng kết phiên mô phỏng ${lowerFirst(scenario.title)} và đánh giá phản ứng của hệ thống.` : undefined;
   const plainHeader = <PageHeader breadcrumb={crumbs(scenario?.code ?? scenarioId)} title={TITLE} description={description} actions={back} />;
 
-  if (sim.status === 'error') {
-    return (
-      <Page pageHeader={plainHeader}>
-        <PageError title="Không tải được kết quả mô phỏng" error={sim.error} onRetry={sim.refetch} />
-      </Page>
-    );
-  }
-  if (sim.status === 'loading') {
-    return (
-      <Page pageHeader={plainHeader}>
-        <Placeholder label="Đang tải…" height={64} />
-        <Placeholder label="Đang tải…" height={110} />
-        <Placeholder label="Đang tải…" height={900} />
-      </Page>
-    );
-  }
+  if (sim.status !== 'success')
+    return pageFallback(sim, { header: plainHeader, errorTitle: 'Không tải được kết quả mô phỏng', skeleton: [64, 110, 900] });
   if (!scenario) {
-    return (
-      <NotFoundPage
-        title="Không tìm thấy kịch bản"
-        breadcrumb={crumbs(scenarioId || '—')}
-        message={`Không có kịch bản mô phỏng "${scenarioId}". Kịch bản đang có: ${sim.scenarios.map((s) => s.code).join(', ')}.`}
-        actions={back}
-      />
-    );
+    return <ScenarioNotFound scenarioId={scenarioId} scenarios={sim.scenarios} breadcrumb={crumbs(scenarioId || '—')} actions={back} />;
   }
   const wanted = sessionParam;
   const picked = wanted ? sim.sessions.find((x) => x.id === wanted && x.scenarioId === scenario.id) : finishedSessionOf(scenario.id, sim.sessions);
   // "Quay lại theo dõi" mở đúng lượt đang xem (không nhảy sang lượt khác đang chạy).
   const backToPicked = picked ? (
-    <Link to={`${simulationMonitorPath(scenario.id)}?session=${encodeURIComponent(picked.id)}`} className={buttonClass('ghost')}>
-      <ArrowLeftIcon size={16} />
-      Quay lại theo dõi
-    </Link>
+    <BackLink to={`${simulationMonitorPath(scenario.id)}?session=${encodeURIComponent(picked.id)}`} label="Quay lại theo dõi" />
   ) : (
     back
   );
@@ -103,21 +65,14 @@ function SimulationResultPage({ scenarioId }: { scenarioId: string }) {
     />
   );
   if (!picked || isActivePhase(sessionPhase(picked, now)) || !picked.runId) {
-    const running = picked && isActivePhase(sessionPhase(picked, now));
     return (
       <Page pageHeader={header}>
-        <Card title={running ? 'Lượt mô phỏng đang chạy' : 'Chưa có kết quả mô phỏng'} headerVariant="plain" radius="lg">
-          <p className="mb-4 text-base text-fg-secondary">
-            {running
-              ? `Lượt ${sessionCode(picked, sim.sessions)} chưa kết thúc – kết quả có khi hết thời lượng hoặc dừng mô phỏng.`
-              : wanted
-                ? `Không tìm thấy lượt "${wanted}" của kịch bản ${scenario.code}.`
-                : `Kịch bản ${scenario.code} chưa có lượt mô phỏng nào kết thúc.`}
-          </p>
-          <Link to={running ? monitorTo : simulationConfigPath(scenario.id)} className={`${buttonClass('primary')} self-start`}>
-            {running ? 'Theo dõi lượt đang chạy' : 'Cấu hình và chạy mô phỏng'}
-          </Link>
-        </Card>
+        <NoResultCard
+          scenario={scenario}
+          running={picked && isActivePhase(sessionPhase(picked, now)) ? sessionCode(picked, sim.sessions) : undefined}
+          wanted={wanted}
+          monitorTo={monitorTo}
+        />
       </Page>
     );
   }
@@ -162,14 +117,7 @@ function ResultView({ scenario: s, session, sessions, scenarios, runs, live, now
   const report = session.report ?? {};
 
   // Độ tin cậy dùng chung công thức màn danh sách (tình trạng 21 tag theo giờ THẬT).
-  const health = tagHealth(SIMULATION_REFERENCE_TAGS, live, Date.now());
-  const healthKey = health ? `${health.ok}/${health.total}` : 'pending';
-  const nowMinute = Math.floor(now / 60_000);
-  const confidence = useMemo(
-    () => (health ? suggestionConfidence(scenarios, runs, health, new Date(nowMinute * 60_000)) : undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `health` đổi object mỗi giây; khoá theo nội dung
-    [scenarios, runs, healthKey, nowMinute],
-  );
+  const confidence = useSuggestionConfidence(scenarios, runs, live, now);
 
   const patchReport = async (patch: Parameters<typeof updateSessionReport>[1], message: string) => {
     setBusy(true);
@@ -177,20 +125,14 @@ function ResultView({ scenario: s, session, sessions, scenarios, runs, live, now
       await updateSessionReport(session.id, patch);
       announce(message);
     } catch (e) {
-      announce(e instanceof Error ? e.message : 'Không cập nhật được báo cáo.');
+      announce(errorMessage(e, 'Không cập nhật được báo cáo.'));
     } finally {
       setBusy(false);
     }
   };
 
   const onExcel = () => {
-    const blob = new Blob(['\uFEFF' + resultCsv(s, session, code, r)], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = resultFileName(code, 'csv');
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(resultCsv(s, session, code, r), resultFileName(code, 'csv'));
     void patchReport({ excelAt: new Date(now).toISOString() }, `Đã xuất ${resultFileName(code, 'csv')}.`);
   };
 
@@ -318,5 +260,22 @@ function ResultView({ scenario: s, session, sessions, scenarios, runs, live, now
         </Modal>
       )}
     </Page>
+  );
+}
+
+/** Chưa có kết quả: lượt còn đang chạy (→ theo dõi) · không tìm thấy lượt `?session=` · kịch bản chưa có lượt nào kết thúc. */
+function NoResultCard({ scenario, running, wanted, monitorTo }: { scenario: Scenario; running?: string; wanted: string | null; monitorTo: string }) {
+  const text = running
+    ? `Lượt ${running} chưa kết thúc – kết quả có khi hết thời lượng hoặc dừng mô phỏng.`
+    : wanted
+      ? `Không tìm thấy lượt "${wanted}" của kịch bản ${scenario.code}.`
+      : `Kịch bản ${scenario.code} chưa có lượt mô phỏng nào kết thúc.`;
+  return (
+    <Card title={running ? 'Lượt mô phỏng đang chạy' : 'Chưa có kết quả mô phỏng'} headerVariant="plain" radius="lg">
+      <p className="mb-4 text-base text-fg-secondary">{text}</p>
+      <Link to={running ? monitorTo : simulationConfigPath(scenario.id)} className={`${buttonClass('primary')} self-start`}>
+        {running ? 'Theo dõi lượt đang chạy' : 'Cấu hình và chạy mô phỏng'}
+      </Link>
+    </Card>
   );
 }

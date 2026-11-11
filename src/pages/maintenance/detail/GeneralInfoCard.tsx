@@ -20,11 +20,9 @@ import { daysFromToday } from '@/lib/plantTime';
 const PRIORITY_LABEL = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
 const FORM_TYPE_LABEL = Object.fromEntries(FORM_TYPE_OPTIONS.map((o) => [o.value, o.label]));
 
-/** Các ô của "Thông tin chung" (mã, nguồn, loại, mức ưu tiên, thiết bị → trang thiết bị, hạn, trạng thái, tiến độ, lý do tạm dừng…). */
-function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridItem[] {
-  const progress = checklistProgress(r.checklist);
+/** Nhận diện: mã, ngày tạo, người tạo, nguồn, loại, ưu tiên, thiết bị (→ trang chi tiết thiết bị). */
+function identityItems(r: MaintenanceRecord): InfoGridItem[] {
   const created = r.history?.find((h) => h.kind === 'create')?.at;
-  const closed = r.status === 'done' || r.status === 'cancelled';
   const assetId = resolveAssetId(r.device);
   return [
     { id: 'code', label: 'Mã yêu cầu', value: r.code },
@@ -56,6 +54,13 @@ function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridI
         r.device
       ),
     },
+  ];
+}
+
+/** Phân công + hạn: khu vực, phòng ban, người phụ trách, bắt đầu dự kiến, hạn (đỏ khi quá hạn / đến hạn hôm nay). */
+function scheduleItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridItem[] {
+  const closed = r.status === 'done' || r.status === 'cancelled';
+  return [
     { id: 'area', label: 'Khu vực', value: r.area },
     { id: 'dept', label: 'Phòng ban', value: r.department ?? '—' },
     { id: 'assignee', label: 'Người phụ trách', value: r.assignee ?? 'Chưa phân công' },
@@ -72,6 +77,13 @@ function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridI
       // Đỏ khi quá hạn hoặc đến hạn trong hôm nay (ảnh: "16:00 Hôm nay" đỏ).
       tone: !closed && (overdue || daysFromToday(r.dueAt, now) <= 0) ? 'danger' : 'default',
     },
+  ];
+}
+
+/** Trạng thái (+ tạm dừng / sự cố), tiến độ báo cáo, checklist, lý do tạm dừng. */
+function stateItems(r: MaintenanceRecord, now: Date): InfoGridItem[] {
+  const progress = checklistProgress(r.checklist);
+  return [
     {
       id: 'status',
       label: 'Trạng thái',
@@ -92,6 +104,13 @@ function infoItems(r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridI
       : []),
   ];
 }
+
+/** Các ô của "Thông tin chung" theo thứ tự hiển thị. */
+const infoItems = (r: MaintenanceRecord, now: Date, overdue: boolean): InfoGridItem[] => [
+  ...identityItems(r),
+  ...scheduleItems(r, now, overdue),
+  ...stateItems(r, now),
+];
 
 /** Khối "Thông tin chung". */
 export function GeneralInfoCard({ record, now, overdue }: { record: MaintenanceRecord; now: Date; overdue: boolean }) {

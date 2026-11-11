@@ -101,17 +101,6 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
     void run(() => onMonitor({ minutes, note }));
   };
 
-  const timeRange = (
-    <span className="inline-flex items-center gap-2">
-      {a.time.slice(0, 5)}
-      <span aria-hidden="true" className="text-fg-secondary">
-        →
-      </span>
-      <span className="sr-only">đến</span>
-      {hhmm(a.resolvedAt)}
-    </span>
-  );
-
   return (
     <Modal
       open
@@ -151,88 +140,12 @@ export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, o
         </>
       }
     >
-      {/* Thẻ đầu */}
-      <div className="flex flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <p className="flex min-w-0 items-center gap-3 text-lg font-semibold text-fg sm:text-xl">
-            <Icon name="danger" box={24} />
-            <span className="min-w-0">
-              {a.code}: {a.message}
-            </span>
-          </p>
-          <Badge variant="status" value="resolved" size="md" />
-        </div>
-        <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <Info label="Thiết bị" value={a.device} />
-          <Info label="Khu vực" value={areaLabel(a.area)} />
-          <Info label="Người xử lý" value={resolverOf(a) ?? '–'} />
-          <Info label="Thời gian" value={timeRange} />
-        </dl>
-      </div>
+      <AlertHeadCard a={a} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Kết quả kỹ thuật */}
-        <section aria-labelledby={`${uid}-h-result`} className="flex flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
-          <h3 id={`${uid}-h-result`} className="text-xl font-semibold text-fg">
-            Kết quả kỹ thuật
-          </h3>
-          <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3">
-            <dt className="text-sm font-semibold text-fg-secondary">Nguyên nhân:</dt>
-            <dd className="text-md text-fg">{summary.cause ?? '–'}</dd>
-            <dt className="text-sm font-semibold text-fg-secondary">Hành động:</dt>
-            <dd className="whitespace-pre-wrap text-md text-fg">{summary.action ?? '–'}</dd>
-          </dl>
-          <div className="flex flex-col gap-3 rounded-md border border-line/30 bg-surface-sunken p-4">
-            {summary.falseAlarm ? (
-              <p className="flex justify-between gap-3 text-md">
-                <span className="text-fg-secondary">Kết luận</span>
-                <span className="font-semibold text-fg">Báo động giả</span>
-              </p>
-            ) : (
-              <>
-                <Reading label={`${cap(summary.quantity)} trước`} value={summary.before} unit={summary.unit} tone="danger" />
-                <Reading label={`${cap(summary.quantity)} sau`} value={summary.after} unit={summary.unit} tone="success" />
-                <p className="flex justify-between gap-3 border-t border-line/30 pt-3 text-md">
-                  <span className="text-fg-secondary">Ngưỡng cho phép</span>
-                  <span className="text-fg">
-                    {summary.direction === 'above' ? '<' : '>'} {metricText(summary.limit, summary.unit)}
-                  </span>
-                </p>
-              </>
-            )}
-          </div>
-        </section>
+        <TechnicalResult summary={summary} />
 
-        {/* Xác nhận điều kiện */}
-        <fieldset className="flex min-w-0 flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
-          <legend className="sr-only">Xác nhận điều kiện</legend>
-          <p aria-hidden="true" className="text-xl font-semibold text-fg">
-            Xác nhận điều kiện
-          </p>
-          <ul className="flex flex-col gap-4">
-            {conditions.map((c) => (
-              <SystemCondition key={c.id} uid={uid} condition={c} />
-            ))}
-            {CLOSE_MANUAL_ITEMS.map((m) => (
-              <li key={m.id} className="flex items-start gap-3">
-                <span className="pt-1">
-                  <Checkbox
-                    id={`${uid}-${m.id}`}
-                    label={m.text}
-                    checked={manual.includes(m.id)}
-                    onChange={(on) => setManual((cur) => (on ? [...cur, m.id] : cur.filter((x) => x !== m.id)))}
-                  />
-                </span>
-                <label htmlFor={`${uid}-${m.id}`} className="cursor-pointer text-md text-fg">
-                  {m.text}
-                </label>
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm text-fg-secondary">
-            Mục có <span className="text-danger-text">*</span> do hệ thống kiểm tra (số trực tiếp, cảnh báo đang mở) – tự đánh dấu khi đạt.
-          </p>
-        </fieldset>
+        <ConditionChecklist uid={uid} conditions={conditions} manual={manual} onManualChange={setManual} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -364,5 +277,120 @@ function CheckCircle() {
       <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <path d="M6.5 10.2l2.4 2.4 4.6-4.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+/** Thẻ đầu: mã + nội dung cảnh báo, trạng thái, thiết bị / khu vực / người xử lý / thời gian phát sinh → xử lý. */
+function AlertHeadCard({ a }: { a: AlertRecord }) {
+  const timeRange = (
+    <span className="inline-flex items-center gap-2">
+      {a.time.slice(0, 5)}
+      <span aria-hidden="true" className="text-fg-secondary">
+        →
+      </span>
+      <span className="sr-only">đến</span>
+      {hhmm(a.resolvedAt)}
+    </span>
+  );
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="flex min-w-0 items-center gap-3 text-lg font-semibold text-fg sm:text-xl">
+          <Icon name="danger" box={24} />
+          <span className="min-w-0">
+            {a.code}: {a.message}
+          </span>
+        </p>
+        <Badge variant="status" value="resolved" size="md" />
+      </div>
+      <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Info label="Thiết bị" value={a.device} />
+        <Info label="Khu vực" value={areaLabel(a.area)} />
+        <Info label="Người xử lý" value={resolverOf(a) ?? '–'} />
+        <Info label="Thời gian" value={timeRange} />
+      </dl>
+    </div>
+  );
+}
+
+/** Kết quả kỹ thuật (chỉ đọc – từ modal cập nhật): nguyên nhân, hành động, số trước/sau + ngưỡng hoặc "Báo động giả". */
+function TechnicalResult({ summary }: { summary: ReturnType<typeof closeSummary> }) {
+  const uid = useId();
+  return (
+    <section aria-labelledby={`${uid}-h-result`} className="flex flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
+      <h3 id={`${uid}-h-result`} className="text-xl font-semibold text-fg">
+        Kết quả kỹ thuật
+      </h3>
+      <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3">
+        <dt className="text-sm font-semibold text-fg-secondary">Nguyên nhân:</dt>
+        <dd className="text-md text-fg">{summary.cause ?? '–'}</dd>
+        <dt className="text-sm font-semibold text-fg-secondary">Hành động:</dt>
+        <dd className="whitespace-pre-wrap text-md text-fg">{summary.action ?? '–'}</dd>
+      </dl>
+      <div className="flex flex-col gap-3 rounded-md border border-line/30 bg-surface-sunken p-4">
+        {summary.falseAlarm ? (
+          <p className="flex justify-between gap-3 text-md">
+            <span className="text-fg-secondary">Kết luận</span>
+            <span className="font-semibold text-fg">Báo động giả</span>
+          </p>
+        ) : (
+          <>
+            <Reading label={`${cap(summary.quantity)} trước`} value={summary.before} unit={summary.unit} tone="danger" />
+            <Reading label={`${cap(summary.quantity)} sau`} value={summary.after} unit={summary.unit} tone="success" />
+            <p className="flex justify-between gap-3 border-t border-line/30 pt-3 text-md">
+              <span className="text-fg-secondary">Ngưỡng cho phép</span>
+              <span className="text-fg">
+                {summary.direction === 'above' ? '<' : '>'} {metricText(summary.limit, summary.unit)}
+              </span>
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Xác nhận điều kiện: 3 mục HỆ THỐNG tự kiểm (chỉ đọc) + mục tick tay. */
+function ConditionChecklist({
+  uid,
+  conditions,
+  manual,
+  onManualChange,
+}: {
+  uid: string;
+  conditions: readonly CloseCondition[];
+  manual: readonly string[];
+  onManualChange: (ids: string[]) => void;
+}) {
+  return (
+    <fieldset className="flex min-w-0 flex-col gap-4 rounded-lg border border-line-card bg-surface p-4 sm:p-6">
+      <legend className="sr-only">Xác nhận điều kiện</legend>
+      <p aria-hidden="true" className="text-xl font-semibold text-fg">
+        Xác nhận điều kiện
+      </p>
+      <ul className="flex flex-col gap-4">
+        {conditions.map((c) => (
+          <SystemCondition key={c.id} uid={uid} condition={c} />
+        ))}
+        {CLOSE_MANUAL_ITEMS.map((m) => (
+          <li key={m.id} className="flex items-start gap-3">
+            <span className="pt-1">
+              <Checkbox
+                id={`${uid}-${m.id}`}
+                label={m.text}
+                checked={manual.includes(m.id)}
+                onChange={(on) => onManualChange(on ? [...manual, m.id] : manual.filter((x) => x !== m.id))}
+              />
+            </span>
+            <label htmlFor={`${uid}-${m.id}`} className="cursor-pointer text-md text-fg">
+              {m.text}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-fg-secondary">
+        Mục có <span className="text-danger-text">*</span> do hệ thống kiểm tra (số trực tiếp, cảnh báo đang mở) – tự đánh dấu khi đạt.
+      </p>
+    </fieldset>
   );
 }

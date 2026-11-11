@@ -41,6 +41,100 @@ function BigValue({ value, unit, tone }: { value: number; unit: string; tone: ke
   );
 }
 
+/** Mức tăng so với giá trị trước: ↑ vàng / ↓ xanh. */
+function DeltaValue({ delta, unit }: { delta: number | undefined; unit: string }) {
+  if (delta === undefined) return <>—</>;
+  return (
+    <span className={delta > 0 ? 'text-warning' : 'text-success'}>
+      <span aria-hidden="true">{delta > 0 ? '↑' : delta < 0 ? '↓' : ''}</span>
+      {formatDelta(delta, unit)}
+    </span>
+  );
+}
+
+/** Thời gian còn vượt ngưỡng của cảnh báo. */
+function OverValue({ over }: { over: ReturnType<typeof overThreshold> }) {
+  if (over.state === 'over') return <>{formatMinutes(over.minutes)}</>;
+  if (over.state === 'below') return <span className="text-success">Đã về dưới ngưỡng</span>;
+  return <>—</>;
+}
+
+/** Trạng thái tín hiệu cảm biến: Online · Không chắc chắn · Mất tín hiệu. */
+function SignalValue({ signal }: { signal: ReturnType<typeof useTagSignal> }) {
+  if (signal === 'online')
+    return (
+      <span className="inline-flex items-center gap-1.5 text-success">
+        <span aria-hidden="true" className="size-2 rounded-full bg-success" />
+        Online
+      </span>
+    );
+  if (signal === 'uncertain') return <span className="text-warning">Không chắc chắn</span>;
+  if (signal === 'lost')
+    return (
+      <span className="inline-flex items-center gap-1 text-fg-secondary">
+        <SignalLostIcon size={14} /> Mất tín hiệu
+      </span>
+    );
+  return <>—</>;
+}
+
+/** Số lớn nồng độ hiện tại (hoặc "Mất tín hiệu") + "Lúc cảnh báo" · icon + badge mức theo bands. */
+function GasHeadline({
+  liveVal,
+  liveState,
+  recordVal,
+  unit,
+  level,
+}: {
+  liveVal: number | undefined;
+  liveState: ReturnType<typeof useAlertLive>['state'];
+  recordVal: number;
+  unit: string;
+  level: ReturnType<typeof levelOf> | null;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-md font-semibold text-fg-secondary">Nồng độ hiện tại</p>
+        {liveVal !== undefined ? (
+          <BigValue value={liveVal} unit={unit} tone={level?.tone ?? 'neutral'} />
+        ) : (
+          <p className="flex items-center gap-2 text-xl font-semibold text-fg-secondary">
+            {liveState === 'lost' ? (
+              <>
+                <SignalLostIcon size={22} /> Mất tín hiệu
+              </>
+            ) : (
+              '—'
+            )}
+          </p>
+        )}
+        <p className="text-sm text-fg-secondary">Lúc cảnh báo: {formatMeasure(recordVal, unit)}</p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        {level && level.tone !== 'success' && (
+          // eslint-disable-next-line no-restricted-syntax -- icon
+          <AlertCircleIcon size={22} aria-hidden="true" className={level.tone === 'danger' ? 'text-danger-strong' : 'text-warning'} />
+        )}
+        {level ? (
+          // Lót nền đặc (tương phản chữ đỏ mức ESD trên nền thẻ sáng hơn).
+          <span className="rounded-sm bg-surface">
+            <Badge variant="tag" tone={BADGE_TONE[level.tone]} size="md">
+              {level.label}
+            </Badge>
+          </span>
+        ) : (
+          liveState === 'lost' && (
+            <Badge variant="tag" tone="neutral" size="md">
+              Mất tín hiệu
+            </Badge>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Panel KHÍ GAS (loại `panel: 'gas'`, ảnh `scratch/figma-ref/alert-drawer-gas-*.png`): số lớn = nồng độ LIVE của tag (dòng nhỏ
  * "Lúc cảnh báo"), badge mức theo bands, thang nhiều mức, 4 chỉ số, banner ESD theo cấu hình, cảm biến trong khu của cảnh báo.
@@ -74,41 +168,18 @@ export function GasPanel({ alert: a, now }: { alert: AlertRecord; now: Date }) {
     {
       id: 'delta',
       label: 'Mức tăng',
-      value:
-        delta === undefined ? (
-          '—'
-        ) : (
-          <span className={delta > 0 ? 'text-warning' : 'text-success'}>
-            <span aria-hidden="true">{delta > 0 ? '↑' : delta < 0 ? '↓' : ''}</span>
-            {formatDelta(delta, unit)}
-          </span>
-        ),
+      value: <DeltaValue delta={delta} unit={unit} />,
     },
     {
       id: 'over',
       label: `T/G vượt ngưỡng ${thresholdText}`,
       hint: `Thời gian nồng độ còn ≥ ${thresholdText} (ngưỡng của cảnh báo), tính từ lúc phát sinh.`,
-      value:
-        over.state === 'over' ? formatMinutes(over.minutes) : over.state === 'below' ? <span className="text-success">Đã về dưới ngưỡng</span> : '—',
+      value: <OverValue over={over} />,
     },
     {
       id: 'signal',
       label: 'Trạng thái CB',
-      value:
-        signal === 'online' ? (
-          <span className="inline-flex items-center gap-1.5 text-success">
-            <span aria-hidden="true" className="size-2 rounded-full bg-success" />
-            Online
-          </span>
-        ) : signal === 'uncertain' ? (
-          <span className="text-warning">Không chắc chắn</span>
-        ) : signal === 'lost' ? (
-          <span className="inline-flex items-center gap-1 text-fg-secondary">
-            <SignalLostIcon size={14} /> Mất tín hiệu
-          </span>
-        ) : (
-          '—'
-        ),
+      value: <SignalValue signal={signal} />,
     },
   ];
 
@@ -116,45 +187,7 @@ export function GasPanel({ alert: a, now }: { alert: AlertRecord; now: Date }) {
     <>
       <Section title="Thông số cảnh báo">
         <div className="flex flex-col gap-4 rounded-md border border-line/30 bg-surface-muted/40 px-5 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <p className="text-md font-semibold text-fg-secondary">Nồng độ hiện tại</p>
-              {liveVal !== undefined ? (
-                <BigValue value={liveVal} unit={unit} tone={lv?.tone ?? 'neutral'} />
-              ) : (
-                <p className="flex items-center gap-2 text-xl font-semibold text-fg-secondary">
-                  {live.state === 'lost' ? (
-                    <>
-                      <SignalLostIcon size={22} /> Mất tín hiệu
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </p>
-              )}
-              <p className="text-sm text-fg-secondary">Lúc cảnh báo: {formatMeasure(recordVal, unit)}</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              {lv && lv.tone !== 'success' && (
-                // eslint-disable-next-line no-restricted-syntax -- icon
-                <AlertCircleIcon size={22} aria-hidden="true" className={lv.tone === 'danger' ? 'text-danger-strong' : 'text-warning'} />
-              )}
-              {lv ? (
-                // Lót nền đặc (tương phản chữ đỏ mức ESD trên nền thẻ sáng hơn).
-                <span className="rounded-sm bg-surface">
-                  <Badge variant="tag" tone={BADGE_TONE[lv.tone]} size="md">
-                    {lv.label}
-                  </Badge>
-                </span>
-              ) : (
-                live.state === 'lost' && (
-                  <Badge variant="tag" tone="neutral" size="md">
-                    Mất tín hiệu
-                  </Badge>
-                )
-              )}
-            </div>
-          </div>
+          <GasHeadline liveVal={liveVal} liveState={live.state} recordVal={recordVal} unit={unit} level={lv} />
           <ThresholdGauge
             label="Nồng độ khí so với các mức cảnh báo"
             value={gaugeVal}

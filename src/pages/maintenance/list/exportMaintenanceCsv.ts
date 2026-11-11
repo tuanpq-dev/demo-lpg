@@ -2,6 +2,7 @@ import { PRIORITY_OPTIONS, STATUS_LABEL, TYPE_LABEL, formatDate, isOverdue, type
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { HOLD_LABEL, reportedProgressOf } from '@/features/maintenance/progress';
 import { plantDayKey } from '@/lib/plantTime';
+import { downloadCsv, toCsv } from '@/lib/download';
 
 /** "2/6" hoặc "" (không có checklist). */
 export const checklistText = (r: MaintenanceRecord) => {
@@ -28,32 +29,21 @@ export function exportMaintenanceCsv(rows: readonly MaintenanceRecord[], now: Da
     'Quá hạn',
   ];
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
-  const esc = (v: string | undefined) => `"${(v ?? '').replace(/"/g, '""')}"`;
-  const lines = rows.map((r) =>
-    [
-      r.code,
-      formatDate(r.createdAt),
-      r.title,
-      r.device,
-      r.area,
-      TYPE_LABEL[r.type],
-      pr[r.priority],
-      r.assignee ?? '',
-      formatDate(r.dueAt),
-      r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status],
-      String(reportedProgressOf(r)),
-      checklistText(r),
-      isOverdue(r, now) ? 'Có' : '',
-    ]
-      .map(esc)
-      .join(','),
-  );
-  const blob = new Blob(['\uFEFF' + [head.map(esc).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
+  const lines = rows.map((r) => [
+    r.code,
+    formatDate(r.createdAt),
+    r.title,
+    r.device,
+    r.area,
+    TYPE_LABEL[r.type],
+    pr[r.priority],
+    r.assignee ?? '',
+    formatDate(r.dueAt),
+    r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status],
+    String(reportedProgressOf(r)),
+    checklistText(r),
+    isOverdue(r, now) ? 'Có' : '',
+  ]);
   // Ngày theo giờ nhà máy (toISOString là UTC → lệch ngày từ 0h đến 7h sáng).
-  a.download = `bao-tri-${plantDayKey(now)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadCsv(toCsv([head, ...lines]), `bao-tri-${plantDayKey(now)}.csv`);
 }

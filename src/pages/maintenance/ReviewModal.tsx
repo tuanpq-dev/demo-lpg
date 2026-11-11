@@ -1,5 +1,17 @@
 import { useId, useRef, useState } from 'react';
-import { Button, FormField, KpiCard, Modal, Select, StatusOptionGroup, Textarea, inputClass, type KpiTone, type StatusOption } from '@/components';
+import {
+  Button,
+  DiscardConfirmButtons,
+  FormField,
+  KpiCard,
+  Modal,
+  Select,
+  StatusOptionGroup,
+  Textarea,
+  inputClass,
+  type KpiTone,
+  type StatusOption,
+} from '@/components';
 import type { Reading } from '@/data/assetDetail';
 import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
 import { useRelatedDevice } from '@/data/maintenanceDetail';
@@ -34,6 +46,102 @@ const liveText = (rd: Reading | undefined, unit: string) =>
       : rd.value === undefined
         ? 'Hiện tại: —'
         : `Hiện tại: ${rd.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}`;
+
+/** Ô thông số: số đã CHỤP lúc gửi + ngưỡng (cấu hình tag) + số trực tiếp hiện tại nhỏ bên dưới. */
+function ReadingCard({ label, unit, snap, now }: { label: string; unit: string; snap: ReadingSnapshot | undefined; now: Reading | undefined }) {
+  if (!snap) return <KpiCard size="sm" emphasis align="center" label={`${label} (${unit})`} value="—" footnote="Không có số liệu lúc gửi" />;
+  const current = liveText(now, unit);
+  return (
+    <KpiCard
+      size="sm"
+      emphasis
+      align="center"
+      label={`${label} (${unit})`}
+      value={snap.value === null ? 'Mất tín hiệu' : snap.value.toFixed(1)}
+      tone={snapTone(snap)}
+      hint={snap.value === null ? 'Lúc gửi nghiệm thu không có tín hiệu' : 'Giá trị lúc gửi nghiệm thu'}
+      footnote={
+        <span className="flex flex-col">
+          {snap.warn !== undefined && <span>Ngưỡng: {fmtLimit(snap.warn)}</span>}
+          {current && <span className="text-xs">{current}</span>}
+        </span>
+      }
+    />
+  );
+}
+
+/** Dải thông tin đầu modal (nhãn · giá trị). */
+function RecordSummary({ items }: { items: readonly (readonly [string, string])[] }) {
+  return (
+    <dl className="grid gap-4 rounded-lg border border-line-card bg-surface-raised/40 px-5 py-4 sm:grid-cols-3">
+      {items.map(([k, val]) => (
+        <div key={k} className="flex min-w-0 flex-col gap-1">
+          <dt className="text-base text-fg-secondary">{k}</dt>
+          <dd className="text-lg font-semibold text-fg">{val}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+type LiveDevice = Extract<ReturnType<typeof useRelatedDevice>, { kind: 'live' }>;
+
+/** Kết quả người thực hiện đã gửi (nguyên nhân, biện pháp, thông số chụp lúc gửi); chưa có biểu mẫu → lưu ý kiểm tra lịch sử. */
+function SubmissionDetails({ sub, live }: { sub: MaintenanceRecord['submission']; live: LiveDevice | null }) {
+  const uid = useId();
+  if (!sub) {
+    return (
+      <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-base text-fg">
+        Yêu cầu này chuyển nghiệm thu trước khi có biểu mẫu gửi nghiệm thu – không có nguyên nhân, biện pháp và thông số đã chụp. Kiểm tra lịch sử xử
+        lý và ghi chú kỹ thuật trước khi kết luận.
+      </p>
+    );
+  }
+  return (
+    <>
+      <section className="flex flex-col gap-3" aria-labelledby={`${uid}-detail`}>
+        <h3 id={`${uid}-detail`} className="text-lg font-semibold text-fg-secondary">
+          Chi tiết kết quả
+        </h3>
+        <dl className="grid gap-4 md:grid-cols-2">
+          {[
+            ['Nguyên nhân', sub.cause],
+            ['Biện pháp', sub.remedy],
+          ].map(([k, val]) => (
+            <div key={k} className="flex min-w-0 flex-col gap-1.5 rounded-md border border-line/30 px-4 py-3">
+              <dt className="text-base text-fg-secondary">{k}</dt>
+              <dd className="text-base text-fg">{val}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-sm text-fg-secondary">
+          Tóm tắt: {sub.summary} · Tình trạng sau bảo trì:{' '}
+          <span className={sub.deviceCondition === 'unresolved' ? 'text-danger-text' : 'text-fg'}>{DEVICE_CONDITION_LABEL[sub.deviceCondition]}</span>{' '}
+          · Gửi bởi {sub.submittedBy}
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3" aria-labelledby={`${uid}-readings`}>
+        <h3 id={`${uid}-readings`} className="text-lg font-semibold text-fg-secondary">
+          Thông số vận hành sau bảo trì
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-6 lg:gap-12">
+          <ReadingCard label="Áp suất" unit="bar" snap={sub.readings.pressure} now={live?.pressure} />
+          <ReadingCard label="Nhiệt độ" unit="°C" snap={sub.readings.temperature} now={live?.temperature} />
+          <KpiCard
+            size="sm"
+            emphasis
+            align="center"
+            label="Trạng thái van"
+            value={VALVE_STATUS_LABEL[sub.valveStatus]}
+            tone={sub.valveStatus === 'stable' ? 'success' : 'danger'}
+            footnote={`Cảm biến: ${SENSOR_STATUS_LABEL[sub.sensorStatus]}`}
+          />
+        </div>
+      </section>
+    </>
+  );
+}
 
 export type ReviewModalProps = {
   record: MaintenanceRecord;
@@ -95,36 +203,14 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
   };
 
   const live = device.kind === 'live' ? device : null;
-  const readingCard = (label: string, unit: string, snap: ReadingSnapshot | undefined, now: Reading | undefined) => {
-    if (!snap) return <KpiCard size="sm" emphasis align="center" label={`${label} (${unit})`} value="—" footnote="Không có số liệu lúc gửi" />;
-    return (
-      <KpiCard
-        size="sm"
-        emphasis
-        align="center"
-        label={`${label} (${unit})`}
-        value={snap.value === null ? 'Mất tín hiệu' : snap.value.toFixed(1)}
-        tone={snapTone(snap)}
-        hint={snap.value === null ? 'Lúc gửi nghiệm thu không có tín hiệu' : 'Giá trị lúc gửi nghiệm thu'}
-        footnote={
-          <span className="flex flex-col">
-            {snap.warn !== undefined && <span>Ngưỡng: {fmtLimit(snap.warn)}</span>}
-            {liveText(now, unit) && <span className="text-xs">{liveText(now, unit)}</span>}
-          </span>
-        }
-      />
-    );
-  };
-
   const footer = confirming ? (
-    <>
-      <Button ref={form.keepEditingRef} variant="subtle" onClick={form.keepEditing}>
-        Tiếp tục nghiệm thu
-      </Button>
-      <Button variant="primary" onClick={form.discard}>
-        Bỏ thay đổi
-      </Button>
-    </>
+    <DiscardConfirmButtons
+      keepEditingRef={form.keepEditingRef}
+      onKeepEditing={form.keepEditing}
+      onDiscard={form.discard}
+      hasDraft={false}
+      keepLabel="Tiếp tục nghiệm thu"
+    />
   ) : (
     <>
       <Button variant="subtle" onClick={requestClose}>
@@ -164,70 +250,15 @@ export function ReviewModal({ record: r, reviewer, onClose, onSubmit }: ReviewMo
       footer={footer}
     >
       <div className="flex flex-col gap-5 py-1">
-        <dl className="grid gap-4 rounded-lg border border-line-card bg-surface-raised/40 px-5 py-4 sm:grid-cols-3">
-          {[
+        <RecordSummary
+          items={[
             ['Mã yêu cầu', r.code],
             ['Thiết bị', live ? `${r.device} – ${live.name}` : r.device],
             ['Người thực hiện', r.assignee ?? '—'],
-          ].map(([k, val]) => (
-            <div key={k} className="flex min-w-0 flex-col gap-1">
-              <dt className="text-base text-fg-secondary">{k}</dt>
-              <dd className="text-lg font-semibold text-fg">{val}</dd>
-            </div>
-          ))}
-        </dl>
+          ]}
+        />
 
-        {!sub ? (
-          <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-base text-fg">
-            Yêu cầu này chuyển nghiệm thu trước khi có biểu mẫu gửi nghiệm thu – không có nguyên nhân, biện pháp và thông số đã chụp. Kiểm tra lịch sử
-            xử lý và ghi chú kỹ thuật trước khi kết luận.
-          </p>
-        ) : (
-          <>
-            <section className="flex flex-col gap-3" aria-labelledby={`${uid}-detail`}>
-              <h3 id={`${uid}-detail`} className="text-lg font-semibold text-fg-secondary">
-                Chi tiết kết quả
-              </h3>
-              <dl className="grid gap-4 md:grid-cols-2">
-                {[
-                  ['Nguyên nhân', sub.cause],
-                  ['Biện pháp', sub.remedy],
-                ].map(([k, val]) => (
-                  <div key={k} className="flex min-w-0 flex-col gap-1.5 rounded-md border border-line/30 px-4 py-3">
-                    <dt className="text-base text-fg-secondary">{k}</dt>
-                    <dd className="text-base text-fg">{val}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="text-sm text-fg-secondary">
-                Tóm tắt: {sub.summary} · Tình trạng sau bảo trì:{' '}
-                <span className={sub.deviceCondition === 'unresolved' ? 'text-danger-text' : 'text-fg'}>
-                  {DEVICE_CONDITION_LABEL[sub.deviceCondition]}
-                </span>{' '}
-                · Gửi bởi {sub.submittedBy}
-              </p>
-            </section>
-
-            <section className="flex flex-col gap-3" aria-labelledby={`${uid}-readings`}>
-              <h3 id={`${uid}-readings`} className="text-lg font-semibold text-fg-secondary">
-                Thông số vận hành sau bảo trì
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-3 sm:gap-6 lg:gap-12">
-                {readingCard('Áp suất', 'bar', sub.readings.pressure, live?.pressure)}
-                {readingCard('Nhiệt độ', '°C', sub.readings.temperature, live?.temperature)}
-                <KpiCard
-                  size="sm"
-                  emphasis
-                  align="center"
-                  label="Trạng thái van"
-                  value={VALVE_STATUS_LABEL[sub.valveStatus]}
-                  tone={sub.valveStatus === 'stable' ? 'success' : 'danger'}
-                  footnote={`Cảm biến: ${SENSOR_STATUS_LABEL[sub.sensorStatus]}`}
-                />
-              </div>
-            </section>
-          </>
-        )}
+        <SubmissionDetails sub={sub} live={live} />
 
         <section className="flex flex-col gap-3">
           <h3 id={resultId} className="text-lg font-semibold text-fg-secondary">

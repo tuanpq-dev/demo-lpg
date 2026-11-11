@@ -17,7 +17,7 @@ import {
 } from '@/components';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useOperationLogs } from '@/data/operationLogs';
 import {
@@ -41,6 +41,7 @@ import {
 import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
+import { downloadCsv } from '@/lib/download';
 
 const PAGE_SIZE = 10;
 const getId = (e: OperationLogEvent) => e.id;
@@ -70,71 +71,9 @@ function alertHref(e: OperationLogEvent, now: Date) {
 
 const MORE_PENDING = 'Chưa có thao tác khác cho sự kiện – chờ thiết kế.';
 
-/**
- * Nhật ký vận hành (Figma bản sao A88YJ2BRhICDDdeu2rtRg1 node 64:418): header (khoảng thời gian · xuất CSV · làm mới · dữ liệu
- * trực tiếp) → 5 KPI → thanh lọc + bảng sự kiện. Cột phải "25%" của Figma chưa lấy được (hết lượt MCP) – docs/questions.md 13.
- */
-export default function OperationLogsPage() {
-  const now = useNow(60_000);
-  const { status, data, error, refetch } = useOperationLogs(now);
-  const all = useMemo(() => data ?? [], [data]);
-  const match = useCallback((e: OperationLogEvent, v: Parameters<typeof matchLogEvent>[1]) => matchLogEvent(e, v, now), [now]);
-  const table = useTableFilters({ rows: all, getId, params: LOG_PARAMS, match, sort: byNewestEvent, pageSize: PAGE_SIZE });
-  const { values: f, setValues } = table;
-  const kpis = useMemo(() => deriveLogKpis(all, f.range, now), [all, f.range, now]);
-  const morePendingId = `${useId()}-more`;
-
-  const exportCsv = () => {
-    const rows = table.filtered;
-    const blob = new Blob([logsToCsv(rows)], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nhat-ky-van-hanh-${plantDayKey(now)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    announce(`Đã xuất ${rows.length} sự kiện ra tệp CSV.`);
-  };
-
-  const header = (
-    <PageHeader
-      breadcrumb={[{ label: 'Vận hành' }, { label: 'Nhật ký vận hành' }]}
-      title="Nhật ký vận hành"
-      actions={
-        <>
-          <DateRangeSelect value={f.range} options={LOG_RANGE_OPTIONS} onChange={(range) => setValues({ range })} />
-          <ExportButton onClick={exportCsv} />
-          <RefreshButton accent onClick={refetch} />
-          <LiveDataButton />
-        </>
-      }
-    />
-  );
-
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được nhật ký vận hành" error={error} onRetry={refetch} />
-      </Page>
-    );
-  }
-
-  if (status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={92} />
-        <Placeholder label="Đang tải…" height={600} />
-      </Page>
-    );
-  }
-
-  const rangeLabel = LOG_RANGE_OPTIONS.find((o) => o.value === f.range)?.label.toLowerCase() ?? '';
-  const filterDefs: FilterDef[] = [
-    { id: 'area', label: 'Khu vực', allLabel: 'Tất cả khu vực', options: distinctLogOptions(all.map((e) => e.area)) },
-    { id: 'category', label: 'Loại sự kiện', allLabel: 'Tất cả', options: LOG_CATEGORIES.map((c) => ({ value: c, label: LOG_CATEGORY_LABEL[c] })) },
-  ];
-
-  const columns: DataTableColumn<OperationLogEvent>[] = [
+/** Cột bảng nhật ký – `now` cho giờ hiển thị (hôm nay / ngày khác) và link mở cảnh báo. */
+function logColumns(now: Date): DataTableColumn<OperationLogEvent>[] {
+  return [
     {
       id: 'time',
       header: 'Thời gian',
@@ -203,6 +142,53 @@ export default function OperationLogsPage() {
       ),
     },
   ];
+}
+
+/**
+ * Nhật ký vận hành (Figma bản sao A88YJ2BRhICDDdeu2rtRg1 node 64:418): header (khoảng thời gian · xuất CSV · làm mới · dữ liệu
+ * trực tiếp) → 5 KPI → thanh lọc + bảng sự kiện. Cột phải "25%" của Figma chưa lấy được (hết lượt MCP) – docs/questions.md 13.
+ */
+export default function OperationLogsPage() {
+  const now = useNow(60_000);
+  const { status, data, error, refetch } = useOperationLogs(now);
+  const all = useMemo(() => data ?? [], [data]);
+  const match = useCallback((e: OperationLogEvent, v: Parameters<typeof matchLogEvent>[1]) => matchLogEvent(e, v, now), [now]);
+  const table = useTableFilters({ rows: all, getId, params: LOG_PARAMS, match, sort: byNewestEvent, pageSize: PAGE_SIZE });
+  const { values: f, setValues } = table;
+  const kpis = useMemo(() => deriveLogKpis(all, f.range, now), [all, f.range, now]);
+  const morePendingId = `${useId()}-more`;
+
+  const exportCsv = () => {
+    const rows = table.filtered;
+    downloadCsv(logsToCsv(rows), `nhat-ky-van-hanh-${plantDayKey(now)}.csv`);
+    announce(`Đã xuất ${rows.length} sự kiện ra tệp CSV.`);
+  };
+
+  const header = (
+    <PageHeader
+      breadcrumb={[{ label: 'Vận hành' }, { label: 'Nhật ký vận hành' }]}
+      title="Nhật ký vận hành"
+      actions={
+        <>
+          <DateRangeSelect value={f.range} options={LOG_RANGE_OPTIONS} onChange={(range) => setValues({ range })} />
+          <ExportButton onClick={exportCsv} />
+          <RefreshButton accent onClick={refetch} />
+          <LiveDataButton />
+        </>
+      }
+    />
+  );
+
+  if (status !== 'success')
+    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được nhật ký vận hành', skeleton: [92, 600] });
+
+  const rangeLabel = LOG_RANGE_OPTIONS.find((o) => o.value === f.range)?.label.toLowerCase() ?? '';
+  const filterDefs: FilterDef[] = [
+    { id: 'area', label: 'Khu vực', allLabel: 'Tất cả khu vực', options: distinctLogOptions(all.map((e) => e.area)) },
+    { id: 'category', label: 'Loại sự kiện', allLabel: 'Tất cả', options: LOG_CATEGORIES.map((c) => ({ value: c, label: LOG_CATEGORY_LABEL[c] })) },
+  ];
+
+  const columns = logColumns(now);
 
   const delta = kpis.delta;
 

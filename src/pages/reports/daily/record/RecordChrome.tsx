@@ -1,4 +1,4 @@
-import { Button, ProgressBar } from '@/components';
+import { Button, ProgressBar, DiscardConfirmButtons } from '@/components';
 import { DAILY_SHIFT_HOURS, periodLabel, type ReportRecord } from '@/features/reports';
 import { cn } from '@/lib/cn';
 import { boxClass } from './fields/recordParts';
@@ -71,14 +71,13 @@ export function RecordFooterStart({ f, checkpoint }: { f: CheckpointRecordForm; 
 export function RecordFooter({ f, checkpoint, blockersId }: { f: CheckpointRecordForm; checkpoint: string; blockersId: string }) {
   const { modal } = f;
   return modal.confirming ? (
-    <>
-      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
-        Tiếp tục nhập
-      </Button>
-      <Button variant="primary" onClick={modal.discard}>
-        {modal.hasDraft ? 'Bỏ thay đổi và xóa nháp' : 'Bỏ thay đổi'}
-      </Button>
-    </>
+    <DiscardConfirmButtons
+      keepEditingRef={modal.keepEditingRef}
+      onKeepEditing={modal.keepEditing}
+      onDiscard={modal.discard}
+      hasDraft={modal.hasDraft}
+      keepLabel="Tiếp tục nhập"
+    />
   ) : (
     <>
       <Button variant="plain" onClick={modal.requestClose}>

@@ -4,6 +4,7 @@
  */
 import type { TimelineEvent, TimelineTone } from '@/components';
 import { daysFromToday, plantDayKey } from '@/lib/plantTime';
+import { formatFileSize } from '@/lib/fileSize';
 import { createSessionDraft } from '@/lib/sessionDraft';
 import type { WorkState } from '@/features/maintenance/progress';
 import type { DeviceCondition, SensorStatus, ValveStatus } from '@/features/maintenance/review';
@@ -87,13 +88,6 @@ export function mockAttachmentFile(a: Pick<MaintenanceAttachment, 'name' | 'size
       `Kích thước khai báo: ${formatFileSize(a.size)}`,
     ].join('\n'),
   };
-}
-
-/** 2_480_000 → "2,4 MB"; 860_000 → "840 KB". */
-export function formatFileSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
-  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${bytes} B`;
 }
 
 // ---- Nháp modal "Cập nhật tiến độ" (sessionStorage theo mã yêu cầu; không đổi trạng thái bản ghi) ----

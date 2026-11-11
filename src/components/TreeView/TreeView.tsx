@@ -219,33 +219,9 @@ export function TreeView({
             </span>
             {item.icon && <span className="inline-flex shrink-0 text-fg-muted">{item.icon}</span>}
             {isRenaming ? (
-              <input
-                // eslint-disable-next-line jsx-a11y/no-autofocus -- ô đổi tên vừa mở
-                autoFocus
-                aria-label={`Đổi tên ${item.label}`}
-                aria-invalid={!!renaming.error || undefined}
-                title={renaming.error}
-                value={renaming.text}
-                onChange={(e) => setRenaming({ id: item.id, text: e.target.value })}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === 'Enter') finishRename(true);
-                  else if (e.key === 'Escape') finishRename(false);
-                }}
-                onBlur={() => finishRename(true)}
-                className={cn(
-                  'h-6 min-w-0 flex-1 rounded-xs border bg-surface-sunken px-1.5 text-sm text-fg focus-visible:outline-none',
-                  renaming.error ? 'border-danger' : 'border-accent/60',
-                )}
-              />
+              <RenameInput label={item.label} renaming={renaming} onText={(text) => setRenaming({ id: item.id, text })} onFinish={finishRename} />
             ) : (
               <span className="max-w-full shrink-0 truncate">{item.label}</span>
-            )}
-            {isRenaming && renaming.error && (
-              <span role="alert" className="sr-only">
-                {renaming.error}
-              </span>
             )}
             {/* Nhãn chính không bị cắt; chữ phụ co lại trước. */}
             {!isRenaming && <span className="min-w-0 flex-1 truncate text-right text-xs text-fg-muted">{item.meta}</span>}
@@ -258,5 +234,48 @@ export function TreeView({
         );
       })}
     </div>
+  );
+}
+
+/** Ô đổi tên tại chỗ: Enter / rời ô = lưu, Esc = huỷ; lỗi → viền đỏ + đọc qua role="alert". */
+function RenameInput({
+  label,
+  renaming,
+  onText,
+  onFinish,
+}: {
+  label: string;
+  renaming: { text: string; error?: string };
+  onText: (text: string) => void;
+  onFinish: (commit: boolean) => void;
+}) {
+  return (
+    <>
+      <input
+        // eslint-disable-next-line jsx-a11y/no-autofocus -- ô đổi tên vừa mở
+        autoFocus
+        aria-label={`Đổi tên ${label}`}
+        aria-invalid={!!renaming.error || undefined}
+        title={renaming.error}
+        value={renaming.text}
+        onChange={(e) => onText(e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') onFinish(true);
+          else if (e.key === 'Escape') onFinish(false);
+        }}
+        onBlur={() => onFinish(true)}
+        className={cn(
+          'h-6 min-w-0 flex-1 rounded-xs border bg-surface-sunken px-1.5 text-sm text-fg focus-visible:outline-none',
+          renaming.error ? 'border-danger' : 'border-accent/60',
+        )}
+      />
+      {renaming.error && (
+        <span role="alert" className="sr-only">
+          {renaming.error}
+        </span>
+      )}
+    </>
   );
 }

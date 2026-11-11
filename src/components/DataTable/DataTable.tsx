@@ -91,6 +91,74 @@ const alignClass: Record<ColumnAlign, string> = {
   end: 'text-right',
 };
 
+const ROW_HEIGHT = { comfortable: 'h-[76px]', compact: 'h-12', dense: 'h-[38px]' } as const;
+
+/** Bật/tắt một id trong tập (trả tập mới). */
+function toggled(set: ReadonlySet<string>, id: string, on: boolean): Set<string> {
+  const next = new Set(set);
+  if (on) next.add(id);
+  else next.delete(id);
+  return next;
+}
+
+/** Chọn dòng trên trang hiện tại: "chọn tất cả" chỉ tác động các dòng đang hiện, giữ lựa chọn ở trang khác. */
+function useRowSelection(ids: readonly string[], selectedIds: readonly string[], onChange: ((ids: string[]) => void) | undefined) {
+  const selected = new Set(selectedIds);
+  const onPage = ids.filter((id) => selected.has(id)).length;
+  const allSelected = ids.length > 0 && onPage === ids.length;
+  return {
+    selected,
+    allSelected,
+    someSelected: onPage > 0 && !allSelected,
+    toggleAll: (on: boolean) => onChange?.([...ids.reduce<Set<string>>((acc, id) => toggled(acc, id, on), selected)]),
+    toggleOne: (id: string, on: boolean) => onChange?.([...toggled(selected, id, on)]),
+  };
+}
+
+/** Dòng tiêu đề nhóm (thu gọn / mở) – nút dính mép trái để tên nhóm không trôi mất khi cuộn ngang. */
+function GroupHeaderRow({
+  group,
+  open,
+  colCount,
+  onToggle,
+}: {
+  group: DataTableGroup;
+  open: boolean;
+  colCount: number;
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <tr className="border-y border-line/30 bg-bg-app">
+      <th scope="colgroup" colSpan={colCount} className="px-3 py-1.5 text-left font-normal">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => onToggle(group.id)}
+          className="sticky left-3 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold leading-4.5 text-primary"
+        >
+          <Icon name="tableGroupChevron" box={14} className={cn('transition-transform motion-reduce:transition-none', !open && '-rotate-90')} />
+          {group.label}
+        </button>
+      </th>
+    </tr>
+  );
+}
+
+/** Chân bảng: "Hiển thị a-b của n mục" · số dòng mỗi trang · phân trang. */
+function TablePager({ pagination: p }: { pagination: DataTablePagination }) {
+  const from = (p.page - 1) * p.pageSize + 1;
+  const to = Math.min(p.page * p.pageSize, p.total);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/30 bg-surface-raised px-4 py-3">
+      <span className="text-md text-fg-secondary">{p.summary ? p.summary(from, to, p.total) : `Hiển thị ${from}-${to} của ${p.total} mục`}</span>
+      <div className="flex flex-wrap items-center gap-4">
+        {p.pageSizeOptions && p.onPageSizeChange && <PageSizeSelect value={p.pageSize} options={p.pageSizeOptions} onChange={p.onPageSizeChange} />}
+        <Pagination page={p.page} pageCount={Math.ceil(p.total / p.pageSize)} onPageChange={p.onPageChange} />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Bảng dữ liệu (Figma 70:3032 – bảng cảnh báo; 70:5337 – bảng bảo trì).
  * Header nền surface-raised, chữ 11px semibold; hàng cao 76px, chữ 12px; đường kẻ line/20.
@@ -119,31 +187,10 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-  const toggleGroup = (id: string) =>
-    setCollapsed((cur) => {
-      const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggleGroup = (id: string) => setCollapsed((cur) => toggled(cur, id, !cur.has(id)));
   const ids = rows.map(getRowId);
-  const selected = new Set(selectedIds);
-  const selectedOnPage = ids.filter((id) => selected.has(id)).length;
-  const allSelected = ids.length > 0 && selectedOnPage === ids.length;
-  const someSelected = selectedOnPage > 0 && !allSelected;
+  const { selected, allSelected, someSelected, toggleAll, toggleOne } = useRowSelection(ids, selectedIds, onSelectionChange);
   const colCount = columns.length + (selectable ? 1 : 0) + (rowActions ? 1 : 0);
-
-  const toggleAll = (on: boolean) => {
-    const next = new Set(selected);
-    ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
-    onSelectionChange?.([...next]);
-  };
-  const toggleOne = (id: string, on: boolean) => {
-    const next = new Set(selected);
-    if (on) next.add(id);
-    else next.delete(id);
-    onSelectionChange?.([...next]);
-  };
 
   const grid = gridLines && 'border-r border-line/30 last:border-r-0';
   const th = cn(
@@ -153,11 +200,8 @@ export function DataTable<T>({
   );
   /** Cột đầu cố định: nằm sau ô chọn (w-14 = 56px). */
   const firstLeft = cn('z-[3]', selectable ? 'left-14' : 'left-0');
-  const rowH = density === 'comfortable' ? 'h-[76px]' : density === 'compact' ? 'h-12' : 'h-[38px]';
+  const rowH = ROW_HEIGHT[density];
   const cellPadY = density === 'dense' && 'py-2';
-
-  const from = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
-  const to = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.total) : 0;
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -210,27 +254,10 @@ export function DataTable<T>({
                 const group = groupBy?.(row);
                 const groupStart = !!group && (rowIndex === 0 || groupBy!(rows[rowIndex - 1]!).id !== group.id);
                 const groupOpen = !group || !collapsed.has(group.id);
-                const groupRow = group && groupStart && (
-                  <tr key={`group-${group.id}`} className="border-y border-line/30 bg-bg-app">
-                    <th scope="colgroup" colSpan={colCount} className="px-3 py-1.5 text-left font-normal">
-                      {/* Nút dính mép trái để tên nhóm không trôi mất khi cuộn ngang. */}
-                      <button
-                        type="button"
-                        aria-expanded={groupOpen}
-                        onClick={() => toggleGroup(group.id)}
-                        className="sticky left-3 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold leading-4.5 text-primary"
-                      >
-                        <Icon
-                          name="tableGroupChevron"
-                          box={14}
-                          className={cn('transition-transform motion-reduce:transition-none', !groupOpen && '-rotate-90')}
-                        />
-                        {group.label}
-                      </button>
-                    </th>
-                  </tr>
-                );
-                const out = groupRow ? [groupRow] : [];
+                const out =
+                  group && groupStart
+                    ? [<GroupHeaderRow key={`group-${group.id}`} group={group} open={groupOpen} colCount={colCount} onToggle={toggleGroup} />]
+                    : [];
                 if (!groupOpen) return out;
                 return [
                   ...out,
@@ -281,19 +308,7 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {pagination && pagination.total > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/30 bg-surface-raised px-4 py-3">
-          <span className="text-md text-fg-secondary">
-            {pagination.summary ? pagination.summary(from, to, pagination.total) : `Hiển thị ${from}-${to} của ${pagination.total} mục`}
-          </span>
-          <div className="flex flex-wrap items-center gap-4">
-            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
-              <PageSizeSelect value={pagination.pageSize} options={pagination.pageSizeOptions} onChange={pagination.onPageSizeChange} />
-            )}
-            <Pagination page={pagination.page} pageCount={Math.ceil(pagination.total / pagination.pageSize)} onPageChange={pagination.onPageChange} />
-          </div>
-        </div>
-      )}
+      {pagination && pagination.total > 0 && <TablePager pagination={pagination} />}
     </div>
   );
 }

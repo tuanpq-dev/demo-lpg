@@ -231,6 +231,3 @@ export function ResultTimelineCard({ events }: { events: readonly SimEvent[] }) 
     </Card>
   );
 }
-
-// Tách file (10/11/2026) – giữ đường import cũ.
-export * from './ResultDetailCards';

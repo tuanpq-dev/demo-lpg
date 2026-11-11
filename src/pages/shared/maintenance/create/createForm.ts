@@ -147,24 +147,27 @@ export type CreateFormAction =
 
 const clearError = (errors: CreateErrors, key: string): CreateErrors => (key in errors ? { ...errors, [key]: undefined } : errors);
 
+/** Chọn thiết bị → tự điền phòng ban (nếu người dùng chưa chọn) và checklist mẫu (nếu checklist còn trống). */
+function withDevice(s: CreateFormState, d: Extract<CreateFormAction, { type: 'device' }>['device']): CreateFormState {
+  const f = s.form;
+  return {
+    ...s,
+    form: {
+      ...f,
+      device: d,
+      department: s.touched.department || !d ? f.department : departmentFor(d),
+      checklist: f.checklist.length || !d ? f.checklist : (templateFor(d)?.items ?? []).map((t) => newChecklistItem(t)),
+    },
+    errors: s.errors.device ? { ...s.errors, device: undefined } : s.errors,
+  };
+}
+
 export function createFormReducer(s: CreateFormState, a: CreateFormAction): CreateFormState {
   switch (a.type) {
     case 'set':
       return { ...s, form: { ...s.form, [a.key]: a.value }, errors: clearError(s.errors, a.key) };
-    case 'device': {
-      const f = s.form;
-      const d = a.device;
-      return {
-        ...s,
-        form: {
-          ...f,
-          device: d,
-          department: s.touched.department || !d ? f.department : departmentFor(d),
-          checklist: f.checklist.length || !d ? f.checklist : (templateFor(d)?.items ?? []).map((t) => newChecklistItem(t)),
-        },
-        errors: s.errors.device ? { ...s.errors, device: undefined } : s.errors,
-      };
-    }
+    case 'device':
+      return withDevice(s, a.device);
     case 'start':
       return { ...s, form: { ...s.form, startAt: a.startAt, shift: s.touched.shift || !a.startAt ? s.form.shift : shiftFor(a.startAt) } };
     case 'department':

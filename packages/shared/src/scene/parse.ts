@@ -57,6 +57,52 @@ const pipeSchema = z
   })
   .strict();
 
+type SceneObjectInput = { id: string; asset: string } & Partial<
+  Pick<SceneConfig['objects'][number], 'position' | 'elevation' | 'attach' | 'path' | 'bindings' | 'marker' | 'params'>
+>;
+type IssueAt = (path: (string | number)[], message: string) => void;
+
+/** Vị trí: cần position (trên sàn, position[1] = elevation) hoặc attach vào ống có thật. */
+function placementIssues(o: SceneObjectInput, pipes: readonly { id: string }[], issue: IssueAt) {
+  if (o.attach) {
+    if (!pipes.some((p) => p.id === o.attach!.pipe)) issue(['attach', 'pipe'], `"${o.id}" gắn vào ống "${o.attach.pipe}" không tồn tại`);
+    return;
+  }
+  if (!o.position) issue([], `"${o.id}" cần position hoặc attach`);
+  else if (Math.abs(o.position[1] - (o.elevation ?? 0)) > 1e-6)
+    issue(['position'], `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`);
+}
+
+/** Quy tắc của MỘT object đã biết asset: vị trí / gắn ống, hàng rào, bindings, nhãn, tham số theo `paramsSchema`. */
+function objectIssues(o: SceneObjectInput, pipes: readonly { id: string }[], issue: IssueAt) {
+  const spec = ASSET_SPECS[o.asset as keyof typeof ASSET_SPECS];
+  placementIssues(o, pipes, issue);
+  if (o.asset === 'fence' && (o.path?.length ?? 0) < 2) issue(['path'], 'hàng rào cần path ≥ 2 điểm');
+  if (spec.category === 'environment' && o.bindings && Object.keys(o.bindings).length)
+    issue(['bindings'], `"${o.asset}" là environment – không gắn bindings`);
+  if (o.marker?.field && !o.bindings?.[o.marker.field])
+    issue(['marker', 'field'], `"${o.id}" không có binding "${o.marker.field}" để làm giá trị nhãn`);
+  for (const [k, v] of Object.entries(o.params ?? {})) paramIssues(o.asset, spec.paramsSchema, k, v, (msg) => issue(['params', k], msg));
+}
+
+function paramIssues(
+  asset: string,
+  schema: (typeof ASSET_SPECS)[keyof typeof ASSET_SPECS]['paramsSchema'],
+  k: string,
+  v: number,
+  issue: (message: string) => void,
+) {
+  const def = schema[k];
+  if (!def) {
+    const names = Object.keys(schema);
+    issue(`"${asset}" không có tham số "${k}" (có: ${names.join(', ') || 'không có'})`);
+    return;
+  }
+  if ((def.min !== undefined && v < def.min) || (def.max !== undefined && v > def.max))
+    issue(`${k} = ${v} ngoài khoảng ${def.min ?? '−∞'}–${def.max ?? '∞'}`);
+  if (def.integer && !Number.isInteger(v)) issue(`${k} phải là số nguyên`);
+}
+
 const sceneSchema = z
   .object({
     id: z.string().min(1),
@@ -82,31 +128,7 @@ const sceneSchema = z
         issue(['objects', i, 'asset'], `asset "${o.asset}" không tồn tại (có: ${ASSET_TYPES.join(', ')})`);
         return;
       }
-      const spec = ASSET_SPECS[o.asset as keyof typeof ASSET_SPECS];
-      if (!o.attach && !o.position) issue(['objects', i], `"${o.id}" cần position hoặc attach`);
-      if (!o.attach && o.position && Math.abs(o.position[1] - (o.elevation ?? 0)) > 1e-6)
-        issue(
-          ['objects', i, 'position'],
-          `"${o.id}": position[1] (${o.position[1]}) phải bằng elevation (${o.elevation ?? 0}) – độ cao chỉ đặt qua elevation`,
-        );
-      if (o.attach && !c.pipes.some((p) => p.id === o.attach!.pipe))
-        issue(['objects', i, 'attach', 'pipe'], `"${o.id}" gắn vào ống "${o.attach.pipe}" không tồn tại`);
-      if (o.asset === 'fence' && (o.path?.length ?? 0) < 2) issue(['objects', i, 'path'], 'hàng rào cần path ≥ 2 điểm');
-      if (spec.category === 'environment' && o.bindings && Object.keys(o.bindings).length)
-        issue(['objects', i, 'bindings'], `"${o.asset}" là environment – không gắn bindings`);
-      if (o.marker?.field && !o.bindings?.[o.marker.field])
-        issue(['objects', i, 'marker', 'field'], `"${o.id}" không có binding "${o.marker.field}" để làm giá trị nhãn`);
-      for (const [k, v] of Object.entries(o.params ?? {})) {
-        const def = spec.paramsSchema[k];
-        const names = Object.keys(spec.paramsSchema);
-        if (!def) {
-          issue(['objects', i, 'params', k], `"${o.asset}" không có tham số "${k}" (có: ${names.join(', ') || 'không có'})`);
-          continue;
-        }
-        if ((def.min !== undefined && v < def.min) || (def.max !== undefined && v > def.max))
-          issue(['objects', i, 'params', k], `${k} = ${v} ngoài khoảng ${def.min ?? '−∞'}–${def.max ?? '∞'}`);
-        if (def.integer && !Number.isInteger(v)) issue(['objects', i, 'params', k], `${k} phải là số nguyên`);
-      }
+      objectIssues(o, c.pipes, (path, message) => issue(['objects', i, ...path], message));
     });
 
     const viewIds = new Set<string>();

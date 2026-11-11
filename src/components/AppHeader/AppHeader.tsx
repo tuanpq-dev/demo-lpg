@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { useDismiss } from '@/lib/useDismiss';
 import { avatarAdmin } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
 import { Badge } from '../Badge';
@@ -129,23 +130,15 @@ function UserMenu({
   const button = useRef<HTMLButtonElement>(null);
   const listId = useId();
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+  useDismiss(
+    open,
+    root,
+    (reason) => {
       setOpen(false);
-      button.current?.focus();
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+      if (reason === 'escape') button.current?.focus();
+    },
+    { escape: true },
+  );
 
   return (
     <div className="relative" ref={root}>

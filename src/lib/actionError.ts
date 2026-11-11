@@ -26,3 +26,6 @@ export function runAction(task: () => Promise<unknown> | unknown, onError: (text
     return Promise.resolve(fail(e));
   }
 }
+
+/** `message` của lỗi (Error) hoặc câu thay thế khi lỗi không phải Error. */
+export const errorMessage = (e: unknown, fallback: string): string => (e instanceof Error ? e.message : fallback);

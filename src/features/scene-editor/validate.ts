@@ -13,7 +13,7 @@ import {
   segmentHitsObject,
 } from '@/features/scene/pipes';
 import { validateSceneConfig } from '@/features/scene/parse';
-import { ASSET_TYPES, type SceneConfig, type SceneObject } from '@/features/scene/types';
+import { ASSET_TYPES, type SceneConfig, type SceneObject, type Vec3 } from '@/features/scene/types';
 
 export type EditorIssue = {
   severity: 'error' | 'warning';
@@ -63,6 +63,32 @@ export function checkScene(scene: SceneConfig, tags: readonly string[]): EditorI
   return issues;
 }
 
+/** Đầu ống không nối cổng và không nằm trên đường đi của ống khác (≤ 1.5 × bán kính lớn hơn). */
+function openEnds(scene: SceneConfig, p: SceneConfig['pipes'][number], path: readonly Vec3[], paths: Map<string, Vec3[]>): ('from' | 'to')[] {
+  return (['from', 'to'] as const).filter((end) => {
+    if (p[end]) return false;
+    const tip = end === 'from' ? path[0]! : path.at(-1)!;
+    const r = p.radius ?? DEFAULT_PIPE_RADIUS;
+    return !scene.pipes.some((q) => q.id !== p.id && nearestOnPath(paths.get(q.id)!, tip).dist <= Math.max(r, q.radius ?? DEFAULT_PIPE_RADIUS) * 1.5);
+  });
+}
+
+/** Thiết bị (equipment) mà đường ống đi xuyên – bỏ 2 object ở 2 đầu và object gắn trên ống. */
+function crossedEquipment(scene: SceneConfig, p: SceneConfig['pipes'][number], path: readonly Vec3[]): Set<string> {
+  const ends = new Set([parsePortRef(p.from)?.objectId, parsePortRef(p.to)?.objectId]);
+  const hits = new Set<string>();
+  for (const o of scene.objects) {
+    if (o.attach || ends.has(o.id) || ASSET_SPECS[o.asset]?.category !== 'equipment') continue;
+    for (let k = 0; k + 1 < path.length; k++) {
+      if (dist3(path[k]!, path[k + 1]!) > 1e-3 && segmentHitsObject(o, path[k]!, path[k + 1]!)) {
+        hits.add(o.id);
+        break;
+      }
+    }
+  }
+  return hits;
+}
+
 /**
  * Kiểm tra ống (3D-4), ngoài zod:
  * - error: hai đầu đường đi trùng nhau (ống khép vòng/độ dài 0);
@@ -90,28 +116,9 @@ function pipeIssues(scene: SceneConfig): EditorIssue[] {
     if (b && p.points.at(-1) && same3(b, p.points.at(-1)!))
       out.push(at(`.points[${p.points.length - 1}]`, `ống "${p.id}": điểm cuối trùng cổng ${p.to}`));
     // Đầu hở: không cổng, không nằm trên đường đi của ống khác (≤ bán kính lớn hơn).
-    (['from', 'to'] as const).forEach((end) => {
-      if (p[end]) return;
-      const tip = end === 'from' ? path[0]! : path.at(-1)!;
-      const onOther = scene.pipes.some(
-        (q) =>
-          q.id !== p.id &&
-          nearestOnPath(paths.get(q.id)!, tip).dist <= Math.max(p.radius ?? DEFAULT_PIPE_RADIUS, q.radius ?? DEFAULT_PIPE_RADIUS) * 1.5,
-      );
-      if (!onOther) out.push(at(`.${end}`, `ống "${p.id}": đầu ${end === 'from' ? 'đầu' : 'cuối'} hở (không nối cổng/ống khác)`));
-    });
-    // Xuyên thiết bị (bỏ 2 object ở 2 đầu và object gắn trên chính ống).
-    const ends = new Set([parsePortRef(p.from)?.objectId, parsePortRef(p.to)?.objectId]);
-    const hits = new Set<string>();
-    for (const o of scene.objects) {
-      if (o.attach || ends.has(o.id) || ASSET_SPECS[o.asset]?.category !== 'equipment') continue;
-      for (let k = 0; k + 1 < path.length; k++) {
-        if (dist3(path[k]!, path[k + 1]!) > 1e-3 && segmentHitsObject(o, path[k]!, path[k + 1]!)) {
-          hits.add(o.id);
-          break;
-        }
-      }
-    }
+    for (const end of openEnds(scene, p, path, paths))
+      out.push(at(`.${end}`, `ống "${p.id}": đầu ${end === 'from' ? 'đầu' : 'cuối'} hở (không nối cổng/ống khác)`));
+    const hits = crossedEquipment(scene, p, path);
     if (hits.size) out.push(at('.points', `ống "${p.id}" đi xuyên thiết bị: ${[...hits].join(', ')}`));
   });
   return out;

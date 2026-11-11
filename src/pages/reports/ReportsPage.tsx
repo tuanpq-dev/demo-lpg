@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
 import { findDailyReport, reportDetailPath } from '@/data/dailyReport';
 import { useReports } from '@/data/reports';
@@ -84,23 +84,8 @@ export default function ReportsPage() {
     />
   );
 
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được danh sách báo cáo" error={error} onRetry={refetch} />
-      </Page>
-    );
-  }
-
-  if (status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={100} />
-        <Placeholder label="Đang tải…" height={262} />
-        <Placeholder label="Đang tải…" height={560} />
-      </Page>
-    );
-  }
+  if (status !== 'success')
+    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được danh sách báo cáo', skeleton: [100, 262, 560] });
 
   return (
     <Page pageHeader={header}>

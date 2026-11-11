@@ -1,10 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeftIcon, Button, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { Button, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
 import { useAuth, useCan } from '@/app/auth';
 import { SIMULATION_PATH, simulationMonitorPath } from '@/app/assetRoutes';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { SIMULATION_REFERENCE_TAGS, saveScenarioConfig, startSimulation, useSimulation } from '@/data/simulation';
 import { activeSessionOf, startBlocker, type SimulationSession } from '@/features/simulation/monitor';
 import {
@@ -24,10 +24,11 @@ import {
 import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../errors/NotFoundPage';
+import { BackLink, ScenarioNotFound, healthKeyOf, useAnalyzedAt } from './simulation/shared';
 import { ExpectedOutcomesCard, InputParamsCard, ReferenceDataCard, ScenarioInfoCard } from './simulation/ConfigCards';
 import { ConfigSuggestionCard, ConfigSummaryCard, ReadinessCard, ScenarioHistoryCard } from './simulation/ConfigSideCards';
 import { CONFIG_SAFETY_RULES, SafetyRulesCard } from './simulation/SimulationSideCards';
+import { errorMessage } from '@/lib/actionError';
 
 const BREADCRUMB_BASE: readonly BreadcrumbItem[] = [
   { label: 'Vận hành' },
@@ -50,37 +51,18 @@ export default function ScenarioConfigRoute() {
 function ScenarioConfigPage({ scenarioId }: { scenarioId: string }) {
   const sim = useSimulation();
   const scenario = sim.scenarios?.find((s) => s.id.toUpperCase() === scenarioId.toUpperCase());
-  const back = (
-    <Link to={SIMULATION_PATH} className={buttonClass('ghost')}>
-      <ArrowLeftIcon size={16} />
-      Quay lại danh sách
-    </Link>
-  );
+  const back = <BackLink to={SIMULATION_PATH} label="Quay lại danh sách" />;
   const header = (
     <PageHeader breadcrumb={[...BREADCRUMB_BASE, { label: scenario?.code ?? scenarioId }]} title={TITLE} description={DESCRIPTION} actions={back} />
   );
 
-  if (sim.status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được kịch bản mô phỏng" error={sim.error} onRetry={sim.refetch} />
-      </Page>
-    );
-  }
-  if (sim.status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={64} />
-        <Placeholder label="Đang tải…" height={760} />
-      </Page>
-    );
-  }
+  if (sim.status !== 'success') return pageFallback(sim, { header, errorTitle: 'Không tải được kịch bản mô phỏng', skeleton: [64, 760] });
   if (!scenario) {
     return (
-      <NotFoundPage
-        title="Không tìm thấy kịch bản"
+      <ScenarioNotFound
+        scenarioId={scenarioId}
+        scenarios={sim.scenarios}
         breadcrumb={[...BREADCRUMB_BASE, { label: scenarioId || '—' }]}
-        message={`Không có kịch bản mô phỏng "${scenarioId}". Kịch bản đang có: ${sim.scenarios.map((s) => s.code).join(', ')}.`}
         actions={back}
       />
     );
@@ -96,6 +78,61 @@ type ConfigFormProps = {
   live: ReturnType<typeof useSimulation>['liveData'];
   back: ReactNode;
 };
+
+/** Nút khoá được (`aria-disabled` + lý do đọc qua `aria-describedby`, span ẩn) – vẫn nhận focus để đọc được lý do. */
+function LockableButton({
+  reason,
+  reasonId,
+  busy,
+  busyHere,
+  showTitle,
+  variant,
+  onClick,
+  children,
+}: {
+  reason?: string;
+  reasonId: string;
+  busy: unknown;
+  busyHere: boolean;
+  showTitle?: boolean;
+  variant?: 'primary';
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <Button
+        variant={variant}
+        aria-disabled={!!reason || !!busy || undefined}
+        aria-describedby={reason ? reasonId : undefined}
+        aria-busy={busyHere || undefined}
+        title={showTitle ? reason : undefined}
+        onClick={onClick}
+      >
+        {children}
+      </Button>
+      {reason && (
+        <span id={reasonId} hidden>
+          {reason}
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Focus sau khi "Bỏ qua" / "Xem lại gợi ý" (nút vừa bấm biến mất → focus sang nút đối ứng). */
+function useSwapFocus(flag: boolean) {
+  const restoreRef = useRef<HTMLButtonElement>(null);
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  const focusAfter = useRef<'restore' | 'dismiss' | null>(null);
+  useEffect(() => {
+    const which = focusAfter.current;
+    const target = which === 'restore' ? restoreRef.current : which === 'dismiss' ? dismissRef.current : null;
+    target?.focus();
+    focusAfter.current = null;
+  }, [flag]);
+  return { restoreRef, dismissRef, focusAfter };
+}
 
 /**
  * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-config/`; Figma không đọc được):
@@ -136,40 +173,31 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
   const start = startValue(v, live, realNow);
 
   // Gợi ý + giờ phân tích chỉ đổi khi dữ liệu đầu vào đổi (không nhảy mỗi giây).
-  const healthKey = health ? `${health.ok}/${health.bad}/${health.missing}/${health.stale}` : 'pending';
+  const healthKey = healthKeyOf(health);
   const suggestion = useMemo(
     () => (health ? configSuggestion(s, health, suggestionConfidence(scenarios, runs, health, now)) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `health` đổi object mỗi giây; khoá theo nội dung
     [s, scenarios, runs, healthKey],
   );
-  const analyzedAt = useMemo(() => now, [suggestion]); // eslint-disable-line react-hooks/exhaustive-deps -- giờ của lần phân tích
+  const analyzedAt = useAnalyzedAt(suggestion, now);
   const history = useMemo(() => scenarioRuns(s.id, runs), [s.id, runs]);
 
-  // Focus sau khi "Bỏ qua" / "Xem lại gợi ý" (nút vừa bấm biến mất).
-  const restoreRef = useRef<HTMLButtonElement>(null);
-  const dismissRef = useRef<HTMLButtonElement>(null);
-  const focusAfter = useRef<'restore' | 'dismiss' | null>(null);
-  useEffect(() => {
-    const target = focusAfter.current === 'restore' ? restoreRef.current : focusAfter.current === 'dismiss' ? dismissRef.current : null;
-    target?.focus();
-    focusAfter.current = null;
-  }, [dismissed]);
+  const { restoreRef, dismissRef, focusAfter } = useSwapFocus(dismissed);
 
   const uid = useId();
   const runReasonId = `${uid}-run-reason`;
   const saveReasonId = `${uid}-save-reason`;
   const historyPendingId = `${uid}-history-pending`;
 
-  const firstError = Object.values(check.errors)[0];
-  const runReason = blocker ? blocker.text : !valid ? `Cấu hình chưa hợp lệ: ${firstError}` : undefined;
-  const saveReason = !valid ? `Cấu hình chưa hợp lệ: ${firstError}` : undefined;
+  const saveReason = valid ? undefined : `Cấu hình chưa hợp lệ: ${Object.values(check.errors)[0]}`;
+  const runReason = blocker ? blocker.text : saveReason;
 
   const save = async (): Promise<boolean> => {
     try {
       await saveScenarioConfig(s.id, draft);
       return true;
     } catch (e) {
-      announce(e instanceof Error ? e.message : 'Không lưu được cấu hình.');
+      announce(errorMessage(e, 'Không lưu được cấu hình.'));
       return false;
     }
   };
@@ -198,7 +226,7 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
       announce(`Đã bắt đầu mô phỏng ${s.code}.`);
       void navigate(simulationMonitorPath(s.id));
     } catch (e) {
-      announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
+      announce(errorMessage(e, 'Không chạy được mô phỏng.'));
       setBusy(null);
     }
   };
@@ -222,21 +250,9 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
         <>
           {back}
           {canConfigure && (
-            <>
-              <Button
-                aria-disabled={!!saveReason || !!busy || undefined}
-                aria-describedby={saveReason ? saveReasonId : undefined}
-                aria-busy={busy === 'save' || undefined}
-                onClick={() => void onSave()}
-              >
-                {busy === 'save' ? 'Đang lưu…' : 'Lưu cấu hình'}
-              </Button>
-              {saveReason && (
-                <span id={saveReasonId} hidden>
-                  {saveReason}
-                </span>
-              )}
-            </>
+            <LockableButton reason={saveReason} reasonId={saveReasonId} busy={busy} busyHere={busy === 'save'} onClick={() => void onSave()}>
+              {busy === 'save' ? 'Đang lưu…' : 'Lưu cấu hình'}
+            </LockableButton>
           )}
           {activeSession ? (
             <Link to={simulationMonitorPath(s.id)} className={buttonClass('primary')}>
@@ -245,24 +261,18 @@ function ConfigForm({ scenario: s, scenarios, runs, sessions, live, back }: Conf
             </Link>
           ) : (
             canRun && (
-              <>
-                <Button
-                  variant="primary"
-                  aria-disabled={!!runReason || !!busy || undefined}
-                  aria-describedby={runReason ? runReasonId : undefined}
-                  aria-busy={busy === 'run' || undefined}
-                  title={runReason}
-                  onClick={() => void onRun()}
-                >
-                  {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
-                  <PlayCircleSolidIcon size={18} className="shrink-0" />
-                </Button>
-                {runReason && (
-                  <span id={runReasonId} hidden>
-                    {runReason}
-                  </span>
-                )}
-              </>
+              <LockableButton
+                variant="primary"
+                reason={runReason}
+                reasonId={runReasonId}
+                busy={busy}
+                busyHere={busy === 'run'}
+                showTitle
+                onClick={() => void onRun()}
+              >
+                {busy === 'run' ? 'Đang khởi động…' : 'Bắt đầu chạy mô phỏng'}
+                <PlayCircleSolidIcon size={18} className="shrink-0" />
+              </LockableButton>
             )
           )}
         </>

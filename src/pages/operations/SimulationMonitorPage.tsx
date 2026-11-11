@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeftIcon, Button, Card, EmergencyBanner, PageHeader, StopCircleIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { Button, Card, EmergencyBanner, PageHeader, StopCircleIcon, buttonClass, type BreadcrumbItem } from '@/components';
 import { SIMULATION_PATH, simulationConfigPath, simulationResultPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
-import { SIMULATION_REFERENCE_TAGS, stopSimulation, useSimulation } from '@/data/simulation';
+import { pageFallback } from '@/app/Placeholder';
+import { stopSimulation, useSimulation } from '@/data/simulation';
 import { dataSyncState } from '@/features/simulation/config';
 import { isActivePhase, monitorSnapshot, sessionOf, type SimulationSession } from '@/features/simulation/monitor';
-import { RUN_RESULT_LABEL, suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
+import { RUN_RESULT_LABEL, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { useNow } from '@/lib/useNow';
-import NotFoundPage from '../errors/NotFoundPage';
 import {
   MonitorHeaderMeta,
   MonitorKpis,
@@ -24,6 +23,8 @@ import {
   SimAlertsCard,
   SimulationTrendCard,
 } from './simulation/MonitorCards';
+import { BackLink, ScenarioNotFound, referenceHealth, useSuggestionConfidence } from './simulation/shared';
+import { errorMessage } from '@/lib/actionError';
 
 const TITLE = 'Theo dõi diễn biến mô phỏng';
 const DESCRIPTION = 'Mô phỏng các tình huống bất thường trong hệ thống LPG để đánh giá phản ứng vận hành và gợi ý xử lý an toàn.';
@@ -46,39 +47,13 @@ function SimulationMonitorPage({ scenarioId }: { scenarioId: string }) {
   // Đồng hồ lượt chạy theo giây (giờ ứng dụng – `?now=` dời được, vẫn chạy).
   const now = useNow(1000).getTime();
   const scenario = sim.scenarios?.find((s) => s.id.toUpperCase() === scenarioId.toUpperCase());
-  const back = (
-    <Link to={SIMULATION_PATH} className={buttonClass('ghost')}>
-      <ArrowLeftIcon size={16} />
-      Quay lại danh sách
-    </Link>
-  );
+  const back = <BackLink to={SIMULATION_PATH} label="Quay lại danh sách" />;
   const plainHeader = <PageHeader breadcrumb={crumbs(scenario?.code ?? scenarioId)} title={TITLE} description={DESCRIPTION} actions={back} />;
 
-  if (sim.status === 'error') {
-    return (
-      <Page pageHeader={plainHeader}>
-        <PageError title="Không tải được lượt mô phỏng" error={sim.error} onRetry={sim.refetch} />
-      </Page>
-    );
-  }
-  if (sim.status === 'loading') {
-    return (
-      <Page pageHeader={plainHeader}>
-        <Placeholder label="Đang tải…" height={64} />
-        <Placeholder label="Đang tải…" height={110} />
-        <Placeholder label="Đang tải…" height={720} />
-      </Page>
-    );
-  }
+  if (sim.status !== 'success')
+    return pageFallback(sim, { header: plainHeader, errorTitle: 'Không tải được lượt mô phỏng', skeleton: [64, 110, 720] });
   if (!scenario) {
-    return (
-      <NotFoundPage
-        title="Không tìm thấy kịch bản"
-        breadcrumb={crumbs(scenarioId || '—')}
-        message={`Không có kịch bản mô phỏng "${scenarioId}". Kịch bản đang có: ${sim.scenarios.map((s) => s.code).join(', ')}.`}
-        actions={back}
-      />
-    );
+    return <ScenarioNotFound scenarioId={scenarioId} scenarios={sim.scenarios} breadcrumb={crumbs(scenarioId || '—')} actions={back} />;
   }
   // `?session=` (link "Quay lại theo dõi" từ màn kết quả) → đúng lượt đó; không có → lượt đang chạy / gần nhất.
   const wanted = params.get('session');
@@ -123,19 +98,11 @@ type MonitorViewProps = {
 function MonitorView({ scenario: s, session, scenarios, runs, live, now, back }: MonitorViewProps) {
   const canRun = useCan('simulation:run');
   const [stopping, setStopping] = useState(false);
-  // Mất tín hiệu so `ts` với giờ THẬT (không theo ?now=) – CLAUDE.md "Dữ liệu trực tiếp".
-  const realNow = Date.now();
+  const { health } = referenceHealth(live);
   const snap = monitorSnapshot(s, s.setup.monitor, session, now);
   const active = isActivePhase(snap.phase);
 
-  const health = tagHealth(SIMULATION_REFERENCE_TAGS, live, realNow);
-  const healthKey = health ? `${health.ok}/${health.bad}/${health.missing}/${health.stale}` : 'pending';
-  const nowMinute = Math.floor(now / 60_000);
-  const confidence = useMemo(
-    () => (health ? suggestionConfidence(scenarios, runs, health, new Date(nowMinute * 60_000)) : undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `health` đổi object mỗi giây; khoá theo nội dung
-    [scenarios, runs, healthKey, nowMinute],
-  );
+  const confidence = useSuggestionConfidence(scenarios, runs, live, now);
   const run = session.runId ? runs.find((r) => r.id === session.runId) : undefined;
 
   // Thông báo động: cảnh báo mô phỏng mới, gợi ý AI, kết thúc lượt (không đọc đồng hồ mỗi giây).
@@ -165,7 +132,7 @@ function MonitorView({ scenario: s, session, scenarios, runs, live, now, back }:
     try {
       await stopSimulation(session.id);
     } catch (e) {
-      announce(e instanceof Error ? e.message : 'Không dừng được mô phỏng.');
+      announce(errorMessage(e, 'Không dừng được mô phỏng.'));
     } finally {
       setStopping(false);
     }

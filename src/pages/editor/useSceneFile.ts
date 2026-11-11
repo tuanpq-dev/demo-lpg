@@ -8,8 +8,9 @@ import type { SceneConfig } from '@/features/scene/types';
 import { clearDraft, readDraft, type EditorDraft } from '@/features/scene-editor/draft';
 import { newScene, normalizeScene, uniqueId } from '@/features/scene-editor/ops';
 import { loadScene, setSceneSilently, useEditorUi, useSceneDoc, type SceneSource } from '@/features/scene-editor/store';
-import { runAction } from '@/lib/actionError';
+import { runAction, errorMessage } from '@/lib/actionError';
 import type { EditorDialog } from './EditorDialogs';
+import { downloadFile } from '@/lib/download';
 
 const ui = () => useEditorUi.getState();
 
@@ -61,7 +62,7 @@ export function useSceneFile({ setDialog, flash }: { setDialog: (d: EditorDialog
         setSceneParam(id);
         flash(`Đã mở "${s.name}"`);
       } catch (e) {
-        flash(e instanceof Error ? e.message : String(e));
+        flash(errorMessage(e, String(e)));
         await startNew();
       }
     },
@@ -124,12 +125,7 @@ export function useSceneFile({ setDialog, flash }: { setDialog: (d: EditorDialog
   // ----- Import / Export -----
   const exportJson = () => {
     const s = normalizeScene(useSceneDoc.getState().scene);
-    const url = URL.createObjectURL(new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${s.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(JSON.stringify(s, null, 2), `${s.id}.json`, 'application/json');
     flash(`Đã xuất ${s.id}.json`);
   };
 

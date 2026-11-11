@@ -4,7 +4,7 @@ import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, P
 import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { SIMULATION_REFERENCE_TAGS, startSimulation, useSimulation } from '@/data/simulation';
 import { activeSessionOf, startBlocker } from '@/features/simulation/monitor';
@@ -31,8 +31,10 @@ import {
 } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
+import { healthKeyOf, useAnalyzedAt } from './simulation/shared';
 import { ScenarioCard } from './simulation/ScenarioCard';
 import { AiSuggestionCard, PlcDataCard, RecentRunsCard, SafetyRulesCard } from './simulation/SimulationSideCards';
+import { errorMessage } from '@/lib/actionError';
 
 const getId = (s: Scenario) => s.id;
 const PENDING_DESIGN = 'Chưa có màn này – chờ thiết kế.';
@@ -60,7 +62,7 @@ export default function AiSimulationPage() {
   const { values: f, setValues } = table;
 
   const health = tagHealth(SIMULATION_REFERENCE_TAGS, sim.liveData, realNow);
-  const healthKey = health ? `${health.ok}/${health.bad}/${health.missing}/${health.stale}` : 'pending';
+  const healthKey = healthKeyOf(health);
   const kpis = deriveSimulationKpis(scenarios, runs, health, now);
   // Góp ý + giờ phân tích chỉ đổi khi dữ liệu đầu vào đổi (không nhảy mỗi giây).
   const suggestion = useMemo(
@@ -68,7 +70,7 @@ export default function AiSimulationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `health` đổi object mỗi giây; khoá theo nội dung
     [scenarios, runs, healthKey],
   );
-  const analyzedAt = useMemo(() => now, [suggestion]); // eslint-disable-line react-hooks/exhaustive-deps -- giờ của lần phân tích
+  const analyzedAt = useAnalyzedAt(suggestion, now);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const firstId = table.filtered[0]?.id;
@@ -87,7 +89,7 @@ export default function AiSimulationPage() {
         announce(`Đã bắt đầu mô phỏng ${s.code}.`);
         void navigate(simulationMonitorPath(s.id));
       } catch (e) {
-        announce(e instanceof Error ? e.message : 'Không chạy được mô phỏng.');
+        announce(errorMessage(e, 'Không chạy được mô phỏng.'));
         setRunning((cur) => {
           const next = new Set(cur);
           next.delete(s.id);
@@ -134,23 +136,7 @@ export default function AiSimulationPage() {
     />
   );
 
-  if (sim.status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được kịch bản mô phỏng" error={sim.error} onRetry={sim.refetch} />
-      </Page>
-    );
-  }
-
-  if (sim.status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={64} />
-        <Placeholder label="Đang tải…" height={110} />
-        <Placeholder label="Đang tải…" height={720} />
-      </Page>
-    );
-  }
+  if (sim.status !== 'success') return pageFallback(sim, { header, errorTitle: 'Không tải được kịch bản mô phỏng', skeleton: [64, 110, 720] });
 
   const filterDefs: FilterDef[] = [
     {

@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Badge, Button, Modal } from '@/components';
+import { Badge, Button, Modal, DiscardConfirmButtons } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
 import type { AssignForm } from '@/features/maintenance/assign';
 import { AssignDetailsColumn, AssignRequestBand, StaffPickerColumn } from './assign/AssignSections';
@@ -53,14 +53,13 @@ export function AssignModal({ record: r, records, onClose, onSubmit }: AssignMod
       }
       footer={
         confirming ? (
-          <>
-            <Button ref={a.modal.keepEditingRef} variant="subtle" onClick={a.modal.keepEditing}>
-              Tiếp tục sửa
-            </Button>
-            <Button variant="primary" onClick={discard}>
-              {hasDraft ? 'Bỏ thay đổi và xóa bản lưu tạm' : 'Bỏ thay đổi'}
-            </Button>
-          </>
+          <DiscardConfirmButtons
+            keepEditingRef={a.modal.keepEditingRef}
+            onKeepEditing={a.modal.keepEditing}
+            onDiscard={discard}
+            hasDraft={hasDraft}
+            draftDiscardLabel="Bỏ thay đổi và xóa bản lưu tạm"
+          />
         ) : (
           <>
             <Button variant="outline" onClick={a.saveDraft}>
