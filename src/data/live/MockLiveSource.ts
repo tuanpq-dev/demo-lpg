@@ -11,12 +11,15 @@ export type MockLiveSourceOptions = {
   intervalMs?: number;
   /** Thời gian kết nối lần đầu (ms). */
   connectMs?: number;
+  /** Hết người nghe bao lâu (ms) mới ngắt – chuyển trang không làm rớt kết nối. */
+  idleMs?: number;
   now?: () => number;
 };
 
 /**
  * Nguồn giả lập (thay bằng WebSocket/SCADA cùng interface LiveDataSource):
- * - kết nối khi có người nghe đầu tiên (subscribe hoặc onStatusChange), ngắt khi hết người nghe;
+ * - kết nối khi có người nghe đầu tiên (subscribe hoặc onStatusChange), ngắt khi hết người nghe ĐỦ `idleMs` (chuyển
+ *   trang: trang cũ gỡ trước, trang mới đăng ký ngay sau – không rớt kết nối);
  * - mỗi `intervalMs`: số dao động quanh giá trị nền (mean-reverting), ts = now, quality = good.
  */
 export class MockLiveSource implements LiveDataSource {
@@ -26,6 +29,7 @@ export class MockLiveSource implements LiveDataSource {
   private readonly statusListeners = new Set<(s: LiveSourceStatus) => void>();
   private tick: number | undefined;
   private pending: number | undefined;
+  private idleTimer: number | undefined;
   private readonly o: Required<MockLiveSourceOptions>;
 
   constructor(options: MockLiveSourceOptions) {
@@ -34,6 +38,7 @@ export class MockLiveSource implements LiveDataSource {
       unit: () => undefined,
       intervalMs: 2000,
       connectMs: 300,
+      idleMs: 30_000,
       now: () => Date.now(),
       ...options,
     };
@@ -54,6 +59,10 @@ export class MockLiveSource implements LiveDataSource {
     };
   }
 
+  peek(tags: readonly string[] | null) {
+    return this.status === 'connected' ? this.pick(tags ? new Set(tags) : null) : undefined;
+  }
+
   getSnapshot(tags: readonly string[] | null) {
     return Promise.resolve(this.pick(tags ? new Set(tags) : null));
   }
@@ -70,6 +79,8 @@ export class MockLiveSource implements LiveDataSource {
   // ----- Nội bộ -----
 
   private ensureConnection() {
+    window.clearTimeout(this.idleTimer);
+    this.idleTimer = undefined;
     if (this.status !== 'disconnected' || this.pending !== undefined) return;
     this.setStatus('connecting');
     this.pending = window.setTimeout(() => this.connect(), this.o.connectMs);
@@ -85,6 +96,12 @@ export class MockLiveSource implements LiveDataSource {
   }
 
   private maybeIdle() {
+    if (this.listeners.size || this.statusListeners.size || this.idleTimer !== undefined) return;
+    this.idleTimer = window.setTimeout(() => this.disconnect(), this.o.idleMs);
+  }
+
+  private disconnect() {
+    this.idleTimer = undefined;
     if (this.listeners.size || this.statusListeners.size) return;
     this.stopTicks();
     window.clearTimeout(this.pending);
