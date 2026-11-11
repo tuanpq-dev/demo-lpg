@@ -75,46 +75,9 @@ const SIGNATURE_FILTER_OPTIONS: { value: SignatureFilter; label: string }[] = [
 const ACTIONS_PENDING = 'Chưa có màn chi tiết cho loại báo cáo này – chờ thiết kế.';
 const MORE_PENDING = 'Chưa có thao tác khác – chờ thiết kế.';
 
-/**
- * Khối tab loại báo cáo + bảng có lọc (ảnh màn Báo cáo). Cột theo tab: tab một kỳ → tiêu đề cột kỳ theo kỳ đó,
- * cột "Ca vận hành" chỉ ở báo cáo ngày; tab gộp ("Tất cả", "Biểu mẫu đã ký") → "Kỳ báo cáo".
- */
-export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionProps>(function ReportTableSection(
-  { table, rows, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label, onSign, canSign },
-  ref,
-) {
-  const uid = useId();
-  const panelId = `${uid}-panel`;
-  const pendingId = `${uid}-pending`;
-  const morePendingId = `${uid}-more-pending`;
-  const { values: f, setValues } = table;
-  const counts = table.tabCounts as Record<ReportTab, number>;
-  const period: ReportPeriod | undefined = (REPORT_PERIODS as readonly string[]).includes(f.tab) ? (f.tab as ReportPeriod) : undefined;
-
-  const tabItems: TabItem[] = tabs.map((t) => ({
-    id: t,
-    label: TAB_LABEL[t],
-    count: counts[t],
-    countMax: 9999,
-    countTone: t === f.tab ? 'info' : 'neutral',
-  }));
-
-  const filterDefs: FilterDef[] = [
-    ...(period === undefined || period === 'daily'
-      ? [{ id: 'shift', label: 'Ca vận hành', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.shift)) }]
-      : []),
-    {
-      id: 'completion',
-      label: 'Trạng thái hoàn thành',
-      allLabel: 'Tất cả',
-      options: COMPLETION_STATUSES.map((s) => ({ value: s, label: COMPLETION_LABEL[s] })),
-    },
-    { id: 'signature', label: 'Trạng thái chữ ký', allLabel: 'Tất cả', options: SIGNATURE_FILTER_OPTIONS },
-    { id: 'inspector', label: 'Người kiểm tra', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.inspector)) },
-    { id: 'approver', label: 'Người duyệt', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.approver)) },
-  ];
-
-  const columns: DataTableColumn<ReportRecord>[] = [
+/** Cột theo tab: tab một kỳ → tiêu đề cột kỳ theo kỳ đó, "Ca vận hành" chỉ ở báo cáo ngày; tab gộp → "Kỳ báo cáo". */
+function reportColumns(period: ReportPeriod | undefined, now: Date): DataTableColumn<ReportRecord>[] {
+  return [
     {
       id: 'code',
       header: 'Mã báo cáo',
@@ -188,6 +151,105 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
       cell: (r) => formatUpdatedAt(r.updatedAt),
     },
   ];
+}
+
+/** Thao tác cuối dòng: ký xác nhận (nếu được) · xem (báo cáo ngày có màn chi tiết; loại khác khoá kèm lý do) · thao tác khác (khoá). */
+function ReportRowActions({
+  r,
+  canSign,
+  onSign,
+  pendingId,
+  morePendingId,
+}: {
+  r: ReportRecord;
+  canSign: boolean;
+  onSign?: (r: ReportRecord) => void;
+  pendingId: string;
+  morePendingId: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {canSign && (
+        <button
+          type="button"
+          aria-label={`Ký xác nhận ${r.code}`}
+          title="Hoàn thành nhận xét & ký xác nhận"
+          onClick={() => onSign?.(r)}
+          className="inline-flex rounded-sm p-1 text-primary hover:bg-primary/10"
+        >
+          <SignaturePenIcon size={18} />
+        </button>
+      )}
+      {reportDetailPath(r) ? (
+        <Link to={reportDetailPath(r)!} aria-label={`Xem báo cáo ${r.code}`} className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100">
+          <Icon name="eye" box={18} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-disabled="true"
+          aria-label={`Xem báo cáo ${r.code}`}
+          aria-describedby={pendingId}
+          title={ACTIONS_PENDING}
+          className="inline-flex cursor-not-allowed rounded-sm p-1 opacity-60"
+        >
+          <Icon name="eye" box={18} />
+        </button>
+      )}
+      <button
+        type="button"
+        aria-disabled="true"
+        aria-label={`Thao tác khác ${r.code}`}
+        aria-describedby={morePendingId}
+        title={MORE_PENDING}
+        className="inline-flex cursor-not-allowed rounded-sm p-1 text-fg-secondary opacity-60"
+      >
+        <MoreVerticalIcon />
+      </button>
+    </span>
+  );
+}
+
+/**
+ * Khối tab loại báo cáo + bảng có lọc (ảnh màn Báo cáo). Cột theo tab: tab một kỳ → tiêu đề cột kỳ theo kỳ đó,
+ * cột "Ca vận hành" chỉ ở báo cáo ngày; tab gộp ("Tất cả", "Biểu mẫu đã ký") → "Kỳ báo cáo".
+ */
+export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionProps>(function ReportTableSection(
+  { table, rows, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label, onSign, canSign },
+  ref,
+) {
+  const uid = useId();
+  const panelId = `${uid}-panel`;
+  const pendingId = `${uid}-pending`;
+  const morePendingId = `${uid}-more-pending`;
+  const { values: f, setValues } = table;
+  const counts = table.tabCounts as Record<ReportTab, number>;
+  const period: ReportPeriod | undefined = (REPORT_PERIODS as readonly string[]).includes(f.tab) ? (f.tab as ReportPeriod) : undefined;
+
+  const tabItems: TabItem[] = tabs.map((t) => ({
+    id: t,
+    label: TAB_LABEL[t],
+    count: counts[t],
+    countMax: 9999,
+    countTone: t === f.tab ? 'info' : 'neutral',
+  }));
+
+  const filterDefs: FilterDef[] = [
+    ...(period === undefined || period === 'daily'
+      ? [{ id: 'shift', label: 'Ca vận hành', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.shift)) }]
+      : []),
+    {
+      id: 'completion',
+      label: 'Trạng thái hoàn thành',
+      allLabel: 'Tất cả',
+      options: COMPLETION_STATUSES.map((s) => ({ value: s, label: COMPLETION_LABEL[s] })),
+    },
+    { id: 'signature', label: 'Trạng thái chữ ký', allLabel: 'Tất cả', options: SIGNATURE_FILTER_OPTIONS },
+    { id: 'inspector', label: 'Người kiểm tra', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.inspector)) },
+    { id: 'approver', label: 'Người duyệt', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.approver)) },
+  ];
+
+  const columns = reportColumns(period, now);
 
   const note = tabNotes[f.tab];
   const clearKeep = ['tab', 'size'] as const;
@@ -256,49 +318,7 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
           rows={table.pageRows}
           getRowId={(r) => r.id}
           rowActions={(r) => (
-            <span className="inline-flex items-center gap-1">
-              {onSign && canSign?.(r) && (
-                <button
-                  type="button"
-                  aria-label={`Ký xác nhận ${r.code}`}
-                  title="Hoàn thành nhận xét & ký xác nhận"
-                  onClick={() => onSign(r)}
-                  className="inline-flex rounded-sm p-1 text-primary hover:bg-primary/10"
-                >
-                  <SignaturePenIcon size={18} />
-                </button>
-              )}
-              {reportDetailPath(r) ? (
-                <Link
-                  to={reportDetailPath(r)!}
-                  aria-label={`Xem báo cáo ${r.code}`}
-                  className="inline-flex rounded-sm p-1 opacity-90 hover:opacity-100"
-                >
-                  <Icon name="eye" box={18} />
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  aria-disabled="true"
-                  aria-label={`Xem báo cáo ${r.code}`}
-                  aria-describedby={pendingId}
-                  title={ACTIONS_PENDING}
-                  className="inline-flex cursor-not-allowed rounded-sm p-1 opacity-60"
-                >
-                  <Icon name="eye" box={18} />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-disabled="true"
-                aria-label={`Thao tác khác ${r.code}`}
-                aria-describedby={morePendingId}
-                title={MORE_PENDING}
-                className="inline-flex cursor-not-allowed rounded-sm p-1 text-fg-secondary opacity-60"
-              >
-                <MoreVerticalIcon />
-              </button>
-            </span>
+            <ReportRowActions r={r} canSign={!!onSign && !!canSign?.(r)} onSign={onSign} pendingId={pendingId} morePendingId={morePendingId} />
           )}
           emptyState="Không có báo cáo phù hợp."
           pagination={{

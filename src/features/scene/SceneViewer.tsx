@@ -18,16 +18,9 @@ import { MaterialsProvider } from './assets/materials';
 import { ASSETS } from './assets/registry';
 import { CameraRig } from './CameraRig';
 import { inverseToneMap, readScenePalette, type ScenePalette } from './colors';
-import {
-  EditGizmo,
-  EDIT_SNAP,
-  FloorOutline,
-  PickerBridge,
-  SCENE_ASSET_MIME,
-  SelectionFootprints,
-  type SceneEditState,
-  type ScenePicker,
-} from './EditTools';
+import { EDIT_SNAP, SCENE_ASSET_MIME } from './editConstants';
+import { EditGizmo } from './EditGizmo';
+import { FloorOutline, PickerBridge, SelectionFootprints, type SceneEditState, type ScenePicker } from './EditTools';
 import type { ResolvedObject, ResolvedScene } from './geometry';
 import { SCENE_EXPOSURE } from './look';
 import { ObjectNode } from './ObjectNode';
@@ -39,7 +32,6 @@ import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, Scene
 import { useEditPointer, type Marquee } from './useEditPointer';
 import { useSceneLive, useSceneSelection } from './useSceneModel';
 
-export { EDIT_SNAP, SCENE_ASSET_MIME } from './EditTools';
 export type { EditTool, ObjectTransform, SceneEditState, SelectHow } from './EditTools';
 
 // Hậu kỳ (postprocessing) ở chunk riêng – chỉ tải khi preset bật.

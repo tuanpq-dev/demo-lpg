@@ -1,6 +1,6 @@
 import { AttachmentCard, Badge, Button, UploadTile } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
-import { formatFileSize } from '@/data/maintenanceDetail';
+import { formatFileSize } from '@/lib/fileSize';
 import { UPLOAD_ACCEPT, UPLOAD_HINT } from '@/features/maintenance/progress';
 import { downloadSampleAttachment } from '../../shared/attachments';
 import type { ProgressUpdateForm } from './useProgressUpdateForm';
@@ -25,27 +25,17 @@ export function ProgressFilesSection({ f, record: r }: { f: ProgressUpdateForm; 
           />
         ))}
         {f.files.map((t) => (
-          <div key={t.id} className="relative flex min-w-0">
-            <AttachmentCard
-              fluid
-              id={t.id}
-              name={t.name}
-              kind={t.kind}
-              meta={formatFileSize(t.size)}
-              notice="Chưa tải lên máy chủ"
-              onView={() => f.setPreview({ kind: 'temp', file: t })}
-            />
-            <button
-              type="button"
-              aria-label={`Bỏ tệp ${t.name}`}
-              onClick={() => f.removeFile(t)}
-              className="absolute right-1 top-1 inline-flex size-6 items-center justify-center rounded-sm text-fg-secondary hover:bg-surface-muted hover:text-fg"
-            >
-              <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
+          <AttachmentCard
+            key={t.id}
+            fluid
+            id={t.id}
+            name={t.name}
+            kind={t.kind}
+            meta={formatFileSize(t.size)}
+            notice="Chưa tải lên máy chủ"
+            onView={() => f.setPreview({ kind: 'temp', file: t })}
+            onRemove={() => f.removeFile(t)}
+          />
         ))}
         <UploadTile accept={UPLOAD_ACCEPT} hint={UPLOAD_HINT} onFiles={f.addFiles} />
       </div>

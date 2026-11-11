@@ -72,73 +72,94 @@ export function closeLimit(a: AlertRecord): number {
   return alertMetric(a).threshold;
 }
 
+type ReadingDef = AlertUpdateConfig['readings'][number];
+
+/** Ngữ cảnh chung khi dựng dòng thông số: tag tài sản, đầu báo nhiệt, tín hiệu khói/gas cùng khu, ngưỡng gas. */
+function readingContext(a: AlertRecord) {
+  const detector = HEAT_DETECTORS[a.device];
+  const signals = AREA_FIRE_SIGNALS[(detector?.area ?? a.area) as Area] ?? [];
+  const signal = (k: 'smoke' | 'gas') => signals.find((x) => x.kind === k);
+  const vars = { tag: a.tag, smoke: signal('smoke')?.id, gas: signal('gas')?.id };
+  return {
+    a,
+    assetTags: ASSET_TAGS[a.device as keyof typeof ASSET_TAGS] as { pressure?: string; temperature?: string } | undefined,
+    detector,
+    signal,
+    gl: gasLimits(alertKind(a)),
+    fill: (t: string, extra: { sensor?: string } = {}) => fillPlaybookText(t, a.device, { ...vars, ...extra }),
+  };
+}
+type ReadingContext = ReturnType<typeof readingContext>;
+
+/** Số chính của cảnh báo (áp suất / nồng độ / nhiệt độ đầu báo) – số lúc báo + ngưỡng đóng. */
+function primaryRow(r: ReadingDef, cfg: AlertUpdateConfig, c: ReadingContext): UpdateReadingRow {
+  const { a } = c;
+  const m = alertMetric(a);
+  const rule = cfg.close.rule;
+  return {
+    id: r.id,
+    label: c.fill(r.label),
+    unit: a.unit,
+    tag: rule === 'fire' ? (c.detector?.tempTag ?? a.tag) : (a.tag ?? c.assetTags?.pressure),
+    before: Number.isFinite(m.value) ? m.value : undefined,
+    warn: closeLimit(a),
+    danger: rule === 'gas' ? c.gl.danger : rule === 'fire' ? undefined : m.danger,
+    primary: true,
+  };
+}
+
+/** Đầu dò gas khác trong cùng khu (bỏ chính tag của cảnh báo). */
+function areaSensorRows(r: ReadingDef, c: ReadingContext): UpdateReadingRow[] {
+  return sensorsInArea(c.a.area)
+    .filter((x) => x.tag !== c.a.tag)
+    .map((x) => ({
+      id: `${r.id}-${x.tag}`,
+      label: c.fill(r.label, { sensor: x.tag }),
+      unit: '% LEL',
+      tag: x.tag,
+      warn: c.gl.warn,
+      danger: c.gl.danger,
+      primary: false,
+    }));
+}
+
+/** Tín hiệu khói (báo động có/không) hoặc gas (% LEL) cùng khu với đầu báo cháy. */
+function signalRows(r: ReadingDef & { field: 'smoke' | 'gas' }, c: ReadingContext): UpdateReadingRow[] {
+  const sg = c.signal(r.field);
+  if (!sg) return [];
+  return r.field === 'smoke'
+    ? [{ id: r.id, label: c.fill(r.label), unit: '', tag: sg.tag, primary: false, alarm: true }]
+    : [{ id: r.id, label: c.fill(r.label), unit: '% LEL', tag: sg.tag, warn: c.gl.warn, danger: c.gl.danger, primary: false }];
+}
+
+/** Áp suất sau van điều áp / nhiệt độ tài sản – ngưỡng theo cấu hình tag. */
+function assetTagRow(r: ReadingDef, c: ReadingContext): UpdateReadingRow {
+  const tag = r.field === 'regulatorOut' ? REGULATOR_TAGS[REGULATORS[c.a.device] ?? '']?.outletPressure : c.assetTags?.temperature;
+  const th = tagThresholds(tag);
+  return {
+    id: r.id,
+    label: c.fill(r.label),
+    unit: r.field === 'temperature' ? '°C' : 'bar',
+    tag,
+    before: c.a.readingsAtAlert?.[r.id],
+    warn: th?.warn,
+    danger: th?.danger,
+    primary: false,
+  };
+}
+
 /**
  * Dòng "Thông số trước và sau xử lý" theo cấu hình loại: tra tag + ngưỡng theo thiết bị. Chính = tag của cảnh báo (cháy:
  * nhiệt độ đầu báo) + ngưỡng đóng; sau bộ điều áp = `REGULATOR_TAGS` (PT-103 GIẢ ĐỊNH, chưa có ngưỡng); nhiệt độ bồn = tag
  * tài sản; cảm biến cùng khu (gas) + khói / gas của khu (cháy) – màu theo bands gas.
  */
 export function updateReadingRows(a: AlertRecord, cfg: AlertUpdateConfig): UpdateReadingRow[] {
-  const assetTags = ASSET_TAGS[a.device as keyof typeof ASSET_TAGS] as { pressure?: string; temperature?: string } | undefined;
-  const kindCfg = alertKind(a);
-  const detector = HEAT_DETECTORS[a.device];
-  const signals = AREA_FIRE_SIGNALS[(detector?.area ?? a.area) as Area] ?? [];
-  const signal = (k: 'smoke' | 'gas') => signals.find((x) => x.kind === k);
-  const vars = { tag: a.tag, smoke: signal('smoke')?.id, gas: signal('gas')?.id };
-  const fill = (t: string, extra: { sensor?: string } = {}) => fillPlaybookText(t, a.device, { ...vars, ...extra });
-  const gl = gasLimits(kindCfg);
+  const c = readingContext(a);
   return cfg.readings.flatMap((r): UpdateReadingRow[] => {
-    if (r.field === 'primary') {
-      const m = alertMetric(a);
-      const limit = closeLimit(a);
-      const tag = cfg.close.rule === 'fire' ? (detector?.tempTag ?? a.tag) : (a.tag ?? assetTags?.pressure);
-      const danger = cfg.close.rule === 'gas' ? gl.danger : cfg.close.rule === 'fire' ? undefined : m.danger;
-      return [
-        {
-          id: r.id,
-          label: fill(r.label),
-          unit: a.unit,
-          tag,
-          before: Number.isFinite(m.value) ? m.value : undefined,
-          warn: limit,
-          danger,
-          primary: true,
-        },
-      ];
-    }
-    if (r.field === 'areaSensors') {
-      return sensorsInArea(a.area)
-        .filter((x) => x.tag !== a.tag)
-        .map((x) => ({
-          id: `${r.id}-${x.tag}`,
-          label: fill(r.label, { sensor: x.tag }),
-          unit: '% LEL',
-          tag: x.tag,
-          warn: gl.warn,
-          danger: gl.danger,
-          primary: false,
-        }));
-    }
-    if (r.field === 'smoke' || r.field === 'gas') {
-      const sg = signal(r.field);
-      if (!sg) return [];
-      return r.field === 'smoke'
-        ? [{ id: r.id, label: fill(r.label), unit: '', tag: sg.tag, primary: false, alarm: true }]
-        : [{ id: r.id, label: fill(r.label), unit: '% LEL', tag: sg.tag, warn: gl.warn, danger: gl.danger, primary: false }];
-    }
-    const tag = r.field === 'regulatorOut' ? REGULATOR_TAGS[REGULATORS[a.device] ?? '']?.outletPressure : assetTags?.temperature;
-    const th = tagThresholds(tag);
-    return [
-      {
-        id: r.id,
-        label: fill(r.label),
-        unit: r.field === 'temperature' ? '°C' : 'bar',
-        tag,
-        before: a.readingsAtAlert?.[r.id],
-        warn: th?.warn,
-        danger: th?.danger,
-        primary: false,
-      },
-    ];
+    if (r.field === 'primary') return [primaryRow(r, cfg, c)];
+    if (r.field === 'areaSensors') return areaSensorRows(r, c);
+    if (r.field === 'smoke' || r.field === 'gas') return signalRows({ ...r, field: r.field }, c);
+    return [assetTagRow(r, c)];
   });
 }
 

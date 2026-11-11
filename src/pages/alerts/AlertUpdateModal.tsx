@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { AssignNotices, Button, Modal } from '@/components';
+import { AssignNotices, Button, Modal, DiscardConfirmButtons } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
 import { stateLabel, suggestsSupport, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
 import { useNow } from '@/lib/useNow';
@@ -41,14 +41,13 @@ export default function AlertUpdateModal({ alert: a, actor, onClose, onSubmit }:
   const resolvedLabel = stateLabel(cfg, 'resolved');
 
   const footer = confirming ? (
-    <>
-      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
-        Tiếp tục sửa
-      </Button>
-      <Button variant="primary" onClick={discard}>
-        {hasDraft ? 'Bỏ thay đổi (giữ bản nháp đã lưu)' : 'Bỏ thay đổi'}
-      </Button>
-    </>
+    <DiscardConfirmButtons
+      keepEditingRef={modal.keepEditingRef}
+      onKeepEditing={modal.keepEditing}
+      onDiscard={discard}
+      hasDraft={hasDraft}
+      draftDiscardLabel="Bỏ thay đổi (giữ bản nháp đã lưu)"
+    />
   ) : (
     <>
       <Button variant="subtle" onClick={f.saveDraft}>

@@ -1,6 +1,6 @@
 /** Khối giao diện của modal "Phân công xử lý cảnh báo". Tách từ AlertAssignModal. */
 import type { RefObject } from 'react';
-import { Button, SearchInput, StaffFilters, StaffList } from '@/components';
+import { Button, SearchInput, StaffFilters, StaffList, DiscardConfirmButtons } from '@/components';
 import { ALERT_STAFF } from '@/data/alertDetail';
 import type { planBulkAlertAssign } from '@/features/alerts/assign';
 import { shiftShortLabel } from '@/features/staff/availability';
@@ -112,16 +112,7 @@ export type AssignFooterProps = {
 /** Chân modal: hỏi bỏ thay đổi khi đang có nháp chưa lưu, hoặc Nháp + nút xác nhận. */
 export function AssignFooter(p: AssignFooterProps) {
   if (p.confirming) {
-    return (
-      <>
-        <Button ref={p.keepEditingRef} variant="subtle" onClick={p.onKeepEditing}>
-          Tiếp tục sửa
-        </Button>
-        <Button variant="primary" onClick={p.onDiscard}>
-          {p.hasDraft ? 'Bỏ thay đổi và xóa nháp' : 'Bỏ thay đổi'}
-        </Button>
-      </>
-    );
+    return <DiscardConfirmButtons keepEditingRef={p.keepEditingRef} onKeepEditing={p.onKeepEditing} onDiscard={p.onDiscard} hasDraft={p.hasDraft} />;
   }
   return (
     <>

@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type DragEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { formatFileSize } from '@/lib/fileSize';
 import { CloseIcon, FileIcon, UploadIcon } from '../Icon';
 
 export type AttachedFile = {
@@ -21,12 +22,6 @@ export type FileDropzoneProps = {
   label?: string;
   className?: string;
 };
-
-export function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
 
 /**
  * Vùng "Kéo thả hoặc chọn tệp để tải lên" + danh sách tệp (tên · dung lượng · xoá).

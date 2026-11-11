@@ -80,83 +80,78 @@ const iconTone: Record<StatusOptionTone, string> = {
  * icon 20px trên nhãn 14px, cao ~76px, viền line/30 bo 6px; được chọn = viền 1.5px theo tone + nền gradient nhạt, chữ đậm.
  * Dùng trong `StatusOptionGroup` (radiogroup + roving tabindex).
  */
-function StatusOptionCard({
-  label,
-  icon,
-  checked,
-  tone = 'primary',
-  disabled,
-  disabledHint,
-  describedBy,
-  tooltip,
-  toneLabel,
-  layout = 'stacked',
-  size = 'md',
-  tabIndex,
-  onSelect,
-  onKeyDown,
-  buttonRef,
-  className,
-}: StatusOptionCardProps) {
-  const inline = layout === 'inline';
-  if (layout === 'plain') {
-    return (
-      <button
-        ref={buttonRef}
-        type="button"
-        role="radio"
-        aria-checked={checked}
-        aria-disabled={disabled || undefined}
-        aria-describedby={describedBy}
-        tabIndex={tabIndex}
-        title={disabled ? disabledHint : tooltip}
-        onClick={disabled ? undefined : onSelect}
-        onKeyDown={onKeyDown}
-        className={cn(
-          'flex min-h-6 min-w-0 items-center gap-3 rounded-sm text-start text-base text-fg',
-          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-          className,
-        )}
-      >
-        <span
-          aria-hidden="true"
-          className={cn(
-            'grid size-4.5 shrink-0 place-items-center rounded-full border-1.5 transition-colors',
-            checked ? dotTone[tone] : 'border-fg-secondary/50',
-          )}
-        >
-          {checked && <span className="size-1.5 rounded-full bg-fg" />}
-        </span>
-        <span>
-          {label}
-          {disabled && disabledHint && !describedBy && <span className="sr-only"> – {disabledHint}</span>}
-        </span>
-      </button>
-    );
-  }
+function StatusOptionCard(props: StatusOptionCardProps) {
+  return props.layout === 'plain' ? <PlainOption {...props} /> : <CardOption {...props} />;
+}
+
+/** Thuộc tính chung của nút radio (mọi layout): khoá = `aria-disabled` + lý do ở title, bấm không chọn. */
+const radioAttrs = (p: StatusOptionCardProps) =>
+  ({
+    ref: p.buttonRef,
+    type: 'button',
+    role: 'radio',
+    'aria-checked': p.checked,
+    'aria-disabled': p.disabled || undefined,
+    'aria-describedby': p.describedBy,
+    tabIndex: p.tabIndex,
+    title: p.disabled ? p.disabledHint : p.tooltip,
+    onClick: p.disabled ? undefined : p.onSelect,
+    onKeyDown: p.onKeyDown,
+  }) as const;
+
+/** Nhãn + lý do khoá cho trình đọc màn hình (khi không có `describedBy` riêng). */
+function OptionLabel({ label, disabled, disabledHint, describedBy, className }: StatusOptionCardProps) {
+  return (
+    <span className={className}>
+      {label}
+      {disabled && disabledHint && !describedBy && <span className="sr-only"> – {disabledHint}</span>}
+    </span>
+  );
+}
+
+/** Layout `plain`: chấm radio + chữ, không khung ("Điều kiện kết thúc"). */
+function PlainOption(p: StatusOptionCardProps) {
+  const tone = p.tone ?? 'primary';
   return (
     <button
-      ref={buttonRef}
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      aria-disabled={disabled || undefined}
-      aria-describedby={describedBy}
-      tabIndex={tabIndex}
-      title={disabled ? disabledHint : tooltip}
-      onClick={disabled ? undefined : onSelect}
-      onKeyDown={onKeyDown}
+      {...radioAttrs(p)}
       className={cn(
-        'flex min-w-0 items-center justify-center rounded-md border transition-colors',
-        inline && size === 'sm' ? 'px-2.5' : 'px-3',
-        inline
-          ? cn('min-h-[50px] flex-row py-2', size === 'sm' ? 'gap-2 text-base' : 'gap-2.5 text-md')
-          : 'min-h-[76px] flex-col gap-2 py-3 text-base',
-        checked ? cn('border-1.5 font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary',
-        disabled ? 'cursor-not-allowed opacity-50' : !checked && 'hover:border-line hover:text-fg',
-        className,
+        'flex min-h-6 min-w-0 items-center gap-3 rounded-sm text-start text-base text-fg',
+        p.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+        p.className,
       )}
     >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'grid size-4.5 shrink-0 place-items-center rounded-full border-1.5 transition-colors',
+          p.checked ? dotTone[tone] : 'border-fg-secondary/50',
+        )}
+      >
+        {p.checked && <span className="size-1.5 rounded-full bg-fg" />}
+      </span>
+      <OptionLabel {...p} className={undefined} />
+    </button>
+  );
+}
+
+function cardClass({ layout = 'stacked', size = 'md', tone = 'primary', checked, disabled }: StatusOptionCardProps) {
+  const inline = layout === 'inline';
+  const sm = size === 'sm';
+  const shape = inline
+    ? cn('min-h-[50px] flex-row py-2', sm ? 'gap-2 px-2.5 text-base' : 'gap-2.5 px-3 text-md')
+    : 'min-h-[76px] flex-col gap-2 px-3 py-3 text-base';
+  const state = checked ? cn('border-1.5 font-semibold', checkedClass[tone]) : 'border-line/30 bg-surface-sunken/30 text-fg-secondary';
+  const interaction = disabled ? 'cursor-not-allowed opacity-50' : !checked && 'hover:border-line hover:text-fg';
+  return cn('flex min-w-0 items-center justify-center rounded-md border transition-colors', shape, state, interaction);
+}
+
+/** Layout `stacked` (icon trên nhãn) / `inline` (chấm radio cạnh nhãn) – ô có khung. */
+function CardOption(p: StatusOptionCardProps) {
+  const { icon, checked, tone = 'primary', toneLabel, size = 'md' } = p;
+  const inline = p.layout === 'inline';
+  return (
+    <button {...radioAttrs(p)} className={cn(cardClass(p), p.className)}>
       {inline && (
         <span
           aria-hidden="true"
@@ -174,10 +169,7 @@ function StatusOptionCard({
           {icon}
         </span>
       )}
-      <span className={cn((toneLabel || (inline && checked)) && labelTone[tone])}>
-        {label}
-        {disabled && disabledHint && !describedBy && <span className="sr-only"> – {disabledHint}</span>}
-      </span>
+      <OptionLabel {...p} className={cn((toneLabel || (inline && checked)) && labelTone[tone])} />
     </button>
   );
 }

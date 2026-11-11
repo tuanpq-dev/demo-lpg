@@ -18,8 +18,6 @@ export type EditTool = 'select' | 'translate' | 'rotate' | 'scale' | 'pipe';
 export type ObjectTransform = { id: string; position: Vec3; rotation: Vec3; scale: Vec3 };
 export type SelectHow = 'replace' | 'toggle' | 'add';
 
-export { EDIT_SNAP, SCENE_ASSET_MIME } from './editConstants';
-
 export type SceneEditState = {
   selected: readonly string[];
   /**
@@ -232,7 +230,3 @@ export function FloorOutline({ half, palette }: { half: number; palette: ScenePa
   ];
   return <Line points={pts} color={palette.neutral} lineWidth={1} dashed dashSize={1.5} gapSize={1} transparent opacity={0.35} />;
 }
-
-// Tách file (10/11/2026) – giữ đường import cũ.
-export { planeHit, startAttachDrag, startGroundDrag } from './editDrag';
-export { EditGizmo } from './EditGizmo';

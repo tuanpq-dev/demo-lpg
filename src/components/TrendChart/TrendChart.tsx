@@ -12,6 +12,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type XAxisTickContentProps,
 } from 'recharts';
 import { useTokenColors, type ColorToken } from '@/lib/tokens';
 import { ChartTooltip } from '../ChartCard';
@@ -75,7 +76,7 @@ function Common({
       interval={0}
       axisLine={false}
       tickLine={false}
-      tick={(p: { x: number; y: number; payload: { value: string }; index: number }) => (
+      tick={(p: XAxisTickContentProps) => (
         // Nhãn đầu căn trái, nhãn cuối căn phải để không bị cắt ở mép (Figma 53:330).
         <text
           x={p.x}
@@ -415,7 +416,7 @@ export function TargetTrendChart({
           axisLine={{ stroke: c('line', 0.6) }}
           tickLine={false}
           tickMargin={10}
-          tick={(p: { x: number; y: number; payload: { value: number }; index: number }) => (
+          tick={(p: XAxisTickContentProps) => (
             // Nhãn đầu căn trái, nhãn cuối căn phải (ảnh: "00:00" sát trục, "10:00" sát mép phải).
             // thinTicks: căn giữa mọi nhãn để phép bỏ bớt nhãn của recharts (tính theo tâm) không làm chồng chữ.
             <text

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { useDismiss } from '@/lib/useDismiss';
 import { cn } from '@/lib/cn';
 import { Icon } from '../Icon';
 
@@ -190,14 +191,7 @@ function useMenuEffects(
   listRef: RefObject<HTMLUListElement>,
   setOpen: (v: boolean) => void,
 ) {
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [open, rootRef, setOpen]);
+  useDismiss(open, rootRef, () => setOpen(false));
 
   useEffect(() => {
     if (open) listRef.current?.focus();

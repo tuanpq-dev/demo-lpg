@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useDismiss } from '@/lib/useDismiss';
 import { cn } from '@/lib/cn';
 import { Avatar } from '../Avatar';
 import { CloseIcon } from '../Icon';
@@ -180,14 +181,7 @@ export function Combobox(props: ComboboxProps) {
 
   useEffect(() => setActive(0), [query, open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) close();
-    };
-    document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
-  }, [open]);
+  useDismiss(open, rootRef, () => close());
 
   const close = () => {
     setOpen(false);

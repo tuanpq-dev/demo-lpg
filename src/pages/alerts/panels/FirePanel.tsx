@@ -7,6 +7,8 @@ import { ALARM_LABEL, DEVICE_LABEL, crossConfirmText, type SignalTone } from '@/
 import { formatMeasure } from '@/features/alerts/gauge';
 import { Section } from '../drawerParts';
 
+type FireReadings = ReturnType<typeof useFireReadings>;
+
 const TONE_TEXT: Record<SignalTone, string> = {
   success: 'text-success',
   warning: 'text-warning',
@@ -28,6 +30,47 @@ function liveText(r: AlertLiveReading | undefined, unit: string) {
   if (r.state === 'pending') return '—';
   if (r.state === 'lost') return <Lost />;
   return formatMeasure(r.value!, unit);
+}
+
+/** Nhiệt độ đầu báo trực tiếp (mất tín hiệu → "Mất tín hiệu", không số cũ) + dòng "Lúc cảnh báo". */
+function TempValue({ temp, unit, toneClass, alertValue }: { temp: FireReadings['temp']; unit: string; toneClass: string; alertValue: string }) {
+  return (
+    <span className="flex flex-col gap-0.5">
+      {temp.state === 'ok' ? (
+        <span className={cn('text-xl font-bold tabular-nums', toneClass)}>{formatMeasure(temp.value!, unit)}</span>
+      ) : temp.state === 'lost' ? (
+        <span className="text-md font-semibold">
+          <Lost size={18} />
+        </span>
+      ) : (
+        <span className="text-xl font-bold text-fg-secondary">—</span>
+      )}
+      <span className="text-sm text-fg-secondary">Lúc cảnh báo: {alertValue}</span>
+    </span>
+  );
+}
+
+const ALARM_CLASS = { active: 'text-danger-text', cleared: 'text-success' } as Partial<Record<FireReadings['alarm'], string>>;
+
+/** Trạng thái đầu báo: báo động (Đang báo động / Đã phục hồi) tách với thiết bị (Trực tuyến / Mất kết nối / Lỗi). */
+function DetectorState({ alarm, device }: Pick<FireReadings, 'alarm' | 'device'>) {
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span className={cn('text-md font-semibold', ALARM_CLASS[alarm] ?? 'text-fg-secondary')}>
+        {device === 'pending' ? '—' : ALARM_LABEL[alarm]}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-sm text-fg-secondary">
+        Thiết bị:
+        {device === 'lost' ? (
+          <span className="inline-flex items-center gap-1">
+            <SignalLostIcon size={12} className="shrink-0" /> {DEVICE_LABEL.lost}
+          </span>
+        ) : (
+          <span className={device === 'online' ? 'text-success' : device === 'fault' ? 'text-danger-text' : undefined}>{DEVICE_LABEL[device]}</span>
+        )}
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -52,49 +95,13 @@ export function FirePanel({ alert: a }: { alert: AlertRecord }) {
       id: 'temp',
       label: 'Nhiệt độ ghi nhận',
       hint: `Nhiệt độ tại đầu báo ${a.device} (số trực tiếp). Ngưỡng báo động ${formatMeasure(alarmAt, unit)} – cấu hình đầu báo.`,
-      value: (
-        <span className="flex flex-col gap-0.5">
-          {temp.state === 'ok' ? (
-            <span className={cn('text-xl font-bold tabular-nums', tempTone)}>{formatMeasure(temp.value!, unit)}</span>
-          ) : temp.state === 'lost' ? (
-            <span className="text-md font-semibold">
-              <Lost size={18} />
-            </span>
-          ) : (
-            <span className="text-xl font-bold text-fg-secondary">—</span>
-          )}
-          <span className="text-sm text-fg-secondary">Lúc cảnh báo: {formatMeasure(Number(a.value), a.unit)}</span>
-        </span>
-      ),
+      value: <TempValue temp={temp} unit={unit} toneClass={tempTone} alertValue={formatMeasure(Number(a.value), a.unit)} />,
     },
     { id: 'type', label: 'Loại tín hiệu', value: det?.signalType ?? cfg.label },
     {
       id: 'state',
       label: 'Trạng thái đầu báo',
-      value: (
-        <span className="flex flex-col gap-0.5">
-          <span
-            className={cn(
-              'text-md font-semibold',
-              r.alarm === 'active' ? 'text-danger-text' : r.alarm === 'cleared' ? 'text-success' : 'text-fg-secondary',
-            )}
-          >
-            {r.device === 'pending' ? '—' : ALARM_LABEL[r.alarm]}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-sm text-fg-secondary">
-            Thiết bị:
-            {r.device === 'lost' ? (
-              <span className="inline-flex items-center gap-1">
-                <SignalLostIcon size={12} className="shrink-0" /> {DEVICE_LABEL.lost}
-              </span>
-            ) : (
-              <span className={r.device === 'online' ? 'text-success' : r.device === 'fault' ? 'text-danger-text' : undefined}>
-                {DEVICE_LABEL[r.device]}
-              </span>
-            )}
-          </span>
-        </span>
-      ),
+      value: <DetectorState alarm={r.alarm} device={r.device} />,
     },
     {
       id: 'updated',

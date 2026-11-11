@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { AttachmentCard, Modal, UploadTile, formatFileSize } from '@/components';
+import { AttachmentCard, Modal, UploadTile } from '@/components';
+import { formatFileSize } from '@/lib/fileSize';
 import type { AlertRecord } from '@/data/alerts';
 import { UPLOAD_ACCEPT, UPLOAD_HINT } from '@/features/maintenance/progress';
 import { downloadSampleAttachment } from '../../shared/attachments';
@@ -40,19 +41,16 @@ export function UpdateFilesSection({ code, attachments, files, uploadError, onAd
           />
         ))}
         {files.map((f) => (
-          <div key={f.id} className="relative flex min-w-0">
-            <AttachmentCard fluid id={f.id} name={f.name} kind={f.kind} meta={formatFileSize(f.size)} notice="Chưa tải lên máy chủ" />
-            <button
-              type="button"
-              aria-label={`Bỏ tệp ${f.name}`}
-              onClick={() => onRemove(f)}
-              className="absolute right-1 top-1 inline-flex size-6 items-center justify-center rounded-sm text-fg-secondary hover:bg-surface-muted hover:text-fg"
-            >
-              <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
+          <AttachmentCard
+            key={f.id}
+            fluid
+            id={f.id}
+            name={f.name}
+            kind={f.kind}
+            meta={formatFileSize(f.size)}
+            notice="Chưa tải lên máy chủ"
+            onRemove={() => onRemove(f)}
+          />
         ))}
         <UploadTile accept={UPLOAD_ACCEPT} hint={UPLOAD_HINT} onFiles={onAdd} />
       </div>

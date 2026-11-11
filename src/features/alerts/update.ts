@@ -218,34 +218,47 @@ export type UpdateErrors = Partial<
 
 export const hasErrors = (e: UpdateErrors) => Object.entries(e).some(([k, v]) => (k === 'inspection' ? Object.keys(v as object).length > 0 : !!v));
 
-export function validateAlertUpdate(input: AlertUpdateInput, check: UpdateCheck, savedAt: Date): UpdateErrors {
+/** Tạm dừng / cần hỗ trợ: lý do (+ người hỗ trợ). */
+function holdErrors(input: AlertUpdateInput): UpdateErrors {
   const e: UpdateErrors = {};
-  const s = input.state;
-  const resolved = isResolvedState(s);
-  if (!check.config.states.includes(s)) e.state = 'Trạng thái không áp dụng cho loại cảnh báo này.';
-  if (resolved && !check.close.ok) e.close = check.close.message;
-  if (s === 'paused' && !input.holdReason.trim()) e.holdReason = 'Nhập lý do tạm dừng.';
-  if (s === 'needs-support') {
+  if (input.state === 'paused' && !input.holdReason.trim()) e.holdReason = 'Nhập lý do tạm dừng.';
+  if (input.state === 'needs-support') {
     if (!input.supportPeople.length) e.supportPeople = 'Chọn người hỗ trợ.';
     if (!input.holdReason.trim()) e.holdReason = 'Nhập lý do cần hỗ trợ.';
   }
-  if (resolved) {
-    if (!input.cause.trim()) e.cause = `Nhập nguyên nhân khi đánh dấu ${stateLabel(check.config, s)}.`;
-    if (!input.actionTaken.trim()) e.actionTaken = `Nhập nội dung đã xử lý khi đánh dấu ${stateLabel(check.config, s)}.`;
-  }
+  return e;
+}
+
+/** Đã xử lý / báo động giả: nguyên nhân + nội dung đã xử lý + theo dõi sau xử lý. */
+function resolvedErrors(input: AlertUpdateInput, check: UpdateCheck, savedAt: Date): UpdateErrors {
+  const e: UpdateErrors = {};
+  const label = stateLabel(check.config, input.state);
+  if (!check.close.ok) e.close = check.close.message;
+  if (!input.cause.trim()) e.cause = `Nhập nguyên nhân khi đánh dấu ${label}.`;
+  if (!input.actionTaken.trim()) e.actionTaken = `Nhập nội dung đã xử lý khi đánh dấu ${label}.`;
+  const followUp = followUpError(input.followUp, check.config.followUp.target !== undefined, savedAt);
+  if (followUp) e.followUp = followUp;
+  return e;
+}
+
+function followUpError(f: AlertUpdateInput['followUp'], needsTarget: boolean, savedAt: Date): string | undefined {
+  if (f.choice === 'custom' && !followUpWindow(f.choice, f.customAt, savedAt)) return 'Chọn thời điểm kiểm tra lại sau thời điểm lưu.';
+  if (f.choice === 0) return undefined;
+  if (needsTarget && (f.target === undefined || f.target <= 0)) return 'Nhập giá trị mục tiêu.';
+  if (!f.owner) return 'Chọn người chịu trách nhiệm theo dõi.';
+  return undefined;
+}
+
+export function validateAlertUpdate(input: AlertUpdateInput, check: UpdateCheck, savedAt: Date): UpdateErrors {
+  const s = input.state;
+  const e: UpdateErrors = { ...holdErrors(input), ...(isResolvedState(s) ? resolvedErrors(input, check, savedAt) : {}) };
+  if (!check.config.states.includes(s)) e.state = 'Trạng thái không áp dụng cho loại cảnh báo này.';
   const ins = inspectionErrors(input.inspection);
   if (Object.keys(ins).length) e.inspection = ins;
   const issue = check.config.issues.find((i) => i.id === input.issue.kind);
   if (issue?.needsNote && !input.issue.note.trim()) e.issueNote = 'Mô tả vấn đề phát sinh.';
   const ver = verificationErrors(input.verification, check.config, check.close.ok, s, check.verificationText);
   if (ver.length) e.verification = ver.join(' ');
-  if (resolved) {
-    const f = input.followUp;
-    const needsTarget = check.config.followUp.target !== undefined;
-    if (f.choice === 'custom' && !followUpWindow(f.choice, f.customAt, savedAt)) e.followUp = 'Chọn thời điểm kiểm tra lại sau thời điểm lưu.';
-    else if (f.choice !== 0 && needsTarget && (f.target === undefined || f.target <= 0)) e.followUp = 'Nhập giá trị mục tiêu.';
-    else if (f.choice !== 0 && !f.owner) e.followUp = 'Chọn người chịu trách nhiệm theo dõi.';
-  }
   return e;
 }
 
@@ -303,74 +316,91 @@ export function alertUpdate(a: AlertRecord, input: AlertUpdateInput, check: Upda
   const at = ctx.at.toISOString();
   const s = input.state;
   const resolved = isResolvedState(s);
-  const before = updateStateOf(a);
-  let guide = a.guide;
-  for (const step of check.steps) {
-    const e = input.inspection[step.id];
-    if (e) guide = writeInspection(guide, step.id, e, ctx);
-  }
-  const issueCfg = check.config.issues.find((i) => i.id === input.issue.kind);
   const people = [...new Set(input.supportPeople.map((p) => p.trim()).filter(Boolean))];
-  const win = resolved ? followUpWindow(input.followUp.choice, input.followUp.customAt, ctx.at) : null;
-  const target = check.config.followUp.target !== undefined ? input.followUp.target : undefined;
-  const followUp: AlertFollowUp | undefined = win
-    ? {
-        minutes: win.minutes,
-        until: win.until.toISOString(),
-        ...(target !== undefined ? { target } : {}),
-        unit: check.unit,
-        owner: input.followUp.owner,
-      }
-    : undefined;
-  const label = stateLabel(check.config, s);
-
-  // Ghi chú: các phần có nội dung, mỗi phần một dòng.
-  const noteLines = [
-    `Trạng thái: ${label}`,
-    s === 'paused' || s === 'needs-support' ? `Lý do: ${input.holdReason.trim()}` : '',
-    s === 'needs-support' ? `Người hỗ trợ: ${people.join(', ')}` : '',
-    input.cause.trim() ? `Nguyên nhân: ${input.cause.trim()}` : '',
-    input.actionTaken.trim() ? `Đã xử lý: ${input.actionTaken.trim()}` : '',
-    issueCfg && issueCfg.id !== 'none' ? `Vấn đề phát sinh: ${issueCfg.label}${input.issue.note.trim() ? ` – ${input.issue.note.trim()}` : ''}` : '',
-  ].filter(Boolean);
-
-  const close = check.close;
-  const historyText =
-    resolved && close.ok
-      ? resolvedHistory(a, input, check, close, followUp)
-      : s === 'paused'
-        ? `Tạm dừng: ${input.holdReason.trim()}`
-        : s === 'needs-support'
-          ? `Cần hỗ trợ: ${people.join(', ')} – ${input.holdReason.trim()}`
-          : before === 'paused' || before === 'needs-support'
-            ? `Tiếp tục xử lý (${label})`
-            : `Cập nhật xử lý: ${label}`;
-  const kind = resolved ? 'resolve' : s === 'paused' || s === 'needs-support' ? 'hold' : 'update';
+  const followUp = resolved ? followUpOf(input, check, ctx.at) : undefined;
+  const issueNote = input.issue.note.trim();
 
   const record: AlertRecord = {
     ...a,
     ...updateStateFields(s, input.holdReason, at),
-    guide,
+    guide: check.steps.reduce((g, step) => {
+      const e = input.inspection[step.id];
+      return e ? writeInspection(g, step.id, e, ctx) : g;
+    }, a.guide),
     readings: { source: input.readings.source, at: input.readings.at, rows: input.readings.rows.map((r) => ({ ...r })) },
     verification: [...input.verification],
-    issue:
-      input.issue.kind === 'none' ? undefined : { kind: input.issue.kind, ...(input.issue.note.trim() ? { note: input.issue.note.trim() } : {}) },
+    issue: input.issue.kind === 'none' ? undefined : { kind: input.issue.kind, ...(issueNote ? { note: issueNote } : {}) },
     cause: input.cause.trim() || a.cause,
     actionTaken: input.actionTaken.trim() || a.actionTaken,
     attachments: [...(a.attachments ?? []), ...input.files.map((x) => ({ name: x.name, size: x.size, kind: x.kind, isTemp: true }))],
     collaborators: s === 'needs-support' ? [...new Set([...(a.collaborators ?? []), ...people])] : a.collaborators,
     followUp,
-    notes: [...(a.notes ?? []), newNote(a, noteLines.join('\n'), ctx)],
-    history: withHistory(a, kind, historyText, ctx),
+    notes: [...(a.notes ?? []), newNote(a, updateNoteLines(input, check, people).join('\n'), ctx)],
+    history: withHistory(a, historyKind(s), updateHistoryText(a, input, check, people, followUp), ctx),
   };
+  const close = check.close;
   if (resolved && close.ok) {
     record.resolvedAt = at;
     record.resolvedBy = ctx.by;
-    if (check.config.close.rule === 'fire')
-      record.resolution = { kind: s === 'false-alarm' ? 'false-alarm' : 'handled', closedBy: close.basis === 'field' ? 'field' : 'live' };
-    else if (close.value !== undefined) record.closingReading = { value: close.value, source: close.basis === 'live' ? 'live' : 'measured' };
+    Object.assign(record, closeOutcome(check.config, s, close));
   }
   return { ok: true, record };
+}
+
+const isHold = (s: UpdateState) => s === 'paused' || s === 'needs-support';
+const historyKind = (s: UpdateState) => (isResolvedState(s) ? 'resolve' : isHold(s) ? 'hold' : 'update');
+
+/** Cửa sổ theo dõi sau xử lý (không chọn theo dõi → undefined). */
+function followUpOf(input: AlertUpdateInput, check: UpdateCheck, at: Date): AlertFollowUp | undefined {
+  const win = followUpWindow(input.followUp.choice, input.followUp.customAt, at);
+  if (!win) return undefined;
+  const target = check.config.followUp.target !== undefined ? input.followUp.target : undefined;
+  return {
+    minutes: win.minutes,
+    until: win.until.toISOString(),
+    ...(target !== undefined ? { target } : {}),
+    unit: check.unit,
+    owner: input.followUp.owner,
+  };
+}
+
+/** Ghi chú của lần cập nhật: các phần có nội dung, mỗi phần một dòng. */
+function updateNoteLines(input: AlertUpdateInput, check: UpdateCheck, people: readonly string[]): string[] {
+  const s = input.state;
+  const issueCfg = check.config.issues.find((i) => i.id === input.issue.kind);
+  const issueNote = input.issue.note.trim();
+  return [
+    `Trạng thái: ${stateLabel(check.config, s)}`,
+    isHold(s) ? `Lý do: ${input.holdReason.trim()}` : '',
+    s === 'needs-support' ? `Người hỗ trợ: ${people.join(', ')}` : '',
+    input.cause.trim() ? `Nguyên nhân: ${input.cause.trim()}` : '',
+    input.actionTaken.trim() ? `Đã xử lý: ${input.actionTaken.trim()}` : '',
+    issueCfg && issueCfg.id !== 'none' ? `Vấn đề phát sinh: ${issueCfg.label}${issueNote ? ` – ${issueNote}` : ''}` : '',
+  ].filter(Boolean);
+}
+
+/** Một dòng lịch sử: kết quả xử lý · tạm dừng · cần hỗ trợ · tiếp tục · cập nhật. */
+function updateHistoryText(
+  a: AlertRecord,
+  input: AlertUpdateInput,
+  check: UpdateCheck,
+  people: readonly string[],
+  followUp: AlertFollowUp | undefined,
+) {
+  const s = input.state;
+  const label = stateLabel(check.config, s);
+  if (isResolvedState(s) && check.close.ok) return resolvedHistory(a, input, check, check.close, followUp);
+  if (s === 'paused') return `Tạm dừng: ${input.holdReason.trim()}`;
+  if (s === 'needs-support') return `Cần hỗ trợ: ${people.join(', ')} – ${input.holdReason.trim()}`;
+  return isHold(updateStateOf(a)) ? `Tiếp tục xử lý (${label})` : `Cập nhật xử lý: ${label}`;
+}
+
+/** Kết quả đóng: cháy → `resolution` (thống kê báo động giả); áp suất/gas → `closingReading`. */
+function closeOutcome(cfg: AlertUpdateConfig, s: UpdateState, close: Extract<UpdateClose, { ok: true }>): Partial<AlertRecord> {
+  if (cfg.close.rule === 'fire')
+    return { resolution: { kind: s === 'false-alarm' ? 'false-alarm' : 'handled', closedBy: close.basis === 'field' ? 'field' : 'live' } };
+  if (close.value !== undefined) return { closingReading: { value: close.value, source: close.basis === 'live' ? 'live' : 'measured' } };
+  return {};
 }
 
 // ---- Nháp (sessionStorage theo mã – `createSessionDraft` ở data/alertDetail) ----

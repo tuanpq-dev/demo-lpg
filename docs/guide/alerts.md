@@ -179,7 +179,7 @@ Ghi (features/alerts/assign.ts → data/alerts.ts):
 | Khu / chuyên môn của nhân sự · chuyên môn theo loại cảnh báo | `STAFF[].areas/skills` (`mocks/maintenance.ts`), `STAFF_SKILLS` (`features/staff/skills.ts`), `ALERT_KINDS[kind].skills` |
 | Ẩn "Lúc cảnh báo" | `ALERT_KINDS[kind].numericValue: false` (sensor-signal-lost, pump-standby) |
 
-`features/alerts/assign.ts` không import mock nhân sự (dùng được ở `data/alerts` – bundle chính); phần cần danh mục ca/nhân sự nằm ở `assignStaff.ts` (chỉ chunk trang Cảnh báo). Nhãn `Availability` ở `components/StaffPicker/availability.ts` (component không import mock).
+`features/alerts/assign.ts` không import mock nhân sự (dùng được ở `data/alerts` – bundle chính); phần cần danh mục ca/nhân sự nằm ở `assignStaff.ts` (chỉ chunk trang Cảnh báo). Nhãn `Availability` ở `components/domain/StaffPicker/availability.ts` (component không import mock).
 
 **Mã mock để thử** (`VITE_AUTH=off npx vite`; thêm `&now=2026-10-27T10:45` (dev) để Ca 1 đang làm như ảnh):
 

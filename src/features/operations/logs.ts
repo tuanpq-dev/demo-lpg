@@ -5,6 +5,7 @@
 import type { AlertRecord } from '@/features/alerts/types';
 import { foldSearch } from '@/lib/foldSearch';
 import { dayNumber, formatDayVi, parsePlantDateTime, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
+import { CSV_BOM, toCsv } from '@/lib/download';
 
 export const LOG_CATEGORIES = ['operation', 'alert', 'user-action', 'connection'] as const;
 export type LogCategory = (typeof LOG_CATEGORIES)[number];
@@ -213,7 +214,6 @@ export function logTimeText(e: Pick<OperationLogEvent, 'at'>, now: Date): { time
 
 /** CSV các sự kiện (UTF-8 BOM để Excel đọc đúng tiếng Việt; CRLF). */
 export function logsToCsv(rows: readonly OperationLogEvent[]): string {
-  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const head = ['Ngày', 'Thời gian', 'Mức độ', 'Mã SK', 'Loại', 'Sự kiện / Hành động', 'Khu vực', 'Thiết bị', 'Trạng thái', 'Người thực hiện'];
   const lines = rows.map((e) => {
     const at = new Date(e.at);
@@ -228,9 +228,7 @@ export function logsToCsv(rows: readonly OperationLogEvent[]): string {
       e.device,
       LOG_STATUS_LABEL[e.status],
       e.actor ?? '',
-    ]
-      .map(esc)
-      .join(',');
+    ];
   });
-  return '\uFEFF' + [head.map(esc).join(','), ...lines].join('\r\n');
+  return CSV_BOM + toCsv([head, ...lines]);
 }

@@ -2,7 +2,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DEFAULT_OPERATION_DEVICE, operationDevicePath } from '@/app/assetRoutes';
 import { RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StatusPill } from '@/components';
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
@@ -102,30 +102,23 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
     />
   );
 
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError
-          title="Không tải được thiết bị"
-          error={error}
-          onRetry={refetch}
-          actions={<Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>}
-        />
-      </Page>
-    );
-  }
-
-  if (status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <div className="reveal-delayed flex flex-col gap-6">
-          <Placeholder label="Đang tải…" height={120} />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <Placeholder label="Đang tải…" height={720} />
-            <Placeholder label="Đang tải…" height={720} />
+  if (status !== 'success') {
+    return pageFallback(
+      { status, error, refetch },
+      {
+        header,
+        errorTitle: 'Không tải được thiết bị',
+        errorActions: <Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>,
+        skeleton: (
+          <div className="reveal-delayed flex flex-col gap-6">
+            <Placeholder label="Đang tải…" height={120} />
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <Placeholder label="Đang tải…" height={720} />
+              <Placeholder label="Đang tải…" height={720} />
+            </div>
           </div>
-        </div>
-      </Page>
+        ),
+      },
     );
   }
 

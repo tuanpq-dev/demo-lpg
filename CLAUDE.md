@@ -72,6 +72,7 @@
 
 ## 7. Việc tiếp theo
 - 🔍 **Nhánh `chore/fe-hardening` (10/11, chưa commit)**: trang lỗi 403/404/500 + `errorElement` + tự tải lại khi lỗi chunk, title theo route, ScrollRestoration, banner mất mạng, chuông/tab Cảnh báo tính từ dữ liệu; tách vendor chunk, SVG không inline, ảnh AVIF/WebP; ESLint/Prettier/EditorConfig; tách SceneViewer, PropertiesPanel, KpiCard, DrawerFooter, AlertsPage, AlertAssignModal, SubmitReviewModal, ReportSignModal, Select; quyền gộp về `packages/shared/src/roles.ts` (cần `npm run build:shared` cho BE); xoá test, playground, mã giả lập, Netlify – chi tiết `docs/decisions.md`.
+- 🔍 **Nhánh `refactor/fe-cleanup` (11/11, tách từ `gitlab-main`, chưa commit)**: lint 37 warning → 0, trùng lặp 0,35 → 0,21 %, `src/components/domain/`, helper chung (`pageFallback`, `DiscardConfirmButtons`, `useDismiss`, `lib/download`, `DeviceLayout`), recharts 3 / eslint 9.39 – chi tiết `docs/decisions.md` (đợt 3).
 - ⚠ **Ưu tiên cao**: header tràn ngang ở 390 px trên MỌI trang (trang nền ~605 px) – dưới `md` gom NavTabs/actions của PageHeader vào menu; kiểm 390/768 mọi trang.
 - Nút chuông header lỗi axe `label-content-name-mismatch` (mọi trang); số chuông còn tĩnh – derive từ cảnh báo chưa xác nhận.
 - Nối API thật cho `fetch*` trong `src/data/*` (hợp đồng cần bổ sung: `docs/decisions.md`); `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.

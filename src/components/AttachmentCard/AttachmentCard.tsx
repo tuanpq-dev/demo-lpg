@@ -17,6 +17,8 @@ export type AttachmentCardProps = {
   fluid?: boolean;
   onView?: (id: string) => void;
   onDownload?: (id: string) => void;
+  /** Tệp tạm bỏ được → nút X góc phải trên ("Bỏ tệp …"). */
+  onRemove?: (id: string) => void;
   className?: string;
 };
 
@@ -44,13 +46,13 @@ function MiniButton({ label, onClick, children }: { label: string; onClick?: () 
  * Thẻ tệp đính kèm – "Ảnh và tài liệu" ảnh MT-00128 (kích thước `--attachment-card-width/height` – ước lượng; viền line/30, bo 4px): icon loại tệp
  * ở giữa trên, tên tệp, hai nút "Xem" / "Tải xuống" (tên truy cập kèm tên tệp).
  */
-export function AttachmentCard({ id, name, kind, meta, notice, fluid, onView, onDownload, className }: AttachmentCardProps) {
+export function AttachmentCard({ id, name, kind, meta, notice, fluid, onView, onDownload, onRemove, className }: AttachmentCardProps) {
   const Icon = ICONS[attachmentKind(name, kind)];
   return (
     <article
       aria-label={name}
       className={cn(
-        'flex min-h-[var(--attachment-card-height)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5',
+        'relative flex min-h-[var(--attachment-card-height)] max-w-full flex-col items-center gap-2 rounded-sm border border-line/30 bg-surface-sunken/30 px-3 pb-3 pt-3.5',
         fluid ? 'w-full min-w-0' : 'w-[var(--attachment-card-width)]',
         className,
       )}
@@ -73,6 +75,18 @@ export function AttachmentCard({ id, name, kind, meta, notice, fluid, onView, on
           Tải xuống
         </MiniButton>
       </div>
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={`Bỏ tệp ${name}`}
+          onClick={() => onRemove(id)}
+          className="absolute right-1 top-1 inline-flex size-6 items-center justify-center rounded-sm text-fg-secondary hover:bg-surface-muted hover:text-fg"
+        >
+          <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
     </article>
   );
 }

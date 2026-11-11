@@ -3,10 +3,10 @@ import { AssetModelPanel } from '@/app/AssetModelPanel';
 import { useCan } from '@/app/auth';
 import { ClockButton, LiveDataButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { assetV101Image, plantMapImage } from '@/assets/digital-twin';
-import { Button, HistoryIcon, Icon, MapIcon, PageHeader, StatusPill } from '@/components';
+import { Button, HistoryIcon, Icon, MapIcon, PageHeader, StatusPill, type StatusPillTone } from '@/components';
 import { useAlerts } from '@/data/alerts';
 import {
   EVENT_PARAMS,
@@ -36,6 +36,57 @@ const FALLBACK_IMAGE: Record<string, ImageAsset> = { 'V-101': assetV101Image };
 const matchEvent = (e: AssetEvent, v: { hide: string | null }) => !parseHiddenTypes(v.hide).includes(e.type);
 const sortEvents = (a: AssetEvent, b: AssetEvent) => newestEventFirst(a, b);
 const EVENT_ROWS = 5;
+
+type AssetData = NonNullable<ReturnType<typeof useAssetDetail>['data']>;
+type AssetLive = NonNullable<ReturnType<typeof useAssetDetail>['live']>;
+
+/** % thể tích lỏng, nhãn nổi trên mô hình 3D (nhiệt độ vòm bồn) và mô tả cho trình đọc màn hình. */
+function modelText(data: AssetData, live: AssetLive) {
+  const { level, pressure, temperature, storageStatus } = live;
+  const liquidPct = level.state === 'ok' ? levelPercentToVolumePercent(level.value!) : undefined;
+  const tempLine = temperature.state === 'ok' ? `Temp: ${fixed(temperature.value!)}°C` : temperature.state === 'lost' ? SIGNAL_LOST_LABEL : 'Temp: —';
+  const levelText = liquidPct !== undefined ? `${fixed(liquidPct)}%` : 'không có số liệu';
+  return {
+    liquidPct,
+    tag: { title: `${data.id} DOME`, line: tempLine, signalLost: lost(temperature) },
+    description: `${data.name}: mức bồn ${levelText}, áp suất ${readingText(pressure, 1, ' bar')}, nhiệt độ ${readingText(temperature, 1, ' °C')}, trạng thái tồn chứa ${STATUS_LABEL[storageStatus]}.`,
+  };
+}
+
+/** Nút header: trạng thái hệ thống · đồng hồ · dữ liệu trực tiếp · xem trên bản đồ · lịch sử cảnh báo · tạo yêu cầu (nếu có quyền). */
+function AssetHeaderActions({
+  status,
+  onMap,
+  onAlerts,
+  onCreate,
+  createDisabled,
+}: {
+  status?: { tone: StatusPillTone; label: string };
+  onMap: () => void;
+  onAlerts: () => void;
+  onCreate?: () => void;
+  createDisabled: boolean;
+}) {
+  return (
+    <>
+      {status && <StatusPill tone={status.tone}>{status.label}</StatusPill>}
+      <ClockButton />
+      <LiveDataButton />
+      <Button icon={<MapIcon size={16} />} onClick={onMap}>
+        Xem trên bản đồ
+      </Button>
+      {/* q (không phải device): khớp cả cảnh báo của tag/van an toàn thuộc bồn, giống thẻ "Cảnh báo liên quan". */}
+      <Button icon={<HistoryIcon size={16} />} onClick={onAlerts}>
+        Lịch sử cảnh báo
+      </Button>
+      {onCreate && (
+        <Button variant="primary" icon={<Icon name="add" />} onClick={onCreate} disabled={createDisabled}>
+          Tạo yêu cầu bảo trì
+        </Button>
+      )}
+    </>
+  );
+}
 
 /**
  * Chi tiết tài sản (GĐ 5D) – `/map/:assetId`, theo ảnh "Bồn LPG V-101" (chưa có node Figma).
@@ -67,55 +118,37 @@ export function AssetDetail({ assetId }: { assetId: string }) {
       breadcrumb={[{ label: 'Bản đồ nội khu' }, { label: data?.area ?? '…' }]}
       title={data?.name ?? assetId}
       actions={
-        <>
-          {data && <StatusPill tone={data.systemStatus.tone}>{data.systemStatus.label}</StatusPill>}
-          <ClockButton />
-          <LiveDataButton />
-          <Button icon={<MapIcon size={16} />} onClick={() => void navigate(`/overview?map=3d&focus=${encodeURIComponent(assetId)}`)}>
-            Xem trên bản đồ
-          </Button>
-          {/* q (không phải device): khớp cả cảnh báo của tag/van an toàn thuộc bồn, giống thẻ "Cảnh báo liên quan". */}
-          <Button icon={<HistoryIcon size={16} />} onClick={() => void navigate(alertsUrl)}>
-            Lịch sử cảnh báo
-          </Button>
-          {canWrite && (
-            <Button variant="primary" icon={<Icon name="add" />} onClick={create.openCreate} disabled={!data}>
-              Tạo yêu cầu bảo trì
-            </Button>
-          )}
-        </>
+        <AssetHeaderActions
+          status={data?.systemStatus}
+          onMap={() => void navigate(`/overview?map=3d&focus=${encodeURIComponent(assetId)}`)}
+          onAlerts={() => void navigate(alertsUrl)}
+          onCreate={canWrite ? create.openCreate : undefined}
+          createDisabled={!data}
+        />
       }
     />
   );
 
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError
-          title="Không tải được tài sản"
-          error={error}
-          onRetry={refetch}
-          actions={<Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>}
-        />
-      </Page>
+  if (status !== 'success' || !live) {
+    // Đã có dữ liệu nhưng chưa có số trực tiếp → vẫn là "đang tải".
+    return pageFallback(
+      { status: status === 'error' ? 'error' : 'loading', error, refetch },
+      {
+        header,
+        errorTitle: 'Không tải được tài sản',
+        errorActions: <Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>,
+        skeleton: (
+          <div className="reveal-delayed grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,2.85fr)_272px]">
+            <Placeholder label="Đang tải…" height={688} />
+            <Placeholder label="Đang tải…" height={688} />
+            <Placeholder label="Đang tải…" height={688} />
+          </div>
+        ),
+      },
     );
   }
 
-  if (status === 'loading' || !live) {
-    return (
-      <Page pageHeader={header}>
-        <div className="reveal-delayed grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,2.85fr)_272px]">
-          <Placeholder label="Đang tải…" height={688} />
-          <Placeholder label="Đang tải…" height={688} />
-          <Placeholder label="Đang tải…" height={688} />
-        </div>
-      </Page>
-    );
-  }
-
-  const { level, pressure, temperature, storageStatus } = live;
-  const liquidPct = level.state === 'ok' ? levelPercentToVolumePercent(level.value!) : undefined;
-  const tempLine = temperature.state === 'ok' ? `Temp: ${fixed(temperature.value!)}°C` : temperature.state === 'lost' ? SIGNAL_LOST_LABEL : 'Temp: —';
+  const { liquidPct, tag, description } = modelText(data, live);
 
   return (
     <Page pageHeader={header}>
@@ -125,8 +158,8 @@ export function AssetDetail({ assetId }: { assetId: string }) {
           sceneId={data.sceneId}
           assetName={data.name}
           liveData={liveData}
-          tag={{ title: `${data.id} DOME`, line: tempLine, signalLost: lost(temperature) }}
-          description={`${data.name}: mức bồn ${liquidPct !== undefined ? `${fixed(liquidPct)}%` : 'không có số liệu'}, áp suất ${readingText(pressure, 1, ' bar')}, nhiệt độ ${readingText(temperature, 1, ' °C')}, trạng thái tồn chứa ${STATUS_LABEL[storageStatus]}.`}
+          tag={tag}
+          description={description}
           fallbackImage={FALLBACK_IMAGE[data.id] ?? plantMapImage}
           className="min-h-[420px] lg:min-h-0"
         />

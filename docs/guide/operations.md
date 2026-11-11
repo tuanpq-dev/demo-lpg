@@ -18,7 +18,7 @@ Menu "Vận hành" → mục con đầu (`operation-main`, nhãn "Vận hành") 
 
 ```
 DeviceDetailRoute (chuẩn hoá mã / không tìm thấy) → DeviceDetailPage   src/pages/operations/DeviceDetailPage.tsx
-  khung chung (header, tải/lỗi) → theo `data.kind`: VaporizerView.tsx · PlcScadaView.tsx; thẻ cột phải chung: DeviceSideCards.tsx
+  khung chung (header, tải/lỗi) → theo `data.kind`: VaporizerView.tsx · PlcScadaView.tsx (chỉ phần riêng: KPI, trạng thái nhanh, sơ đồ, chuỗi xu hướng, cột bảng); bố cục 4 KPI + 2 cột + cột phải chung, `DiagramCard`, `TrendCard`: DeviceLayout.tsx; thẻ cột phải: DeviceSideCards.tsx
   useOperationDevice(id)                       src/data/operationDevice.ts
     ├─ fetchOperationDevice → mocks/operations.ts   cấu hình TĨNH: tham số + ngưỡng, PLC, nhật ký, số tạm
     ├─ useLiveData(tag tham số + PLC + trạng thái chạy E-101A/E-101B)
@@ -62,7 +62,7 @@ DeviceDetailRoute (chuẩn hoá mã / không tìm thấy) → DeviceDetailPage  
 | Mock | `mocks/operations.ts` `plcScadaDevices` | 6 nhóm nguồn (tag thật của V-101, E-101A/B, PR-101, tuyến chính, gas, báo cháy) → `monitoredTags` 21; ngưỡng độ trễ 3 s, mất gói 5 %, tối thiểu 18 tag; `relatedKinds: ['sensor-signal-lost']`; uptime, hạng mục bảo trì, nhật ký = số tạm |
 | Logic thuần | `features/operations/plcScada.ts` (+ test) | `readStateTag`/`stateView` (tag chuỗi, mất tín hiệu → xám), `plcStatus`/`scadaStatus`, `tagAvailability`, `sourceState`, `plcScadaRows` (9 dòng bảng), `uptimeText` |
 | Dữ liệu | `data/operationDevice.ts` | `AnyOperationDevice`, `deviceLiveTags`, `plcLatencyHistory`, `deriveDeviceAlerts(…, kinds)` |
-| Component | `components/PlcScadaDiagram` | Sơ đồ kết nối (nút nguồn → PLC → SCADA/HMI) |
+| Component | `components/domain/PlcScadaDiagram` | Sơ đồ kết nối (nút nguồn → PLC → SCADA/HMI) |
 | Trang | `pages/operations/PlcScadaView.tsx` | KPI (PLC, SCADA, tag khả dụng, độ trễ) · sơ đồ · xu hướng 60 phút (độ trễ + % tag khả dụng, ngưỡng 3 s) · bảng · trạng thái nhanh (PLC, SCADA, cảnh báo nghiêm trọng, tag lỗi, đồng bộ, chế độ, thời gian hoạt động liên tục) · cảnh báo · bảo trì (+ "Bảo trì tiếp theo") · dữ liệu PLC/SCADA · nhật ký |
 
 - **Đổi thiết bị**: ô "Thiết bị ( mã )" CẠNH TIÊU ĐỀ (`PageHeader titleEnd`, rộng cố định 200 px – không xô vị trí khi chip Tên/Khu vực đổi độ rộng theo thiết bị; Select `filter` `fullWidth`, `OPERATION_DEVICE_OPTIONS` – mọi thiết bị có trang, chỉ mã vì tên đã ở chip "Tên") → `/operations/devices/<mã>` giữ query. Thay cho màn danh sách "Giám sát thiết bị" tới khi có thiết kế (questions 13.5, 13.8).

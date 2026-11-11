@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Badge, Button, DatePicker, FormField, Modal, Select, Textarea } from '@/components';
+import { Badge, Button, DatePicker, FormField, Modal, Select, Textarea, DiscardConfirmButtons } from '@/components';
 import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
 import { clearSubmitDraft, loadSubmitDraft, saveSubmitDraft, useRelatedDevice, type SubmitDraft } from '@/data/maintenanceDetail';
 import type { ProgressFile } from '@/features/maintenance/progress';
@@ -100,14 +100,7 @@ export function SubmitReviewModal({ record: r, onClose, onSubmit, prefill }: Sub
   };
 
   const footer = confirming ? (
-    <>
-      <Button ref={modal.keepEditingRef} variant="subtle" onClick={modal.keepEditing}>
-        Tiếp tục sửa
-      </Button>
-      <Button variant="primary" onClick={discard}>
-        {hasDraft ? 'Bỏ thay đổi và xóa nháp' : 'Bỏ thay đổi'}
-      </Button>
-    </>
+    <DiscardConfirmButtons keepEditingRef={modal.keepEditingRef} onKeepEditing={modal.keepEditing} onDiscard={discard} hasDraft={hasDraft} />
   ) : (
     <>
       <Button variant="plain" onClick={requestClose}>

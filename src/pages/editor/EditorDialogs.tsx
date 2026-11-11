@@ -80,55 +80,8 @@ export function EditorDialogs({
         errors={dialog?.kind === 'import-error' ? dialog.errors : null}
         onClose={onClose}
       />
-      <ConfirmDialog
-        open={dialog?.kind === 'confirm'}
-        title={dialog?.kind === 'confirm' ? dialog.title : ''}
-        confirmLabel={dialog?.kind === 'confirm' ? dialog.confirmLabel : ''}
-        danger
-        onClose={onClose}
-        onConfirm={() => {
-          if (dialog?.kind !== 'confirm') return;
-          onClose();
-          dialog.run();
-        }}
-      >
-        {dialog?.kind === 'confirm' ? dialog.message : ''}
-      </ConfirmDialog>
-      <ConfirmDialog
-        open={dialog?.kind === 'delete'}
-        title="Xoá – còn ống liên quan"
-        confirmLabel="Xoá cả ống"
-        danger
-        altLabel={dialog?.kind === 'delete' && dialog.impact.connected.length ? 'Giữ ống' : undefined}
-        onAlt={() => {
-          if (dialog?.kind !== 'delete') return;
-          onClose();
-          dialog.run('keep');
-        }}
-        onClose={onClose}
-        onConfirm={() => {
-          if (dialog?.kind !== 'delete') return;
-          onClose();
-          dialog.run('delete');
-        }}
-      >
-        {dialog?.kind === 'delete' && (
-          <div className="flex flex-col gap-2">
-            {dialog.impact.connected.length > 0 && (
-              <p>
-                Ống nối vào {dialog.impact.objects.join(', ')}: <b className="text-fg">{dialog.impact.connected.join(', ')}</b>. Giữ ống (đầu nối
-                thành điểm tự do, hình ống không đổi) hay xoá cả ống (kèm object gắn trên ống)?
-              </p>
-            )}
-            {dialog.impact.attached.length > 0 && (
-              <p>
-                Object gắn trên ống bị xoá cũng bị xoá: <b className="text-fg">{dialog.impact.attached.join(', ')}</b>.
-              </p>
-            )}
-            <p className="text-sm text-fg-muted">Hoàn tác được bằng Ctrl+Z.</p>
-          </div>
-        )}
-      </ConfirmDialog>
+      <GenericConfirm dialog={dialog?.kind === 'confirm' ? dialog : null} onClose={onClose} />
+      <DeleteConfirm dialog={dialog?.kind === 'delete' ? dialog : null} onClose={onClose} />
       <ConfirmDialog
         open={blocker.state === 'blocked'}
         title="Rời Scene Editor?"
@@ -140,5 +93,64 @@ export function EditorDialogs({
         Có thay đổi chưa lưu (bản nháp tự lưu vẫn còn để khôi phục lần sau). Rời trang?
       </ConfirmDialog>
     </>
+  );
+}
+
+/** Xác nhận chung (bỏ thay đổi, mở cảnh khác…): đóng hộp rồi chạy hành động. */
+function GenericConfirm({ dialog, onClose }: { dialog: Extract<EditorDialog, { kind: 'confirm' }> | null; onClose: () => void }) {
+  return (
+    <ConfirmDialog
+      open={!!dialog}
+      title={dialog?.title ?? ''}
+      confirmLabel={dialog?.confirmLabel ?? ''}
+      danger
+      onClose={onClose}
+      onConfirm={() => {
+        if (!dialog) return;
+        onClose();
+        dialog.run();
+      }}
+    >
+      {dialog?.message ?? ''}
+    </ConfirmDialog>
+  );
+}
+
+/** Xoá còn ống liên quan: giữ ống (đầu nối thành điểm tự do) hoặc xoá cả ống + object gắn trên ống. */
+function DeleteConfirm({ dialog, onClose }: { dialog: Extract<EditorDialog, { kind: 'delete' }> | null; onClose: () => void }) {
+  const impact = dialog?.impact;
+  const run = (pipes: 'keep' | 'delete') => {
+    if (!dialog) return;
+    onClose();
+    dialog.run(pipes);
+  };
+  return (
+    <ConfirmDialog
+      open={!!dialog}
+      title="Xoá – còn ống liên quan"
+      confirmLabel="Xoá cả ống"
+      danger
+      altLabel={impact?.connected.length ? 'Giữ ống' : undefined}
+      onAlt={() => run('keep')}
+      onClose={onClose}
+      onConfirm={() => run('delete')}
+    >
+      {impact && (
+        <div className="flex flex-col gap-2">
+          {impact.connected.length > 0 && (
+            <p>
+              Ống nối vào {impact.objects.join(', ')}: <b className="text-fg">{impact.connected.join(', ')}</b>. Giữ ống (đầu nối thành điểm tự do,
+              hình ống không đổi) hay xoá cả ống (kèm object gắn trên ống)?
+            </p>
+          )}
+          {impact.attached.length > 0 && (
+            <p>
+              Object gắn trên ống bị xoá cũng bị xoá: <b className="text-fg">{impact.attached.join(', ')}</b>.
+            </p>
+          )}
+          <p className="text-sm text-fg-muted">Hoàn tác được bằng Ctrl+Z.</p>
+        </div>
+      )}
+    </ConfirmDialog>
   );
 }

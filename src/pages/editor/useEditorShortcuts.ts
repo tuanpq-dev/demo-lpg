@@ -5,6 +5,37 @@ import type { EditorActions } from './useEditorActions';
 
 const ui = () => useEditorUi.getState();
 
+type ShortcutCtx = { actions: EditorActions; flash: (msg: string) => void };
+type Shortcut = (c: ShortcutCtx, e: KeyboardEvent) => void;
+
+/** Ctrl/⌘ + phím (khoá theo `key` chữ thường). */
+const MOD_KEYS: Partial<Record<string, Shortcut>> = {
+  z: (_, e) => (e.shiftKey ? redo() : undo()),
+  y: () => redo(),
+  d: ({ actions }) => actions.duplicateSelection(),
+  c: ({ actions, flash }) => {
+    const n = actions.copySelection();
+    if (n) flash(`Đã copy ${n} object`);
+  },
+  v: ({ actions }) => actions.paste(),
+  a: ({ actions }) => actions.selectAll(),
+};
+
+/** Phím đơn: công cụ Q W E R P, O trực giao, G lưới, F căn khung, Delete/Backspace xoá, Esc bỏ chọn. */
+const PLAIN_KEYS: Partial<Record<string, Shortcut>> = {
+  q: () => ui().setTool('select'),
+  w: () => ui().setTool('translate'),
+  e: () => ui().setTool('rotate'),
+  r: () => ui().setTool('scale'),
+  p: () => ui().setTool('pipe'),
+  o: () => ui().toggle('ortho'),
+  g: () => ui().toggle('grid'),
+  f: ({ actions }) => actions.fit(),
+  delete: ({ actions }) => actions.deleteSelection(),
+  backspace: ({ actions }) => actions.deleteSelection(),
+  escape: () => ui().setSelection([]),
+};
+
 /**
  * Phím tắt Scene Editor (không chạy khi đang gõ / có hộp thoại): Ctrl+S lưu (cả khi đang ở ô nhập – rời ô trước để chốt
  * giá trị), Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y, Ctrl+D / C / V / A, Q W E R P công cụ, O trực giao, G lưới, F căn khung,
@@ -24,28 +55,10 @@ export function useEditorShortcuts({ actions, save, flash }: { actions: EditorAc
       }
       if (isTyping(e.target)) return;
       const k = e.key.toLowerCase();
-      let handled = true;
-      if (mod && k === 'z' && e.shiftKey) redo();
-      else if (mod && k === 'z') undo();
-      else if (mod && k === 'y') redo();
-      else if (mod && k === 'd') actions.duplicateSelection();
-      else if (mod && k === 'c') {
-        const n = actions.copySelection();
-        if (n) flash(`Đã copy ${n} object`);
-      } else if (mod && k === 'v') actions.paste();
-      else if (mod && k === 'a') actions.selectAll();
-      else if (mod || e.altKey) handled = false;
-      else if (k === 'q') ui().setTool('select');
-      else if (k === 'w') ui().setTool('translate');
-      else if (k === 'e') ui().setTool('rotate');
-      else if (k === 'r') ui().setTool('scale');
-      else if (k === 'p') ui().setTool('pipe');
-      else if (k === 'o') ui().toggle('ortho');
-      else if (k === 'g') ui().toggle('grid');
-      else if (k === 'f') actions.fit();
-      else if (e.key === 'Delete' || e.key === 'Backspace') actions.deleteSelection();
-      else if (e.key === 'Escape') ui().setSelection([]);
-      else handled = false;
+      // Alt + phím: để trình duyệt / hệ điều hành xử lý.
+      const run = mod ? MOD_KEYS[k] : e.altKey ? undefined : PLAIN_KEYS[k];
+      const handled = !!run;
+      run?.({ actions, flash }, e);
       if (handled) e.preventDefault();
     };
     window.addEventListener('keydown', onKey);

@@ -57,6 +57,24 @@ export function ConfigSummaryCard({
   );
 }
 
+/** 4 ô đếm tag giám sát: khả dụng / lỗi / mất kết nối / cũ (chưa có dữ liệu → "—"). */
+function healthTiles(h: TagHealth | undefined): { id: string; label: string; value: string; warn: boolean }[] {
+  const count = (n: number | undefined) => (h ? String(n) : '—');
+  return [
+    { id: 'ok', label: 'Thông số khả dụng', value: h ? `${h.ok}/${h.total}` : '—', warn: !!h && h.ok < h.total },
+    { id: 'bad', label: 'Cảm biến lỗi', value: count(h?.bad), warn: !!h && h.bad > 0 },
+    { id: 'missing', label: 'Mất kết nối', value: count(h?.missing), warn: !!h && h.missing > 0 },
+    { id: 'stale', label: 'Dữ liệu cũ', value: count(h?.stale), warn: !!h && h.stale > 0 },
+  ];
+}
+
+const READY_BOX: Record<string, string> = {
+  success: 'border-success bg-success/10 text-success',
+  warning: 'border-warning bg-warning/10 text-warning',
+  neutral: 'border-line bg-surface-raised text-fg-secondary',
+};
+const READY_TEXT: Record<string, string> = { success: 'text-success', warning: 'text-warning', neutral: 'text-fg-secondary' };
+
 /**
  * "Trạng thái sẵn sàng" (ảnh `readiness.png`): ô icon + câu trạng thái · "Dữ liệu PLC/SCADA: Đã đồng bộ" · 4 ô đếm 21 tag
  * giám sát (khả dụng / lỗi / mất kết nối / cũ) · giờ cập nhật cuối. Lý do chưa sẵn sàng hiện dưới câu trạng thái.
@@ -64,32 +82,18 @@ export function ConfigSummaryCard({
 export function ReadinessCard({ readiness, reason, health }: { readiness: Readiness; reason?: string; health: TagHealth | undefined }) {
   const ok = readiness.tone === 'success';
   const sync: DataSyncState = !health ? 'pending' : health.ok === health.total ? 'synced' : 'missing';
-  const tiles: { id: string; label: string; value: string; warn: boolean }[] = [
-    { id: 'ok', label: 'Thông số khả dụng', value: health ? `${health.ok}/${health.total}` : '—', warn: !!health && health.ok < health.total },
-    { id: 'bad', label: 'Cảm biến lỗi', value: health ? String(health.bad) : '—', warn: !!health && health.bad > 0 },
-    { id: 'missing', label: 'Mất kết nối', value: health ? String(health.missing) : '—', warn: !!health && health.missing > 0 },
-    { id: 'stale', label: 'Dữ liệu cũ', value: health ? String(health.stale) : '—', warn: !!health && health.stale > 0 },
-  ];
+  const tiles = healthTiles(health);
   return (
     <Card title="Trạng thái sẵn sàng" headerVariant="divided" radius="lg" titleSize="lg" aria-label="Trạng thái sẵn sàng" bodyClassName="gap-2">
       <div className="mb-2 mt-1 flex items-center gap-4">
         <span
           aria-hidden="true"
-          className={cn(
-            'flex size-12 shrink-0 items-center justify-center rounded-lg border',
-            ok
-              ? 'border-success bg-success/10 text-success'
-              : readiness.tone === 'warning'
-                ? 'border-warning bg-warning/10 text-warning'
-                : 'border-line bg-surface-raised text-fg-secondary',
-          )}
+          className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg border', READY_BOX[readiness.tone] ?? READY_BOX.neutral)}
         >
           {ok ? <CheckCircleIcon size={24} /> : <AlertTriangleIcon size={22} />}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={cn('text-md', ok ? 'text-success' : readiness.tone === 'warning' ? 'text-warning' : 'text-fg-secondary')}>
-            {readiness.headline}
-          </span>
+          <span className={cn('text-md', READY_TEXT[readiness.tone] ?? READY_TEXT.neutral)}>{readiness.headline}</span>
           {reason && <span className="text-sm text-fg-secondary">{reason}</span>}
         </span>
       </div>

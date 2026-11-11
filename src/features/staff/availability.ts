@@ -7,14 +7,14 @@
  * "Lịch ca" hiện là ca mặc định của từng người (`STAFF.defaultShift`) – TODO(backend): lịch ca thật theo ngày.
  */
 import { plantTimeOfDay } from '@/lib/plantTime';
-import type { Availability } from '@/components/StaffPicker/availability';
+import type { Availability } from '@/components/domain/StaffPicker/availability';
 import { SHIFTS } from '@/features/staff/org';
 import type { ShiftId } from '@/features/maintenance/types';
 
 /** Bận khi đang có ≥ 3 việc (bảo trì) / cảnh báo (cảnh báo) với vai trò người phụ trách chính. */
 export const BUSY_THRESHOLD = 3;
 
-export { type Availability } from '@/components/StaffPicker/availability';
+export { type Availability } from '@/components/domain/StaffPicker/availability';
 
 /** Thứ tự sắp xếp: Sẵn sàng → Bận → Ngoài ca. */
 export const AVAILABILITY_ORDER: Readonly<Record<Availability, number>> = { available: 0, busy: 1, 'off-shift': 2 };

@@ -4,7 +4,7 @@ import { Button, Icon, PageHeader } from '@/components';
 import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
-import { PageError, Placeholder } from '@/app/Placeholder';
+import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { useAlerts } from '@/data/alerts';
 import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
@@ -119,23 +119,8 @@ export default function MaintenancePage() {
     return <Navigate to={`/maintenance/${encodeURIComponent(legacyOpen)}`} replace state={{ from }} />;
   }
 
-  if (status === 'error') {
-    return (
-      <Page pageHeader={header}>
-        <PageError title="Không tải được danh sách bảo trì" error={error} onRetry={refetch} />
-      </Page>
-    );
-  }
-
-  if (status === 'loading') {
-    return (
-      <Page pageHeader={header}>
-        <Placeholder label="Đang tải…" height={130} />
-        <Placeholder label="Đang tải…" height={190} />
-        <Placeholder label="Đang tải…" height={518} />
-      </Page>
-    );
-  }
+  if (status !== 'success')
+    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được danh sách bảo trì', skeleton: [130, 190, 518] });
 
   return (
     <Page pageHeader={header}>
