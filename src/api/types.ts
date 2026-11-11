@@ -1,6 +1,7 @@
 /**
- * Hợp đồng API backend (FE tự định nghĩa – không dùng packages/shared). Mọi response đi qua zod
- * (`src/api/client.ts`): sai hợp đồng → ApiError CONTRACT_ERROR có mô tả rõ trường nào sai.
+ * Hợp đồng API backend (FE tự định nghĩa – không dùng packages/shared): mã lỗi + kiểu TS. Schema zod ở ./schemas
+ * (tải lười); mọi response đi qua zod (`src/api/client.ts`): sai hợp đồng → ApiError CONTRACT_ERROR nêu rõ trường sai.
+ * File này nằm trong bundle tải đầu → chỉ `import type` từ zod / ./schemas.
  *
  *   POST /auth/register {email,name,password} → 201 {message}
  *   POST /auth/login    {email,password}      → 200 {accessToken, user} (+ cookie refresh HttpOnly)
@@ -9,8 +10,8 @@
  *   GET  /auth/me       (Bearer)              → 200 user
  *   Lỗi: {error:{code,message}}
  */
-import { z } from 'zod';
-import { ROLES } from '@/features/auth/permissions';
+import type { z } from 'zod/mini';
+import type * as S from './schemas';
 
 /** Mã lỗi backend theo hợp đồng. */
 export type BackendErrorCode =
@@ -31,33 +32,10 @@ export type BackendErrorCode =
 export type ClientErrorCode = 'NETWORK_ERROR' | 'CONTRACT_ERROR' | 'CONFIG_ERROR' | 'TIMEOUT' | 'UNKNOWN';
 export type ApiErrorCode = BackendErrorCode | ClientErrorCode;
 
-export const ApiErrorBodySchema = z.object({
-  error: z.object({
-    code: z.string().min(1),
-    message: z.string(),
-    /** ⚠ Ngoài hợp đồng gốc: backend gửi kèm chi tiết khi VALIDATION_ERROR (vd "password: Mật khẩu tối thiểu 12 ký tự"). Tuỳ chọn. */
-    details: z.array(z.string()).optional(),
-  }),
-});
-
-export const UserSchema = z.object({
-  id: z.string().min(1),
-  email: z.string().min(1),
-  name: z.string(),
-  role: z.enum(ROLES),
-  /** ⚠ Hợp đồng chưa liệt kê giá trị (vd "active"/"pending") → nhận mọi chuỗi. */
-  status: z.string().min(1),
-});
-export type User = z.infer<typeof UserSchema>;
-
-export const LoginResponseSchema = z.object({ accessToken: z.string().min(1), user: UserSchema });
-export type LoginResponse = z.infer<typeof LoginResponseSchema>;
-
-export const RefreshResponseSchema = z.object({ accessToken: z.string().min(1) });
-export type RefreshResponse = z.infer<typeof RefreshResponseSchema>;
-
-export const RegisterResponseSchema = z.object({ message: z.string() });
-export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
+export type User = z.infer<typeof S.UserSchema>;
+export type LoginResponse = z.infer<typeof S.LoginResponseSchema>;
+export type RefreshResponse = z.infer<typeof S.RefreshResponseSchema>;
+export type RegisterResponse = z.infer<typeof S.RegisterResponseSchema>;
 
 export type LoginRequest = { email: string; password: string };
 export type RegisterRequest = { email: string; name: string; password: string };

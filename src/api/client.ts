@@ -3,14 +3,16 @@
  * - `credentials: 'include'` để trình duyệt gửi/nhận cookie refresh HttpOnly.
  * - Access token chỉ trong bộ nhớ (biến trong closure) – không localStorage/sessionStorage.
  * - Lỗi luôn là `ApiError` có `code`: mã backend ({error:{code,message}}) hoặc mã FE (NETWORK_ERROR, CONTRACT_ERROR…).
- * - Response validate bằng zod (schema ở ./types) – sai hợp đồng → CONTRACT_ERROR nêu rõ trường sai.
+ * - Response validate bằng zod (schema ở ./schemas, TẢI LƯỜI – nạp song song khi gửi request; code tải đầu không chứa zod)
+ *   – sai hợp đồng → CONTRACT_ERROR nêu rõ trường sai.
  * - Request có xác thực gặp 401 → refresh MỘT lần (gộp mọi request cùng hết hạn thành một lần gọi
  *   /auth/refresh, Web Locks giữa các tab) rồi gọi lại; refresh thất bại → báo `onSessionLost` (đăng xuất).
  * - Huỷ: `signal` của nơi gọi huỷ → ném lại `AbortError` gốc (kiểm bằng `isAbortError`, UI bỏ qua, không báo lỗi).
  *   Quá `timeoutMs` (mặc định 15 s, tính cả lúc đọc body) → `ApiError('TIMEOUT')`.
  */
-import type { ZodType } from 'zod';
-import { ApiErrorBodySchema, RefreshResponseSchema, type ApiErrorCode } from './types';
+import type { ZodMiniType, safeParse } from 'zod/mini';
+import type * as ApiSchemas from './schemas';
+import type { ApiErrorCode } from './types';
 
 export class ApiError extends Error {
   constructor(
@@ -64,13 +66,35 @@ function timeoutSignal(outer: AbortSignal | undefined, ms: number) {
 }
 
 /** Schema zod của response (đầu vào bất kỳ – JSON chưa kiểm). */
-type Schema<T> = ZodType<T>;
+type Schema<T> = ZodMiniType<T>;
+/** Chọn schema từ module ./schemas (tải lười): `schema: (s) => s.UserSchema`. */
+export type SchemaPick<T> = (schemas: typeof ApiSchemas) => Schema<T>;
+
+type Validator = { schemas: typeof ApiSchemas; safeParse: typeof safeParse };
+let validator: Promise<Validator> | null = null;
+
+/**
+ * Nạp zod + schema MỘT lần – gọi khi BẮT ĐẦU request (tải song song với fetch). Lỗi tải chunk (mất mạng, deploy mới
+ * xoá chunk cũ) → NETWORK_ERROR, lần sau thử nạp lại.
+ */
+function loadValidator(): Promise<Validator> {
+  validator ??= Promise.all([import('./schemas'), import('zod/mini')]).then(
+    ([schemas, z]) => ({ schemas, safeParse: z.safeParse }),
+    () => {
+      validator = null;
+      throw new ApiError('NETWORK_ERROR', NETWORK_MESSAGE, 0);
+    },
+  );
+  // Nơi gọi có thể chưa await (request lỗi trước khi cần validate) – tránh "unhandled rejection".
+  validator.catch(() => undefined);
+  return validator;
+}
 
 export type RequestOptions<T> = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
-  /** Schema của response 2xx (bỏ qua với 204). */
-  schema?: Schema<T>;
+  /** Schema của response 2xx (bỏ qua với 204): `(s) => s.UserSchema` – chọn từ ./schemas (tải lười). */
+  schema?: SchemaPick<T>;
   /** Gắn Bearer + tự refresh khi 401. Mặc định true; endpoint đăng nhập/refresh/logout đặt false. */
   auth?: boolean;
   /** Huỷ request (rời trang, đổi tham số…) → promise bị reject bằng `AbortError`. */
@@ -109,7 +133,9 @@ async function readJson(res: Response): Promise<unknown> {
 /** Lỗi HTTP → ApiError: ưu tiên {error:{code,message}}; không có thì suy theo status. */
 async function toApiError(res: Response): Promise<ApiError> {
   const retry = Number(res.headers.get('Retry-After')) || undefined;
-  const body = ApiErrorBodySchema.safeParse(await readJson(res));
+  const json = await readJson(res);
+  const { schemas, safeParse } = await loadValidator();
+  const body = safeParse(schemas.ApiErrorBodySchema, json);
   if (body.success) {
     const { code, message, details } = body.data.error;
     return new ApiError(code, message, res.status, retry, details);
@@ -121,11 +147,18 @@ async function toApiError(res: Response): Promise<ApiError> {
   return new ApiError('UNKNOWN', `Máy chủ trả lỗi ${res.status} (không đúng định dạng {error:{code,message}})`, res.status);
 }
 
+/** Mô tả một lỗi validate: mã + kiểu mong đợi (vd "invalid_type, cần string"). */
+function issueText(i: { code: string; message: string; expected?: unknown }): string {
+  const expected = i.expected === undefined ? '' : `, cần ${String(i.expected)}`;
+  return i.message && i.message !== 'Invalid input' ? `${i.message} (${i.code})` : `${i.code}${expected}`;
+}
+
 function contractError(path: string, detail: string, status: number) {
   return new ApiError('CONTRACT_ERROR', `Phản hồi của ${path} không đúng hợp đồng API: ${detail}`, status);
 }
 
-function createApiClient(deps: ApiClientDeps): ApiClient {
+/** Tạo client (test / DI truyền `fetch` riêng); app dùng `api` bên dưới. */
+export function createApiClient(deps: ApiClientDeps): ApiClient {
   let accessToken: string | null = null;
   let refreshing: Promise<string | null> | null = null;
   const lostListeners = new Set<() => void>();
@@ -144,15 +177,17 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
     }
   };
 
-  const parse = async <T>(path: string, res: Response, schema?: Schema<T>): Promise<T> => {
-    if (res.status === 204 || !schema) return undefined as T;
+  const parse = async <T>(path: string, res: Response, pick?: SchemaPick<T>): Promise<T> => {
+    if (res.status === 204 || !pick) return undefined as T;
     const json = await readJson(res);
     if (json === Symbol.for('invalid-json') || json === undefined) {
       throw contractError(path, 'không phải JSON', res.status);
     }
-    const parsed = schema.safeParse(json);
+    const { schemas, safeParse } = await loadValidator();
+    const parsed = safeParse(pick(schemas), json);
     if (!parsed.success) {
-      const detail = parsed.error.issues.map((i) => `${i.path.join('.') || '(gốc)'}: ${i.message}`).join('; ');
+      // zod/mini không nạp sẵn câu lỗi tiếng Anh (message chung "Invalid input") → ghi kèm mã lỗi + kiểu mong đợi.
+      const detail = parsed.error.issues.map((i) => `${i.path.join('.') || '(gốc)'}: ${issueText(i)}`).join('; ');
       throw contractError(path, detail, res.status);
     }
     return parsed.data;
@@ -173,17 +208,19 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
   };
 
   // Refresh dùng chung cho mọi request đang chờ → không theo signal của request nào, chỉ có timeout.
-  const doRefresh = () =>
-    withTimeout(undefined, DEFAULT_TIMEOUT_MS, async (signal): Promise<string | null> => {
+  const doRefresh = () => {
+    void loadValidator();
+    return withTimeout(undefined, DEFAULT_TIMEOUT_MS, async (signal): Promise<string | null> => {
       const res = await send('/auth/refresh', { method: 'POST', signal }, false);
       if (!res.ok) {
         accessToken = null;
         return null;
       }
-      const { accessToken: token } = await parse('/auth/refresh', res, RefreshResponseSchema);
+      const { accessToken: token } = await parse('/auth/refresh', res, (s) => s.RefreshResponseSchema);
       accessToken = token;
       return token;
     });
+  };
 
   const refresh = () => {
     refreshing ??= (deps.lock ? deps.lock(doRefresh) : doRefresh()).finally(() => {
@@ -194,6 +231,7 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
 
   const request = async <T>(path: string, opts: RequestOptions<T> = {}, retried = false): Promise<T> => {
     const auth = opts.auth ?? true;
+    void loadValidator(); // tải zod song song với request
     const res = await withTimeout(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS, async (signal) => {
       const init: RequestInit = {
         method: opts.method ?? (opts.body === undefined ? 'GET' : 'POST'),

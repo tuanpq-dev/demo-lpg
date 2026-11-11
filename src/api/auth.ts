@@ -6,7 +6,7 @@
  * - VITE_AUTH=off: `createOfflineAuthService` – phiên giả admin, không gọi backend (demo tĩnh).
  */
 import { api as defaultApi, type ApiClient } from './client';
-import { LoginResponseSchema, RegisterResponseSchema, UserSchema, type LoginRequest, type RegisterRequest, type User } from './types';
+import type { LoginRequest, RegisterRequest, User } from './types';
 import { tokenExpiresAt } from '@/features/auth/session';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -42,7 +42,7 @@ function createAuthService(client: ApiClient = defaultApi, channel?: Channel): A
     client.setAccessToken(null);
     if (state.status !== 'anonymous') setState({ status: 'anonymous', user: null });
   };
-  const me = () => client.request('/auth/me', { schema: UserSchema });
+  const me = () => client.request('/auth/me', { schema: (s) => s.UserSchema });
 
   client.onSessionLost(signOut);
   if (channel) {
@@ -74,14 +74,14 @@ function createAuthService(client: ApiClient = defaultApi, channel?: Channel): A
       return initialized;
     },
     async login(input) {
-      const res = await client.request('/auth/login', { method: 'POST', body: input, auth: false, schema: LoginResponseSchema });
+      const res = await client.request('/auth/login', { method: 'POST', body: input, auth: false, schema: (s) => s.LoginResponseSchema });
       client.setAccessToken(res.accessToken);
       setState({ status: 'authenticated', user: res.user });
       channel?.postMessage('login');
       return res.user;
     },
     async register(input) {
-      const res = await client.request('/auth/register', { method: 'POST', body: input, auth: false, schema: RegisterResponseSchema });
+      const res = await client.request('/auth/register', { method: 'POST', body: input, auth: false, schema: (s) => s.RegisterResponseSchema });
       return res.message;
     },
     async logout() {
