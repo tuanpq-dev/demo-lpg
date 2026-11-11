@@ -2,10 +2,13 @@
 #   verify: lint → typecheck → unit test → build (VITE_AUTH=off) + kiểm dist/ không chứa ảnh thiết kế
 #   e2e:    smoke test trình duyệt (Playwright) trên đúng bản dist/ vừa build
 # Node theo .nvmrc (20). Không deploy ở đây – Vercel tự build từ repo (vercel.json).
+# Chỉ chạy trên gitlab.com: git.tbo.vn (remote origin) chưa có runner → pipeline treo "pending" chặn merge.
 stages: [verify, e2e]
 
 workflow:
   rules:
+    - if: $CI_SERVER_HOST =~ /(^|\.)tbo\.vn$/
+      when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never

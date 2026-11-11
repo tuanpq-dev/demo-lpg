@@ -31,6 +31,7 @@ import { Ground, RendererLook, SceneLights, ShadowUpdates, WebGLErrorBoundary } 
 import { DeviceList, ObjectTooltip } from './SceneOverlays';
 import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, SceneView, Vec3 } from './types';
 import { QualityMonitor, ReadySignal, useSceneReady } from './sceneReady';
+import { useSceneSnapshot } from './sceneSnapshot';
 import { useEditPointer, type Marquee } from './useEditPointer';
 import { useSceneLive, useSceneSelection } from './useSceneModel';
 
@@ -224,6 +225,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   const { glError, reportGlError } = useGlError(onWebGLError);
   const { level, stepLevel, fallback } = useQualityLevel(quality);
   const { ready, monitor, markReady } = useSceneReady();
+  // Cảnh xem ở camera mặc định: lớp chờ hiện ảnh lần vẽ trước (mở lại trang), lần này vẽ xong thì chụp lại.
+  const { snapshot, onCapture } = useSceneSnapshot(config.id, { edit, view });
   const palette = useMemo(readScenePalette, []);
   const preset = QUALITY_PRESETS[level];
   const groundBehindToneMap = useMemo(() => inverseToneMap(palette.ground, SCENE_EXPOSURE), [palette]);
@@ -369,11 +372,11 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
               />
             </Suspense>
           )}
-          <ReadySignal onReady={markReady} />
+          <ReadySignal onReady={markReady} onCapture={onCapture} />
         </Canvas>
       </WebGLErrorBoundary>
       <div aria-hidden className="scene-vignette pointer-events-none absolute inset-0" />
-      <SceneLoading hidden={ready} />
+      <SceneLoading hidden={ready} snapshot={snapshot} />
       <DeviceList
         sceneName={config.name}
         objects={visible.filter((o) => ASSETS[o.asset].category === 'equipment')}

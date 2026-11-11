@@ -52,7 +52,7 @@ Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (20 test, ~20 s) – 13 t
 
 ## CI / Deploy
 
-- **GitLab CI** (`.gitlab-ci.yml`): mỗi merge request và nhánh chạy job `verify` (`lint → typecheck → test → build` + kiểm `dist/` không chứa ảnh thiết kế) rồi job `e2e` (Playwright trên đúng `dist/` đó; trace + ảnh lỗi + junit giữ 7 ngày). Image Playwright phải trùng phiên bản `@playwright/test` (ghim 1.64.1).
+- **GitLab CI** (`.gitlab-ci.yml`): mỗi merge request và nhánh chạy job `verify` (`lint → typecheck → test → build` + kiểm `dist/` không chứa ảnh thiết kế) rồi job `e2e` (Playwright trên đúng `dist/` đó; trace + ảnh lỗi + junit giữ 7 ngày). Image Playwright phải trùng phiên bản `@playwright/test` (ghim 1.64.1). CI chỉ chạy trên gitlab.com – git.tbo.vn chưa có runner nên `workflow.rules` bỏ qua (không tạo pipeline).
 - **Deploy**: Vercel (`vercel.json`) build từ repo, bản demo đặt `VITE_AUTH=off`. Header bảo mật (CSP…) khai trong `vercel.json`; bản xem trước của Vite và smoke test dùng cùng bộ header.
 
 ## Tài liệu

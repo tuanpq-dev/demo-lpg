@@ -13,8 +13,11 @@ const MONITOR_DELAY_MS = 1500;
  * Đặt CUỐI cây <Canvas>: nếu con nào còn suspend (nạp tài nguyên) thì component này cũng chưa chạy. Đếm khung đã vẽ
  * (frameloop "demand" → tự `invalidate`) rồi báo `onReady` MỘT lần.
  */
-export function ReadySignal({ onReady }: { onReady: () => void }) {
+export function ReadySignal({ onReady, onCapture }: { onReady: () => void; onCapture?: (canvas: HTMLCanvasElement) => void }) {
   const invalidate = useThree((s) => s.invalidate);
+  const canvas = useThree((s) => s.gl.domElement);
+  const capture = useRef(onCapture);
+  capture.current = onCapture;
   const frames = useRef(0);
   const done = useRef(false);
   const fire = useRef(onReady);
@@ -28,8 +31,14 @@ export function ReadySignal({ onReady }: { onReady: () => void }) {
   useFrame(() => {
     if (done.current) return;
     frames.current += 1;
-    if (frames.current >= READY_FRAMES) finish();
-    else invalidate();
+    if (frames.current < READY_FRAMES) {
+      invalidate();
+      return;
+    }
+    // Khung này vẽ SAU các useFrame → microtask chạy khi khung đã vẽ xong, trước khi trình duyệt xoá drawing buffer.
+    const cb = capture.current;
+    if (cb) queueMicrotask(() => cb(canvas));
+    finish();
   });
   useEffect(() => {
     invalidate();
