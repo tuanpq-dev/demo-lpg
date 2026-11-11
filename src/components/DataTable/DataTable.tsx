@@ -205,7 +205,9 @@ export function DataTable<T>({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      <div className="overflow-auto" style={{ maxHeight }}>
+      {/* `relative`: phần tử absolute trong ô (sr-only, huy hiệu) lấy khung cuộn làm mốc → bị cắt/cuộn theo bảng. Thiếu nó,
+          sr-only ở cột bên phải "thoát" khỏi khung cuộn và kéo rộng cả trang trên màn hẹp. */}
+      <div className="relative overflow-auto" style={{ maxHeight }}>
         <table className="w-full border-collapse text-sm" style={{ minWidth }}>
           {/* caption = tên truy cập của bảng (ẩn hiển thị). */}
           <caption className="sr-only">{label}</caption>

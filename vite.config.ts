@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -18,8 +19,21 @@ const VENDOR_CHUNKS: readonly [name: string, pattern: RegExp][] = [
   ['vendor-charts', /[\\/]node_modules[\\/](recharts|recharts-scale|react-smooth|d3-[^\\/]+|decimal\.js-light|lodash|victory-vendor)[\\/]/],
 ];
 
+/**
+ * Header bảo mật của bản deploy (CSP, nosniff, chống nhúng iframe…) khai MỘT chỗ ở `vercel.json`. `vite preview` gửi cùng bộ
+ * header đó → smoke test (`npm run test:e2e`) chạy dưới đúng CSP của production: thêm thư viện / tài nguyên bị CSP chặn là
+ * test báo lỗi console ngay, không đợi lên Vercel mới biết.
+ */
+function securityHeaders(): Record<string, string> {
+  type VercelConfig = { headers?: { source: string; headers: { key: string; value: string }[] }[] };
+  const vercel = JSON.parse(readFileSync(path.resolve(__dirname, 'vercel.json'), 'utf8')) as VercelConfig;
+  const all = vercel.headers?.find((h) => h.source === '/(.*)')?.headers ?? [];
+  return Object.fromEntries(all.map((h) => [h.key, h.value]));
+}
+
 export default defineConfig({
   plugins: [react()],
+  preview: { headers: securityHeaders() },
   resolve: {
     alias: [
       { find: '@', replacement: path.resolve(__dirname, 'src') },

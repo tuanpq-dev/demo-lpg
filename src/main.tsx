@@ -14,6 +14,7 @@ import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
 import { reloadForNewVersion } from './lib/chunkReload';
+import { initMonitoring } from './lib/monitoring';
 import ForbiddenPage from './pages/errors/ForbiddenPage';
 import NotFoundPage from './pages/errors/NotFoundPage';
 import RouteError from './pages/errors/RouteError';
@@ -143,6 +144,8 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+initMonitoring();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

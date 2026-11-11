@@ -3,14 +3,18 @@
  * - `credentials: 'include'` để trình duyệt gửi/nhận cookie refresh HttpOnly.
  * - Access token chỉ trong bộ nhớ (biến trong closure) – không localStorage/sessionStorage.
  * - Lỗi luôn là `ApiError` có `code`: mã backend ({error:{code,message}}) hoặc mã FE (NETWORK_ERROR, CONTRACT_ERROR…).
+ * - Sai hợp đồng được báo về giám sát lỗi (`reportError`).
  * - Response validate bằng zod (schema ở ./schemas, TẢI LƯỜI – nạp song song khi gửi request; code tải đầu không chứa zod)
  *   – sai hợp đồng → CONTRACT_ERROR nêu rõ trường sai.
  * - Request có xác thực gặp 401 → refresh MỘT lần (gộp mọi request cùng hết hạn thành một lần gọi
  *   /auth/refresh, Web Locks giữa các tab) rồi gọi lại; refresh thất bại → báo `onSessionLost` (đăng xuất).
  * - Huỷ: `signal` của nơi gọi huỷ → ném lại `AbortError` gốc (kiểm bằng `isAbortError`, UI bỏ qua, không báo lỗi).
  *   Quá `timeoutMs` (mặc định 15 s, tính cả lúc đọc body) → `ApiError('TIMEOUT')`.
+ * - Thử lại: CHỈ request GET (không đổi dữ liệu), khi lỗi tạm thời (NETWORK_ERROR, HTTP 502/503/504) – tối đa 2 lần, chờ
+ *   0,3 s rồi 0,9 s (huỷ được). Không thử lại TIMEOUT (người dùng đã chờ đủ lâu) và mọi lỗi 4xx.
  */
 import type { ZodMiniType, safeParse } from 'zod/mini';
+import { reportError } from '@/lib/monitoring';
 import type * as ApiSchemas from './schemas';
 import type { ApiErrorCode } from './types';
 
@@ -99,8 +103,10 @@ export type RequestOptions<T> = {
   auth?: boolean;
   /** Huỷ request (rời trang, đổi tham số…) → promise bị reject bằng `AbortError`. */
   signal?: AbortSignal;
-  /** Giới hạn thời gian (ms), mặc định `DEFAULT_TIMEOUT_MS`; 0 = không giới hạn (vd tải tệp lớn). */
+  /** Giới hạn thời gian (ms) của MỖI lượt gọi, mặc định `DEFAULT_TIMEOUT_MS`; 0 = không giới hạn (vd tải tệp lớn). */
   timeoutMs?: number;
+  /** Số lần tự thử lại khi lỗi tạm thời. Mặc định 2 cho GET, 0 cho method khác (ghi dữ liệu không tự gửi lại). */
+  retry?: number;
 };
 
 export interface ApiClient {
@@ -118,7 +124,31 @@ export type ApiClientDeps = {
   fetch: typeof fetch;
   /** Khoá giữa các tab (Web Locks) cho refresh – backend coi hai lần dùng cùng refresh token là bị đánh cắp. */
   lock?: <T>(fn: () => Promise<T>) => Promise<T>;
+  /** Khoảng chờ (ms) trước từng lần thử lại – mặc định `RETRY_DELAYS_MS` (test truyền số nhỏ). */
+  retryDelaysMs?: readonly number[];
 };
+
+/** Chờ trước lần thử lại thứ 1, 2 (ms). */
+const RETRY_DELAYS_MS: readonly number[] = [300, 900];
+
+/** Lỗi tạm thời đáng thử lại: không tới được máy chủ, hoặc cổng/proxy báo máy chủ tạm không phục vụ. */
+const isTransient = (e: unknown) => e instanceof ApiError && (e.code === 'NETWORK_ERROR' || e.status === 502 || e.status === 503 || e.status === 504);
+
+/** Chờ `ms`; `signal` huỷ → reject ngay bằng AbortError. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(t);
+      reject(signal?.reason instanceof DOMException ? signal.reason : new DOMException('Đã huỷ', 'AbortError'));
+    };
+    const t = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    if (signal?.aborted) onAbort();
+    else signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
 
 async function readJson(res: Response): Promise<unknown> {
   const text = await res.text();
@@ -154,7 +184,10 @@ function issueText(i: { code: string; message: string; expected?: unknown }): st
 }
 
 function contractError(path: string, detail: string, status: number) {
-  return new ApiError('CONTRACT_ERROR', `Phản hồi của ${path} không đúng hợp đồng API: ${detail}`, status);
+  const err = new ApiError('CONTRACT_ERROR', `Phản hồi của ${path} không đúng hợp đồng API: ${detail}`, status);
+  // Backend lệch hợp đồng là lỗi cần đội phát triển biết ngay (người dùng chỉ thấy "dữ liệu không đúng định dạng").
+  reportError(err, { source: 'api-contract', path, status });
+  return err;
 }
 
 /** Tạo client (test / DI truyền `fetch` riêng); app dùng `api` bên dưới. */
@@ -261,8 +294,23 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     throw res.error;
   };
 
+  /** `request` + thử lại lỗi tạm thời (mặc định chỉ GET). */
+  const requestWithRetry = async <T>(path: string, opts: RequestOptions<T> = {}): Promise<T> => {
+    const delays = deps.retryDelaysMs ?? RETRY_DELAYS_MS;
+    const isGet = (opts.method ?? (opts.body === undefined ? 'GET' : 'POST')) === 'GET';
+    const max = Math.min(opts.retry ?? (isGet ? delays.length : 0), delays.length);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await request(path, opts);
+      } catch (err) {
+        if (attempt >= max || !isTransient(err) || opts.signal?.aborted) throw err;
+        await sleep(delays[attempt] ?? 0, opts.signal);
+      }
+    }
+  };
+
   return {
-    request: (path, opts) => request(path, opts),
+    request: requestWithRetry,
     refresh,
     getAccessToken: () => accessToken,
     setAccessToken: (t) => {

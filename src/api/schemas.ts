@@ -7,6 +7,10 @@
 import { z } from 'zod/mini';
 import { ROLES } from '@/features/auth/permissions';
 
+// CSP của bản deploy không cho `eval` / `new Function` (script-src 'self') – tắt bộ biên dịch JIT của zod để nó không thử
+// (thử là trình duyệt ghi lỗi vi phạm CSP vào console). Chậm hơn không đáng kể với response cỡ app này.
+z.config({ jitless: true });
+
 export const ApiErrorBodySchema = z.object({
   error: z.object({
     code: z.string().check(z.minLength(1)),

@@ -29,13 +29,22 @@ export type TabsProps = {
 /**
  * Tabs gạch chân – "Tất cả / Chưa xác nhận / Đang xử lý / Đã hoàn thành" (Figma 70:3006, 70:5311).
  * ←/→/Home/End vừa di chuyển vừa chọn (automatic activation).
+ * Dải tab rộng hơn khung (điện thoại) → cuộn ngang trong dải (ẩn thanh cuộn; tab nhận focus tự cuộn vào khung) thay vì bị cắt /
+ * kéo rộng trang.
  */
 export function Tabs({ items, value, onChange, label, panelId, className }: TabsProps) {
   const { setRef, onKeyDown, getTabIndex } = useRovingFocus({ items, value, onChange });
   const uid = useId();
 
   return (
-    <div role="tablist" aria-label={label} className={cn('flex items-start border-b border-line/30 bg-surface-raised px-2 pb-px', className)}>
+    <div
+      role="tablist"
+      aria-label={label}
+      className={cn(
+        'flex items-start overflow-x-auto border-b border-line/30 bg-surface-raised px-2 pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
       {items.map((item) => {
         const selected = item.id === value;
         return (
@@ -52,7 +61,8 @@ export function Tabs({ items, value, onChange, label, panelId, className }: Tabs
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => onKeyDown(e, item.id)}
             className={cn(
-              '-mb-px flex items-center gap-1 whitespace-nowrap border-b-2 px-4 pb-3.5 pt-3 text-base transition-colors disabled:opacity-50',
+              // outline lùi vào trong: dải tab cuộn ngang (overflow) sẽ cắt outline nằm ngoài nút.
+              '-mb-px flex shrink-0 items-center gap-1 whitespace-nowrap border-b-2 px-4 pb-3.5 pt-3 text-base transition-colors focus-visible:outline-offset-[-2px] disabled:opacity-50',
               selected ? 'border-info text-info' : 'border-transparent text-fg-secondary hover:text-fg',
             )}
           >

@@ -18,7 +18,7 @@ import { appNow } from '@/lib/demoNow';
 import { dayNumber, plantDayKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
 import { alertsReady, currentAlerts, useAlertList } from './alertStore';
-import { fetchDailyReadings } from './dailyReport';
+import { fetchDailyReadings, useDailyReadings } from './dailyReport';
 import { currentReports, replaceReport } from './reports';
 
 /** Cảnh báo mock ghi ngày tương đối (`daysAgo`) → ngày tuyệt đối theo `now` (giờ nhà máy). */
@@ -27,13 +27,16 @@ function sensorAlertsOf(alerts: readonly AlertRecord[], now: Date): SensorAlertL
   return alerts.map((a) => ({ code: a.code, kind: a.kind, status: a.status, day: dayFromNumber(today - a.daysAgo) }));
 }
 
-/** Số đo + lỗi cảm biến của báo cáo đang mở modal (cập nhật khi cảnh báo đổi trạng thái). */
+/**
+ * Số đo + lỗi cảm biến của báo cáo đang mở modal (cập nhật khi cảnh báo đổi trạng thái). `readings` = trạng thái tải số đo
+ * (`{ status, data, error, refetch }`) – modal chỉ dựng form khi `success` (điều kiện ký không tính trên số chưa tải).
+ */
 export function useReportSignData(report: ReportRecord) {
   const alerts = useAlertList();
-  const rows = useMemo(() => fetchDailyReadings(report), [report]);
+  const readings = useDailyReadings(report);
   const list = alerts.data ?? currentAlerts();
   const sensorFaults = useMemo(() => openSensorFaults(sensorAlertsOf(list, appNow()), report.periodKey), [list, report.periodKey]);
-  return { rows, sensorFaults };
+  return { readings, sensorFaults };
 }
 
 export type InspectorSignInput = { note?: string; draftReviewed: boolean; responsibility: boolean };
@@ -50,7 +53,7 @@ export async function signDailyReport(id: string, input: InspectorSignInput): Pr
   if (!r || !canInspectorSign(r, now)) return { ok: false, error: 'Báo cáo không còn ở bước chờ Người kiểm tra ký.' };
   const conditions = signConditions({
     report: r,
-    rows: fetchDailyReadings(r),
+    rows: await fetchDailyReadings(r),
     sensorFaults: openSensorFaults(sensorAlertsOf(currentAlerts(), now), r.periodKey),
     draftReviewed: input.draftReviewed,
     responsibility: input.responsibility,

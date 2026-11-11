@@ -48,14 +48,37 @@ for (const [path, heading] of PAGES) {
   });
 }
 
-test('mobile 390 px: các trang chính render không lỗi', async ({ page }) => {
+test('mobile 390 px: mọi trang render không lỗi và KHÔNG tràn ngang', async ({ page }) => {
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = watchErrors(page);
-  for (const [path, heading] of PAGES.slice(0, 6)) {
+  for (const [path, heading] of PAGES) {
     await page.goto(path);
     await expectPage(page, heading);
+    await page.waitForLoadState('networkidle');
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width, `${path}: trang rộng ${width}px trên màn 390px`).toBeLessThanOrEqual(390);
   }
   expect(errors).toEqual([]);
+});
+
+test('header bảo mật (vercel.json) được gửi và trang 3D không vi phạm CSP', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) => {
+      (window as unknown as { __csp: string[] }).__csp.push(`${e.violatedDirective} ← ${e.blockedURI}`);
+    });
+  });
+  const res = await page.goto('/map/V-101');
+  const h = res!.headers();
+  expect(h['content-security-policy']).toContain("script-src 'self'");
+  expect(h['content-security-policy']).toContain("frame-ancestors 'none'");
+  expect(h['x-content-type-options']).toBe('nosniff');
+  expect(h['referrer-policy']).toBeTruthy();
+  // Cảnh 3D: three.js + zod (validate cảnh) + nhãn – các thư viện dễ đụng CSP nhất.
+  await expect(page.locator('canvas').first()).toBeVisible({ timeout: 20_000 });
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
 
 test('URL lạ → trang 404 (không trắng trang)', async ({ page }) => {

@@ -3,6 +3,7 @@
  * (`useReports`) → trạng thái/chữ ký ở hai màn luôn khớp; số đo theo mốc là mock riêng.
  */
 import { useMemo } from 'react';
+import { useIdentityRevision, useQuery } from '@/lib/useQuery';
 import type { DailyReadingRow, ReportRecord } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { buildDailyReadings } from '@/mocks/dailyReport';
@@ -23,8 +24,19 @@ export function findDailyReport(rows: readonly ReportRecord[], code: string): Re
  * Số đo theo mốc. TODO(backend): `api.request('/reports/:code/readings', { schema })` – hợp đồng ở docs/decisions.md
  * ("Báo cáo – hợp đồng API cần bổ sung").
  */
-export function fetchDailyReadings(report: ReportRecord): DailyReadingRow[] {
+export async function fetchDailyReadings(report: ReportRecord, _signal?: AbortSignal): Promise<DailyReadingRow[]> {
   return buildDailyReadings(report, appNow());
+}
+
+/**
+ * Số đo theo mốc của `report` (`{ status, data, error, refetch }`); `report` chưa có → loading. Bản ghi đổi (ghi mốc, ký) →
+ * tải lại ngầm, giữ số đang hiện.
+ */
+export function useDailyReadings(report: ReportRecord | undefined) {
+  const revision = useIdentityRevision(report);
+  return useQuery(report?.id ?? '', (signal) => (report ? fetchDailyReadings(report, signal) : new Promise<DailyReadingRow[]>(() => {})), {
+    revision,
+  });
 }
 
 export type DailyReportState =
@@ -36,10 +48,12 @@ export type DailyReportState =
 export function useDailyReport(code: string): DailyReportState & { reports: readonly ReportRecord[] } {
   const { status, data, error, refetch } = useReports();
   const report = useMemo(() => (data ? findDailyReport(data, code) : undefined), [data, code]);
-  const readings = useMemo(() => (report ? fetchDailyReadings(report) : undefined), [report]);
+  const readings = useDailyReadings(report);
   const reports = data ?? [];
   if (status === 'loading') return { status, refetch, reports };
   if (status === 'error') return { status, error, refetch, reports };
-  if (!report || !readings) return { status: 'not-found', refetch, reports };
-  return { status: 'success', report, readings, refetch, reports };
+  if (!report) return { status: 'not-found', refetch, reports };
+  if (readings.status === 'loading') return { status: 'loading', refetch, reports };
+  if (readings.status === 'error') return { status: 'error', error: readings.error, refetch: readings.refetch, reports };
+  return { status: 'success', report, readings: readings.data, refetch, reports };
 }

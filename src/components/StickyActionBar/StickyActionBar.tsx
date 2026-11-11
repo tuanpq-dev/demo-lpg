@@ -19,6 +19,8 @@ export type StickyActionBarProps = {
  * - Chèn một khoảng đệm cùng chiều cao vào luồng trang → nội dung cuối không bị che.
  * - Đặt `scroll-padding-bottom` cho trang khi đang hiện → phần tử nhận focus bằng Tab được cuộn lên trên thanh.
  * Thanh nằm sau nội dung trong DOM nên thứ tự Tab = nội dung → thanh.
+ * Nhóm nút rộng hơn màn (điện thoại) → cuộn ngang trong thanh, mặc định thấy nút CUỐI (hành động chính): khung cuộn
+ * `direction: rtl` (vị trí cuộn ban đầu ở mép phải, nội dung vừa thì căn phải), hàng nút bên trong `ltr` giữ thứ tự.
  */
 export function StickyActionBar({ label, start, children, className }: StickyActionBarProps) {
   useEffect(() => {
@@ -39,8 +41,10 @@ export function StickyActionBar({ label, start, children, className }: StickyAct
         style={{ height: HEIGHT }}
       >
         <div className="mx-auto flex h-full max-w-content items-center justify-between gap-4 px-4 sm:px-8">
-          <div className="min-w-0 text-sm text-fg-secondary">{start}</div>
-          <div className="flex shrink-0 items-center gap-4">{children}</div>
+          {start && <div className="min-w-0 shrink text-sm text-fg-secondary">{start}</div>}
+          <div className="min-w-0 flex-1 overflow-x-auto py-1 [direction:rtl] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max items-center gap-2 px-0.5 [direction:ltr] sm:gap-4">{children}</div>
+          </div>
         </div>
       </div>
     </>

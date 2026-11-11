@@ -97,8 +97,36 @@ export function pageFallback(
       </Page>
     );
   }
-  const blocks = Array.isArray(skeleton)
-    ? (skeleton as readonly number[]).map((h, i) => <Placeholder key={i} label="Đang tải…" height={h} />)
-    : skeleton;
+  // `reveal-delayed`: khung chờ chỉ hiện nếu tải lâu hơn ~200 ms – dữ liệu về nhanh thì không nháy khung nét đứt.
+  const blocks = Array.isArray(skeleton) ? (
+    <div className="reveal-delayed flex flex-col gap-6">
+      {(skeleton as readonly number[]).map((h, i) => (
+        <Placeholder key={i} label="Đang tải…" height={h} />
+      ))}
+    </div>
+  ) : (
+    skeleton
+  );
   return <Page pageHeader={header}>{blocks}</Page>;
+}
+
+/**
+ * Thân modal khi dữ liệu của modal chưa sẵn sàng: khung chờ (hiện trễ, giữ chiều cao gần bằng form để hộp thoại không nhảy
+ * kích thước) hoặc Card lỗi + "Thử lại". Modal chỉ dựng form khi `status === 'success'`.
+ */
+export function ModalDataFallback({
+  q,
+  errorTitle,
+  height = 480,
+}: {
+  q: { status: 'loading' | 'error'; error?: Error | undefined; refetch: () => void };
+  errorTitle: string;
+  height?: number;
+}) {
+  if (q.status === 'error' && q.error) return <PageError title={errorTitle} error={q.error} onRetry={q.refetch} />;
+  return (
+    <div style={{ minHeight: height }}>
+      <Placeholder label="Đang tải số liệu…" height={height} className="reveal-delayed" />
+    </div>
+  );
 }

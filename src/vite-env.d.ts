@@ -11,4 +11,10 @@ interface ImportMetaEnv {
   readonly VITE_DEMO?: string;
   /** Ghim mốc giờ app LÚC BUILD (giờ nhà máy "yyyy-mm-ddTHH:mm" hoặc ISO có Z) – demo nội bộ. Mặc định tắt; KHÔNG đặt trên bản công khai. */
   readonly VITE_FIXED_NOW?: string;
+  /** DSN của dự án Sentry – có thì bật giám sát lỗi (src/lib/monitoring.ts); bỏ trống = tắt. Không phải bí mật (DSN vốn công khai). */
+  readonly VITE_SENTRY_DSN?: string;
+  /** Tên môi trường gửi kèm lỗi ("production", "staging"); mặc định theo MODE của Vite. */
+  readonly VITE_APP_ENV?: string;
+  /** Mã phiên bản gửi kèm lỗi (vd SHA commit – Vercel: đặt = $VERCEL_GIT_COMMIT_SHA lúc build). */
+  readonly VITE_APP_VERSION?: string;
 }

@@ -121,13 +121,14 @@ export default function OverviewPage() {
       <Page
         variant="sidebar"
         pageHeader={header}
+        // `reveal-delayed`: khung chờ chỉ hiện nếu tải lâu hơn ~200 ms – về nhanh thì không nháy khung nét đứt khi đổi tab.
         sidebar={[235, 239, 234, 197].map((h) => (
-          <Placeholder key={h} label="Đang tải…" height={h} />
+          <Placeholder key={h} label="Đang tải…" height={h} className="reveal-delayed" />
         ))}
       >
-        <Placeholder label="Đang tải…" height={128} />
-        <Placeholder label="Đang tải…" height={591} />
-        <Placeholder label="Đang tải…" height={315} />
+        <Placeholder label="Đang tải…" height={128} className="reveal-delayed" />
+        <Placeholder label="Đang tải…" height={591} className="reveal-delayed" />
+        <Placeholder label="Đang tải…" height={315} className="reveal-delayed" />
       </Page>
     );
   }

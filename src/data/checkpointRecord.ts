@@ -14,6 +14,7 @@ import {
 } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { createSessionDraft } from '@/lib/sessionDraft';
+import { useIdentityRevision, useQuery } from '@/lib/useQuery';
 import { buildCheckpointSnapshot } from '@/mocks/checkpointRecord';
 import { currentReports, replaceReport } from './reports';
 
@@ -21,8 +22,14 @@ import { currentReports, replaceReport } from './reports';
  * Số liệu IoT/PLC của mốc. TODO(backend): `api.request('/reports/:code/checkpoints/:key/snapshot', { schema })` – hợp đồng ở
  * docs/decisions.md ("Báo cáo – hợp đồng API cần bổ sung").
  */
-export function fetchCheckpointSnapshot(report: ReportRecord, key: string): CheckpointSnapshot {
+export async function fetchCheckpointSnapshot(report: ReportRecord, key: string, _signal?: AbortSignal): Promise<CheckpointSnapshot> {
   return buildCheckpointSnapshot(report, key, appNow());
+}
+
+/** Ảnh chụp số liệu của mốc `key` (`{ status, data, error, refetch }`); bản ghi báo cáo đổi → tải lại ngầm. */
+export function useCheckpointSnapshot(report: ReportRecord, key: string) {
+  const revision = useIdentityRevision(report);
+  return useQuery(`${report.id}@${key}`, (signal) => fetchCheckpointSnapshot(report, key, signal), { revision });
 }
 
 // ---- Nháp (sessionStorage theo mã báo cáo + mốc). Tệp đính kèm KHÔNG lưu trong nháp.
@@ -54,7 +61,7 @@ export async function recordCheckpoint(id: string, key: string, input: RecordChe
   const now = appNow();
   const r = currentReports().find((x) => x.id === id);
   if (!r || !canRecordCheckpoint(r, key, now)) return { ok: false, error: `Mốc ${key} không còn chờ ghi nhận.` };
-  const snapshot = fetchCheckpointSnapshot(r, key);
+  const snapshot = await fetchCheckpointSnapshot(r, key);
   const blockers = recordBlockers(recordGroups(snapshot, input.manual), input.remark);
   if (blockers.length) return { ok: false, error: `Chưa đủ điều kiện xác nhận: ${blockers.join('; ')}.` };
   const record = applyCheckpointRecord(r, key, {

@@ -1,6 +1,8 @@
 import { useId } from 'react';
-import { Modal } from '@/components';
-import type { ReportRecord } from '@/features/reports';
+import { ModalDataFallback } from '@/app/Placeholder';
+import { Button, Modal } from '@/components';
+import { useCheckpointSnapshot } from '@/data/checkpointRecord';
+import type { CheckpointSnapshot, ReportRecord } from '@/features/reports';
 import { RecordFooter, RecordFooterStart, RecordHeaderInfo, RecordNav } from './record/RecordChrome';
 import { RecordEquipment, RecordOverview, RecordRemarkAndFiles, RecordSummary } from './record/RecordSections';
 import { useCheckpointRecordForm } from './record/useCheckpointRecordForm';
@@ -20,10 +22,40 @@ export type CheckpointRecordModalProps = {
  * Khối (thư mục `record/`): thông tin đầu + tab + chân (RecordChrome), tổng quan / nhóm thiết bị / nhận xét + tệp / tóm tắt
  * (RecordSections). State + kiểm tra: `useCheckpointRecordForm` (reducer + useFormModal); tab theo cuộn: `useSectionNav`.
  */
-export function CheckpointRecordModal({ report: r, checkpoint, onClose }: CheckpointRecordModalProps) {
+export function CheckpointRecordModal(props: CheckpointRecordModalProps) {
+  const { report: r, checkpoint, onClose } = props;
+  const snapshot = useCheckpointSnapshot(r, checkpoint);
+  // Số liệu IoT của mốc chưa tải xong / lỗi → chưa dựng form (nhóm thiết bị, điều kiện xác nhận đều tính từ ảnh chụp này).
+  if (snapshot.status !== 'success') {
+    return (
+      <Modal
+        open
+        size="xl"
+        titleTone="primary"
+        title={`Ghi nhận mốc kiểm tra ${checkpoint}`}
+        description={RECORD_DESCRIPTION}
+        headerExtra={<RecordHeaderInfo report={r} checkpoint={checkpoint} />}
+        onClose={onClose}
+        dismissOnBackdrop={false}
+        footer={
+          <Button variant="subtle" onClick={onClose}>
+            Hủy
+          </Button>
+        }
+      >
+        <ModalDataFallback q={snapshot} errorTitle={`Không tải được số liệu mốc ${checkpoint}`} />
+      </Modal>
+    );
+  }
+  return <CheckpointRecordForm {...props} snapshot={snapshot.data} />;
+}
+
+const RECORD_DESCRIPTION = 'Cập nhật thông số vận hành định kỳ cho hệ thống trạm LPG.';
+
+function CheckpointRecordForm({ report: r, checkpoint, onClose, snapshot }: CheckpointRecordModalProps & { snapshot: CheckpointSnapshot }) {
   const uid = useId();
   const blockersId = `${uid}-blockers`;
-  const f = useCheckpointRecordForm(r, checkpoint, onClose);
+  const f = useCheckpointRecordForm(r, checkpoint, snapshot, onClose);
   const nav = useSectionNav();
   const confirming = f.modal.confirming;
   const sectionProps = { f, uid, sectionRef: nav.sectionRef };
@@ -34,7 +66,7 @@ export function CheckpointRecordModal({ report: r, checkpoint, onClose }: Checkp
       size="xl"
       titleTone="primary"
       title={`Ghi nhận mốc kiểm tra ${checkpoint}`}
-      description="Cập nhật thông số vận hành định kỳ cho hệ thống trạm LPG."
+      description={RECORD_DESCRIPTION}
       headerExtra={<RecordHeaderInfo report={r} checkpoint={checkpoint} />}
       beforeBody={<RecordNav active={nav.active} onGo={nav.goTo} />}
       bodyRef={nav.bodyRef}

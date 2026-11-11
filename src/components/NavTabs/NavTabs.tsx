@@ -311,11 +311,11 @@ export function NavMenu({ items, value, onChange, label = 'Điều hướng chí
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-[41px] items-center gap-2 rounded-md px-2 text-md font-semibold text-primary hover:bg-surface-muted/40"
+        className="flex h-[41px] max-w-full items-center gap-2 rounded-md px-2 text-md font-semibold text-primary hover:bg-surface-muted/40"
       >
         <MenuIcon />
-        {/* Nhãn dài ("Bản đồ nội khu") không xuống dòng; màn rất hẹp thì cắt "…". */}
-        <span className="max-w-[40vw] truncate whitespace-nowrap">{current?.label ?? 'Menu'}</span>
+        {/* Nhãn dài ("Bản đồ nội khu") không xuống dòng; không đủ chỗ (điện thoại) thì co lại và cắt "…". */}
+        <span className="min-w-0 truncate whitespace-nowrap">{current?.label ?? 'Menu'}</span>
         <span className="sr-only">– mở menu điều hướng</span>
       </button>
       {open && (

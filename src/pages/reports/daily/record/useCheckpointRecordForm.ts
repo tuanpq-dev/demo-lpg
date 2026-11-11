@@ -1,6 +1,6 @@
-import { useMemo, useReducer, useState } from 'react';
+import { useReducer, useState } from 'react';
 import type { AttachedFile } from '@/components';
-import { clearRecordDraft, fetchCheckpointSnapshot, loadRecordDraft, recordCheckpoint, saveRecordDraft } from '@/data/checkpointRecord';
+import { clearRecordDraft, loadRecordDraft, recordCheckpoint, saveRecordDraft } from '@/data/checkpointRecord';
 import {
   appendRemark,
   recordBlockers,
@@ -8,6 +8,7 @@ import {
   recordProgress,
   recordQuality,
   sensorSummary,
+  type CheckpointSnapshot,
   type ManualValues,
   type ReportRecord,
 } from '@/features/reports';
@@ -61,8 +62,7 @@ function recordFormReducer(s: RecordFormState, a: RecordFormAction): RecordFormS
  * nhóm thiết bị / tiến độ / chất lượng / cảm biến / lý do chặn (`features/reports/record.ts`). Vòng đời modal qua
  * `useFormModal`: "Lưu bản nháp" ở lại, "Lưu và tiếp tục sau" đóng, hỏi khi đóng chỉ theo "đã sửa". Nháp sessionStorage theo mã + mốc.
  */
-export function useCheckpointRecordForm(r: ReportRecord, checkpoint: string, onClose: () => void) {
-  const snapshot = useMemo(() => fetchCheckpointSnapshot(r, checkpoint), [r, checkpoint]);
+export function useCheckpointRecordForm(r: ReportRecord, checkpoint: string, snapshot: CheckpointSnapshot, onClose: () => void) {
   const [initialDraft] = useState(() => loadRecordDraft(r.code, checkpoint));
   const [state, dispatch] = useReducer(recordFormReducer, undefined, () => ({
     remark: initialDraft?.remark ?? '',

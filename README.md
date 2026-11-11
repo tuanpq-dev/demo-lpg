@@ -31,7 +31,7 @@ Backend nằm ở repo riêng `../demo-lpg-server` (NestJS + PostgreSQL): `npm r
 
 ## Biến môi trường
 
-Xem `.env.example`. Chính: `VITE_API_URL` (gốc URL backend), `VITE_AUTH` (`api` mặc định / `off` = demo tĩnh không đăng nhập). Chỉ biến tiền tố `VITE_` lộ ra trình duyệt – **không đặt bí mật**.
+Xem `.env.example`. Chính: `VITE_API_URL` (gốc URL backend), `VITE_AUTH` (`api` mặc định / `off` = demo tĩnh không đăng nhập). `VITE_SENTRY_DSN` bật giám sát lỗi (bỏ trống = tắt). Chỉ biến tiền tố `VITE_` lộ ra trình duyệt – **không đặt bí mật**.
 
 ## Test
 
@@ -53,7 +53,7 @@ Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (20 test, ~20 s) – 13 t
 ## CI / Deploy
 
 - **GitLab CI** (`.gitlab-ci.yml`): mỗi merge request và nhánh chạy job `verify` (`lint → typecheck → test → build` + kiểm `dist/` không chứa ảnh thiết kế) rồi job `e2e` (Playwright trên đúng `dist/` đó; trace + ảnh lỗi + junit giữ 7 ngày). Image Playwright phải trùng phiên bản `@playwright/test` (ghim 1.64.1).
-- **Deploy**: Vercel (`vercel.json`) build từ repo, bản demo đặt `VITE_AUTH=off`.
+- **Deploy**: Vercel (`vercel.json`) build từ repo, bản demo đặt `VITE_AUTH=off`. Header bảo mật (CSP…) khai trong `vercel.json`; bản xem trước của Vite và smoke test dùng cùng bộ header.
 
 ## Tài liệu
 

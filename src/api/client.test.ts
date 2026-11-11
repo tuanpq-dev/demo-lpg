@@ -22,7 +22,7 @@ function make(routes: Record<string, Reply[]>) {
       });
     return next instanceof Error ? Promise.reject(next) : Promise.resolve(next);
   };
-  return { client: createApiClient({ baseUrl: 'http://api', fetch: fetch }), calls };
+  return { client: createApiClient({ baseUrl: 'http://api', fetch: fetch, retryDelaysMs: [1, 1] }), calls };
 }
 
 describe('api client', () => {
@@ -53,10 +53,45 @@ describe('api client', () => {
     await expect(client.request('/c', { method: 'POST', auth: false })).rejects.toMatchObject({ code: 'UNKNOWN', status: 500 });
   });
 
-  test('mất mạng → NETWORK_ERROR; quá thời gian → TIMEOUT', async () => {
-    const { client } = make({ 'GET /x': [new TypeError('Failed to fetch')], 'GET /y': ['hang'] });
-    await expect(client.request('/x')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+  test('mất mạng → NETWORK_ERROR; quá thời gian → TIMEOUT (không thử lại)', async () => {
+    const { client, calls } = make({ 'GET /x': [new TypeError('Failed to fetch')], 'GET /y': ['hang', json(200, {})] });
+    await expect(client.request('/x', { retry: 0 })).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
     await expect(client.request('/y', { timeoutMs: 20 })).rejects.toMatchObject({ code: 'TIMEOUT' });
+    expect(calls.filter((c) => c.url.endsWith('/y'))).toHaveLength(1);
+  });
+
+  test('GET tự thử lại lỗi tạm thời (mất mạng, 503) tối đa 2 lần; 4xx và POST không thử lại', async () => {
+    const down = () => new TypeError('Failed to fetch');
+    const { client, calls } = make({
+      'GET /flaky': [down(), new Response('', { status: 503 }), json(200, { ok: 1 })],
+      'GET /dead': [down(), down(), down(), json(200, {})],
+      'GET /missing': [json(404, {}), json(200, {})],
+      'POST /write': [down(), json(200, {})],
+    });
+    const count = (path: string) => calls.filter((c) => c.url.endsWith(path)).length;
+    await expect(client.request('/flaky')).resolves.toBeUndefined();
+    expect(count('/flaky')).toBe(3);
+    await expect(client.request('/dead')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(count('/dead')).toBe(3);
+    await expect(client.request('/missing')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(count('/missing')).toBe(1);
+    await expect(client.request('/write', { method: 'POST', body: {}, auth: false })).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(count('/write')).toBe(1);
+  });
+
+  test('huỷ trong lúc chờ thử lại → AbortError, không gọi thêm', async () => {
+    let n = 0;
+    const fetch = () => {
+      n += 1;
+      return Promise.reject(new TypeError('Failed to fetch'));
+    };
+    const client = createApiClient({ baseUrl: 'http://api', fetch, retryDelaysMs: [200, 200] });
+    const ctrl = new AbortController();
+    const p = client.request('/x', { signal: ctrl.signal }).catch((e: unknown) => e);
+    await new Promise((r) => setTimeout(r, 20));
+    ctrl.abort();
+    expect(isAbortError(await p)).toBe(true);
+    expect(n).toBe(1);
   });
 
   test('nơi gọi huỷ → AbortError (không phải ApiError), kể cả huỷ trước khi gửi', async () => {

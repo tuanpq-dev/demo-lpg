@@ -34,7 +34,11 @@ export type AppHeaderProps = {
   className?: string;
 };
 
-/** Thanh trên cùng cao 60px (Figma 53:13): logo · NavTabs · thông báo/cài đặt/người dùng. */
+/**
+ * Thanh trên cùng cao 60px (Figma 53:13): logo · NavTabs · thông báo/cài đặt/người dùng.
+ * < sm (điện thoại): thu gọn để KHÔNG tràn ngang – chỉ icon logo (tên app chỉ còn cho trình đọc màn hình), khoảng cách hẹp,
+ * tên người dùng ẩn (vẫn có trong menu tài khoản + tên truy cập của nút), nhãn nút Menu co lại và cắt "…".
+ */
 export function AppHeader({
   navItems,
   navValue,
@@ -51,13 +55,13 @@ export function AppHeader({
   className,
 }: AppHeaderProps) {
   return (
-    <header className={cn('flex h-header items-center justify-between gap-6 bg-bg-header px-6', className)}>
+    <header className={cn('flex h-header items-center justify-between gap-2 bg-bg-header px-3 sm:gap-6 sm:px-6', className)}>
       {/* Logo – 53:14 */}
-      <div className="flex shrink-0 items-center gap-3 px-2">
+      <div className="flex shrink-0 items-center gap-3 sm:px-2">
         <span className="flex size-10 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
           <Icon name="logo" box={20} />
         </span>
-        <div className="flex flex-col">
+        <div className="sr-only flex-col sm:not-sr-only sm:flex">
           <span className="text-lg text-fg">{title}</span>
           <span className="text-2xs text-fg-muted">{subtitle}</span>
         </div>
@@ -65,11 +69,11 @@ export function AppHeader({
 
       {/* ≥ xl: menu ngang (chỉ icon tới wide); < xl: nút Menu xổ danh sách. */}
       <NavTabs items={navItems} value={navValue} onChange={onNavChange} className="hidden min-w-0 xl:block" />
-      <NavMenu items={navItems} value={navValue} onChange={onNavChange} className="mr-auto xl:hidden" />
+      <NavMenu items={navItems} value={navValue} onChange={onNavChange} className="mr-auto min-w-0 xl:hidden" />
 
       {/* Nhóm phải – 53:76 */}
-      <div className="flex shrink-0 items-center gap-[26px] pl-2.5 pr-2">
-        <div className="flex items-center gap-[22px]">
+      <div className="flex shrink-0 items-center gap-3.5 sm:gap-[26px] sm:pl-2.5 sm:pr-2">
+        <div className="flex items-center gap-3.5 sm:gap-[22px]">
           <button
             type="button"
             aria-label={notificationCount ? `Thông báo (${notificationCount} chưa đọc)` : 'Thông báo'}
@@ -110,7 +114,8 @@ function UserButtonContent({ user }: { user: AppHeaderUser }) {
   return (
     <>
       <img src={user.avatarSrc ?? avatarAdmin} alt="" width={34} height={34} className="size-[34px] rounded-full" />
-      <span className="max-w-[120px] truncate">{user.name}</span>
+      {/* < sm: chỉ avatar – tên vẫn là tên truy cập của nút và hiện trong menu tài khoản. */}
+      <span className="sr-only max-w-[120px] truncate sm:not-sr-only">{user.name}</span>
     </>
   );
 }

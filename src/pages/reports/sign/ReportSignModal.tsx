@@ -1,8 +1,9 @@
 import { useId, useState } from 'react';
+import { ModalDataFallback } from '@/app/Placeholder';
 import { Button, Modal, SignaturePenIcon } from '@/components';
 import { reportDetailPath } from '@/data/dailyReport';
 import { signDailyReport, useReportSignData } from '@/data/reportSign';
-import { SIGN_PIN_REQUIRED, inspectorSignStatus, signConditions, signReady, type ReportRecord } from '@/features/reports';
+import { SIGN_PIN_REQUIRED, inspectorSignStatus, signConditions, signReady, type DailyReadingRow, type ReportRecord } from '@/features/reports';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
@@ -22,12 +23,47 @@ export type ReportSignModalProps = {
  * Figma; ảnh + ghi chú: scratch/figma-ref/report-sign/). Điều kiện ký: `features/reports/sign.ts`; ghi: `data/reportSign.ts`
  * (kiểm lại điều kiện từ dữ liệu hiện tại). Mã xác nhận KHÔNG lưu ở đâu (chỉ state). Chỉ mount khi mở.
  */
-export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: ReportSignModalProps) {
+export function ReportSignModal(props: ReportSignModalProps) {
+  const { readings, sensorFaults } = useReportSignData(props.report);
+  // Số đo chưa tải xong / lỗi → chưa dựng form: điều kiện ký KHÔNG được tính trên số liệu thiếu.
+  if (readings.status !== 'success') {
+    return (
+      <Modal
+        open
+        size="xl"
+        titleTone="primary"
+        title={SIGN_TITLE}
+        description={SIGN_DESCRIPTION}
+        onClose={props.onClose}
+        dismissOnBackdrop={false}
+        footer={
+          <Button variant="subtle" onClick={props.onClose}>
+            Hủy
+          </Button>
+        }
+      >
+        <ModalDataFallback q={readings} errorTitle="Không tải được số liệu báo cáo" />
+      </Modal>
+    );
+  }
+  return <ReportSignForm {...props} rows={readings.data} sensorFaults={sensorFaults} />;
+}
+
+const SIGN_TITLE = 'Hoàn thành nhận xét & ký xác nhận';
+const SIGN_DESCRIPTION = 'Rà soát dữ liệu vận hành, xác nhận nhận xét cuối ca và ký báo cáo trước khi gửi cho Người duyệt.';
+
+function ReportSignForm({
+  report: r,
+  onClose,
+  onBackToEdit,
+  nowParam,
+  rows,
+  sensorFaults,
+}: ReportSignModalProps & { rows: readonly DailyReadingRow[]; sensorFaults: readonly string[] }) {
   const now = useNow(30_000);
   const uid = useId();
   const unmetId = `${uid}-unmet`;
   const pdfPendingId = `${uid}-pdf`;
-  const { rows, sensorFaults } = useReportSignData(r);
 
   const [draftReviewed, setDraftReviewed] = useState(false);
   const [responsibility, setResponsibility] = useState(false);
@@ -66,8 +102,8 @@ export function ReportSignModal({ report: r, onClose, onBackToEdit, nowParam }: 
       open
       size="xl"
       titleTone="primary"
-      title="Hoàn thành nhận xét & ký xác nhận"
-      description="Rà soát dữ liệu vận hành, xác nhận nhận xét cuối ca và ký báo cáo trước khi gửi cho Người duyệt."
+      title={SIGN_TITLE}
+      description={SIGN_DESCRIPTION}
       onClose={onClose}
       dismissOnBackdrop={false}
       onSubmit={(e) => {
