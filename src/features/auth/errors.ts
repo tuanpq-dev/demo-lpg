@@ -10,6 +10,7 @@ const AUTH_MESSAGES = {
   RATE_LIMITED: 'Bạn đã thử quá nhiều lần. Vui lòng đợi ít phút rồi thử lại.',
   NETWORK_ERROR: 'Không kết nối được máy chủ',
   CONFIG_ERROR: 'Chưa cấu hình địa chỉ máy chủ (VITE_API_URL)',
+  TIMEOUT: 'Máy chủ phản hồi quá lâu, vui lòng thử lại',
   CONTRACT_ERROR: 'Máy chủ trả dữ liệu không đúng định dạng. Báo cho quản trị hệ thống.',
   UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
   VALIDATION_FALLBACK: 'Thông tin chưa hợp lệ',
@@ -23,6 +24,7 @@ const FIXED: Partial<Record<string, string>> = {
   RATE_LIMITED: AUTH_MESSAGES.RATE_LIMITED,
   NETWORK_ERROR: AUTH_MESSAGES.NETWORK_ERROR,
   CONFIG_ERROR: AUTH_MESSAGES.CONFIG_ERROR,
+  TIMEOUT: AUTH_MESSAGES.TIMEOUT,
   CONTRACT_ERROR: AUTH_MESSAGES.CONTRACT_ERROR,
   UNAUTHORIZED: AUTH_MESSAGES.UNAUTHORIZED,
 };

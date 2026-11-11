@@ -39,6 +39,11 @@ export type KpiCardProps = {
    * ví dụ "Mức bồn V-101" chỉ hiện "—" (53:239) như ảnh Figma.
    */
   subIcon?: ReactNode;
+  /**
+   * Giữ chỗ dòng phụ khi chưa có `sub` (số liệu trực tiếp đang chờ) – thẻ không cao thêm khi dữ liệu về (tránh layout
+   * shift). Chỉ variant md.
+   */
+  reserveSub?: boolean;
   /** Làm mờ dòng phụ 70% – dòng trạng thái ("Ổn định", "Bình thường", "—") khác dòng trend (53:187, 53:199, 53:238). */
   subDim?: boolean;
   /**
@@ -228,10 +233,10 @@ function KpiHeader({ label, hint, hintIcon, icon, iconPosition = 'end', labelCla
   );
 }
 
-type SubLineProps = Pick<KpiCardProps, 'sub' | 'subIcon' | 'subDim' | 'signalLost' | 'dense'> & { subTone: KpiSubTone };
+type SubLineProps = Pick<KpiCardProps, 'sub' | 'subIcon' | 'subDim' | 'signalLost' | 'dense' | 'reserveSub'> & { subTone: KpiSubTone };
 
 /** Dòng phụ thẻ md (trend / trạng thái) hoặc "Mất tín hiệu". */
-function KpiSubLine({ sub, subIcon, subDim, subTone, signalLost, dense }: SubLineProps) {
+function KpiSubLine({ sub, subIcon, subDim, subTone, signalLost, dense, reserveSub }: SubLineProps) {
   const height = dense ? 'h-4 text-xs' : 'h-6 text-md';
   if (signalLost) {
     return (
@@ -241,7 +246,7 @@ function KpiSubLine({ sub, subIcon, subDim, subTone, signalLost, dense }: SubLin
       </div>
     );
   }
-  if (sub === undefined && !subIcon) return null;
+  if (sub === undefined && !subIcon) return reserveSub ? <div aria-hidden="true" className={height} /> : null;
   return (
     <div className={cn('flex items-center gap-1', height, subToneClass[subTone], subDim && 'opacity-70')}>
       {subIcon}
@@ -350,7 +355,15 @@ export function KpiCard(props: KpiCardProps) {
           />
         )}
 
-        <KpiSubLine sub={sub} subIcon={props.subIcon} subDim={props.subDim} subTone={subTone} signalLost={props.signalLost} dense={dense} />
+        <KpiSubLine
+          sub={sub}
+          subIcon={props.subIcon}
+          subDim={props.subDim}
+          subTone={subTone}
+          signalLost={props.signalLost}
+          dense={dense}
+          reserveSub={props.reserveSub}
+        />
 
         {action && <KpiAction action={action} danger={danger} />}
       </div>

@@ -127,18 +127,21 @@ function PlcKpis({ data, m }: { data: PlcScadaDeviceMock; m: PlcModel }) {
         value={<span className="text-2xl font-bold">{plc.label}</span>}
         sub={plc.tone === 'success' ? `${data.controller} ổn định` : plc.tone === 'danger' ? `${data.controller} mất kết nối` : undefined}
         subTone={plc.tone === 'success' ? 'success' : kpiTone(plc.tone)}
+        reserveSub
       />
       <KpiCard
         label="Trạng thái SCADA"
         value={<span className="text-2xl font-bold">{scada.label}</span>}
         sub={scada.tone === 'success' ? 'Dữ liệu hiển thị bình thường' : scada.tone === 'danger' ? 'Mất kết nối SCADA' : undefined}
         subTone={scada.tone === 'success' ? 'muted' : kpiTone(scada.tone)}
+        reserveSub
       />
       <KpiCard
         label="Tag khả dụng"
         value={m.availText}
         sub={!avail ? undefined : avail.lost === 0 ? 'Không có tag lỗi' : `${avail.lost} tag lỗi`}
         subTone={!avail ? 'muted' : avail.lost === 0 ? 'success' : 'warning'}
+        reserveSub
       />
       <KpiCard
         label="Độ trễ dữ liệu"
@@ -147,6 +150,7 @@ function PlcKpis({ data, m }: { data: PlcScadaDeviceMock; m: PlcModel }) {
         signalLost={latency.state === 'lost'}
         sub={latencySub}
         subTone={latency.status === 'normal' ? 'muted' : 'warning'}
+        reserveSub
       />
     </>
   );

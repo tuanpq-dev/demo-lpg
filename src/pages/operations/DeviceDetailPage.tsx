@@ -3,7 +3,7 @@ import { DEFAULT_OPERATION_DEVICE, operationDevicePath } from '@/app/assetRoutes
 import { RefreshButton } from '@/app/HeaderActions';
 import { Page } from '@/app/Page';
 import { pageFallback, Placeholder } from '@/app/Placeholder';
-import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StatusPill } from '@/components';
+import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StableWidth, StatusPill } from '@/components';
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
 import { useMaintenance } from '@/data/maintenance';
@@ -15,7 +15,7 @@ import {
   resolveOperationDeviceId,
   useOperationDevice,
 } from '@/data/operationDevice';
-import { connectionView } from '@/features/operations/device';
+import { connectionView, HEADER_RUN_LABELS, PLC_CONNECTION_LABELS } from '@/features/operations/device';
 import { useNow } from '@/lib/useNow';
 import NotFoundPage from '../errors/NotFoundPage';
 import { PlcScadaView, plcHeaderStatus } from './PlcScadaView';
@@ -88,15 +88,20 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
       // TODO: đổi sang `actionItems` (gom Tên/Khu vực/PLC vào "Thêm" < md) khi nhánh fix/header-mobile vào main.
       actions={
         <>
-          {data && run && (
-            <>
-              <InfoChip icon={<InfoIcon size={16} />} label="Tên" value={data.name} />
-              <InfoChip icon={<MapPinIcon />} label="Khu vực" value={data.area} />
-              <StatusPill tone={run.tone}>Trạng thái: {runLabel}</StatusPill>
-            </>
-          )}
+          {/* Chống layout shift khi dữ liệu về: luôn hiện đủ chip (đang tải → "—"); Tên / Khu vực bề rộng cố định (< md cả dòng,
+              từ md 240px, dài thì cắt "…") – độ dài tên không đổi số dòng header; trạng thái / PLC rộng bằng nhãn dài nhất. */}
+          <InfoChip icon={<InfoIcon size={16} />} label="Tên" value={data?.name ?? '—'} className="w-full md:w-60" />
+          <InfoChip icon={<MapPinIcon />} label="Khu vực" value={data?.area ?? '—'} className="w-full md:w-60" />
+          <StatusPill tone={run?.tone ?? 'neutral'}>
+            Trạng thái: <StableWidth candidates={HEADER_RUN_LABELS}>{run ? runLabel : '—'}</StableWidth>
+          </StatusPill>
           <RefreshButton accent onClick={refetch} />
-          <InfoChip icon={<CpuIcon />} label="PLC" value={conn.plc} tone={conn.tone === 'neutral' ? 'muted' : conn.tone} />
+          <InfoChip
+            icon={<CpuIcon />}
+            label="PLC"
+            value={<StableWidth candidates={PLC_CONNECTION_LABELS}>{conn.plc}</StableWidth>}
+            tone={conn.tone === 'neutral' ? 'muted' : conn.tone}
+          />
         </>
       }
     />

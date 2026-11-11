@@ -52,6 +52,7 @@ export * from './StatusDot';
 export * from './domain/StaffPicker';
 export * from './domain/InspectionTable';
 export * from './StatusOptionCard';
+export * from './StableWidth';
 export * from './StatusPill';
 export * from './StickyActionBar';
 export * from './Switch';

@@ -30,11 +30,12 @@ export type PageErrorProps = {
   preformatted?: boolean;
 };
 
-/** Câu thay cho `error.message` theo mã lỗi API (403, mất mạng); undefined = dùng message gốc. */
+/** Câu thay cho `error.message` theo mã lỗi API (403, mất mạng, quá thời gian); undefined = dùng message gốc. */
 function errorText(error: Error): string | undefined {
   if (!(error instanceof ApiError)) return undefined;
   if (error.code === 'FORBIDDEN') return 'Tài khoản của bạn không có quyền xem nội dung này. Liên hệ quản trị viên nếu cần quyền.';
   if (error.code === 'NETWORK_ERROR') return 'Không kết nối được máy chủ. Kiểm tra mạng rồi bấm "Thử lại".';
+  if (error.code === 'TIMEOUT') return 'Máy chủ phản hồi quá lâu. Bấm "Thử lại" sau ít phút.';
   return undefined;
 }
 

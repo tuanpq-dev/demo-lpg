@@ -35,8 +35,11 @@ export function InfoChip({ icon, label, value, tone = 'default', className }: In
       )}
     >
       {icon && <span className="inline-flex text-fg-secondary">{icon}</span>}
-      <span className="text-fg-secondary">{label}:</span>
-      <span className={cn('font-semibold', valueTone[tone])}>{value}</span>
+      <span className="shrink-0 text-fg-secondary">{label}:</span>
+      {/* Chip bị giới hạn bề rộng (vd `w-full` trên mobile) → giá trị dài cắt "…" thay vì tràn. */}
+      <span className={cn('min-w-0 truncate font-semibold', valueTone[tone])} title={typeof value === 'string' ? value : undefined}>
+        {value}
+      </span>
     </span>
   );
 }

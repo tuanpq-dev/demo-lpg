@@ -6,6 +6,8 @@
  * - Response validate bằng zod (schema ở ./types) – sai hợp đồng → CONTRACT_ERROR nêu rõ trường sai.
  * - Request có xác thực gặp 401 → refresh MỘT lần (gộp mọi request cùng hết hạn thành một lần gọi
  *   /auth/refresh, Web Locks giữa các tab) rồi gọi lại; refresh thất bại → báo `onSessionLost` (đăng xuất).
+ * - Huỷ: `signal` của nơi gọi huỷ → ném lại `AbortError` gốc (kiểm bằng `isAbortError`, UI bỏ qua, không báo lỗi).
+ *   Quá `timeoutMs` (mặc định 15 s, tính cả lúc đọc body) → `ApiError('TIMEOUT')`.
  */
 import type { ZodType } from 'zod';
 import { ApiErrorBodySchema, RefreshResponseSchema, type ApiErrorCode } from './types';
@@ -27,6 +29,39 @@ export class ApiError extends Error {
 }
 
 const NETWORK_MESSAGE = 'Không kết nối được máy chủ';
+const TIMEOUT_MESSAGE = 'Máy chủ phản hồi quá lâu';
+/** Thời gian chờ mặc định của một request (gồm cả đọc body). */
+export const DEFAULT_TIMEOUT_MS = 15_000;
+
+/** Lỗi do huỷ request (signal của nơi gọi) – không phải lỗi cần hiện cho người dùng. */
+export const isAbortError = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
+
+/**
+ * Signal gộp: huỷ khi `outer` huỷ hoặc hết `ms` (0 = không giới hạn). `timedOut()` phân biệt hai trường hợp;
+ * `dispose()` gỡ timer + listener khi request xong. Không dùng `AbortSignal.any` (Safari < 17.4).
+ */
+function timeoutSignal(outer: AbortSignal | undefined, ms: number) {
+  const ctrl = new AbortController();
+  let timedOut = false;
+  const onAbort = () => ctrl.abort(outer?.reason);
+  if (outer?.aborted) ctrl.abort(outer.reason);
+  else outer?.addEventListener('abort', onAbort, { once: true });
+  const timer =
+    ms > 0
+      ? setTimeout(() => {
+          timedOut = true;
+          ctrl.abort(new DOMException(TIMEOUT_MESSAGE, 'TimeoutError'));
+        }, ms)
+      : undefined;
+  return {
+    signal: ctrl.signal,
+    timedOut: () => timedOut,
+    dispose: () => {
+      clearTimeout(timer);
+      outer?.removeEventListener('abort', onAbort);
+    },
+  };
+}
 
 /** Schema zod của response (đầu vào bất kỳ – JSON chưa kiểm). */
 type Schema<T> = ZodType<T>;
@@ -38,7 +73,10 @@ export type RequestOptions<T> = {
   schema?: Schema<T>;
   /** Gắn Bearer + tự refresh khi 401. Mặc định true; endpoint đăng nhập/refresh/logout đặt false. */
   auth?: boolean;
+  /** Huỷ request (rời trang, đổi tham số…) → promise bị reject bằng `AbortError`. */
   signal?: AbortSignal;
+  /** Giới hạn thời gian (ms), mặc định `DEFAULT_TIMEOUT_MS`; 0 = không giới hạn (vd tải tệp lớn). */
+  timeoutMs?: number;
 };
 
 export interface ApiClient {
@@ -101,7 +139,7 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
     try {
       return await deps.fetch(`${deps.baseUrl}${path}`, { ...init, headers, credentials: 'include' });
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') throw err;
+      if (init.signal?.aborted) throw err;
       throw new ApiError('NETWORK_ERROR', NETWORK_MESSAGE, 0);
     }
   };
@@ -120,16 +158,32 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
     return parsed.data;
   };
 
-  const doRefresh = async (): Promise<string | null> => {
-    const res = await send('/auth/refresh', { method: 'POST' }, false);
-    if (!res.ok) {
-      accessToken = null;
-      return null;
+  /** Chạy `fn` với signal gộp (huỷ của nơi gọi + timeout); hết giờ → `ApiError('TIMEOUT')`, huỷ → `AbortError` gốc. */
+  const withTimeout = async <T>(outer: AbortSignal | undefined, ms: number, fn: (signal: AbortSignal) => Promise<T>) => {
+    const t = timeoutSignal(outer, ms);
+    try {
+      return await fn(t.signal);
+    } catch (err) {
+      if (t.timedOut() && !outer?.aborted) throw new ApiError('TIMEOUT', TIMEOUT_MESSAGE, 0);
+      if (t.signal.aborted) throw outer?.reason instanceof DOMException ? outer.reason : new DOMException('Đã huỷ', 'AbortError');
+      throw err;
+    } finally {
+      t.dispose();
     }
-    const { accessToken: token } = await parse('/auth/refresh', res, RefreshResponseSchema);
-    accessToken = token;
-    return token;
   };
+
+  // Refresh dùng chung cho mọi request đang chờ → không theo signal của request nào, chỉ có timeout.
+  const doRefresh = () =>
+    withTimeout(undefined, DEFAULT_TIMEOUT_MS, async (signal): Promise<string | null> => {
+      const res = await send('/auth/refresh', { method: 'POST', signal }, false);
+      if (!res.ok) {
+        accessToken = null;
+        return null;
+      }
+      const { accessToken: token } = await parse('/auth/refresh', res, RefreshResponseSchema);
+      accessToken = token;
+      return token;
+    });
 
   const refresh = () => {
     refreshing ??= (deps.lock ? deps.lock(doRefresh) : doRefresh()).finally(() => {
@@ -140,21 +194,33 @@ function createApiClient(deps: ApiClientDeps): ApiClient {
 
   const request = async <T>(path: string, opts: RequestOptions<T> = {}, retried = false): Promise<T> => {
     const auth = opts.auth ?? true;
-    const init: RequestInit = {
-      method: opts.method ?? (opts.body === undefined ? 'GET' : 'POST'),
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
-      signal: opts.signal,
-    };
-    const res = await send(path, init, auth);
-    if (res.status === 401 && auth) {
-      // Lần đầu: refresh rồi gọi lại. Đã refresh mà vẫn 401 / refresh bị từ chối → mất phiên.
-      const token = retried ? null : await refresh();
-      if (token) return request(path, opts, true);
-      accessToken = null;
-      lostListeners.forEach((l) => l());
-    }
-    if (!res.ok) throw await toApiError(res);
-    return parse(path, res, opts.schema);
+    const res = await withTimeout(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS, async (signal) => {
+      const init: RequestInit = {
+        method: opts.method ?? (opts.body === undefined ? 'GET' : 'POST'),
+        body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+        signal,
+      };
+      const r = await send(path, init, auth);
+      if (r.status === 401 && auth && !retried) return { retry: true as const, error: await toApiError(r) };
+      // Đọc body trong cùng khung timeout / huỷ.
+      if (!r.ok) throw await toApiError(r);
+      return { retry: false as const, data: await parse(path, r, opts.schema) };
+    }).catch((err: unknown) => {
+      if (err instanceof ApiError && err.status === 401 && auth) {
+        // Đã refresh mà vẫn 401 → mất phiên.
+        accessToken = null;
+        lostListeners.forEach((l) => l());
+      }
+      throw err;
+    });
+    if (!res.retry) return res.data;
+    // 401 lần đầu: refresh rồi gọi lại; refresh bị từ chối → mất phiên.
+    const token = await refresh();
+    opts.signal?.throwIfAborted();
+    if (token) return request(path, opts, true);
+    accessToken = null;
+    lostListeners.forEach((l) => l());
+    throw res.error;
   };
 
   return {

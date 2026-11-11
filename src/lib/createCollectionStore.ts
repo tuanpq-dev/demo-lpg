@@ -14,13 +14,21 @@ export type CollectionState<T> =
  * Thứ tự kết quả: mỗi lượt tải có số thứ tự; chỉ lượt MỚI NHẤT được ghi vào store. `commit` cũng vô hiệu mọi lượt
  * đang chạy (dữ liệu của chúng lấy trước thao tác ghi) → kết quả cũ về muộn không đè thay đổi vừa ghi.
  * Nhiều hook mount cùng lúc dùng chung một lượt tải; `refetch` tường minh luôn tạo lượt mới.
+ * Lượt bị thay thế (lượt tải / commit mới hơn) bị huỷ qua `signal` của `fetchAll` – truyền vào `api.request` để dừng
+ * request mạng thừa. Rời trang KHÔNG huỷ: store dùng chung, kết quả vẫn có ích cho lần mở sau.
  */
-export function createCollectionStore<T>(fetchAll: () => Promise<T[]>) {
+export function createCollectionStore<T>(fetchAll: (signal: AbortSignal) => Promise<T[]>) {
   let state: CollectionState<T> = { status: 'loading' };
   /** Số thứ tự lượt tải / commit gần nhất. */
   let seq = 0;
   /** Có lượt tải (mới nhất) đang chạy. */
   let pending = false;
+  /** Huỷ lượt tải đang chạy (nếu có). */
+  let inflight: AbortController | null = null;
+  const cancelInflight = () => {
+    inflight?.abort();
+    inflight = null;
+  };
   const listeners = new Set<() => void>();
   const emit = (next: CollectionState<T>) => {
     state = next;
@@ -34,13 +42,16 @@ export function createCollectionStore<T>(fetchAll: () => Promise<T[]>) {
   function load() {
     const id = ++seq;
     pending = true;
+    cancelInflight();
+    const ctrl = (inflight = new AbortController());
     if (state.status !== 'success') emit({ status: 'loading' });
     const settle = (next: CollectionState<T>) => {
       if (id !== seq) return; // đã có lượt tải / commit mới hơn
       pending = false;
+      inflight = null;
       emit(next);
     };
-    fetchAll()
+    fetchAll(ctrl.signal)
       .then((data) => settle({ status: 'success', data }))
       .catch((e: unknown) => settle({ status: 'error', error: e instanceof Error ? e : new Error(String(e)) }));
   }
@@ -48,6 +59,7 @@ export function createCollectionStore<T>(fetchAll: () => Promise<T[]>) {
   function commit(data: T[]) {
     seq++;
     pending = false;
+    cancelInflight();
     emit({ status: 'success', data });
   }
 

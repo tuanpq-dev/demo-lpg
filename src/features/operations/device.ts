@@ -91,11 +91,13 @@ const RUN_STATE: Record<string, { label: string; short: string; tone: ViewTone }
 
 export type RunStateView = { label: string; short: string; tone: ViewTone };
 
+const UNKNOWN_RUN_LABEL = 'Không xác định';
+
 /** Trạng thái chạy từ tag chuỗi; mất tín hiệu / giá trị lạ → "Mất tín hiệu" / "Không xác định" xám. */
 export function runState(tv: TagValue | undefined, live: boolean, now: number): RunStateView {
   if (!live) return { label: '—', short: '—', tone: 'neutral' };
   if (tagSignal(tv, now) === 'lost') return { label: SIGNAL_LOST_LABEL, short: 'mất tín hiệu', tone: 'neutral' };
-  return RUN_STATE[String(tv?.value)] ?? { label: 'Không xác định', short: 'không xác định', tone: 'neutral' };
+  return RUN_STATE[String(tv?.value)] ?? { label: UNKNOWN_RUN_LABEL, short: 'không xác định', tone: 'neutral' };
 }
 
 /** "Thiết bị dự phòng": standby = "Sẵn sàng" (máy chờ chạy được), các trạng thái khác theo `runState`. */
@@ -105,11 +107,31 @@ export function standbyReadiness(view: RunStateView, raw: TagValue | undefined):
 }
 
 /** Kết nối SCADA / PLC theo trạng thái nguồn dữ liệu trực tiếp. */
+const CONNECTION = {
+  connected: { scada: 'Trực tuyến', plc: 'Online', tone: 'success' },
+  connecting: { scada: 'Đang kết nối lại', plc: 'Đang kết nối', tone: 'warning' },
+  disconnected: { scada: 'Mất kết nối', plc: 'Offline', tone: 'danger' },
+} as const satisfies Record<LiveSourceStatus, { scada: string; plc: string; tone: ViewTone }>;
+
 export function connectionView(status: LiveSourceStatus): { scada: string; plc: string; tone: ViewTone } {
-  if (status === 'connected') return { scada: 'Trực tuyến', plc: 'Online', tone: 'success' };
-  if (status === 'connecting') return { scada: 'Đang kết nối lại', plc: 'Đang kết nối', tone: 'warning' };
-  return { scada: 'Mất kết nối', plc: 'Offline', tone: 'danger' };
+  return CONNECTION[status];
 }
+
+/** Mọi nhãn chip "PLC" ở header (giữ bề rộng – `StableWidth`). */
+export const PLC_CONNECTION_LABELS: readonly string[] = Object.values(CONNECTION).map((c) => c.plc);
+
+/**
+ * Mọi nhãn có thể hiện ở header chi tiết thiết bị (giữ bề rộng chip – `StableWidth`): trạng thái chạy (máy hóa hơi), trạng
+ * thái PLC/SCADA (`plcHeaderStatus`).
+ */
+export const HEADER_RUN_LABELS: readonly string[] = [
+  '—',
+  ...Object.values(RUN_STATE).map((r) => r.label),
+  SIGNAL_LOST_LABEL,
+  UNKNOWN_RUN_LABEL,
+  'Đã kết nối',
+  'Mất kết nối',
+];
 
 // ============================================================================
 // Xu hướng (lịch sử mock – thay bằng API lịch sử tag)

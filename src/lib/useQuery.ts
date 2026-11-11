@@ -15,25 +15,27 @@ const toError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
  * - Đổi `key` → về loading ngay ở lần render đó (không lộ dữ liệu của key cũ) rồi tải lại.
  * - `refetch()` → về loading rồi tải lại; kết quả của lượt cũ về muộn bị bỏ.
  * - Unmount → bỏ kết quả đang chờ (không setState sau unmount).
+ * - `fetcher(signal)`: signal bị huỷ khi đổi key / refetch / unmount – truyền vào `api.request(…, { signal })` để huỷ
+ *   request mạng đang chạy (lỗi AbortError của lượt đã huỷ bị bỏ qua).
  * - Luôn bắt lỗi (cả lỗi ném đồng bộ trong `fetcher`); lỗi không phải Error được bọc thành Error.
  * `fetcher` lấy bản mới nhất mỗi lượt tải (truyền hàm inline được); chỉ `key` / `refetch` kích hoạt tải lại.
  * Danh sách dùng chung nhiều trang (cảnh báo, bảo trì…) dùng `createCollectionStore` thay vì hook này.
  */
-export function useQuery<T>(key: string, fetcher: () => Promise<T>): QueryState<T> & { refetch: () => void } {
+export function useQuery<T>(key: string, fetcher: (signal: AbortSignal) => Promise<T>): QueryState<T> & { refetch: () => void } {
   const [attempt, setAttempt] = useState(0);
   const [snap, setSnap] = useState<Snapshot<T>>({ status: 'loading', key, attempt });
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
   useEffect(() => {
-    let cancelled = false;
+    const ctrl = new AbortController();
     setSnap({ status: 'loading', key, attempt });
     const done = (next: QueryState<T>) => {
-      if (!cancelled) setSnap({ ...next, key, attempt });
+      if (!ctrl.signal.aborted) setSnap({ ...next, key, attempt });
     };
     let pending: Promise<T>;
     try {
-      pending = Promise.resolve(fetcherRef.current());
+      pending = Promise.resolve(fetcherRef.current(ctrl.signal));
     } catch (e) {
       pending = Promise.reject(e);
     }
@@ -41,9 +43,7 @@ export function useQuery<T>(key: string, fetcher: () => Promise<T>): QueryState<
       (data) => done({ status: 'success', data }),
       (e: unknown) => done({ status: 'error', error: toError(e) }),
     );
-    return () => {
-      cancelled = true;
-    };
+    return () => ctrl.abort();
   }, [key, attempt]);
 
   const refetch = useCallback(() => setAttempt((n) => n + 1), []);
