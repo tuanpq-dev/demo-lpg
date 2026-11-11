@@ -41,3 +41,6 @@ CLAUDE.local.md
 # Dữ liệu tạm khi làm việc với Figma
 .figma-cache/
 scratch/
+# Kết quả Playwright (trace, ảnh lỗi, junit)
+e2e-results
+playwright-report

@@ -14,9 +14,6 @@ import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
 import { reloadForNewVersion } from './lib/chunkReload';
-import LoginPage from './pages/login/LoginPage';
-import PendingPage from './pages/login/PendingPage';
-import RegisterPage from './pages/login/RegisterPage';
 import ForbiddenPage from './pages/errors/ForbiddenPage';
 import NotFoundPage from './pages/errors/NotFoundPage';
 import RouteError from './pages/errors/RouteError';
@@ -37,6 +34,10 @@ const AiSimulationPage = lazy(() => import('./pages/operations/AiSimulationPage'
 const ScenarioConfigPage = lazy(() => import('./pages/operations/ScenarioConfigPage'));
 const SimulationMonitorPage = lazy(() => import('./pages/operations/SimulationMonitorPage'));
 const SimulationResultPage = lazy(() => import('./pages/operations/SimulationResultPage'));
+// Đăng nhập / đăng ký / chờ duyệt: người đã có phiên (và bản demo VITE_AUTH=off) không cần tải.
+const LoginPage = lazy(() => import('./pages/login/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/login/RegisterPage'));
+const PendingPage = lazy(() => import('./pages/login/PendingPage'));
 
 const APP_TITLE = 'Plant Control – Digital Twin';
 

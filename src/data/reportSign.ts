@@ -17,7 +17,7 @@ import {
 import { appNow } from '@/lib/demoNow';
 import { dayNumber, plantDayKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
-import { currentAlerts, useAlertList } from './alertStore';
+import { alertsReady, currentAlerts, useAlertList } from './alertStore';
 import { fetchDailyReadings } from './dailyReport';
 import { currentReports, replaceReport } from './reports';
 
@@ -44,6 +44,7 @@ export type SignResult = { ok: true; record: ReportRecord } | { ok: false; error
  * máy chủ kiểm quyền (đúng người kiểm tra) + điều kiện; FE chỉ kiểm để báo lỗi sớm.
  */
 export async function signDailyReport(id: string, input: InspectorSignInput): Promise<SignResult> {
+  await alertsReady();
   const now = appNow();
   const r = currentReports().find((x) => x.id === id);
   if (!r || !canInspectorSign(r, now)) return { ok: false, error: 'Báo cáo không còn ở bước chờ Người kiểm tra ký.' };

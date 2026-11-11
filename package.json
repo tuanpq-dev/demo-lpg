@@ -15,6 +15,10 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . && prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "VITE_AUTH=off npm run build && playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "build:shared": "npm run build -w @demo-lpg/shared",
     "format": "prettier --write ."
   },
@@ -37,6 +41,7 @@
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
@@ -52,7 +57,8 @@
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.34.1",
-    "vite": "^6.4.6"
+    "vite": "^6.4.6",
+    "vitest": "^3.2.4"
   },
   "overrides": {
     "@typescript-eslint/typescript-estree": {

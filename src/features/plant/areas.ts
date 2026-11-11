@@ -4,7 +4,7 @@
  * về "Khu bồn LPG" (ảnh drawer cảnh báo ALT-00128). Figma bảng cảnh báo 70:3032 vẫn ghi "Bồn chứa" – docs/figma-diffs.md.
  * TODO(backend): GET danh mục khu vực.
  */
-const AREAS = ['Khu bồn LPG', 'Khu nạp xuất', 'Trạm hóa hơi', 'Khu Lọc', 'Khu bơm', 'Tuyến chính', 'Khu vực B'] as const;
+export const AREAS = ['Khu bồn LPG', 'Khu nạp xuất', 'Trạm hóa hơi', 'Khu Lọc', 'Khu bơm', 'Tuyến chính', 'Khu vực B'] as const;
 export type Area = (typeof AREAS)[number];
 
 const isArea = (v: string): v is Area => (AREAS as readonly string[]).includes(v);

@@ -3,7 +3,7 @@
 Tài liệu cho người mới: đọc theo **luồng** (URL → dữ liệu → màn hình) thay vì mở file ngẫu nhiên.
 GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi mỗi luồng 1–2 dòng + link tới `docs/guide/<luồng>.md`. **Chỉ mở file của luồng đang làm**, không đọc hết.
 
-> **10/11/2026 (nhánh `chore/fe-hardening`)**: đã xoá toàn bộ unit test (`*.test.ts(x)`, vitest), trang `/playground`, mã giả lập `liveSimulator`/`devScenarios` và cấu hình Netlify. Các nhắc tới `#playground`, file test hay `npm test` trong `docs/guide/*` là **lịch sử** – không còn trong repo. Chi tiết: `docs/decisions.md` mục "FE hardening". Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
+> **11/11/2026**: có lại bộ test TỐI THIỂU (`npm test`, 9 file logic thuần – bảng trong `README.md`) + GitLab CI. **10/11/2026 (nhánh `chore/fe-hardening`)**: đã xoá bộ unit test cũ, trang `/playground`, mã giả lập `liveSimulator`/`devScenarios` và cấu hình Netlify. Các nhắc tới `#playground` hay file test KHÔNG có trong bảng của README trong `docs/guide/*` là **lịch sử** – không còn trong repo. Chi tiết: `docs/decisions.md` mục "FE hardening". Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
 
 ---
 
