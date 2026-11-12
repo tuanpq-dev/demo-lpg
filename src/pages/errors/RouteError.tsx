@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { ApiError } from '@/api/client';
 import { isChunkLoadError, reloadForNewVersion } from '@/lib/chunkReload';
+import { cn } from '@/lib/cn';
 import { reportError } from '@/lib/monitoring';
 import ForbiddenPage from './ForbiddenPage';
 import NotFoundPage from './NotFoundPage';
@@ -25,7 +26,10 @@ export default function RouteError({ withHeader = true }: { withHeader?: boolean
   if (status === 404) return <NotFoundPage withHeader={withHeader} />;
   if (isChunkLoadError(error) && reloadForNewVersion()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg-app text-sm text-fg-muted" aria-busy="true">
+      <div
+        className={cn('flex items-center justify-center bg-bg-app text-sm text-fg-muted', withHeader ? 'flex-1' : 'min-h-screen')}
+        aria-busy="true"
+      >
         Đang tải phiên bản mới…
       </div>
     );

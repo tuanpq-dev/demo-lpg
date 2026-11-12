@@ -24,3 +24,11 @@ export function Icon({ name, box = 18, className, label }: IconProps) {
     </span>
   );
 }
+
+/**
+ * Tải trước ảnh icon vào cache của trình duyệt – cho icon chỉ hiện ở một trạng thái về sau (vd icon tab đang chọn), để lần
+ * đầu đổi trạng thái không có khung hình thiếu ảnh.
+ */
+export function preloadIcons(names: readonly IconName[]) {
+  for (const name of names) new Image().src = icons[name];
+}

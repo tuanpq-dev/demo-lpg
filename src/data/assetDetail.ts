@@ -234,7 +234,8 @@ export function deriveMaintenanceSummary(rows: readonly MaintenanceRecord[], dev
  * trực tiếp đã ghép (`deriveAssetLive`, tính lại mỗi lần render để "Mất tín hiệu" đúng mốc 10 s).
  */
 export function useAssetDetail(assetId: string) {
-  const state = useQuery(assetId, () => fetchAssetDetail(assetId));
+  // `remember`: quay lại trang → có dữ liệu ngay (tiêu đề không đổi chữ), tải lại ngầm.
+  const state = useQuery(assetId, () => fetchAssetDetail(assetId), { remember: 'asset-detail' });
 
   const tags = state.data ? Object.values(state.data.tags) : [];
   const liveData = useLiveData(tags, { enabled: !!state.data });

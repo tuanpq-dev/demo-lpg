@@ -46,6 +46,24 @@ describe('useQuery – trạng thái trả cho render', () => {
   });
 });
 
+describe('useQuery – kết quả đã nhớ (remember)', () => {
+  test('mount lại / đổi sang key đã từng tải → hiện ngay kết quả đã nhớ, không qua loading', () => {
+    expect(startSnapshot(loading('a'), 'b', 0, { background: true, keepPrevious: false, cached: 7 })).toEqual(ok(7, 'b', 0));
+    expect(viewOf(ok(1, 'a'), 'b', 0, false, 7)).toEqual({ status: 'success', data: 7, pending: true });
+  });
+  test('đang hiện dữ liệu của chính key đó → giữ nguyên (không lùi về bản đã nhớ cũ hơn)', () => {
+    const cur = ok(9, 'b', 0);
+    expect(startSnapshot(cur, 'b', 0, { background: true, keepPrevious: false, cached: 7 })).toBe(cur);
+  });
+  test('tải lại lỗi → giữ kết quả đã nhớ đang hiện', () => {
+    const cur = ok(7, 'b', 0);
+    expect(settleSnapshot(cur, fail, 'b', 0, true)).toBe(cur);
+  });
+  test('refetch khi có kết quả đã nhớ → vẫn hiện dữ liệu (pending), không về loading', () => {
+    expect(viewOf(ok(7, 'b', 0), 'b', 1, false, 7)).toEqual({ status: 'success', data: 7, pending: true });
+  });
+});
+
 describe('combineQueries', () => {
   const q = (status: 'loading' | 'error' | 'success') => ({ status, error: status === 'error' ? new Error(status) : undefined, refetch: () => {} });
   test('lỗi thắng loading; loading khi còn truy vấn chưa xong; refetch gọi tất cả', () => {

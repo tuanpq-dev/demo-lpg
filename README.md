@@ -57,7 +57,7 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 | `packages/shared/src/roles.test.ts` | Phân quyền theo vai trò |
 | `src/mocks/contracts.test.ts` | Mock khớp hợp đồng dữ liệu dùng chung |
 
-Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (23 test, ~40 s) – 13 trang chính + 390 px + trang 404 không lỗi JS/console, mở drawer / modal theo query, ký báo cáo, CLS trang chi tiết thiết bị < 0,1. Không so pixel. Thêm test mới chỉ khi logic có hậu quả nghiệp vụ nếu sai; đặt cạnh module (`foo.ts` → `foo.test.ts`).
+Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (25 test, ~45 s) – 13 trang chính + 390 px + trang 404 không lỗi JS/console, mở drawer / modal theo query, ký báo cáo, CLS trang chi tiết thiết bị < 0,1. Không so pixel. Thêm test mới chỉ khi logic có hậu quả nghiệp vụ nếu sai; đặt cạnh module (`foo.ts` → `foo.test.ts`).
 
 ## CI / Deploy
 

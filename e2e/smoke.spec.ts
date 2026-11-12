@@ -144,6 +144,86 @@ test.describe('luồng chính', () => {
     expect(errors).toEqual([]);
   });
 
+  test('chuyển trang: header KHÔNG dựng lại và không đổi nội dung ở khung hình nào (không nháy)', async ({ page }) => {
+    await page.goto('/overview');
+    const header = page.locator('header').first();
+    // Số cảnh báo chưa xác nhận đã về (huy hiệu trên tab Cảnh báo) rồi mới bắt đầu đo.
+    await expect(header.getByRole('tab', { name: /Cảnh báo/ })).toContainText(/\d/);
+    // Ghi lại MỖI khung hình: header còn là phần tử cũ không + số cảnh báo đang hiện + bề rộng menu.
+    await page.evaluate(() => {
+      const first = document.querySelector('header');
+      const w = window as unknown as { __header: { remounted: boolean; states: Set<string> } };
+      w.__header = { remounted: false, states: new Set() };
+      const tick = () => {
+        const h = document.querySelector('header');
+        if (h !== first) w.__header.remounted = true;
+        // Tên trang trong nút Menu đổi theo trang là đúng → chỉ so các con số (số cảnh báo) + bề rộng menu.
+        const counts = h ? (h.textContent?.match(/\d+/g) ?? []).join(',') : '(không có header)';
+        w.__header.states.add(`${counts}|${h?.querySelector('nav')?.getBoundingClientRect().width ?? 0}`);
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    for (let round = 0; round < 3; round++) {
+      for (const [tab, url] of [
+        [/Cảnh báo/, /\/alerts/],
+        [/Bảo trì/, /\/maintenance/],
+        [/Báo cáo/, /\/reports/],
+        [/Tổng quan/, /\/overview/],
+      ] as const) {
+        await header.getByRole('tab', { name: tab }).click();
+        await expect(page).toHaveURL(url);
+        await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+      }
+    }
+    const result = await page.evaluate(() => {
+      const { remounted, states } = (window as unknown as { __header: { remounted: boolean; states: Set<string> } }).__header;
+      return { remounted, states: [...states] };
+    });
+    expect(result.remounted, 'header bị gỡ / dựng lại khi chuyển trang').toBe(false);
+    expect(result.states, 'số cảnh báo / bề rộng menu đổi giữa chừng').toHaveLength(1);
+  });
+
+  test('Bản đồ nội khu: quay lại trang → tiêu đề đúng ngay, trang không đổi chiều cao sau khi hiện; luôn giữ chỗ thanh cuộn', async ({ page }) => {
+    await page.goto('/overview');
+    // Giữ sẵn chỗ thanh cuộn → thanh cuộn hiện / mất không làm header xô ngang (bản chạy ẩn giấu thanh cuộn nên kiểm CSS).
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarGutter)).toBe('stable');
+    const header = page.locator('header').first();
+    const openMap = async () => {
+      await header.getByRole('tab', { name: /Bản đồ nội khu/ }).click();
+      await expect(page).toHaveURL(/\/map\/V-101/);
+      await expect(page.getByRole('heading', { level: 1, name: /Bồn LPG V-101/ })).toBeVisible();
+    };
+    await openMap();
+    await header.getByRole('tab', { name: /Tổng quan/ }).click();
+    await expect(page).toHaveURL(/\/overview/);
+    // Lần quay lại: ghi MỖI khung hình tên trang + chiều cao trang kể từ lúc trang bản đồ hiện.
+    await page.evaluate(() => {
+      const w = window as unknown as { __map: { titles: Set<string>; heights: Set<number> } };
+      w.__map = { titles: new Set(), heights: new Set() };
+      const tick = () => {
+        if (location.pathname.startsWith('/map/')) {
+          const h1 = document.querySelector('main h1');
+          // URL đổi trước khi trang mới được vẽ → chỉ ghi khi tiêu đề đã là của trang bản đồ (chữ thế chỗ là "V-101").
+          if (h1?.textContent?.includes('V-101')) {
+            w.__map.titles.add(h1.textContent ?? '');
+            w.__map.heights.add(document.documentElement.scrollHeight);
+          }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await openMap();
+    await page.waitForTimeout(1500);
+    const seen = await page.evaluate(() => {
+      const { titles, heights } = (window as unknown as { __map: { titles: Set<string>; heights: Set<number> } }).__map;
+      return { titles: [...titles], heights: [...heights] };
+    });
+    expect(seen.titles, 'tiêu đề trang đổi chữ sau khi hiện (chữ thế chỗ → tên thật)').toEqual(['Bồn LPG V-101']);
+    expect(seen.heights, 'trang đổi chiều cao sau khi hiện (dữ liệu thẻ về muộn)').toHaveLength(1);
+  });
+
   test('Tổng quan: cuộn trang → nút bản đồ nằm DƯỚI header dính (không đè)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto('/overview');

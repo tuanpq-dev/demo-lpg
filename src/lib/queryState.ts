@@ -18,14 +18,15 @@ export const toError = (e: unknown) => (e instanceof Error ? e : new Error(Strin
  * Lượt tải bắt đầu. Trả nguyên `cur` khi không cần đổi:
  * - `background` (cùng key + attempt, chỉ `revision` đổi) → giữ dữ liệu đang hiện, tải ngầm;
  * - `keepPrevious` và đang có dữ liệu → giữ snapshot cũ (render trả `pending`) tới khi lượt này xong.
- * Còn lại → loading của lượt mới.
+ * Có kết quả đã nhớ của key này (`cached`) → hiện ngay kết quả đó trong lúc tải lại. Còn lại → loading của lượt mới.
  */
 export function startSnapshot<T>(
   cur: Snapshot<T>,
   key: string,
   attempt: number,
-  { background, keepPrevious }: { background: boolean; keepPrevious: boolean },
+  { background, keepPrevious, cached }: { background: boolean; keepPrevious: boolean; cached?: T },
 ): Snapshot<T> {
+  if (cached !== undefined && !(cur.status === 'success' && cur.key === key)) return { status: 'success', data: cached, key, attempt };
   if (background || (keepPrevious && cur.status === 'success')) return cur;
   return { status: 'loading', key, attempt };
 }
@@ -37,12 +38,14 @@ export function settleSnapshot<T>(cur: Snapshot<T>, next: QueryState<T>, key: st
 }
 
 /**
- * Trạng thái trả cho render. Snapshot của key / lượt khác (effect chưa chạy, hoặc đang tải key mới) → loading, hoặc dữ liệu
- * cũ kèm `pending` khi `keepPrevious` – không bao giờ trả lỗi / dữ liệu của key cũ như thể của key mới.
+ * Trạng thái trả cho render. Snapshot của key / lượt khác (effect chưa chạy, hoặc đang tải key mới) → kết quả đã nhớ của
+ * key mới (nếu có), không thì loading, hoặc dữ liệu cũ kèm `pending` khi `keepPrevious` – không bao giờ trả lỗi / dữ liệu
+ * của key cũ như thể của key mới.
  */
-export function viewOf<T>(snap: Snapshot<T>, key: string, attempt: number, keepPrevious: boolean): QueryState<T> & { pending: boolean } {
+export function viewOf<T>(snap: Snapshot<T>, key: string, attempt: number, keepPrevious: boolean, cached?: T): QueryState<T> & { pending: boolean } {
   const { key: _k, attempt: _a, ...state } = snap;
   const current = state as QueryState<T>;
   if (snap.key === key && snap.attempt === attempt) return { ...current, pending: false };
+  if (cached !== undefined) return { status: 'success', data: cached, pending: true };
   return keepPrevious && current.status === 'success' ? { ...current, pending: true } : { status: 'loading', pending: true };
 }

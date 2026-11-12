@@ -3,6 +3,7 @@ import { authService as defaultService, type AuthService, type AuthState } from 
 import type { LoginRequest, RegisterRequest, User } from '@/api/types';
 import { can, type Permission } from '@/features/auth/permissions';
 import { refreshDelayMs } from '@/features/auth/session';
+import { clearRememberedQueries } from '@/lib/useQuery';
 
 export type AuthContextValue = AuthState & {
   login(input: LoginRequest): Promise<User>;
@@ -31,6 +32,11 @@ export function AuthProvider({ service = defaultService, children }: { service?:
     const id = window.setTimeout(() => void service.refresh(), refreshDelayMs(exp, Date.now()));
     return () => window.clearTimeout(id);
   }, [service, state]);
+
+  // Hết phiên (đăng xuất ở tab này / tab khác, phiên bị thu hồi) → bỏ dữ liệu trang đã nhớ của phiên đó.
+  useEffect(() => {
+    if (state.status === 'anonymous') clearRememberedQueries();
+  }, [state.status]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -71,7 +71,7 @@ export const fetchMaintenanceByDevice = (device: string, _signal?: AbortSignal) 
 /** Yêu cầu bảo trì của một thiết bị. */
 export function useMaintenanceByDevice(device: string) {
   const revision = useMaintenanceRevision();
-  return useQuery(device, (signal) => fetchMaintenanceByDevice(device, signal), { revision });
+  return useQuery(device, (signal) => fetchMaintenanceByDevice(device, signal), { revision, remember: 'maintenance-by-device' });
 }
 
 /** TODO(backend): GET /maintenance?tab&q&area&priority&type&range&sort&page&size → MaintenanceListResult. */
