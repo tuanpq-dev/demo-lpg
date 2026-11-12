@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, CloseIcon } from '@/components';
-import { useAlerts } from '@/data/alerts';
-import { deriveDeviceDirectory, useMaintenance, type NewMaintenanceInput } from '@/data/maintenance';
+import { createMaintenanceRequest, useDeviceDirectory, type NewMaintenanceInput } from '@/data/maintenanceApi';
 import { announce } from '@/lib/announce';
 
 /**
@@ -10,10 +9,9 @@ import { announce } from '@/lib/announce';
  * tạo xong → đóng + thông báo có link "Xem trong Bảo trì" (tự ẩn sau 8 giây). `setExtra` = ghi query của bảng sự kiện.
  */
 export function useAssetCreateRequest({ open, setExtra }: { open: boolean; setExtra: (patch: Record<string, string | null>) => void }) {
-  const alerts = useAlerts();
-  const maintenance = useMaintenance();
   const [created, setCreated] = useState<{ id: string; code: string } | null>(null);
-  const devices = useMemo(() => deriveDeviceDirectory(maintenance.data ?? [], alerts.data ?? []), [maintenance.data, alerts.data]);
+  // Danh bạ thiết bị chỉ tải khi mở modal (GET /devices).
+  const devices = useDeviceDirectory(open);
 
   useEffect(() => {
     if (!created) return;
@@ -34,7 +32,7 @@ export function useAssetCreateRequest({ open, setExtra }: { open: boolean; setEx
       announce('Đã lưu nháp yêu cầu bảo trì.');
     },
     onSubmit: async (input: NewMaintenanceInput) => {
-      const rec = await maintenance.create(input);
+      const rec = await createMaintenanceRequest(input);
       close();
       setCreated({ id: rec.id, code: rec.code });
       announce(`Đã tạo yêu cầu ${rec.code}.`);

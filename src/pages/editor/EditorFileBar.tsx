@@ -23,7 +23,7 @@ export function EditorFileBar({ source, errorCount, onNew, onOpen, onSave, onSav
   const canRedo = useStore(useSceneDoc.temporal, (s) => s.futureStates.length > 0);
   return (
     <div role="toolbar" aria-label="Tệp cảnh" className="flex flex-wrap items-center gap-2">
-      <h1 className="mr-2 text-lg font-semibold text-fg">Scene Editor</h1>
+      <h1 className="mr-2 text-lg font-semibold text-fg">Chỉnh sửa bản đồ 3D</h1>
       <Button variant="ghost" size="sm" icon={<FilePlusIcon />} onClick={onNew}>
         Cảnh mới
       </Button>

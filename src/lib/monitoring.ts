@@ -5,6 +5,8 @@
  * Nơi báo: lỗi JS toàn cục + promise không bắt (SDK tự nghe), lỗi render / loader (`RouteError`), response sai hợp đồng
  * API (`src/api/client.ts`).
  */
+import { whenIdle } from './whenIdle';
+
 const DSN = import.meta.env.VITE_SENTRY_DSN;
 
 type Context = Record<string, string | number | boolean | undefined>;
@@ -59,6 +61,5 @@ export function initMonitoring(): void {
         queue.length = 0;
       });
   };
-  if ('requestIdleCallback' in window) window.requestIdleCallback(load, { timeout: 4000 });
-  else setTimeout(load, 2000);
+  whenIdle(load);
 }

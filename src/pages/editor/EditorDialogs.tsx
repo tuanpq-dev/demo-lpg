@@ -84,7 +84,7 @@ export function EditorDialogs({
       <DeleteConfirm dialog={dialog?.kind === 'delete' ? dialog : null} onClose={onClose} />
       <ConfirmDialog
         open={blocker.state === 'blocked'}
-        title="Rời Scene Editor?"
+        title="Rời trang chỉnh sửa bản đồ?"
         confirmLabel="Rời trang"
         danger
         onClose={() => blocker.reset?.()}

@@ -1,6 +1,6 @@
-import { Card, EventTimeline, Icon, PriorityTaskCard, type TimelineEvent } from '@/components';
+import { Card, EventTimeline, Icon, PriorityTaskCard, type PriorityTaskData, type TimelineEvent } from '@/components';
 import { KpiFromData } from '@/app/kpi';
-import type { deriveMaintenanceKpis, derivePriorityTasks } from '@/data/maintenance';
+import type { KpiData } from '@/data/overview';
 
 export function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' | 'sectionTimer'; children: string; id: string }) {
   return (
@@ -12,7 +12,7 @@ export function SectionHeading({ icon, children, id }: { icon: 'sectionWarning' 
 }
 
 /** 1. KPI – Figma 70:5207 (6 cột gap 18). */
-export function MaintenanceKpiSection({ kpis }: { kpis: ReturnType<typeof deriveMaintenanceKpis> }) {
+export function MaintenanceKpiSection({ kpis }: { kpis: readonly KpiData[] }) {
   return (
     <section aria-label="Thống kê bảo trì" className="grid grid-cols-2 gap-[18px] md:grid-cols-3 wide:grid-cols-6">
       {kpis.map((k) => (
@@ -23,7 +23,7 @@ export function MaintenanceKpiSection({ kpis }: { kpis: ReturnType<typeof derive
 }
 
 /** 2. Công việc cần ưu tiên – Figma 70:5208. */
-export function PriorityTasksSection({ tasks, onDetail }: { tasks: ReturnType<typeof derivePriorityTasks>; onDetail: (id: string) => void }) {
+export function PriorityTasksSection({ tasks, onDetail }: { tasks: readonly PriorityTaskData[]; onDetail: (id: string) => void }) {
   return (
     <section aria-labelledby="mt-priority" className="flex flex-col gap-3">
       <SectionHeading id="mt-priority" icon="sectionWarning">

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAlertList } from '@/data/alertStore';
+import { useUnacknowledgedCount } from '@/data/alertApi';
 import { useLiveStatus } from '@/data/live';
 import { announce, useAnnouncement } from '@/lib/announce';
 
@@ -28,8 +28,8 @@ export function LiveAnnouncer() {
     announce(STATUS_TEXT[status]);
   }, [status]);
 
-  const alerts = useAlertList();
-  const unack = alerts.data?.filter((a) => a.status === 'unacknowledged').length;
+  // Số đếm từ máy chủ (GET /alerts/counts) – không tải danh sách cảnh báo ở mọi trang.
+  const unack = useUnacknowledgedCount();
   const prevUnack = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (unack === undefined) return;

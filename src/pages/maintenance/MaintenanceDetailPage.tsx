@@ -2,13 +2,13 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Page } from '@/app/Page';
 import { PageError, Placeholder } from '@/app/Placeholder';
 import { Button, PageHeader } from '@/components';
-import { useMaintenance } from '@/data/maintenance';
-import { maintenanceListUrl, resolveMaintenanceId } from '@/data/maintenanceDetail';
+import { useMaintenanceById } from '@/data/maintenanceApi';
+import { maintenanceListUrl } from '@/data/maintenanceDetail';
 import NotFoundPage from '../errors/NotFoundPage';
 import { MaintenanceDetail } from './detail/MaintenanceDetail';
 
 /**
- * Route `/maintenance/:id`: chờ danh sách tải xong rồi chuẩn hoá mã.
+ * Route `/maintenance/:id`: đọc MỘT yêu cầu theo mã (GET /maintenance/:id – máy chủ so mã không phân biệt hoa thường).
  * - khác kiểu chữ (`/maintenance/mt-00128`) → mã chuẩn (giữ query + state);
  * - không có → "Không tìm thấy yêu cầu" (URL giữ nguyên, không để trang trắng).
  */
@@ -16,7 +16,7 @@ export default function MaintenanceDetailRoute() {
   const { id: raw = '' } = useParams();
   const { search, state } = useLocation();
   const navigate = useNavigate();
-  const { status, data, error, refetch } = useMaintenance();
+  const { status, data, error, refetch } = useMaintenanceById(raw);
   const listUrl = maintenanceListUrl((state as { from?: unknown } | null)?.from);
 
   if (status !== 'success') {
@@ -37,8 +37,7 @@ export default function MaintenanceDetailRoute() {
     );
   }
 
-  const id = resolveMaintenanceId(raw, data);
-  if (!id) {
+  if (!data) {
     return (
       <NotFoundPage
         title="Không tìm thấy yêu cầu"
@@ -52,6 +51,6 @@ export default function MaintenanceDetailRoute() {
       />
     );
   }
-  if (id !== raw) return <Navigate to={`/maintenance/${id}${search}`} replace state={state} />;
-  return <MaintenanceDetail record={data.find((r) => r.id === id)!} listUrl={listUrl} />;
+  if (data.id !== raw) return <Navigate to={`/maintenance/${data.id}${search}`} replace state={state} />;
+  return <MaintenanceDetail record={data} listUrl={listUrl} />;
 }

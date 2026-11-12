@@ -1,66 +1,30 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Card, DataTable, FilterBar, PageHeader, TableActionButton, Tabs, type Severity } from '@/components';
 import { useAuth, useCan } from '@/app/auth';
 import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
-import { useTableFilters } from '@/app/useTableFilters';
+import { useFilterParams } from '@/app/useTableFilters';
+import { useRecordSelection } from '@/app/useRecordSelection';
+import { fetchAlertList, useAlertPage, useAlertSummary, type AlertListQuery } from '@/data/alertApi';
+import { ALERT_PARAMS, RANGE_OPTIONS, alertKpis, priorityCard, type AlertRecord, type AlertShift, type AlertTab } from '@/data/alerts';
 import { runAction } from '@/lib/actionError';
-import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { useNow } from '@/lib/useNow';
-import { useTimedNotice } from '@/lib/useTimedNotice';
-import { bulkMessage, linkedMaintenance } from '@/features/alerts/workflow';
-import { bulkCloseMessage, planBulkClose } from '@/features/alerts/close';
-import { followUpConfig, useCloseConditions } from '@/data/alertDetail';
-import { DuplicateFromAlertError, deriveDeviceDirectory, useMaintenance } from '@/data/maintenance';
-import {
-  ALERT_PARAMS,
-  RANGE_OPTIONS,
-  byNewest,
-  deriveAlertKpis,
-  derivePriorityCards,
-  matchAlert,
-  useAlerts,
-  type AlertRecord,
-  type AlertShift,
-  type AlertTab,
-} from '@/data/alerts';
-import { CreateMaintenanceModal } from '../shared/maintenance/CreateMaintenanceModal';
-import { AlertAssignModal } from './AlertAssignModal';
-import { AlertBulkCloseModal } from './AlertBulkCloseModal';
-import { AlertDetailDrawer, type AlertDrawerHandlers } from './AlertDetailDrawer';
+import { combineQueries } from '@/lib/useQuery';
+import { AlertDrawerHost, usePreloadAlertOverlays } from './AlertDrawerHost';
+import { AlertBulkActions } from './list/AlertBulkActions';
 import { alertColumns, alertFilterDefs, alertTabs } from './list/alertTable';
-import { BulkActionsBar, PriorityAlerts } from './list/AlertsSections';
-import { exportAlertsCsv } from './list/exportAlertsCsv';
+import { PriorityAlerts } from './list/AlertsSections';
 
 const getAlertId = (a: AlertRecord) => a.id;
-const sortNewest = (a: AlertRecord, b: AlertRecord) => byNewest(a, b);
+const NO_ROWS: AlertRecord[] = [];
 
 const PAGE_SIZE = 5;
-
-/** Thao tác của drawer chi tiết → store cảnh báo (người thao tác = `actor`; theo dõi sau xử lý theo cấu hình loại). */
-function drawerHandlers(
-  alerts: ReturnType<typeof useAlerts>,
-  actor: string,
-  followOf: (id: string) => ReturnType<typeof followUpConfig>,
-): Omit<AlertDrawerHandlers, 'onCreateMaintenance'> {
-  return {
-    onAcknowledge: async (id) => {
-      await alerts.acknowledge([id], actor);
-      announce('Đã xác nhận cảnh báo – chuyển sang Đang xử lý.');
-    },
-    onAssign: (id, form) => alerts.assignOne(id, form, actor),
-    onResolve: (id, note) => alerts.resolve(id, note, actor),
-    onToggleGuide: (id, step) => alerts.toggleGuide(id, step, actor),
-    onAddNote: (id, text) => alerts.addNote(id, text, actor),
-    onUpdate: (id, input, check) => alerts.update(id, input, check, actor),
-    onCloseAlert: (id, input, conditions) => alerts.close(id, input, conditions, followOf(id), actor),
-    onMonitor: (id, input) => alerts.monitor(id, input, followOf(id), actor),
-    onRequestSupport: (id, input) => alerts.requestSupport(id, input, actor),
-  };
-}
+/** Ô tìm kiếm: chỉ gửi truy vấn khi ngừng gõ (URL vẫn cập nhật ngay). */
+const SEARCH_DEBOUNCE_MS = 300;
 
 /** Giá trị FilterBar → tham số lọc của bảng (rỗng = bỏ lọc). */
 const alertFilterValues = (v: Record<string, string | null | undefined>) => ({
@@ -70,76 +34,44 @@ const alertFilterValues = (v: Record<string, string | null | undefined>) => ({
   shift: (v.shift as AlertShift | null) ?? null,
 });
 
-/** Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. */
+/** Xuất CSV MỌI cảnh báo khớp bộ lọc (không chỉ trang đang xem). TODO(backend): GET /alerts/export?… trả CSV. */
+const exportMatching = (query: AlertListQuery, total: number) =>
+  runAction(async () => {
+    const [{ exportAlertsCsv }, all] = await Promise.all([
+      import('./list/exportAlertsCsv'),
+      fetchAlertList({ ...query, page: 1, pageSize: Math.max(1, total) }),
+    ]);
+    exportAlertsCsv(all.rows);
+  });
+
+/**
+ * Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. Phân trang / lọc / đếm ở MÁY CHỦ (`data/alertApi.ts`): trang
+ * chỉ giữ một trang dòng + số đếm, đổi bộ lọc / trang giữ dữ liệu cũ (mờ) tới khi kết quả mới về.
+ */
 export default function AlertsPage() {
-  const alerts = useAlerts();
-  const { status, data, error, refetch } = alerts;
-  const maintenance = useMaintenance();
   const { user } = useAuth();
   const actor = user?.name || 'Admin';
   const now = useNow(60_000);
   // Ẩn thao tác theo vai trò (UX) – backend kiểm tra lại quyền khi có API.
   const canAck = useCan('alert:acknowledge');
   const canCreateMaintenance = useCan('maintenance:write');
-  // Thông báo kết quả thao tác hàng loạt (lỗi → chữ đỏ), tự ẩn sau 4 giây.
-  const { notice, show: setNotice, fail: failNotice } = useTimedNotice();
-  const all = useMemo(() => data ?? [], [data]);
 
-  const table = useTableFilters({
-    rows: all,
-    getId: getAlertId,
-    params: ALERT_PARAMS,
-    match: matchAlert,
-    sort: sortNewest,
-    pageSize: PAGE_SIZE,
-    tabKey: 'tab',
-    openKey: 'alert',
-  });
-  const { values: filters, setValues: setFilters, selected, setSelected, openId, setOpenId } = table;
-  const rows = table.filtered;
+  const params = useFilterParams(ALERT_PARAMS, 'alert');
+  const { values: filters, setValues: setFilters, openId, setOpenId } = params;
+  const q = useDebouncedValue(filters.q, SEARCH_DEBOUNCE_MS);
+  const query: AlertListQuery = { ...filters, q, page: params.page, pageSize: PAGE_SIZE };
+  const list = useAlertPage(query);
+  const summary = useAlertSummary(filters.range);
+  const state = combineQueries(list, summary);
+  usePreloadAlertOverlays(state.status === 'success');
 
-  const kpis = useMemo(() => deriveAlertKpis(all, filters.range), [all, filters.range]);
-  const priority = useMemo(() => derivePriorityCards(all), [all]);
-  const openAlert = openId ? (all.find((a) => a.id === openId) ?? null) : null;
-
-  // Hàng loạt dùng CHUNG quy tắc với drawer (features/alerts/workflow + assign): xác nhận chỉ dòng Chưa xác nhận; phân công
-  // qua modal (không tự xác nhận, bỏ qua dòng Hoàn thành / đã đúng người, dòng của người khác = đổi người với một lý do
-  // chung); đóng chỉ dòng Đã xử lý đủ 3 điều kiện hệ thống + một ghi chú kết luận chung (bỏ qua dòng Nghiêm trọng nếu
-  // người đóng là người xử lý).
-  const selectedRecords = all.filter((a) => selected.includes(a.id));
-  const closeConds = useCloseConditions(
-    selectedRecords.filter((a) => a.status === 'resolved'),
-    all,
-  );
-  const closePlan = planBulkClose(all, selected, (a) => closeConds[a.id] ?? [], actor);
-  const [bulkCloseOpen, setBulkCloseOpen] = useState(false);
-  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
-  const runAck = () =>
-    runAction(async () => {
-      const r = await alerts.acknowledge([...selected], actor);
-      setNotice(bulkMessage('Đã xác nhận', r.done, r.skipped));
-      setSelected([]);
-    }, failNotice);
-
-  // Modal "Tạo yêu cầu bảo trì" mở TRÊN drawer (drawer vẫn mở); đóng → focus về nút đã mở.
-  const [createFor, setCreateFor] = useState<{ alert: AlertRecord; title?: string } | null>(null);
-  const maintRecords = maintenance.data;
-  const openLinked = openAlert && maintRecords ? linkedMaintenance(openAlert.id, maintRecords) : undefined;
-  const devices = useMemo(() => deriveDeviceDirectory(maintRecords ?? [], all), [maintRecords, all]);
-  const followOf = (id: string) => followUpConfig(all.find((x) => x.id === id) ?? {});
-
-  // Tạo yêu cầu bảo trì từ cảnh báo → ghi chú "đã tạo MT-…" vào cảnh báo; trùng (đã có yêu cầu) → chỉ thông báo.
-  const createFromAlert = async (source: AlertRecord, input: Parameters<typeof maintenance.create>[0]) => {
-    try {
-      const rec = await maintenance.create({ ...input, createdBy: actor });
-      await alerts.noteMaintenance(source.id, rec.code, actor);
-      announce(`Đã tạo yêu cầu ${rec.code} từ ${source.code}.`);
-    } catch (e) {
-      if (!(e instanceof DuplicateFromAlertError)) throw e;
-      announce(e.message);
-    }
-    setCreateFor(null);
-  };
+  const result = list.data;
+  const rows = result?.rows ?? NO_ROWS;
+  // Đổi bộ lọc (không tính trang) → bỏ chọn.
+  const { page: _page, ...filterKey } = query;
+  const selection = useRecordSelection(rows, getAlertId, JSON.stringify(filterKey));
+  const kpis = useMemo(() => (summary.data ? alertKpis(summary.data.counts, filters.range) : []), [summary.data, filters.range]);
+  const priority = useMemo(() => summary.data?.priority.map(priorityCard) ?? [], [summary.data]);
 
   const header = (
     <PageHeader
@@ -149,16 +81,19 @@ export default function AlertsPage() {
       actions={
         <>
           <DateRangeSelect value={filters.range} options={RANGE_OPTIONS} onChange={(range) => setFilters({ range })} />
-          <ExportButton onClick={() => exportAlertsCsv(rows)} />
-          <RefreshButton accent onClick={refetch} />
+          <ExportButton onClick={() => void exportMatching(query, result?.total ?? 0)} />
+          <RefreshButton accent onClick={state.refetch} />
           <LiveDataButton />
         </>
       }
     />
   );
 
-  if (status !== 'success')
-    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được danh sách cảnh báo', skeleton: [135, 92, 528] });
+  if (state.status !== 'success' || !result)
+    return pageFallback(
+      { status: state.status === 'error' ? 'error' : 'loading', error: state.error, refetch: state.refetch },
+      { header, errorTitle: 'Không tải được danh sách cảnh báo', skeleton: [135, 92, 528] },
+    );
 
   return (
     <Page pageHeader={header}>
@@ -175,119 +110,58 @@ export default function AlertsPage() {
       <Card padding="none" radius="lg">
         <Tabs
           label="Lọc theo trạng thái"
-          items={alertTabs(table.tabCounts)}
+          items={alertTabs(result.tabCounts)}
           value={filters.tab}
           onChange={(tab) => setFilters({ tab: tab as AlertTab })}
           panelId="alerts-table"
         />
         <FilterBar
           search={filters.q}
-          onSearchChange={(q) => setFilters({ q })}
-          filters={alertFilterDefs(all)}
+          onSearchChange={(value) => setFilters({ q: value })}
+          filters={alertFilterDefs(result.facets)}
           values={{ severity: filters.severity, area: filters.area, device: filters.device, shift: filters.shift }}
           onValuesChange={(v) => setFilters(alertFilterValues(v))}
           advancedLabel="Xoá bộ lọc"
-          advancedActive={table.isFiltered(['range'])}
-          onAdvancedFilter={() => table.reset(['range'])}
+          advancedActive={params.isFiltered(['range'])}
+          onAdvancedFilter={() => params.reset(['range'])}
         />
 
-        {canAck && selected.length > 0 && (
-          <BulkActionsBar
-            selected={selected.length}
-            acknowledgeable={selectedRecords.filter((a) => a.status === 'unacknowledged').length}
-            assignable={selectedRecords.filter((a) => a.status !== 'done').length}
-            closable={closePlan.eligible.length}
-            onAcknowledge={() => void runAck()}
-            onAssign={() => setBulkAssignOpen(true)}
-            onClose={() => setBulkCloseOpen(true)}
-            onClear={() => setSelected([])}
-          />
-        )}
-        <p role="status" className={notice.text ? cn('px-4 pt-2 text-sm', notice.error ? 'text-danger-text' : 'text-success') : 'sr-only'}>
-          {notice.text}
-        </p>
+        <AlertBulkActions records={selection.records} onClear={selection.clear} actor={actor} canAct={canAck} />
 
-        <div id="alerts-table">
+        {/* Đang tải trang / bộ lọc mới: giữ kết quả cũ, làm mờ (aria-busy) tới khi có kết quả. */}
+        <div id="alerts-table" aria-busy={list.pending} className={cn('transition-opacity', list.pending && 'opacity-60')}>
           <DataTable
             label="Danh sách cảnh báo"
             // Khung hẹp hơn → cuộn ngang trong khung; cột "Xem" cố định mép phải.
             minWidth={1180}
             stickyActions
             columns={alertColumns(now)}
-            rows={table.pageRows}
+            rows={rows}
             getRowId={getAlertId}
             selectable={canAck}
-            selectedIds={selected}
-            onSelectionChange={setSelected}
+            selectedIds={selection.selected}
+            onSelectionChange={selection.setSelected}
             rowActions={(a) => <TableActionButton label={`Xem chi tiết ${a.code}`} onClick={() => setOpenId(a.id)} />}
             emptyState="Không có cảnh báo phù hợp với bộ lọc."
             pagination={{
-              page: table.page,
+              page: result.page,
               pageSize: PAGE_SIZE,
-              total: rows.length,
-              onPageChange: table.setPage,
+              total: result.total,
+              onPageChange: params.setPage,
               summary: (f, t, n) => `Hiển thị ${f}-${t} của ${n} cảnh báo`,
             }}
           />
         </div>
       </Card>
 
-      <AlertDetailDrawer
-        alert={openAlert}
+      <AlertDrawerHost
+        openId={openId}
         onClose={() => setOpenId(null)}
         now={now}
-        allAlerts={all}
-        maintenance={openLinked ? { id: openLinked.id, code: openLinked.code } : null}
+        actor={actor}
         canAct={canAck}
         canCreateMaintenance={canCreateMaintenance}
-        {...drawerHandlers(alerts, actor, followOf)}
-        onCreateMaintenance={(alert, opts) => setCreateFor({ alert, title: opts?.title })}
-        actor={actor}
       />
-
-      {createFor && (
-        <CreateMaintenanceModal
-          open
-          onClose={() => setCreateFor(null)}
-          devices={devices}
-          defaultDevice={createFor.alert.device}
-          alert={createFor.alert}
-          defaultTitle={createFor.title}
-          onDraftSaved={() => {
-            setCreateFor(null);
-            announce('Đã lưu nháp yêu cầu bảo trì.');
-          }}
-          onSubmit={(input) => createFromAlert(createFor.alert, input)}
-        />
-      )}
-
-      {bulkAssignOpen && (
-        <AlertAssignModal
-          alerts={selectedRecords}
-          allAlerts={all}
-          onClose={() => setBulkAssignOpen(false)}
-          onConfirm={async (form) => {
-            const r = await alerts.assign(selected, form, actor);
-            setBulkAssignOpen(false);
-            setSelected([]);
-            setNotice(`${r.message} – người phụ trách: ${form.assignee}.`);
-          }}
-        />
-      )}
-
-      {bulkCloseOpen && (
-        <AlertBulkCloseModal
-          eligible={closePlan.eligible.length}
-          skippedText={closePlan.skipped.length ? (bulkCloseMessage(closePlan.eligible.length, closePlan.skipped).split(' · ')[1] ?? null) : null}
-          onClose={() => setBulkCloseOpen(false)}
-          onConfirm={async (note) => {
-            const r = await alerts.closeMany(selected, note, closeConds, followUpConfig, actor);
-            setBulkCloseOpen(false);
-            setSelected([]);
-            setNotice(r.message);
-          }}
-        />
-      )}
     </Page>
   );
 }

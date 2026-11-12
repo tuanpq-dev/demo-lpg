@@ -6,10 +6,11 @@ import { tankLayers, upperLimitStatus, type LimitStatus, type TankLayers } from 
 import { daysFromToday } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
 import { assetEvents, assetMocks, type AssetEvent, type AssetEventStatus, type AssetEventType, type AssetMock } from '@/mocks/assets';
-import { isoDay } from '@/mocks/maintenance';
+import { isoDay } from '@/mocks/maintenanceDates';
 import { systemStatus } from '@/mocks/overview';
 import { useLiveData } from './live';
-import { dueLabel, isOverdue, type MaintenanceRecord } from './maintenance';
+import { dueLabel, isOverdue } from './maintenanceView';
+import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { useQuery } from '@/lib/useQuery';
 
 export type { AssetEvent, AssetEventStatus, AssetEventType, AssetMock };

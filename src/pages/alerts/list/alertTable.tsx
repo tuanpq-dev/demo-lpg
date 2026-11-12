@@ -23,11 +23,12 @@ export function alertTabs(counts: Readonly<Record<string, number>>): TabItem[] {
   ];
 }
 
-export function alertFilterDefs(all: readonly AlertRecord[]): FilterDef[] {
+/** Bộ lọc của bảng; Khu vực / Thiết bị lấy từ `facets` máy chủ trả về (giá trị có trong dữ liệu). */
+export function alertFilterDefs(facets: { areas: readonly string[]; devices: readonly string[] }): FilterDef[] {
   return [
     { id: 'severity', label: 'Mức độ', options: SEVERITY_OPTIONS },
-    { id: 'area', label: 'Khu vực', allLabel: 'Tất cả khu vực', options: uniqueOptions(all.map((a) => a.area)) },
-    { id: 'device', label: 'Thiết bị', options: uniqueOptions(all.map((a) => a.device)) },
+    { id: 'area', label: 'Khu vực', allLabel: 'Tất cả khu vực', options: uniqueOptions(facets.areas) },
+    { id: 'device', label: 'Thiết bị', options: uniqueOptions(facets.devices) },
     { id: 'shift', label: 'Thời gian', options: SHIFT_OPTIONS },
   ];
 }

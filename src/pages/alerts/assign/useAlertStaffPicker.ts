@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import type { StaffPickerItem } from '@/components';
 import { ALERT_STAFF, alertKind } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
-import { ALERT_LOAD_HINT, MATCH_LABEL, alertLoadLabel, computeAlertLoads, rankAlertStaff } from '@/features/alerts/assignStaff';
+import { useAlertLoads } from '@/data/alertApi';
+import { ALERT_LOAD_HINT, MATCH_LABEL, alertLoadLabel, rankAlertStaff } from '@/features/alerts/assignStaff';
 import type { ShiftId } from '@/features/maintenance/types';
 import { shiftShortLabel } from '@/features/staff/availability';
 import type { StaffSkill } from '@/features/staff/skills';
@@ -11,13 +12,14 @@ import type { StaffSkill } from '@/features/staff/skills';
  * Danh sách nhân sự của modal phân công cảnh báo: xếp hạng theo khu vực / chuyên môn / tải việc (`rankAlertStaff`) + bộ lọc
  * (tên, phòng ban, ca, chỉ người đang trong ca).
  */
-export function useAlertStaffPicker(alerts: readonly AlertRecord[], allAlerts: readonly AlertRecord[], now: Date) {
+export function useAlertStaffPicker(alerts: readonly AlertRecord[], now: Date) {
   const [query, setQuery] = useState('');
   const [dept, setDept] = useState<string | null>(null);
   const [shift, setShift] = useState<ShiftId | null>(null);
   const [onShiftOnly, setOnShiftOnly] = useState(false);
 
-  const loads = useMemo(() => computeAlertLoads(allAlerts), [allAlerts]);
+  // Tải việc từng người: máy chủ đếm (GET /staff/alert-loads) – không duyệt toàn bộ cảnh báo ở client.
+  const loads = useAlertLoads();
   const context = useMemo(
     () => ({
       areas: [...new Set(alerts.map((a) => a.area))],

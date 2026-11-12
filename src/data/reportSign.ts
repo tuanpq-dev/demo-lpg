@@ -9,6 +9,7 @@ import {
   canInspectorSign,
   dayFromNumber,
   openSensorFaults,
+  SENSOR_FAULT_KINDS,
   signConditions,
   signReady,
   type ReportRecord,
@@ -17,11 +18,15 @@ import {
 import { appNow } from '@/lib/demoNow';
 import { dayNumber, plantDayKey } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
-import { alertsReady, currentAlerts, useAlertList } from './alertStore';
+import { alertsReady, currentAlerts } from './alertStore';
+import { useAlertsByDevices } from './alertApi';
 import { fetchDailyReadings, useDailyReadings } from './dailyReport';
 import { currentReports, replaceReport } from './reports';
 
 /** Cảnh báo mock ghi ngày tương đối (`daysAgo`) → ngày tuyệt đối theo `now` (giờ nhà máy). */
+const NO_DEVICES: string[] = [];
+const NO_ALERTS: AlertRecord[] = [];
+
 function sensorAlertsOf(alerts: readonly AlertRecord[], now: Date): SensorAlertLike[] {
   const today = dayNumber(plantDayKey(now));
   return alerts.map((a) => ({ code: a.code, kind: a.kind, status: a.status, day: dayFromNumber(today - a.daysAgo) }));
@@ -32,9 +37,10 @@ function sensorAlertsOf(alerts: readonly AlertRecord[], now: Date): SensorAlertL
  * (`{ status, data, error, refetch }`) – modal chỉ dựng form khi `success` (điều kiện ký không tính trên số chưa tải).
  */
 export function useReportSignData(report: ReportRecord) {
-  const alerts = useAlertList();
+  // Chỉ cảnh báo lỗi cảm biến (GET /alerts?kinds=…) – không tải toàn bộ cảnh báo.
+  const alerts = useAlertsByDevices(NO_DEVICES, SENSOR_FAULT_KINDS);
   const readings = useDailyReadings(report);
-  const list = alerts.data ?? currentAlerts();
+  const list = alerts.data ?? NO_ALERTS;
   const sensorFaults = useMemo(() => openSensorFaults(sensorAlertsOf(list, appNow()), report.periodKey), [list, report.periodKey]);
   return { readings, sensorFaults };
 }

@@ -1,4 +1,4 @@
-import { alertStore, currentAlerts, mutateAlerts } from './alertStore';
+import { currentAlerts, mutateAlerts } from './alertStore';
 import type { AlertCardData, AlertHandling, SelectOption, Severity } from '@/components';
 import {
   acknowledgeAlert,
@@ -36,28 +36,14 @@ import type { FollowUpConfig } from '@/features/alerts/kinds';
 import { appNow } from '@/lib/demoNow';
 import { withUnit } from '@/features/alerts/gauge';
 import type { AlertRecord, AlertStatus } from '@/features/alerts/types';
+import type { AlertCounts, AlertFilters, AlertRange, AlertShift, AlertTab } from '@/features/alerts/query';
 import type { KpiMock } from '@/mocks/types';
 
-export type { AlertRecord, AlertStatus };
+export type { AlertRecord, AlertStatus, AlertFilters, AlertRange, AlertShift, AlertTab };
 
 // ============================================================================
 // Bộ lọc
 // ============================================================================
-
-export type AlertTab = 'all' | AlertStatus;
-export type AlertRange = 'today' | '7d' | '30d';
-/** Ca làm việc – dùng cho Select "Thời gian". */
-export type AlertShift = 'night' | 'morning' | 'afternoon';
-
-export type AlertFilters = {
-  tab: AlertTab;
-  q: string;
-  severity: Severity | null;
-  area: string | null;
-  device: string | null;
-  shift: AlertShift | null;
-  range: AlertRange;
-};
 
 export const RANGE_OPTIONS: SelectOption<AlertRange>[] = [
   { value: 'today', label: 'Hôm nay' },
@@ -78,17 +64,6 @@ export const SHIFT_OPTIONS: SelectOption<AlertShift>[] = [
   { value: 'afternoon', label: 'Ca chiều (14h–22h)' },
 ];
 
-const RANGE_DAYS: Record<AlertRange, number> = { today: 0, '7d': 6, '30d': 29 };
-
-function shiftOf(time: string): AlertShift {
-  const h = Number(time.slice(0, 2));
-  if (h >= 6 && h < 14) return 'morning';
-  if (h >= 14 && h < 22) return 'afternoon';
-  return 'night';
-}
-
-const inRange = (a: AlertRecord, range: AlertRange) => a.daysAgo <= RANGE_DAYS[range];
-
 /**
  * Tham số lọc trên URL cho bảng cảnh báo (dùng với useTableFilters).
  * ?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=
@@ -103,31 +78,7 @@ export const ALERT_PARAMS = {
   range: { values: ['today', '7d', '30d'], default: 'today' },
 } as const;
 
-/** Một cảnh báo có khớp bộ lọc không. */
-export function matchAlert(a: AlertRecord, f: AlertFilters) {
-  const q = f.q.trim().toLowerCase();
-  return (
-    inRange(a, f.range) &&
-    (f.tab === 'all' || a.status === f.tab) &&
-    (!q || [a.code, a.message, a.device, a.area, a.assignee ?? ''].some((s) => s.toLowerCase().includes(q))) &&
-    (!f.severity || a.severity === f.severity) &&
-    (!f.area || a.area === f.area) &&
-    (!f.device || a.device === f.device) &&
-    (!f.shift || shiftOf(a.time) === f.shift)
-  );
-}
-
-/** Mới nhất trước: theo ngày rồi theo giờ. */
-export const byNewest = (a: AlertRecord, b: AlertRecord) => a.daysAgo - b.daysAgo || b.time.localeCompare(a.time);
-
-function countByStatus(alerts: readonly AlertRecord[]) {
-  const c = { all: alerts.length, unacknowledged: 0, 'in-progress': 0, resolved: 0, done: 0 } satisfies Record<AlertTab, number>;
-  alerts.forEach((a) => (c[a.status] += 1));
-  return c;
-}
-
-export const uniqueOptions = (values: string[]): SelectOption[] =>
-  [...new Set(values)].sort((a, b) => a.localeCompare(b, 'vi')).map((v) => ({ value: v, label: v }));
+export const uniqueOptions = (values: readonly string[]): SelectOption[] => values.map((v) => ({ value: v, label: v }));
 
 // ============================================================================
 // Hiển thị
@@ -151,39 +102,21 @@ function handlingOf(a: AlertRecord): AlertHandling {
 /** Badge trạng thái của cảnh báo: Đã xử lý (chờ đóng) xanh như Figma · Hoàn thành (đã đóng) trung tính. */
 export const alertBadgeStatus = (s: AlertStatus) => (s === 'done' ? 'closed' : s);
 
-/**
- * 3 cảnh báo ưu tiên = mới nhất, CÒN PHẢI XỬ LÝ (Chưa xác nhận / Đang xử lý – Đã xử lý chờ đóng không còn ưu tiên), mức
- * Nghiêm trọng/Cao (khớp Figma 70:2910).
- */
-export function derivePriorityCards(alerts: readonly AlertRecord[], limit = 3): AlertCardData[] {
-  return alerts
-    .filter((a) => (a.status === 'unacknowledged' || a.status === 'in-progress') && (a.severity === 'critical' || a.severity === 'high'))
-    .sort(byNewest)
-    .slice(0, limit)
-    .map((a) => ({
-      id: a.id,
-      severity: a.severity,
-      code: a.code,
-      device: a.device,
-      message: a.message,
-      ...cardValue(a),
-      handling: handlingOf(a),
-    }));
+/** Thẻ cảnh báo ưu tiên (70:2910) từ bản ghi máy chủ trả về (GET /alerts/summary → `priority`). */
+export function priorityCard(a: AlertRecord): AlertCardData {
+  return { id: a.id, severity: a.severity, code: a.code, device: a.device, message: a.message, ...cardValue(a), handling: handlingOf(a) };
 }
 
-/** 5 KPI (70:2957) tính trên khoảng thời gian đang chọn – giữ như Figma; Đã xử lý (chờ đóng) chỉ đếm ở tab "Chờ đóng". */
-export function deriveAlertKpis(alerts: readonly AlertRecord[], range: AlertRange = 'today'): KpiMock[] {
-  const scoped = alerts.filter((a) => inRange(a, range));
-  const c = countByStatus(scoped);
-  const critical = scoped.filter((a) => a.severity === 'critical').length;
+/** 5 KPI (70:2957) từ số đếm máy chủ trong khoảng thời gian đang chọn – giữ như Figma. */
+export function alertKpis(c: AlertCounts, range: AlertRange = 'today'): KpiMock[] {
   const totalLabel =
     range === 'today' ? 'Tổng cảnh báo hôm nay' : `Tổng cảnh báo ${RANGE_OPTIONS.find((r) => r.value === range)?.label.toLowerCase()}`;
   const base = { variant: 'compact', iconBox: 18, iconPosition: 'start', toneLabel: true } as const;
   return [
-    { id: 'total', label: totalLabel, value: String(c.all), variant: 'compact' },
-    { ...base, id: 'critical', label: 'Cảnh báo nghiêm trọng', icon: 'kpiAlertCritical', value: String(critical), tone: 'danger' },
+    { id: 'total', label: totalLabel, value: String(c.total), variant: 'compact' },
+    { ...base, id: 'critical', label: 'Cảnh báo nghiêm trọng', icon: 'kpiAlertCritical', value: String(c.critical), tone: 'danger' },
     { ...base, id: 'unacknowledged', label: 'Chưa xác nhận', icon: 'kpiAlertUnack', value: String(c.unacknowledged), tone: 'warning' },
-    { ...base, id: 'in-progress', label: 'Đang xử lý', icon: 'kpiAlertProgress', value: String(c['in-progress']), tone: 'info' },
+    { ...base, id: 'in-progress', label: 'Đang xử lý', icon: 'kpiAlertProgress', value: String(c.inProgress), tone: 'info' },
     { ...base, id: 'done', label: 'Đã hoàn thành', icon: 'kpiAlertDone', value: String(c.done), tone: 'success' },
   ];
 }
@@ -321,9 +254,12 @@ async function noteMaintenanceCreated(id: string, code: string, by = 'Admin') {
 }
 
 /** Hook dữ liệu cảnh báo: `{ status, data, error, refetch, acknowledge, assign, resolve, update, close, monitor, closeMany, … }`. */
+/**
+ * Thao tác ghi cảnh báo (KHÔNG tải danh sách – đọc qua `data/alertApi.ts`). Xong thao tác → store tăng phiên bản → các
+ * truy vấn đang hiện tải lại ngầm.
+ */
 export function useAlerts() {
   return {
-    ...alertStore.useCollection(),
     acknowledge: acknowledgeAlerts,
     closeMany: closeAlerts,
     assign: assignAlerts,

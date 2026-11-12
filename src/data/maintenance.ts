@@ -5,7 +5,8 @@ import { reviewRecord, submitForReview, type ReviewInput, type SubmitInput } fro
 import { applyAssignment, computeWorkloads, initialAssignForm, planBulkAssign, type AssignForm } from '@/features/maintenance/assign';
 import { addNoteRecord, advanceRecord, cancelRecord } from '@/features/maintenance/workflow';
 import { linkedMaintenance } from '@/features/alerts/workflow';
-import { createCollectionStore } from '@/lib/createCollectionStore';
+import { DuplicateFromAlertError } from './maintenanceApi';
+import { currentMaintenance, insertMaintenance, maintenanceReady, mutateMaintenance } from './maintenanceStore';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey } from '@/lib/plantTime';
 import {
@@ -17,7 +18,6 @@ import {
   SOURCE_OPTIONS,
   isoDay,
   staffByName,
-  maintenanceRecords,
 } from '@/mocks/maintenance';
 import { DEPARTMENTS, SHIFTS } from '@/features/staff/org';
 import type {
@@ -54,21 +54,8 @@ export { ASSIGNABLE_STAFF, CHECKLIST_TEMPLATES, DEPARTMENTS, MAINTENANCE_ASSIGNE
 // "Hôm nay" tính theo giờ nhà máy (Asia/Bangkok – src/lib/plantTime.ts), không theo múi giờ máy người xem.
 // Mọi hàm nhận `now` từ nơi gọi (trang dùng useNow) → test được, không gọi Date.now() bên trong.
 
-let db: MaintenanceRecord[] = maintenanceRecords.map((r) => ({ ...r }));
-
-/** GET /maintenance – thay bằng fetch thật khi có API. */
-async function fetchMaintenance(): Promise<MaintenanceRecord[]> {
-  return db.map((r) => ({ ...r }));
-}
-
-const store = createCollectionStore(fetchMaintenance);
-const commit = () => store.commit(db.map((r) => ({ ...r })));
-
-function patch(ids: readonly string[], fn: (r: MaintenanceRecord) => MaintenanceRecord) {
-  const set = new Set(ids);
-  db = db.map((r) => (set.has(r.id) ? fn(r) : r));
-  commit();
-}
+/** Áp `fn` lên các bản ghi `ids` (mock server – khi có API: PATCH rồi refetch). */
+const patch = (ids: readonly string[], fn: (r: MaintenanceRecord) => MaintenanceRecord) => mutateMaintenance(ids, fn);
 
 export type NewMaintenanceInput = {
   title: string;
@@ -98,12 +85,7 @@ export type NewMaintenanceInput = {
   createdBy?: string;
 };
 
-/** Đã có yêu cầu (chưa hủy) tạo từ cảnh báo này → tạo lại bị từ chối (drawer hiện "Xem MT-…" thay nút tạo). */
-export class DuplicateFromAlertError extends Error {
-  constructor(readonly existing: MaintenanceRecord) {
-    super(`Cảnh báo ${existing.sourceAlertId} đã có yêu cầu bảo trì ${existing.code}.`);
-  }
-}
+export { DuplicateFromAlertError };
 
 /** Hạn chỉ có ngày ("2026-11-20") → cuối ngày, đánh dấu không có giờ. */
 const dueFields = (dueAt: string) => (dueAt.length === 10 ? { dueAt: `${dueAt}T23:59`, dueHasTime: false } : { dueAt, dueHasTime: undefined });
@@ -136,7 +118,9 @@ function creationHistory(input: NewMaintenanceInput, createdBy: string, at: stri
  * POST /maintenance – tạo yêu cầu mới; có người phụ trách → "Đã phân công", không → "Chờ tiếp nhận".
  * Một cảnh báo chỉ có MỘT yêu cầu đang hiệu lực (`linkedMaintenance`, bỏ yêu cầu đã hủy) – trùng → `DuplicateFromAlertError`.
  */
-async function createMaintenance(input: NewMaintenanceInput): Promise<MaintenanceRecord> {
+export async function createMaintenance(input: NewMaintenanceInput): Promise<MaintenanceRecord> {
+  await maintenanceReady();
+  const db = currentMaintenance();
   if (input.sourceAlertId) {
     const existing = linkedMaintenance(input.sourceAlertId, db);
     if (existing) throw new DuplicateFromAlertError(existing);
@@ -168,8 +152,7 @@ async function createMaintenance(input: NewMaintenanceInput): Promise<Maintenanc
     ...optionalCreateFields(input, checklist, createdBy, at),
     history: creationHistory(input, createdBy, at),
   };
-  db = [record, ...db];
-  commit();
+  await insertMaintenance(record);
   return record;
 }
 
@@ -189,6 +172,8 @@ const assignMaintenance = async (id: string, form: AssignForm, actor?: string) =
  * Trả số đã phân công / bỏ qua + cảnh báo gộp khi người được chọn sẽ thành Bận sau cả lô.
  */
 async function bulkAssignMaintenance(ids: readonly string[], assignee: string, actor?: string) {
+  await maintenanceReady();
+  const db = currentMaintenance();
   const c = ctx(actor);
   const set = new Set(ids);
   const plan = planBulkAssign(
@@ -196,7 +181,7 @@ async function bulkAssignMaintenance(ids: readonly string[], assignee: string, a
     assignee,
     computeWorkloads(db, c.now),
   );
-  patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c, staffByName));
+  await patch(plan.ids, (r) => applyAssignment(r, { ...initialAssignForm(r), assignee }, c, staffByName));
   return { assigned: plan.ids.length, skipped: plan.skipped, skippedBy: plan.skippedBy, busyAfter: plan.busyAfter, activeAfter: plan.activeAfter };
 }
 
@@ -228,10 +213,12 @@ const toggleMaintenanceChecklist = async (id: string, itemId: string) =>
 /** Thêm ghi chú kỹ thuật. */
 const addMaintenanceNote = async (id: string, text: string, actor?: string) => patch([id], (r) => addNoteRecord(r, text, ctx(actor)));
 
-/** Hook: `{ status, data, error, refetch, create, assign, advance, cancel, updateProgress, submitForReview, review, toggleChecklist, addNote }`. */
+/**
+ * Thao tác ghi bảo trì (KHÔNG tải danh sách – đọc qua `data/maintenanceApi.ts`: trang, tóm tắt, theo mã / thiết bị). Xong thao
+ * tác → store tăng phiên bản → các truy vấn đang hiện tải lại ngầm.
+ */
 export function useMaintenance() {
   return {
-    ...store.useCollection(),
     create: createMaintenance,
     assign: assignMaintenance,
     bulkAssign: bulkAssignMaintenance,

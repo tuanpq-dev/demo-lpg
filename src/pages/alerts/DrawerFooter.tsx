@@ -150,12 +150,11 @@ function FooterStatus({
 
 /** Các modal mở trên drawer (phân công, hỗ trợ, quy trình khẩn cấp, cập nhật xử lý, xác nhận đóng). */
 function FooterModals({ p, cfg, modal, close }: { p: FooterProps; cfg: KindConfig; modal: FooterModal | null; close: () => void }) {
-  const { alert: a, allAlerts, actor = 'Admin' } = p;
+  const { alert: a, actor = 'Admin' } = p;
   if (modal === 'assign') {
     return (
       <AlertAssignModal
         alerts={[a]}
-        allAlerts={allAlerts}
         onClose={close}
         onConfirm={async (form) => {
           const change = alertAssignChange(a, form);
@@ -210,7 +209,6 @@ function FooterModals({ p, cfg, modal, close }: { p: FooterProps; cfg: KindConfi
       <Suspense fallback={null}>
         <AlertCloseModal
           alert={a}
-          allAlerts={allAlerts}
           actor={actor}
           onClose={close}
           onConfirmClose={async (input, conditions) => {

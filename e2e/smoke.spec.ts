@@ -90,6 +90,19 @@ test('URL lạ → trang 404 (không trắng trang)', async ({ page }) => {
 });
 
 test.describe('luồng chính', () => {
+  test('cài đặt: menu Cài đặt → Chỉnh sửa bản đồ 3D; /editor cũ chuyển sang route mới', async ({ page }) => {
+    const errors = watchErrors(page);
+    // Bản e2e là VITE_AUTH=off: phiên giả admin có quyền scene:write → mục có trong menu, không cần ?edit=1.
+    await page.goto('/overview');
+    await page.getByRole('button', { name: 'Cài đặt' }).click();
+    await page.getByRole('button', { name: 'Chỉnh sửa bản đồ 3D' }).click();
+    await expect(page).toHaveURL(/\/settings\/map-editor$/);
+    await expect(page.getByRole('complementary', { name: 'Thư viện và cây object' })).toBeVisible();
+    await page.goto('/editor?scene=demo');
+    await expect(page).toHaveURL(/\/settings\/map-editor\?scene=demo$/);
+    expect(errors).toEqual([]);
+  });
+
   test('cảnh báo: mở drawer chi tiết bằng query', async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto('/alerts?alert=ALT-00128');

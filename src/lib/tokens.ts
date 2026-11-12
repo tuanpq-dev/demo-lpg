@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 /**
  * Tên token màu (khớp `--color-<name>` trong src/styles/tokens.css).
- * Dùng cho nơi không dùng được class Tailwind – ví dụ thuộc tính SVG của recharts (stroke, fill).
+ * Dùng cho nơi không dùng được class Tailwind – ví dụ thuộc tính SVG của chart (stroke, fill).
  */
 export type ColorToken =
   | 'bg-app'

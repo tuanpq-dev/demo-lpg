@@ -7,8 +7,6 @@ import { useAssignForm } from './assign/useAssignForm';
 
 export type AssignModalProps = {
   record: MaintenanceRecord;
-  /** Toàn bộ yêu cầu – tính "đang làm / quá hạn / Bận" của từng người. */
-  records: readonly MaintenanceRecord[];
   onClose: () => void;
   /** Ghi bản ghi – modal đã kiểm tra hợp lệ trước khi gọi. */
   onSubmit: (form: AssignForm) => Promise<void>;
@@ -21,9 +19,9 @@ export type AssignModalProps = {
  * Chặn: nút xác nhận aria-disabled + danh sách lý do; cảnh báo không chặn đọc qua aria-live. Nháp: sessionStorage. Chỉ mount khi mở.
  * Khối: `assign/AssignSections`; state + kiểm tra: `assign/useAssignForm` (reducer `assignFormReducer` + useFormModal).
  */
-export function AssignModal({ record: r, records, onClose, onSubmit }: AssignModalProps) {
+export function AssignModal({ record: r, onClose, onSubmit }: AssignModalProps) {
   const blockId = `${useId()}-block`;
-  const a = useAssignForm({ record: r, records, onClose, onSubmit });
+  const a = useAssignForm({ record: r, onClose, onSubmit });
   const { confirming, submitting, hasDraft, requestClose, discard } = a.modal;
 
   return (

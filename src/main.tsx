@@ -13,6 +13,7 @@ import {
 import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
+import { MAP_EDITOR_PATH } from './app/settingsRoutes';
 import { reloadForNewVersion } from './lib/chunkReload';
 import { initMonitoring } from './lib/monitoring';
 import ForbiddenPage from './pages/errors/ForbiddenPage';
@@ -20,7 +21,7 @@ import NotFoundPage from './pages/errors/NotFoundPage';
 import RouteError from './pages/errors/RouteError';
 import { DEFAULT_ASSET_ID, DEFAULT_OPERATION_DEVICE, assetPath, operationDevicePath } from './app/assetRoutes';
 
-// Mỗi trang một chunk (chart recharts, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
+// Mỗi trang một chunk (chart, 3D, Editor, bảng lớn) – bundle chính chỉ còn React + router + layout.
 const OverviewPage = lazy(() => import('./pages/overview/OverviewPage'));
 const AlertsPage = lazy(() => import('./pages/alerts/AlertsPage'));
 const MaintenancePage = lazy(() => import('./pages/maintenance/MaintenancePage'));
@@ -74,11 +75,11 @@ function Root() {
   );
 }
 
-/** /editor chỉ mở khi có quyền (engineer/admin – xem canUseEditor); không có quyền → trang 403. */
+/** Chỉnh sửa bản đồ 3D (/settings/map-editor) chỉ mở khi có quyền (engineer/admin – xem canUseEditor); không có quyền → trang 403. */
 function EditorRoute() {
   const { search } = useLocation();
   const { user } = useAuth();
-  return canUseEditor(search, user?.role) ? <EditorPage /> : <ForbiddenPage feature="Scene Editor" />;
+  return canUseEditor(search, user?.role) ? <EditorPage /> : <ForbiddenPage feature="Chỉnh sửa bản đồ 3D" />;
 }
 
 /** Tab mở từ trước khi deploy: preload chunk cũ (đã xoá) lỗi → tải lại trang một lần để nhận bản mới. */
@@ -137,7 +138,10 @@ const router = createBrowserRouter([
           { path: '/reports', element: <ReportsPage />, ...t('Báo cáo') },
           // Chi tiết báo cáo ngày (Figma 117:4250); tháng/quý/năm chưa có thiết kế.
           { path: '/reports/daily/:code', element: <DailyReportDetailPage />, ...t('Báo cáo ngày') },
-          { path: '/editor', element: <EditorRoute />, ...t('Scene Editor') },
+          // Chỉnh sửa bản đồ 3D (Scene Editor) – mở từ menu Cài đặt trên header. /settings và /editor (link cũ) chuyển sang, giữ query.
+          { path: MAP_EDITOR_PATH, element: <EditorRoute />, ...t('Chỉnh sửa bản đồ 3D') },
+          { path: '/settings', loader: () => redirect(MAP_EDITOR_PATH) },
+          { path: '/editor', loader: ({ request }) => redirect(`${MAP_EDITOR_PATH}${new URL(request.url).search}`) },
           { path: '*', element: <NotFoundPage />, ...t('Không tìm thấy trang') },
         ],
       },

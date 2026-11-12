@@ -2,7 +2,7 @@
 
 Dashboard giám sát hệ thống LPG: Tổng quan · Cảnh báo · Bảo trì · Báo cáo · Vận hành (thiết bị, nhật ký, AI mô phỏng) · Chi tiết tài sản · Scene Editor 3D. Dữ liệu hiện là **mock** đi qua lớp `src/data/` (thay bằng API sau, không sửa giao diện).
 
-Stack: Vite 6 · React 18 · TypeScript strict · Tailwind 3 · react-router 7 · recharts 3 · three/R3F (tải lười) · zod 4 · vitest.
+Stack: Vite 6 · React 18 · TypeScript strict · Tailwind 3 · react-router 7 · chart SVG tự vẽ · three/R3F (tải lười) · zod 4 · vitest.
 
 ## Bắt đầu
 

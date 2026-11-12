@@ -1,10 +1,11 @@
 /** Điều kiện hệ thống để đóng cảnh báo (đọc live) + tóm tắt. Tách từ alertDetail.ts. */
 import type { AlertDirection, AlertRecord } from '@/features/alerts/types';
-import { closeConditions, relatedOpenAlerts, type CloseCondition, type CloseConditionInput } from '@/features/alerts/close';
+import { closeConditions, type CloseCondition, type CloseConditionInput, type RelatedAlert } from '@/features/alerts/close';
 import { HEAT_DETECTORS, type HeatDetector } from '@/mocks/sensors';
 import { detectorStatus } from '@/features/alerts/fire';
 import type { LiveData } from '@/features/live/types';
 import { useLiveData } from './live';
+import { useRelatedOpen } from './alertApi';
 import { type AlertLiveReading, liveReading, readingOf } from './alertLive';
 import { alertKind, alertMetric } from './alertBase';
 import { closeLimit, updateConfig, updateReadingRows } from './alertUpdateData';
@@ -42,7 +43,7 @@ function secondaryState(s: CloseSpec['secondary'][number], r: AlertLiveReading):
 }
 
 /** Đầu vào thuần của `closeConditions` từ LiveData đã đọc (tách khỏi hook để test). */
-function closeConditionInput(a: AlertRecord, all: readonly AlertRecord[], live: LiveData | undefined, now: number): CloseConditionInput {
+function closeConditionInput(a: AlertRecord, related: readonly RelatedAlert[], live: LiveData | undefined, now: number): CloseConditionInput {
   const spec = closeSpec(a);
   const read = (tag: string | undefined): AlertLiveReading => (tag ? liveReading(live, tag, now) : { state: 'lost' });
   const p = spec.primary;
@@ -62,7 +63,7 @@ function closeConditionInput(a: AlertRecord, all: readonly AlertRecord[], live: 
         : null,
     secondary: spec.secondary.map((s) => ({ label: s.label, state: secondaryState(s, read(s.tag)) })),
     detector: d && st ? { name: d.id, alarm: st.alarm, device: live ? st.device : 'pending' } : undefined,
-    related: relatedOpenAlerts(a, all),
+    related,
   };
 }
 
@@ -78,12 +79,25 @@ function closeTags(alerts: readonly AlertRecord[]): string[] {
   return [...out].sort();
 }
 
-/** 3 điều kiện hệ thống theo id cảnh báo – đọc live một lần cho cả danh sách. Mất tín hiệu theo `tagSignal` lúc render. */
-export function useCloseConditions(alerts: readonly AlertRecord[], all: readonly AlertRecord[]): Record<string, CloseCondition[]> {
+/** Điều kiện "không còn cảnh báo liên quan" khi máy chủ chưa trả danh sách liên quan – chưa đạt (không cho đóng sớm). */
+const RELATED_PENDING: CloseCondition = { id: 'no-related', ok: false, reason: 'Đang kiểm tra cảnh báo liên quan…' };
+
+/**
+ * 3 điều kiện hệ thống theo id cảnh báo – đọc live một lần cho cả danh sách; cảnh báo liên quan đang mở hỏi máy chủ
+ * (GET /alerts/related-open). Mất tín hiệu theo `tagSignal` lúc render.
+ */
+export function useCloseConditions(alerts: readonly AlertRecord[]): Record<string, CloseCondition[]> {
   const tags = closeTags(alerts);
   const live = useLiveData(tags, { enabled: tags.length > 0 });
+  const related = useRelatedOpen(alerts.map((a) => a.id));
   const now = Date.now();
-  return Object.fromEntries(alerts.map((a) => [a.id, closeConditions(closeConditionInput(a, all, tags.length ? live : {}, now))]));
+  return Object.fromEntries(
+    alerts.map((a) => {
+      const rel = related?.[a.id];
+      const conds = closeConditions(closeConditionInput(a, rel ?? [], tags.length ? live : {}, now));
+      return [a.id, rel ? conds : conds.map((c) => (c.id === 'no-related' ? RELATED_PENDING : c))];
+    }),
+  );
 }
 
 /**
