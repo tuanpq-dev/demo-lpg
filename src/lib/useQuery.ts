@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { settleSnapshot, startSnapshot, toError, viewOf, type QueryState, type Snapshot } from './queryState';
 
-/** Trạng thái tải dữ liệu MỘT tài nguyên (trang chi tiết, cảnh 3D…). */
-export type QueryState<T> =
-  | { status: 'loading'; data?: undefined; error?: undefined }
-  | { status: 'error'; data?: undefined; error: Error }
-  | { status: 'success'; data: T; error?: undefined };
-
-type Snapshot<T> = QueryState<T> & { key: string; attempt: number };
-
-const toError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
+export type { QueryState };
 
 /**
  * Tải dữ liệu theo `key` (mã tài sản, mã cảnh…) bằng `fetcher` – `{ status, data, error, refetch }`.
@@ -43,13 +36,10 @@ export function useQuery<T>(
     const ctrl = new AbortController();
     const background = started.current?.key === key && started.current.attempt === attempt;
     started.current = { key, attempt };
-    // keepPrevious: key mới nhưng đang có dữ liệu → để nguyên snapshot cũ (render trả `pending`) tới khi lượt này xong.
-    const keep = keepPrevious && snapRef.current.status === 'success';
-    if (!background && !keep) setSnap({ status: 'loading', key, attempt });
+    const first = startSnapshot(snapRef.current, key, attempt, { background, keepPrevious });
+    if (first !== snapRef.current) setSnap(first);
     const done = (next: QueryState<T>) => {
-      if (ctrl.signal.aborted) return;
-      // Tải ngầm lỗi: giữ dữ liệu đang hiện (nếu có) thay vì thay cả màn bằng trang lỗi.
-      setSnap((cur) => (background && next.status === 'error' && cur.status === 'success' ? cur : { ...next, key, attempt }));
+      if (!ctrl.signal.aborted) setSnap((cur) => settleSnapshot(cur, next, key, attempt, background));
     };
     let pending: Promise<T>;
     try {
@@ -65,14 +55,7 @@ export function useQuery<T>(
   }, [key, attempt, revision, keepPrevious]);
 
   const refetch = useCallback(() => setAttempt((n) => n + 1), []);
-  const { key: _k, attempt: _a, ...state } = snap;
-  // Snapshot của key / lượt khác (chưa kịp chạy effect hoặc đang tải key mới) → loading, hoặc dữ liệu cũ khi keepPrevious.
-  if (snap.key !== key || snap.attempt !== attempt) {
-    return keepPrevious && state.status === 'success'
-      ? { ...(state as QueryState<T>), refetch, pending: true }
-      : { status: 'loading', refetch, pending: true };
-  }
-  return { ...(state as QueryState<T>), refetch, pending: false };
+  return { ...viewOf(snap, key, attempt, keepPrevious), refetch };
 }
 
 /**

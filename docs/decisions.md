@@ -478,3 +478,9 @@ Theo review FE (route, bundle, lint, trang lỗi, ảnh, convention). Code khôn
 - Quy ước comment: comment giải thích code đang làm gì / vì sao; KHÔNG ghi lịch sử ("trước đây", "đã bỏ", "tách file ngày …", nhãn giai đoạn GĐ/3D-x, ngày duyệt / ngày nhận ảnh) – lịch sử thuộc git + file này. Nguồn thiết kế ghi node Figma hoặc đường dẫn ảnh `scratch/figma-ref/…`, không kèm ngày. Đã dọn khoảng 50 comment.
 - Khối comment dài còn lại (≥ 12 dòng: `useQuery`, `api/client`, `createCollectionStore`, bảng biến thể `Button`/`Badge`, bảng trạng thái `progress`/`close`) mô tả hành vi / hợp đồng – giữ.
 - `npm run check` sạch (lint 0 warning), vitest 100.
+
+### Maintainability – test nghiệp vụ, `useQuery` test được, đồng bộ CLAUDE.md (12/11/2026, nhánh `chore/maintainability`)
+- Unit test 100 → 156 (chỉ logic thuần có hậu quả nghiệp vụ): `alerts/close.test.ts` (3 điều kiện hệ thống, người đóng ≠ người xử lý mức Nghiêm trọng, tiếp tục theo dõi, đóng hàng loạt) · `alerts/update.test.ts` (điều kiện "Đã xử lý" áp suất / gas / cháy kể cả mất tín hiệu, theo dõi sau xử lý, nháp) · `maintenance/progress.test.ts` (tiến độ, gửi nghiệm thu, nghiệm thu, tệp) · `maintenance/assign.test.ts` (tải việc / Bận, lỗi chặn, đổi người, hàng loạt) · `lib/queryState.test.ts` · thêm ca subscribe cho `createCollectionStore`.
+- `useQuery`: chuyển trạng thái tách ra `lib/queryState.ts` (thuần: `startSnapshot`, `settleSnapshot`, `viewOf`) – hook chỉ nối state / effect, hành vi không đổi. Giữ hook tự viết thay vì TanStack Query: bề mặt nhỏ (1 hook + 1 store), không thêm ~13 KB gzip; xem lại khi nối API thật nếu cần cache theo key / dedupe giữa trang.
+- Smoke e2e "nút bản đồ dưới header" hết chập chờn: chờ bố cục đứng yên trước khi đo, cuộn bằng `scrollTo` và kiểm nút đã vào vùng header (8/8 lần).
+- CLAUDE.md mục 6–7 viết lại theo `main` (mọi nhánh đã merge); README cập nhật bảng test.

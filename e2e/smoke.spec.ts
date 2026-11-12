@@ -148,10 +148,20 @@ test.describe('luồng chính', () => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto('/overview');
     const zoom = page.getByRole('button', { name: 'Phóng to' }).first();
-    const before = (await zoom.boundingBox())!;
-    // Cuộn để nút nằm giữa chiều cao header (60 px).
-    await page.mouse.wheel(0, before.y - 30);
-    await page.waitForTimeout(300);
+    await expect(zoom).toBeVisible();
+    // Chờ bố cục đứng yên (khối bản đồ / số liệu tải xong làm xô vị trí) – đo khi còn dịch chuyển thì cuộn lệch.
+    let last = -1;
+    await expect
+      .poll(async () => {
+        const y = (await zoom.boundingBox())!.y + (await page.evaluate(() => window.scrollY));
+        const stable = y === last;
+        last = y;
+        return stable;
+      })
+      .toBe(true);
+    // Cuộn để tâm nút nằm giữa chiều cao header (60 px).
+    await page.evaluate((y) => window.scrollTo(0, y), last - 30);
+    await expect.poll(async () => (await zoom.boundingBox())!.y, { message: 'nút phải cuộn vào vùng header' }).toBeLessThan(45);
     const box = (await zoom.boundingBox())!;
     const onTop = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('header, [role="banner"]'), {
       x: box.x + box.width / 2,

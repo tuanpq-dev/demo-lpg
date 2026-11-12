@@ -52,4 +52,21 @@ describe('createCollectionStore', () => {
     await flush();
     expect(s.getState()).toEqual({ status: 'success', data: [9] });
   });
+
+  test('subscriber được báo mỗi lần dữ liệu đổi (tải xong / commit) – query đọc từ store tải lại theo đó', async () => {
+    const { fetchAll, calls } = deferredFetch();
+    const s = createCollectionStore(fetchAll);
+    let n = 0;
+    const off = s.subscribe(() => (n += 1));
+    s.load();
+    calls[0]!.resolve([1]);
+    await flush();
+    const afterLoad = n;
+    expect(afterLoad).toBeGreaterThan(0);
+    s.commit([2]);
+    expect(n).toBe(afterLoad + 1);
+    off();
+    s.commit([3]);
+    expect(n).toBe(afterLoad + 1);
+  });
 });

@@ -40,15 +40,21 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 | File | Bảo vệ |
 |---|---|
 | `src/api/client.test.ts` | Gọi API: lỗi theo `code`, timeout, huỷ, refresh 401 một lần, mất phiên, sai hợp đồng |
-| `src/lib/createCollectionStore.test.ts` | Store dữ liệu: kết quả cũ về muộn không đè dữ liệu vừa ghi, huỷ lượt cũ |
+| `src/lib/createCollectionStore.test.ts` | Store dữ liệu: kết quả cũ về muộn không đè dữ liệu vừa ghi, huỷ lượt cũ, báo subscriber khi đổi |
+| `src/lib/queryState.test.ts` | `useQuery`: không lộ dữ liệu / lỗi của key cũ, tải ngầm lỗi giữ dữ liệu, `keepPrevious`, gộp trạng thái |
 | `src/features/alerts/workflow.test.ts` · `maintenance/workflow.test.ts` | Quy trình trạng thái cảnh báo / bảo trì chỉ đi tiến, không nhảy bước |
+| `src/features/alerts/close.test.ts` | Đóng cảnh báo: 3 điều kiện hệ thống, người đóng ≠ người xử lý (Nghiêm trọng), tiếp tục theo dõi, đóng hàng loạt |
+| `src/features/alerts/update.test.ts` | Cập nhật xử lý: điều kiện "Đã xử lý" theo loại (áp suất / gas / cháy, mất tín hiệu), theo dõi sau xử lý, nháp |
+| `src/features/maintenance/progress.test.ts` | Tiến độ, gửi nghiệm thu, nghiệm thu (không tự nghiệm thu, Không đạt / Cần bổ sung), tệp tải lên |
+| `src/features/maintenance/assign.test.ts` | Phân công: tải việc / Bận, lỗi chặn, đổi người, phân công hàng loạt |
+| `src/features/alerts/query.test.ts` · `maintenance/query.test.ts` | Truy vấn phía máy chủ: lọc, phân trang, đếm tab, KPI, quá hạn |
 | `src/features/reports/sign.test.ts` | 8 điều kiện ký báo cáo ngày |
 | `src/features/live/signal.test.ts` | Quy tắc "Mất tín hiệu" (không hiện số cũ) |
 | `src/lib/plantTime.test.ts` | "Hôm nay" theo giờ nhà máy |
 | `packages/shared/src/roles.test.ts` | Phân quyền theo vai trò |
 | `src/mocks/contracts.test.ts` | Mock khớp hợp đồng dữ liệu dùng chung |
 
-Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (20 test, ~20 s) – 13 trang chính + 390 px + trang 404 không lỗi JS/console, mở drawer / modal theo query, ký báo cáo, CLS trang chi tiết thiết bị < 0,1. Không so pixel. Thêm test mới chỉ khi logic có hậu quả nghiệp vụ nếu sai; đặt cạnh module (`foo.ts` → `foo.test.ts`).
+Giao diện: smoke test Playwright `e2e/smoke.spec.ts` (23 test, ~40 s) – 13 trang chính + 390 px + trang 404 không lỗi JS/console, mở drawer / modal theo query, ký báo cáo, CLS trang chi tiết thiết bị < 0,1. Không so pixel. Thêm test mới chỉ khi logic có hậu quả nghiệp vụ nếu sai; đặt cạnh module (`foo.ts` → `foo.test.ts`).
 
 ## CI / Deploy
 
