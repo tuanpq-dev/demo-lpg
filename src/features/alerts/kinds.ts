@@ -40,7 +40,7 @@ export type UpdateReadingField = 'primary' | 'regulatorOut' | 'temperature' | 'a
 export type UpdateStateId = 'inspecting' | 'resolving' | 'paused' | 'needs-support' | 'resolved' | 'false-alarm';
 
 /**
- * "Cập nhật xử lý" theo LOẠI – khung chung `AlertUpdateModal` (dựng theo ảnh modal áp suất 28/10/2026; gas/cháy chưa có
+ * "Cập nhật xử lý" theo LOẠI – khung chung `AlertUpdateModal` (dựng theo ảnh modal áp suất; gas/cháy chưa có
  * thiết kế riêng – docs/figma-diffs.md). Chữ được thay `{device}`, `{tag}`, `{regulator}`, `{safetyValve}`, `{smoke}`, `{gas}`.
  */
 export type AlertUpdateConfig = {

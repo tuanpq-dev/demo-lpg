@@ -4,7 +4,7 @@
  * gợi ý AI, trạng thái lượt. `now` (ms) truyền vào. Mọi số chỉ nằm trên lớp mô phỏng – không lệnh PLC, không ESD thật,
  * không cảnh báo vận hành thật; dữ liệu PLC/SCADA thật chỉ được CHỤP lúc bắt đầu làm trạng thái ban đầu.
  *
- * Mô hình (người dùng chốt 03/11/2026 theo ảnh Kết quả): biến tăng (smoothstep) tới mục tiêu → chạm mục tiêu = High-High →
+ * Mô hình (theo ảnh màn Kết quả): biến tăng (smoothstep) tới mục tiêu → chạm mục tiêu = High-High →
  * ESD ảo / biện pháp xử lý mô phỏng kéo biến về gần mức ban đầu (tuyến tính, nửa thời lượng). "Tăng chậm" có thể không chạm
  * mục tiêu (không có pha giảm).
  */
@@ -134,7 +134,7 @@ export function pendingSuggestionText(
   return `AI đang theo dõi diễn biến – gợi ý sẽ có khi ${v.noun} ${v.direction === 'above' ? 'vượt' : 'xuống dưới'} ${lowerFirst(v.thresholdLabel)} (${formatVariable(v.threshold, v)}).`;
 }
 
-// Tách file (10/11/2026) – điểm import chung vẫn là `features/simulation/monitor`.
+// Điểm import chung của mô hình theo dõi mô phỏng.
 export * from './monitorCore';
 export * from './session';
 export * from './timeline';

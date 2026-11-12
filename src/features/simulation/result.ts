@@ -1,5 +1,5 @@
 /*
- * Kết quả mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-result/`) – logic THUẦN tổng kết một lượt đã
+ * Kết quả mô phỏng (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-result/`) – logic THUẦN tổng kết một lượt đã
  * kết thúc: KPI, đánh giá tổng quan + 4 ô, bảng tiêu chí, gợi ý AI sau lượt, điểm biểu đồ, nội dung báo cáo (CSV).
  * Mọi số suy từ lượt (`SimulationSession`) + bản ghi lịch sử (`SimulationRun`) + mô hình diễn biến (`monitor.ts`).
  */

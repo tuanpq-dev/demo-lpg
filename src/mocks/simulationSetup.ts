@@ -1,5 +1,5 @@
 /*
- * Màn "Cấu hình kịch bản mô phỏng" (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-config/`): thông tin cố định
+ * Màn "Cấu hình kịch bản mô phỏng" (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-config/`): thông tin cố định
  * + tham số đang lưu của 5 kịch bản; `monitor` = chữ của màn "Theo dõi diễn biến" (`scratch/figma-ref/ai-sim-monitor/`, SC-001
  * nguyên văn ảnh, còn lại suy cùng mẫu – questions 17). Ảnh chỉ vẽ SC-001 (chữ lấy nguyên văn); SC-002…005 suy theo cùng mẫu (GIẢ ĐỊNH –
  * docs/questions.md 16). Ngưỡng tô trạng thái bảng tham chiếu theo DAILY_ITEMS (mocks/dailyReport.ts) / cảnh báo mock.

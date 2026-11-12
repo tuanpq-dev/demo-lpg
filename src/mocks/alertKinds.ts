@@ -101,7 +101,7 @@ const FIRE_UPDATE: AlertUpdateConfig = {
   followUp: { options: FOLLOW_OPTIONS, defaultMinutes: 30 },
 };
 
-/** Bands mặc định của khí gas theo ảnh (27/10/2026): 0–10 bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD – CHỜ chốt với
+/** Bands mặc định của khí gas theo ảnh drawer gas: 0–10 bình thường · 10–20 cấp 1 · 20–40 cấp 2 · ≥ 40 ESD – CHỜ chốt với
  * khách (dữ liệu cũ ghi ngưỡng 20 % LEL; docs/questions.md). */
 export const GAS_BANDS: readonly AlertBand[] = [
   { level: 'normal', from: 0, to: 10, label: 'Bình thường', tone: 'success' },
@@ -126,7 +126,7 @@ type PlaybookPart = {
 
 const PLAYBOOKS: Readonly<Record<Exclude<AlertKind, 'gas-leak' | 'fire'>, PlaybookPart>> = {
   // Ảnh drawer ALT-00128 (3 nguyên nhân + 3 bước giữ nguyên chữ; "van PR-101" → van an toàn của bồn).
-  // Hướng dẫn xử lý (drawer) = Kết quả kiểm tra thiết bị (modal) – MỘT danh sách (28/10/2026): 6 hạng mục theo ảnh modal;
+  // Hướng dẫn xử lý (drawer) = Kết quả kiểm tra thiết bị (modal) – MỘT danh sách: 6 hạng mục theo ảnh modal;
   // giữ id cũ field-gauge / verify-valve / cooling-ready để tick cũ không mất. Ảnh "Kiểm tra bộ điều áp PR-" bị cắt → PR-101.
   'tank-overpressure': {
     label: 'Áp suất bồn vượt ngưỡng',

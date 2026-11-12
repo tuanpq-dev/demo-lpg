@@ -14,7 +14,7 @@ import {
   type CloseResult,
   type MonitorResult,
 } from '@/features/alerts/close';
-import { followUpDurationLabel } from '@/features/alerts/update';
+import { followUpDurationLabel } from '@/features/alerts/followUp';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
@@ -35,7 +35,7 @@ const hhmm = (iso?: string) => (iso ? plantTimeOfDay(new Date(iso)).slice(0, 5) 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /**
- * "Xác nhận đóng cảnh báo" – CHUNG mọi loại (ảnh `scratch/figma-ref/alert-close-modal-{header,body,footer}.png`, 28/10/2026;
+ * "Xác nhận đóng cảnh báo" – CHUNG mọi loại (ảnh `scratch/figma-ref/alert-close-modal-{header,body,footer}.png`;
  * lệch ảnh ghi docs/figma-diffs.md; docs/guide/alerts.md (4p)). Mở từ drawer khi cảnh báo Đã xử lý (chờ đóng).
  * Thẻ đầu · Kết quả kỹ thuật (chỉ đọc – từ modal cập nhật) · Xác nhận điều kiện (3 mục HỆ THỐNG tự kiểm + 2 mục tick tay) ·
  * Ghi chú kết luận (bắt buộc khi đóng) · Thời gian theo dõi (điền sẵn từ modal cập nhật – một giá trị `followUp`).

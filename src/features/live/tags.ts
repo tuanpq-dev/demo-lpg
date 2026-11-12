@@ -81,7 +81,7 @@ export const VAPORIZER_AREA_TAGS = {
 } as const;
 
 /**
- * Bộ điều áp sau bồn (modal "Cập nhật xử lý cảnh báo áp suất", ảnh 28/10/2026 – dòng "Áp suất sau PR-101").
+ * Bộ điều áp sau bồn (modal "Cập nhật xử lý cảnh báo áp suất", ảnh – dòng "Áp suất sau PR-101").
  * `PT-103` là tag GIẢ ĐỊNH (chưa có trong danh sách tag của khách – docs/questions.md). Không dùng PT-102 vì PT-102 đã là
  * áp suất đẩy bơm P-101A trong cảnh 3D và là cảm biến của ALT-00122 / MT-00116. Chưa có ngưỡng cấu hình → số không tô màu.
  */

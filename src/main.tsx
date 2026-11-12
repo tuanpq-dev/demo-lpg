@@ -92,7 +92,7 @@ const t = (title: string): { handle: RouteHandle } => ({ handle: { title } });
 /**
  * Chuyển hướng cố định làm bằng `loader` (chạy trước khi render) thay vì phần tử `<Navigate>`: `<Navigate>` render một
  * khung trống rồi mới chuyển trong effect → màn hình nháy (header biến mất) khi bấm tab "Bản đồ nội khu".
- * Đường dẫn cũ /operations/:assetId (GĐ 5D) → /map/:assetId, giữ query (?hide=, ?create=…) để link cũ không hỏng.
+ * Đường dẫn cũ /operations/:assetId → /map/:assetId, giữ query (?hide=, ?create=…) để link cũ không hỏng.
  */
 const legacyAssetRedirect = ({ params, request }: LoaderFunctionArgs) => redirect(`${assetPath(params.assetId ?? '')}${new URL(request.url).search}`);
 
@@ -126,7 +126,7 @@ const router = createBrowserRouter([
           { path: '/operations/devices/:deviceId', element: <DeviceDetailPage />, ...t('Giám sát thiết bị') },
           { path: '/operations/logs', element: <OperationLogsPage />, ...t('Nhật ký vận hành') },
           { path: '/operations/ai-simulation', element: <AiSimulationPage />, ...t('AI mô phỏng sự cố') },
-          // Cấu hình kịch bản mô phỏng (ảnh 03/11/2026).
+          // Cấu hình kịch bản mô phỏng.
           { path: '/operations/ai-simulation/:scenarioId/config', element: <ScenarioConfigPage />, ...t('Cấu hình kịch bản') },
           { path: '/operations/ai-simulation/:scenarioId/monitor', element: <SimulationMonitorPage />, ...t('Theo dõi mô phỏng') },
           { path: '/operations/ai-simulation/:scenarioId/result', element: <SimulationResultPage />, ...t('Kết quả mô phỏng') },

@@ -172,7 +172,7 @@ export const CheckIcon = ({ size = 16, ...p }: P) => (
   </svg>
 );
 
-// ---- Cấu hình kịch bản mô phỏng (ảnh 03/11/2026 – scratch/figma-ref/ai-sim-config/) ----
+// ---- Cấu hình kịch bản mô phỏng (ảnh – scratch/figma-ref/ai-sim-config/) ----
 
 /** Mũi tên trái – nút "Quay lại danh sách". */
 export const ArrowLeftIcon = ({ size = 16, ...p }: P) => (

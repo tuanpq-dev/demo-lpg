@@ -12,10 +12,10 @@ import {
   verificationItems,
 } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
+import { followUpWindow } from '@/features/alerts/followUp';
 import type { InspectionEntry } from '@/features/alerts/inspection';
 import {
   fieldItemId,
-  followUpWindow,
   hasErrors,
   hasGauge,
   isResolvedState,

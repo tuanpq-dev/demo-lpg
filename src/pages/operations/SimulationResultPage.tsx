@@ -102,7 +102,7 @@ type ResultViewProps = {
 };
 
 /**
- * Kết quả mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-result/`; Figma không đọc được): thông tin phiên →
+ * Kết quả mô phỏng (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-result/`; Figma không đọc được): thông tin phiên →
  * banner → 5 KPI → [Đánh giá tổng quan · biểu đồ · dòng thời gian · bảng tiêu chí · điểm làm tốt / cần cải thiện | Gợi ý AI ·
  * cảnh báo đã tạo · dữ liệu tham chiếu · báo cáo]. Mọi số suy từ lượt + bản ghi lịch sử (`simulationResult`).
  */

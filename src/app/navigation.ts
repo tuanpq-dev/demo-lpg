@@ -16,7 +16,7 @@ export const NAV_ROUTES: readonly NavRoute[] = [
     id: 'operation',
     label: 'Vận hành',
     icon: 'navOperation',
-    // Menu con chưa có trong Figma (questions.md 1.3) – theo yêu cầu khách 30/10/2026.
+    // Menu con chưa có trong Figma, dựng theo yêu cầu khách (questions.md 1.3).
     children: [
       // Mục đầu = "Giám sát thiết bị" (breadcrumb ảnh op-device-header.png); giữ nhãn "Vận hành" theo yêu cầu khách 30/10.
       { id: 'operation-main', label: 'Vận hành', path: '/operations/devices' },

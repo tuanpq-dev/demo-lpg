@@ -29,7 +29,7 @@ export type InspectionTableProps<S extends string = string> = {
 };
 
 /**
- * Bảng "Kết quả kiểm tra thiết bị" (modal cập nhật xử lý cảnh báo áp suất – ảnh 28/10/2026, chưa có node): Hạng mục ·
+ * Bảng "Kết quả kiểm tra thiết bị" (modal cập nhật xử lý cảnh báo áp suất – ảnh, chưa có node): Hạng mục ·
  * Trạng thái (ô chọn, nhãn ẩn "Trạng thái: <hạng mục>") · Người kiểm tra · Thời gian · Ghi chú (sửa ngay trong dòng, nhãn ẩn
  * "Ghi chú: <hạng mục>"). Ảnh có cột checkbox – bỏ (trạng thái đã đủ nghĩa). `<caption>` + `th scope`; khung tự cuộn ngang
  * dưới ~760 px (role=region có tên, Tab tới được) – trang/modal không tràn.

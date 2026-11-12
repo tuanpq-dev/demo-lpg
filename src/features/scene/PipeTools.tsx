@@ -12,7 +12,7 @@ import { allPorts, orthoSegment, PORT_SNAP_RADIUS, same3, type WorldPort } from 
 import type { Pipe, SceneConfig, Vec3 } from './types';
 
 /*
- * Công cụ ống của chế độ sửa (3D-4): vẽ ống (P), đánh dấu cổng, tay nắm điểm gập của ống đang chọn.
+ * Công cụ ống của chế độ sửa: vẽ ống (P), đánh dấu cổng, tay nắm điểm gập của ống đang chọn.
  * Dùng chung pipes.ts (thuần) với Editor; ghi dữ liệu qua callback của SceneEditState (1 lần = 1 bước undo).
  */
 

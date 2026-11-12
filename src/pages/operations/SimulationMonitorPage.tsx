@@ -12,17 +12,8 @@ import { RUN_RESULT_LABEL, type Scenario, type SimulationRun } from '@/features/
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
 import { useNow } from '@/lib/useNow';
-import {
-  MonitorHeaderMeta,
-  MonitorKpis,
-  MonitorStatusCard,
-  MonitorSuggestionCard,
-  MonitorTimelineCard,
-  PhaseBadge,
-  ReferenceSnapshotCard,
-  SimAlertsCard,
-  SimulationTrendCard,
-} from './simulation/MonitorCards';
+import { MonitorHeaderMeta, MonitorKpis, MonitorTimelineCard, PhaseBadge, SimAlertsCard, SimulationTrendCard } from './simulation/MonitorCards';
+import { MonitorStatusCard, MonitorSuggestionCard, ReferenceSnapshotCard } from './simulation/MonitorSideCards';
 import { BackLink, ScenarioNotFound, referenceHealth, useSuggestionConfidence } from './simulation/shared';
 import { errorMessage } from '@/lib/actionError';
 
@@ -90,7 +81,7 @@ type MonitorViewProps = {
 };
 
 /**
- * Theo dõi diễn biến mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-monitor/`; Figma không đọc được):
+ * Theo dõi diễn biến mô phỏng (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-monitor/`; Figma không đọc được):
  * header (huy hiệu trạng thái · Mã / Mức độ / Kịch bản / Thời lượng · Dừng mô phỏng) → banner → 5 KPI → [biểu đồ diễn biến ·
  * cảnh báo mô phỏng | timeline · gợi ý AI | trạng thái mô phỏng · dữ liệu PLC/SCADA tham chiếu]. Mọi số suy từ lượt chạy
  * (`monitorSnapshot`) tại `now`; dữ liệu thật chỉ là ảnh chụp lúc bắt đầu + tình trạng 21 tag.

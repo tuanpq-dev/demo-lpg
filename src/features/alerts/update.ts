@@ -1,20 +1,19 @@
 /*
- * "Cập nhật xử lý" – KHUNG CHUNG mọi loại có `update.kind = 'alert-update'` (áp suất theo ảnh 28/10/2026; gas, cháy dựng theo
- * khung đó – docs/guide/alerts.md (4o)). Thuần, có test (update.test.ts). Thời điểm + người thao tác truyền vào (`ctx`,
- * `savedAt`); số live do UI đọc rồi truyền vào (`CloseRuleInput`) – hàm kiểm lại.
+ * "Cập nhật xử lý" – khung chung mọi loại có `update.kind = 'alert-update'` (áp suất, gas, cháy – docs/guide/alerts.md (4o)).
+ * Thuần. Thời điểm + người thao tác truyền vào (`ctx`, `savedAt`); số live do UI đọc rồi truyền vào (`CloseRuleInput`).
  *
  * Ô trạng thái ↔ bản ghi:
  *   Đang kiểm tra / Đang xử lý = in-progress + phase (inspecting | resolving)
  *   Tạm dừng   = in-progress + hold paused (lý do bắt buộc)
  *   Cần hỗ trợ = in-progress + hold needs-support (lý do + người hỗ trợ bắt buộc → người phối hợp)
  *   Đã xử lý (cháy: Đã xử lý sự cố / Báo động giả) = resolved (chờ xác nhận đóng) – CHỈ khi đủ điều kiện của loại
- *   (`updateCloseCheck`: áp suất / gas / cháy giữ nguyên như modal cũ). Hoàn thành chỉ qua `close.ts`.
+ *   (`updateCloseCheck`). Hoàn thành chỉ qua `close.ts`.
  */
 import type { AlertFollowUp, AlertRecord, VerificationSource } from '@/features/alerts/types';
 import type { AlertUpdateConfig, UpdateStateId } from '@/features/alerts/kinds';
-import { plantTimeOfDay } from '@/lib/plantTime';
 import { canCloseGas } from './bands';
 import { canCloseFire, type DetectorAlarm, type DetectorDevice } from './fire';
+import { followUpWindow, hhmm, type FollowUpChoice } from './followUp';
 import { formatMeasure } from './gauge';
 import { inspectionErrors, writeInspection, type InspectionEntry } from './inspection';
 import { canClosePressure, hasGauge, type LiveState } from './pressure';
@@ -85,7 +84,7 @@ export type CloseRuleInput = {
   fieldChecked?: boolean;
 };
 
-/** Điều kiện của loại (giữ nguyên như modal cũ): áp suất `canClosePressure` · gas `canCloseGas` · cháy `canCloseFire`. */
+/** Điều kiện của loại: áp suất `canClosePressure` · gas `canCloseGas` · cháy `canCloseFire`. */
 export function updateCloseCheck(rule: AlertUpdateConfig['close'], c: CloseRuleInput): UpdateClose {
   if (rule.rule === 'pressure') {
     const r = canClosePressure({ liveState: c.liveState, live: c.live, after: c.after, source: c.source, warn: c.limit, unit: c.unit });
@@ -140,45 +139,6 @@ function verificationErrors(
   if (state === 'false-alarm' && fire && has(fire.id)) out.push(`"${text(fire.id)}" mâu thuẫn với "${stateLabel(cfg, 'false-alarm')}" – bỏ một mục.`);
   return out;
 }
-
-// ---- Theo dõi sau xử lý ----
-
-export type FollowUpChoice = number | 'custom';
-
-/** Thời điểm kiểm tra lại = lúc lưu + số phút. */
-export const followUpUntil = (savedAt: Date, minutes: number) => new Date(savedAt.getTime() + minutes * 60_000);
-
-/** Khoảng theo dõi thực tế (0 phút → null). Tùy chỉnh: thời điểm phải sau lúc lưu (không thì null). */
-export function followUpWindow(choice: FollowUpChoice, customAt: string | undefined, savedAt: Date): { minutes: number; until: Date } | null {
-  if (choice === 'custom') {
-    const t = customAt ? new Date(customAt) : null;
-    if (!t || Number.isNaN(t.getTime()) || t.getTime() <= savedAt.getTime()) return null;
-    return { minutes: Math.round((t.getTime() - savedAt.getTime()) / 60_000), until: t };
-  }
-  return choice > 0 ? { minutes: choice, until: followUpUntil(savedAt, choice) } : null;
-}
-
-export const followUpChoiceLabel = (c: FollowUpChoice) =>
-  c === 'custom' ? 'Tùy chỉnh' : c === 0 ? 'Không cần theo dõi thêm' : c < 60 ? `Theo dõi thêm ${c} phút` : `Theo dõi thêm ${c / 60} giờ`;
-
-/** Nhãn ngắn của thời gian theo dõi (select ở modal đóng): "30 phút", "2 Giờ", "Không theo dõi". */
-export const followUpDurationLabel = (m: number) =>
-  m === 0 ? 'Không theo dõi' : m < 60 ? `${m} phút` : m % 60 === 0 ? `${m / 60} Giờ` : `${Math.floor(m / 60)} Giờ ${m % 60} phút`;
-
-const hhmm = (iso: string) => plantTimeOfDay(new Date(iso)).slice(0, 5);
-
-/** "Đang theo dõi đến HH:MM[, mục tiêu < 10 bar]" – Đã xử lý hoặc Hoàn thành có theo dõi và chưa hết giờ. */
-export function followUpLabel(a: Pick<AlertRecord, 'status' | 'followUp'>, now: Date): string | null {
-  const f = a.followUp;
-  if ((a.status !== 'done' && a.status !== 'resolved') || !f || new Date(f.until).getTime() <= now.getTime()) return null;
-  return `Đang theo dõi đến ${hhmm(f.until)}${f.target !== undefined ? `, mục tiêu < ${formatMeasure(f.target, f.unit)}` : ''}`;
-}
-
-/** Hết giờ theo dõi mà vẫn chờ đóng → chip "Đến giờ kiểm tra lại". */
-export function followUpDue(a: Pick<AlertRecord, 'status' | 'followUp'>, now: Date): boolean {
-  return a.status === 'resolved' && !!a.followUp && new Date(a.followUp.until).getTime() <= now.getTime();
-}
-export const FOLLOW_UP_DUE_LABEL = 'Đến giờ kiểm tra lại';
 
 // ---- Form ----
 

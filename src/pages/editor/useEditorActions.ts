@@ -4,19 +4,10 @@ import type { ObjectTransform } from '@/features/scene/EditTools';
 import type { AssetType, Pipe, PipeAttachment, SceneConfig, SceneObject, Vec3 } from '@/features/scene/types';
 import {
   addObjects,
-  addPipe,
   alignObjects,
   applyTransforms,
-  attachToPipe,
-  detachFromPipe,
-  insertPipePoint,
   objectsOnPipes,
   pipesConnectedTo,
-  removePipes,
-  renamePipe,
-  reversePipe,
-  updatePipe,
-  type PipeDraft,
   cloneObjects,
   createObject,
   objectIds,
@@ -29,6 +20,17 @@ import {
   updateObject,
   OBJECT_ID_PATTERN,
 } from '@/features/scene-editor/ops';
+import {
+  addPipe,
+  attachToPipe,
+  detachFromPipe,
+  insertPipePoint,
+  removePipes,
+  renamePipe,
+  reversePipe,
+  updatePipe,
+  type PipeDraft,
+} from '@/features/scene-editor/pipeOps';
 import { useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 
 /** Độ dời khi nhân bản / dán (m). */
@@ -142,7 +144,7 @@ export function useEditorActions(
         setScene((s) => updateObject(s, id, fn));
       },
 
-      // ----- Ống (3D-4) -----
+      // ----- Ống -----
       /** Kết thúc vẽ ống → thêm ống, chọn ống mới. */
       createPipe(draft: PipeDraft) {
         let id = '';

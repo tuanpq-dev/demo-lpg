@@ -168,7 +168,7 @@ sequenceDiagram
 | `src/features/scene/EditTools.tsx` | `planeHit` (mặt phẳng ngang bất kỳ), `startAttachDrag` (kéo van/đồng hồ dọc ống), callback ống trong `SceneEditState` |
 | `src/features/scene/geometry.ts` | `CurveCache`, `ScenePreview` + `applyPreview` |
 | `src/features/scene/SceneViewer.tsx` | Chọn ống, click đoạn = thêm điểm, Delete điểm, bắt tay nắm trong `onPointerDownCapture` |
-| `src/features/scene-editor/ops.ts` | `addPipe`, `updatePipe`, `removePipes`, `renamePipe`, `insertPipePoint`, `reversePipe`, `attachToPipe`, `detachFromPipe`, `removeObjects(…, 'keep' \| 'delete')` |
+| `src/features/scene-editor/pipeOps.ts` (+ `ops.ts`) | `addPipe`, `updatePipe`, `removePipes`, `renamePipe`, `insertPipePoint`, `reversePipe`, `attachToPipe`, `detachFromPipe`, `removeObjects(…, 'keep' \| 'delete')` |
 | `src/pages/editor/PropertiesPanel.tsx` | `PipeProperties`, "Gắn lên ống" / "Tháo khỏi ống" |
 | `src/pages/editor/useEditorShortcuts.ts` · `EditorDialogs.tsx` | Phím P/O, hộp "Xoá – còn ống liên quan" |
 

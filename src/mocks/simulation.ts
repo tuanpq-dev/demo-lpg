@@ -1,5 +1,5 @@
 /*
- * AI mô phỏng sự cố – 5 kịch bản (ảnh thiết kế 02/11/2026) + lịch sử chạy mẫu (lùi theo phút từ `now`).
+ * AI mô phỏng sự cố – 5 kịch bản (ảnh thiết kế) + lịch sử chạy mẫu (lùi theo phút từ `now`).
  * Tag tham chiếu lấy từ `features/live/tags.ts` (cùng tag các màn khác); ngưỡng khớp cảnh báo mock (ALT-00128 10.5 bar,
  * ALT-00126 50 °C, gas 20 % LEL). Các bước phản ứng + mục tiêu là GIẢ ĐỊNH (docs/questions.md 15.x).
  * TODO(backend): GET /simulation/scenarios, GET /simulation/runs, POST /simulation/scenarios/:id/runs.

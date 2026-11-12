@@ -1,6 +1,6 @@
 /**
  * Định dạng số DÙNG CHUNG toàn app: dấu CHẤM thập phân, dấu PHẨY phân tách hàng nghìn – "12,450.5", "3.8", "92.5" (như
- * Figma đa số màn; chốt 11/11/2026 – docs/decisions.md). Không dùng `toLocaleString(...)` / `.replace('.', ',')` rải rác.
+ * Figma đa số màn – docs/decisions.md). Không dùng `toLocaleString(...)` / `.replace('.', ',')` rải rác.
  * Ô nhập (`NumberField`) vẫn nhận cả "3,8" lẫn "3.8".
  */
 const formatters = new Map<string, Intl.NumberFormat>();
