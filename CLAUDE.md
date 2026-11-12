@@ -61,12 +61,12 @@
 ## 6. Trạng thái hiện tại (12/11/2026)
 - Mọi giai đoạn đã merge vào `main` (không còn nhánh tính năng chưa commit). Nhật ký từng giai đoạn, số đo, quyết định: `docs/decisions.md`.
 - Màn đã có: Tổng quan + bản đồ 3D, Cảnh báo (drawer theo loại, phân công, cập nhật xử lý, đóng), Bảo trì (danh sách, chi tiết, tiến độ, nghiệm thu, phân công), Chi tiết tài sản, Báo cáo vận hành (danh sách, chi tiết ngày, ký – bước Người kiểm tra, ghi nhận mốc), Vận hành (chi tiết thiết bị, PLC/SCADA, nhật ký, AI mô phỏng: danh sách / cấu hình / theo dõi / kết quả), Chỉnh sửa bản đồ 3D (`/settings/map-editor`), đăng nhập / phân quyền (BE-1).
-- Cảnh báo + Bảo trì đọc theo hình dạng API (phân trang / lọc / KPI ở mock server); Báo cáo, Nhật ký vận hành, sự kiện trang tài sản còn lọc ở client.
+- Cảnh báo, Bảo trì, Báo cáo đọc theo hình dạng API (phân trang / lọc / KPI ở mock server, response kiểm schema ở dev/test); Nhật ký vận hành (≤ 30 ngày), sự kiện trang tài sản còn lọc ở client.
 - Số đo gần nhất: JS route (gzip) `/overview` 138,6 KB · `/alerts` ~150 · `/maintenance` 155 · `/map` 167 · `/editor` 175; lint 0 warning; không file code nào > 400 dòng (trừ `src/mocks`).
 - Dựng theo ảnh / chờ thiết kế: cột phải Nhật ký vận hành (questions 14.1), màn mô phỏng SC-002…005 (questions 16), Xuất PDF (khoá).
 
 ## 7. Việc tiếp theo
-- Nối API thật cho `fetch*` trong `src/data/*` (endpoint cần có: `docs/decisions.md`); schema zod cho báo cáo (cảnh báo + bảo trì đã có – `src/api/alertSchemas.ts`, `maintenanceSchemas.ts`); chuyển action ghi sang "gửi → nhận bản ghi từ server"; `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.
+- Nối API thật cho `fetch*` trong `src/data/*` (endpoint cần có: `docs/decisions.md`); schema zod cho Vận hành / Mô phỏng (cảnh báo, bảo trì, báo cáo đã có – `src/api/*Schemas.ts`); chuyển action ghi sang "gửi → nhận bản ghi từ server"; `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.
 - Báo cáo: chi tiết tháng/quý/năm + ký/trả lại/nhập mốc + nút header chi tiết ngày (chờ thiết kế, `docs/questions.md` mục 12). Bản đồ 3D toàn nhà máy cho `/map` (nếu cần); ống 3D: kéo điểm theo Y, tự đi ống tránh thiết bị, nhánh chữ T.
 - Kỹ thuật: CI trên git.tbo.vn (chưa có runner – chỉ chạy gitlab.com).
 - Thay TempIcons + ảnh dự phòng khi có asset (danh sách: `docs/decisions.md` mục TODO). Chờ designer/khách: `docs/questions.md`.

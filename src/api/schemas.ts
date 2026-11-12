@@ -10,6 +10,7 @@ import { ROLES } from '@/features/auth/permissions';
 
 export * from './alertSchemas';
 export * from './maintenanceSchemas';
+export * from './reportSchemas';
 
 export const ApiErrorBodySchema = z.object({
   error: z.object({

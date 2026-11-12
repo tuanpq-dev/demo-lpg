@@ -1,6 +1,6 @@
 /*
  * Lớp dữ liệu modal "Hoàn thành nhận xét & ký xác nhận" (bước Người kiểm tra của báo cáo ngày).
- * Điều kiện ký cần: bản ghi báo cáo (store `useReports`), số đo theo mốc (`fetchDailyReadings`) và cảnh báo lỗi cảm biến
+ * Điều kiện ký cần: bản ghi báo cáo (kho `data/reports.ts`), số đo theo mốc (`fetchDailyReadings`) và cảnh báo lỗi cảm biến
  * trong ngày báo cáo (store cảnh báo). Lúc ký, kiểm lại toàn bộ điều kiện từ dữ liệu HIỆN TẠI – không tin trạng thái modal.
  */
 import { useMemo } from 'react';
@@ -21,7 +21,7 @@ import type { AlertRecord } from '@/features/alerts/types';
 import { alertsReady, currentAlerts } from './alertStore';
 import { useAlertsByDevices } from './alertApi';
 import { fetchDailyReadings, useDailyReadings } from './dailyReport';
-import { currentReports, replaceReport } from './reports';
+import { currentReports, replaceReport, reportsReady } from './reports';
 
 /** Cảnh báo mock ghi ngày tương đối (`daysAgo`) → ngày tuyệt đối theo `now` (giờ nhà máy). */
 const NO_DEVICES: string[] = [];
@@ -53,7 +53,7 @@ export type SignResult = { ok: true; record: ReportRecord } | { ok: false; error
  * máy chủ kiểm quyền (đúng người kiểm tra) + điều kiện; FE chỉ kiểm để báo lỗi sớm.
  */
 export async function signDailyReport(id: string, input: InspectorSignInput): Promise<SignResult> {
-  await alertsReady();
+  await Promise.all([alertsReady(), reportsReady()]);
   const now = appNow();
   const r = currentReports().find((x) => x.id === id);
   if (!r || !canInspectorSign(r, now)) return { ok: false, error: 'Báo cáo không còn ở bước chờ Người kiểm tra ký.' };

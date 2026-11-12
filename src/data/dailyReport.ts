@@ -1,23 +1,16 @@
 /*
- * Lớp dữ liệu màn "Chi tiết báo cáo ngày" (`/reports/daily/:code`). Bản ghi báo cáo lấy từ CÙNG store với danh sách
- * (`useReports`) → trạng thái/chữ ký ở hai màn luôn khớp; số đo theo mốc là mock riêng.
+ * Lớp dữ liệu màn "Chi tiết báo cáo ngày" (`/reports/daily/:code`). Bản ghi đọc theo mã (`GET /reports/daily/:code` –
+ * `reportApi`), cùng nguồn với danh sách → trạng thái/chữ ký ở hai màn luôn khớp; số đo theo mốc là mock riêng.
  */
-import { useMemo } from 'react';
 import { useIdentityRevision, useQuery } from '@/lib/useQuery';
 import type { DailyReadingRow, ReportRecord } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { buildDailyReadings } from '@/mocks/dailyReport';
-import { useReports } from './reports';
+import { useDailyReportByCode } from './reportApi';
 
 /** Đường dẫn chi tiết của báo cáo; chỉ báo cáo NGÀY có màn chi tiết (tháng/quý/năm chờ thiết kế). */
 export function reportDetailPath(r: Pick<ReportRecord, 'period' | 'code'>): string | null {
   return r.period === 'daily' ? `/reports/daily/${r.code}` : null;
-}
-
-/** Mã trên URL không phân biệt hoa thường ("bcvh-n-24062026"). */
-export function findDailyReport(rows: readonly ReportRecord[], code: string): ReportRecord | undefined {
-  const key = code.trim().toUpperCase();
-  return rows.find((r) => r.period === 'daily' && r.code.toUpperCase() === key);
 }
 
 /**
@@ -45,15 +38,15 @@ export type DailyReportState =
   | { status: 'not-found'; error?: undefined; report?: undefined; readings?: undefined; refetch: () => void }
   | { status: 'success'; error?: undefined; report: ReportRecord; readings: DailyReadingRow[]; refetch: () => void };
 
-export function useDailyReport(code: string): DailyReportState & { reports: readonly ReportRecord[] } {
-  const { status, data, error, refetch } = useReports();
-  const report = useMemo(() => (data ? findDailyReport(data, code) : undefined), [data, code]);
+export function useDailyReport(code: string): DailyReportState {
+  const q = useDailyReportByCode(code);
+  const report = q.data ?? undefined;
   const readings = useDailyReadings(report);
-  const reports = data ?? [];
-  if (status === 'loading') return { status, refetch, reports };
-  if (status === 'error') return { status, error, refetch, reports };
-  if (!report) return { status: 'not-found', refetch, reports };
-  if (readings.status === 'loading') return { status: 'loading', refetch, reports };
-  if (readings.status === 'error') return { status: 'error', error: readings.error, refetch: readings.refetch, reports };
-  return { status: 'success', report, readings: readings.data, refetch, reports };
+  const refetch = q.refetch;
+  if (q.status === 'loading') return { status: 'loading', refetch };
+  if (q.status === 'error') return { status: 'error', error: q.error, refetch };
+  if (!report) return { status: 'not-found', refetch };
+  if (readings.status === 'loading') return { status: 'loading', refetch };
+  if (readings.status === 'error') return { status: 'error', error: readings.error, refetch: readings.refetch };
+  return { status: 'success', report, readings: readings.data, refetch };
 }

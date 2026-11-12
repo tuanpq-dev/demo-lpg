@@ -12,6 +12,7 @@ import {
   fetchRelatedOpen,
 } from './alertApi';
 import { fromMock } from './contract';
+import { fetchDailyReport, fetchReportList, fetchReportSummary } from './reportApi';
 import {
   fetchDeviceDirectory,
   fetchLinkedMaintenance,
@@ -90,6 +91,26 @@ describe('response mock khớp schema API (src/api/*Schemas.ts)', () => {
       notes: 'Mang đồng hồ cơ',
     });
     expect(await fetchMaintenanceById(created.id)).toMatchObject({ dueAt: '2026-11-20T23:59', dueHasTime: false });
+  });
+
+  test('báo cáo: danh sách đủ mọi bản ghi, số liệu tóm tắt, báo cáo ngày theo mã', async () => {
+    const all = await fetchReportList({
+      tab: 'all',
+      q: '',
+      date: null,
+      shift: null,
+      completion: null,
+      signature: null,
+      inspector: null,
+      approver: null,
+      page: 1,
+      pageSize: 100_000,
+    });
+    expect(all.rows.length).toBe(all.total);
+    const daily = all.rows.find((r) => r.period === 'daily')!;
+    await fetchReportSummary();
+    expect((await fetchDailyReport(daily.code.toLowerCase()))?.id).toBe(daily.id);
+    expect(await fetchDailyReport('KHONG-CO')).toBeNull();
   });
 
   test('lệch hợp đồng → ApiError CONTRACT_ERROR nêu đúng trường sai', async () => {

@@ -133,6 +133,8 @@ export function deriveUpcomingDeadlines(now: Date, limit = 3): UpcomingDeadline[
 export type ReportActionItem = {
   id: string;
   reportId: string;
+  /** Mã báo cáo – "Xử lý ngay" lọc bảng theo mã (trang không giữ cả danh sách). */
+  reportCode: string;
   tone: 'danger' | 'warning';
   /** Phần đậm: mã báo cáo hoặc "Dữ liệu 14:00". */
   subject: string;
@@ -153,6 +155,7 @@ export function deriveTodayActions(rows: readonly ReportRecord[], now: Date): Re
       out.push({
         id: `${r.id}-missing`,
         reportId: r.id,
+        reportCode: r.code,
         tone: 'danger',
         subject: r.code,
         message: `Thiếu mốc ${miss.map((c) => c.label).join(', ')}`,
@@ -162,12 +165,19 @@ export function deriveTodayActions(rows: readonly ReportRecord[], now: Date): Re
   rows
     .filter((r) => reportState(r, now) === 'awaiting' && r.signature.status === 'rejected')
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .forEach((r) => out.push({ id: `${r.id}-rejected`, reportId: r.id, tone: 'danger', subject: r.code, message: 'Bị trả lại' }));
+    .forEach((r) => out.push({ id: `${r.id}-rejected`, reportId: r.id, reportCode: r.code, tone: 'danger', subject: r.code, message: 'Bị trả lại' }));
   for (const r of todays) {
     r.checkpoints
       .filter((c) => c.done && c.needsVerify)
       .forEach((c) =>
-        out.push({ id: `${r.id}-verify-${c.key}`, reportId: r.id, tone: 'warning', subject: `Dữ liệu ${c.label}`, message: 'Cần xác minh' }),
+        out.push({
+          id: `${r.id}-verify-${c.key}`,
+          reportId: r.id,
+          reportCode: r.code,
+          tone: 'warning',
+          subject: `Dữ liệu ${c.label}`,
+          message: 'Cần xác minh',
+        }),
       );
   }
   return out;
