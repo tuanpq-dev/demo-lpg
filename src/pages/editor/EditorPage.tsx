@@ -20,7 +20,7 @@ import { useEditorShortcuts } from './useEditorShortcuts';
 import { useSceneFile } from './useSceneFile';
 
 /**
- * Scene Editor (/editor, chỉ bật khi ?edit=1 hoặc VITE_SCENE_EDITOR=true – xem app/editorAccess).
+ * Chỉnh sửa bản đồ 3D – Scene Editor (/settings/map-editor, mở từ menu Cài đặt trên header; /editor cũ chuyển hướng). Quyền: app/editorAccess.
  * Trên: thanh tệp (EditorFileBar) · trái: thư viện asset + cây object · giữa: canvas (SceneViewer dùng chung) + thanh trạng
  * thái (EditorStatusBar) · phải: Thuộc tính / Góc nhìn / Kiểm tra (EditorSidePanel) · hộp thoại: EditorDialogs.
  * Lưu qua `sceneRepository` (localStorage, `useSceneFile`), tự lưu nháp mỗi 3 giây, phím tắt `useEditorShortcuts`.

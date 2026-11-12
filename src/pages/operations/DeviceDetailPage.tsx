@@ -6,7 +6,7 @@ import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StableWidth, StatusPill } from '@/components';
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
-import { useMaintenance } from '@/data/maintenance';
+import { useMaintenanceByDevice } from '@/data/maintenanceApi';
 import {
   OPERATION_DEVICE_IDS,
   OPERATION_DEVICE_OPTIONS,
@@ -58,7 +58,8 @@ function DeviceDetailPage({ deviceId }: { deviceId: string }) {
   const nowDate = useNow(1000);
   const now = nowDate.getTime();
   const { status, data, error, refetch, liveData, alerts } = useOperationDevice(deviceId);
-  const maintenance = useMaintenance();
+  // Yêu cầu bảo trì của thiết bị này (máy chủ lọc).
+  const maintenance = useMaintenanceByDevice(deviceId);
   const liveStatus = useLiveStatus();
   const conn = connectionView(liveStatus);
 

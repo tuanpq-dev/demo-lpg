@@ -20,7 +20,6 @@ import { ASSETS } from './assets/registry';
 import { CameraRig } from './CameraRig';
 import { inverseToneMap, readScenePalette, type ScenePalette } from './colors';
 import { EDIT_SNAP, SCENE_ASSET_MIME } from './editConstants';
-import { EditGizmo } from './EditGizmo';
 import { FloorOutline, PickerBridge, SelectionFootprints, type SceneEditState, type ScenePicker } from './EditTools';
 import type { ResolvedObject, ResolvedScene } from './geometry';
 import { SCENE_EXPOSURE } from './look';
@@ -39,6 +38,8 @@ export type { EditTool, ObjectTransform, SceneEditState, SelectHow } from './Edi
 
 // Hậu kỳ (postprocessing) ở chunk riêng – chỉ tải khi preset bật.
 const PostEffects = lazy(() => import('./PostEffects'));
+// Gizmo kéo/xoay/scale (TransformControls ~29 KB) chỉ có ở Editor → chunk riêng, trang xem bản đồ không tải.
+const EditGizmo = lazy(() => import('./EditGizmo').then((m) => ({ default: m.EditGizmo })));
 
 export type SceneViewerHandle = {
   zoomIn(): void;
@@ -356,7 +357,11 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           />
           <SceneLabels labels={labels} edit={edit} drawing={drawing} onSelect={onSelect} />
 
-          {edit && <EditGizmo edit={edit} byId={byId} state={pointer.gizmo} palette={palette} />}
+          {edit && (
+            <Suspense fallback={null}>
+              <EditGizmo edit={edit} byId={byId} state={pointer.gizmo} palette={palette} />
+            </Suspense>
+          )}
 
           {hoveredObj && !markedIds.has(hoveredObj.id) && <ObjectTooltip obj={hoveredObj} liveData={liveData} thresholds={thresholds} />}
 

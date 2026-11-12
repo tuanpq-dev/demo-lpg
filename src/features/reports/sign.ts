@@ -146,7 +146,7 @@ export const signReady = (conditions: readonly SignCondition[]) => conditions.ev
 export type SensorAlertLike = { code: string; kind?: string; status: string; day: string };
 
 /** Loại cảnh báo tính là "lỗi cảm biến" (mocks/alertKinds.ts). */
-const SENSOR_FAULT_KINDS: readonly string[] = ['sensor-signal-lost'];
+export const SENSOR_FAULT_KINDS: readonly string[] = ['sensor-signal-lost'];
 /** Đã xử lý (chờ đóng) hoặc đã đóng → không chặn ký. */
 const HANDLED_STATUSES: readonly string[] = ['resolved', 'done'];
 

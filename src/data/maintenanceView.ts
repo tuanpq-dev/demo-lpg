@@ -1,8 +1,9 @@
 /** Hiển thị + lọc danh sách bảo trì: hạn, nhãn trạng thái/loại, tham số lọc URL, KPI, việc ưu tiên, lịch. Tách từ maintenance.ts. */
 import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
-import { isPastDue } from '@/features/maintenance/deadline';
-import { daysFromToday, plantMonthKey } from '@/lib/plantTime';
+import { isPastDue, isRequestOverdue } from '@/features/maintenance/deadline';
+import type { MaintenanceCounts, MaintenanceRange, MaintenanceTab } from '@/features/maintenance/query';
+import { daysFromToday } from '@/lib/plantTime';
 import type { MaintenanceRecord, MaintenanceStatus, MaintenanceType } from '@/features/maintenance/types';
 import type { KpiMock } from '@/mocks/types';
 
@@ -15,14 +16,8 @@ export const dueHasTime = (r: Pick<MaintenanceRecord, 'dueHasTime'>) => r.dueHas
 /** "16:00" hoặc "Cuối ngày" (hạn chỉ có ngày). */
 export const dueTimeLabel = (r: Pick<MaintenanceRecord, 'dueAt' | 'dueHasTime'>) => (dueHasTime(r) ? r.dueAt.slice(11, 16) : 'Cuối ngày');
 
-/** Còn mở = chưa hoàn thành và chưa hủy. */
-const isOpen = (r: Pick<MaintenanceRecord, 'status'>) => r.status !== 'done' && r.status !== 'cancelled';
-
-/**
- * Quá hạn = còn mở và now ≥ giờ hạn (giờ nhà máy; hạn chỉ có ngày = 23:59) – MỘT quy tắc cho danh sách, KPI,
- * thẻ ưu tiên, lịch và trang chi tiết (`features/maintenance/deadline.ts`). Đã xong / đã hủy → không.
- */
-export const isOverdue = (r: MaintenanceRecord, now: Date) => isOpen(r) && isPastDue(r.dueAt, now, dueHasTime(r));
+/** Quá hạn (một quy tắc chung – `isRequestOverdue` ở `features/maintenance/deadline.ts`). */
+export const isOverdue = (r: MaintenanceRecord, now: Date) => isRequestOverdue(r, now);
 
 /**
  * "Quá hạn 2 ngày" · "Quá hạn từ 16:00" (hạn hôm nay đã qua giờ) · "Hết hạn hôm nay" (hôm nay, chưa tới giờ) ·
@@ -88,7 +83,7 @@ export const PRIORITY_OPTIONS: SelectOption<Severity>[] = [
   { value: 'low', label: 'Thấp' },
 ];
 
-export type MaintenanceRange = 'all' | 'today' | '7d' | '30d';
+export type { MaintenanceRange, MaintenanceTab };
 export const RANGE_OPTIONS: SelectOption<MaintenanceRange>[] = [
   { value: 'all', label: 'Tất cả thời gian' },
   { value: 'today', label: 'Hôm nay' },
@@ -104,10 +99,8 @@ function deviceIcon(device: string): IconName {
 }
 
 // ============================================================================
-// Lọc (dùng với useTableFilters)
+// Tham số lọc trên URL (lọc / sắp xếp / đếm ở máy chủ – features/maintenance/query.ts)
 // ============================================================================
-
-export type MaintenanceTab = 'all' | Exclude<MaintenanceStatus, 'cancelled'> | 'overdue';
 
 /** ?tab=&q=&area=&priority=&type=&range=&sort=&page= (`?open=<id>` cũ → chuyển hướng /maintenance/:id). Đã hủy chỉ hiện ở tab "Tất cả". */
 export const MAINTENANCE_PARAMS = {
@@ -120,89 +113,41 @@ export const MAINTENANCE_PARAMS = {
   sort: { values: ['created', 'due'], default: 'created' },
 } as const;
 
-type Filters = {
-  tab: MaintenanceTab;
-  q: string;
-  area: string | null;
-  priority: Severity | null;
-  type: MaintenanceType | null;
-  range: MaintenanceRange;
-  sort: 'created' | 'due';
-};
-
-const RANGE_DAYS: Record<Exclude<MaintenanceRange, 'all'>, number> = { today: 0, '7d': 6, '30d': 29 };
-
-export function matchMaintenance(r: MaintenanceRecord, f: Filters, now: Date) {
-  const q = f.q.trim().toLowerCase();
-  const age = -daysFromToday(r.createdAt, now);
-  return (
-    (f.range === 'all' || age <= RANGE_DAYS[f.range]) &&
-    (f.tab === 'all' || (f.tab === 'overdue' ? isOverdue(r, now) : r.status === f.tab)) &&
-    (!q || [r.code, r.title, r.device, r.area, r.assignee ?? ''].some((s) => s.toLowerCase().includes(q))) &&
-    (!f.area || r.area === f.area) &&
-    (!f.priority || r.priority === f.priority) &&
-    (!f.type || r.type === f.type)
-  );
-}
-
-/** created: mới tạo trước (rồi mã giảm dần) · due: hạn gần nhất trước. */
-export function sortMaintenance(a: MaintenanceRecord, b: MaintenanceRecord, f: Pick<Filters, 'sort'>) {
-  return f.sort === 'due' ? a.dueAt.localeCompare(b.dueAt) : b.createdAt.localeCompare(a.createdAt) || b.code.localeCompare(a.code);
-}
-
 // ============================================================================
 // Suy dẫn
 // ============================================================================
 
-const SEVERITY_RANK: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-
-/** 3 việc ưu tiên: chưa xong, mức Nghiêm trọng/Cao; quá hạn trước, rồi hạn gần nhất, rồi mức độ (70:4969). */
-export function derivePriorityTasks(rows: readonly MaintenanceRecord[], now: Date, limit = 3): PriorityTaskData[] {
-  return rows
-    .filter((r) => isOpen(r) && (r.priority === 'critical' || r.priority === 'high'))
-    .sort((a, b) => daysUntilDue(a, now) - daysUntilDue(b, now) || SEVERITY_RANK[a.priority] - SEVERITY_RANK[b.priority])
-    .slice(0, limit)
-    .map((r) => ({
-      id: r.id,
-      code: r.code,
-      title: r.title,
-      severity: r.priority,
-      device: r.device,
-      deviceIcon: deviceIcon(r.device),
-      dueLabel: dueLabel(r, now),
-      overdue: isOverdue(r, now),
-    }));
+/** Thẻ việc ưu tiên (70:4969) từ bản ghi máy chủ trả về (GET /maintenance/summary → `priority`). */
+export function priorityTask(r: MaintenanceRecord, now: Date): PriorityTaskData {
+  return {
+    id: r.id,
+    code: r.code,
+    title: r.title,
+    severity: r.priority,
+    device: r.device,
+    deviceIcon: deviceIcon(r.device),
+    dueLabel: dueLabel(r, now),
+    overdue: isOverdue(r, now),
+  };
 }
 
-/** Lịch sắp tới: việc ĐỊNH KỲ còn mở, chưa tới giờ hạn (đã quá giờ → sang "Quá hạn"), gần nhất trước (70:4889). */
-export function deriveSchedule(rows: readonly MaintenanceRecord[], now: Date, limit = 3): TimelineEvent[] {
-  return rows
-    .filter((r) => r.type === 'periodic' && isOpen(r) && !isPastDue(r.dueAt, now, dueHasTime(r)))
-    .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
-    .slice(0, limit)
-    .map((r, i) => ({ id: r.id, time: scheduleLabel(r, now), title: r.title, location: r.area, active: i === 0 }));
-}
-
-/** Ngày `iso` thuộc tháng hiện tại (giờ nhà máy) dời `monthOffset` tháng. */
-const inMonth = (iso: string | null, monthOffset: number, now: Date) => !!iso && iso.slice(0, 7) === plantMonthKey(now, monthOffset);
+/** Lịch sắp tới (70:4889) từ bản ghi máy chủ trả về (`schedule`) – mục đầu sáng. */
+export const scheduleEvents = (rows: readonly MaintenanceRecord[], now: Date): TimelineEvent[] =>
+  rows.map((r, i) => ({ id: r.id, time: scheduleLabel(r, now), title: r.title, location: r.area, active: i === 0 }));
 
 /**
- * 6 KPI (70:5207):
+ * 6 KPI (70:5207) từ số đếm máy chủ (`maintenanceCounts` ở features/maintenance/query.ts):
  * - Tổng yêu cầu = tạo trong tháng; dòng phụ = % so với số tạo tháng trước.
  * - Đang thực hiện: thanh = đang thực hiện / (đang thực hiện + chờ nghiệm thu + hoàn thành trong tháng).
  * - Đã hoàn thành = hoàn thành trong tháng.
  * - Yêu cầu đã hủy không tính vào KPI nào.
  */
-export function deriveMaintenanceKpis(all: readonly MaintenanceRecord[], now: Date): KpiMock[] {
-  const rows = all.filter((r) => r.status !== 'cancelled');
-  const thisMonth = rows.filter((r) => inMonth(r.createdAt, 0, now)).length;
-  const lastMonth = rows.filter((r) => inMonth(r.createdAt, -1, now)).length;
+export function maintenanceKpis(c: MaintenanceCounts): KpiMock[] {
+  const thisMonth = c.createdThisMonth;
+  const lastMonth = c.createdLastMonth;
   const trend = lastMonth ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;
-  const count = (s: MaintenanceStatus) => rows.filter((r) => r.status === s).length;
-  const inProgress = count('in-progress');
-  const review = count('review');
-  const doneMonth = rows.filter((r) => r.status === 'done' && inMonth(r.completedAt, 0, now)).length;
-  const overdue = rows.filter((r) => isOverdue(r, now)).length;
+  const { inProgress, review, overdue } = c;
+  const doneMonth = c.doneThisMonth;
   const ratio = inProgress + review + doneMonth ? (inProgress / (inProgress + review + doneMonth)) * 100 : 0;
   const base = { variant: 'compact', strongBorder: true, iconBox: 24 } as const;
   const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -222,7 +167,7 @@ export function deriveMaintenanceKpis(all: readonly MaintenanceRecord[], now: Da
       id: 'pending',
       label: 'Chờ tiếp nhận',
       icon: 'kpiMtPending',
-      value: pad2(count('pending')),
+      value: pad2(c.pending),
       sub: 'Cần phân công',
       subTone: 'muted',
       tone: 'warning',

@@ -16,13 +16,6 @@ const SHIFT_VALUES: readonly ShiftId[] = SHIFTS.map((s) => s.value);
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 
-/** Mã yêu cầu từ URL, không phân biệt hoa thường ("mt-00128" → "MT-00128"); không có → null. */
-export function resolveMaintenanceId(raw: string | undefined, rows: readonly Pick<MaintenanceRecord, 'id'>[]): string | null {
-  const key = (raw ?? '').trim().toUpperCase();
-  if (!key) return null;
-  return rows.find((r) => r.id.toUpperCase() === key)?.id ?? null;
-}
-
 /** "2026-10-26T08:30" → "26/10/2026 08:30"; chỉ ngày → "26/10/2026". */
 export function formatPlantDateTime(s: string): string {
   const [y, m, d] = s.slice(0, 10).split('-');

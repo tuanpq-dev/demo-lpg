@@ -30,8 +30,11 @@ export function createCollectionStore<T>(fetchAll: (signal: AbortSignal) => Prom
     inflight = null;
   };
   const listeners = new Set<() => void>();
+  /** Tăng mỗi lần dữ liệu đổi (tải xong / commit) – `revision` cho query đọc từ store (trang, tóm tắt…). */
+  let version = 0;
   const emit = (next: CollectionState<T>) => {
     state = next;
+    version++;
     listeners.forEach((l) => l());
   };
   const subscribe = (l: () => void) => {
@@ -72,5 +75,10 @@ export function createCollectionStore<T>(fetchAll: (signal: AbortSignal) => Prom
     return { ...snap, refetch };
   }
 
-  return { load, commit, useCollection, getState: () => state };
+  /** Số phiên bản dữ liệu (đổi → query phụ thuộc store tải lại ngầm) – KHÔNG tự tải danh sách. */
+  function useVersion() {
+    return useSyncExternalStore(subscribe, () => version);
+  }
+
+  return { load, commit, useCollection, useVersion, subscribe, getState: () => state };
 }

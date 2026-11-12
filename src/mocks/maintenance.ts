@@ -1,16 +1,12 @@
-import { checklistProgress } from '@/features/maintenance/checklist';
 /**
- * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
- * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này.
+ * Danh mục dùng cho bảo trì: nhân sự, nguồn yêu cầu, mẫu checklist, người nghiệm thu (dữ liệu cấu hình – nhẹ, nạp cùng trang).
+ * Bản ghi yêu cầu bảo trì ở `maintenanceRecords.ts` (nạp LƯỜI qua mock server).
  */
 
-import type { MaintenanceRecord, MaintenanceSource } from '@/features/maintenance/types';
+import type { MaintenanceSource } from '@/features/maintenance/types';
 import { type DEPARTMENTS, type StaffMember } from '@/features/staff/org';
-import { DETAILS } from './maintenanceDetails';
-import { at, isoDay } from './maintenanceDates';
 
 export { isoDay } from './maintenanceDates';
-import { seeds } from './maintenanceSeeds';
 
 export const SOURCE_OPTIONS: { value: MaintenanceSource; label: string }[] = [
   { value: 'alert', label: 'Từ cảnh báo hệ thống' },
@@ -180,18 +176,3 @@ export const REVIEWERS: readonly { name: string; title: string }[] = REVIEWER_ST
 
 /** Tên người nhận việc (thao tác hàng loạt). */
 export const MAINTENANCE_ASSIGNEES: readonly string[] = ASSIGNABLE_STAFF.map((p) => p.name);
-
-export const maintenanceRecords: MaintenanceRecord[] = seeds.map(({ created, due, dueTime, completed, ...s }) => {
-  const r: MaintenanceRecord = {
-    ...s,
-    id: s.code,
-    createdAt: isoDay(created),
-    dueAt: at(due, dueTime),
-    ...(dueTime ? {} : { dueHasTime: false }),
-    completedAt: completed === undefined ? null : isoDay(completed),
-    ...DETAILS[s.code]?.(),
-  };
-  // Tiến độ của bản ghi có checklist = tính từ checklist (bỏ mục Không áp dụng).
-  if (r.checklist?.length) r.progress = checklistProgress(r.checklist).percent;
-  return r;
-});

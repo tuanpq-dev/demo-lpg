@@ -1,7 +1,7 @@
 /*
- * Store danh sách cảnh báo (mock hôm nay, API sau này) – module NHẸ, chỉ đọc/ghi danh sách.
- * Tách khỏi `data/alerts.ts` vì `LiveAnnouncer` (bundle chính, mọi trang) chỉ cần đếm cảnh báo chưa xác nhận: import
- * từ đây thì logic quy trình/bộ lọc/KPI ở `data/alerts.ts` chỉ nằm trong chunk các trang dùng nó.
+ * "Cơ sở dữ liệu" cảnh báo của mock server – module NHẸ. Trang KHÔNG đọc danh sách từ đây: đọc qua `data/alertApi.ts`
+ * (máy chủ lọc / phân trang / đếm). Thao tác ghi (`data/alerts.ts`) sửa qua `mutateAlerts` → store tăng phiên bản → các
+ * truy vấn đang hiện tải lại ngầm. Khi có API: bỏ module này, ghi = POST/PATCH rồi refetch.
  */
 import { createCollectionStore } from '@/lib/createCollectionStore';
 import type { AlertRecord } from '@/features/alerts/types';
@@ -39,6 +39,3 @@ export function mutateAlerts(ids: readonly string[], fn: (a: AlertRecord) => Ale
   db = db.map((a) => (set.has(a.id) ? fn(a) : a));
   alertStore.commit(db.map((a) => ({ ...a })));
 }
-
-/** Chỉ đọc danh sách (`{ status, data, error, refetch }`) – không kéo logic thao tác. */
-export const useAlertList = () => alertStore.useCollection();

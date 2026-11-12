@@ -62,8 +62,6 @@ export type AlertDetailDrawerProps = AlertDrawerHandlers & {
   alert: AlertRecord | null;
   onClose: () => void;
   now: Date;
-  /** Toàn bộ cảnh báo – số việc đang xử lý của từng người trong hộp phân công. */
-  allAlerts: readonly AlertRecord[];
   /** Yêu cầu bảo trì đã tạo từ cảnh báo (suy từ `sourceAlertId`) → "Xem MT-…" thay nút tạo. */
   maintenance?: { id: string; code: string } | null;
   /** Quyền `alert:acknowledge` – xác nhận, phân công, đánh dấu đã xử lý, tick hướng dẫn, ghi chú. */

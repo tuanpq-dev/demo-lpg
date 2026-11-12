@@ -12,7 +12,8 @@ import {
   type TabItem,
   type TimelineEvent,
 } from '@/components';
-import type { useTableFilters } from '@/app/useTableFilters';
+import type { useFilterParams } from '@/app/useTableFilters';
+import type { useRecordSelection } from '@/app/useRecordSelection';
 import {
   MAINTENANCE_ASSIGNEES,
   PRIORITY_OPTIONS,
@@ -22,12 +23,15 @@ import {
   type MaintenanceTab,
   type MaintenanceType,
 } from '@/data/maintenance';
+import type { MaintenanceListResult } from '@/data/maintenanceApi';
+import { cn } from '@/lib/cn';
 import { ScheduleCard, SectionHeading } from './MaintenanceSections';
 
 export const PAGE_SIZE = 8;
 const getId = (r: MaintenanceRecord) => r.id;
 
-export type MaintenanceTable = ReturnType<typeof useTableFilters<MaintenanceRecord, typeof MAINTENANCE_PARAMS>>;
+/** Bộ lọc + trang ↔ URL (`useFilterParams(MAINTENANCE_PARAMS)`). */
+export type MaintenanceParams = ReturnType<typeof useFilterParams<typeof MAINTENANCE_PARAMS>>;
 
 /** Thanh thao tác hàng loạt: phân công (chỉ dòng Chờ tiếp nhận) + bỏ chọn. */
 function BulkAssignBar({ count, onAssign, onClear }: { count: number; onAssign: (name: string) => void; onClear: () => void }) {
@@ -49,9 +53,12 @@ function BulkAssignBar({ count, onAssign, onClear }: { count: number; onAssign: 
 }
 
 export type MaintenanceListSectionProps = {
-  table: MaintenanceTable;
-  /** Mọi bản ghi (lấy danh sách khu vực cho bộ lọc). */
-  all: readonly MaintenanceRecord[];
+  params: MaintenanceParams;
+  /** Một trang kết quả + số đếm tab + facet (GET /maintenance). */
+  result: MaintenanceListResult;
+  /** Đang tải bộ lọc / trang mới – giữ kết quả cũ, làm mờ. */
+  pending: boolean;
+  selection: ReturnType<typeof useRecordSelection<MaintenanceRecord>>;
   columns: DataTableColumn<MaintenanceRecord>[];
   /** Thông báo sau thao tác (vùng `role="status"`). */
   notice: string;
@@ -63,11 +70,14 @@ export type MaintenanceListSectionProps = {
 
 /**
  * 3. Danh sách yêu cầu + Lịch sắp tới – Figma 70:5642: tab trạng thái, tìm kiếm + bộ lọc (đồng bộ URL), thao tác hàng loạt,
- * thông báo, bảng phân trang (mã + cột "Xem" cố định khi cuộn ngang); cột phải = lịch bảo trì định kỳ.
+ * thông báo, bảng phân trang (mã + cột "Xem" cố định khi cuộn ngang); cột phải = lịch bảo trì định kỳ. Lọc / trang / đếm ở
+ * MÁY CHỦ – bảng chỉ có dòng của trang đang xem; lựa chọn giữ qua nhiều trang (`useRecordSelection`).
  */
 export function MaintenanceListSection({
-  table,
-  all,
+  params,
+  result,
+  pending,
+  selection,
   columns,
   notice,
   schedule,
@@ -75,8 +85,8 @@ export function MaintenanceListSection({
   openDetail,
   onBulkAssign,
 }: MaintenanceListSectionProps) {
-  const { values: f, setValues, selected, setSelected } = table;
-  const tc = table.tabCounts as Record<MaintenanceTab, number>;
+  const { values: f, setValues } = params;
+  const tc = result.tabCounts;
   const tabs: TabItem[] = [
     { id: 'all', label: 'Tất cả' },
     { id: 'pending', label: 'Chờ tiếp nhận', count: tc.pending },
@@ -91,7 +101,7 @@ export function MaintenanceListSection({
       id: 'area',
       label: 'Khu vực',
       allLabel: 'Tất cả khu vực',
-      options: [...new Set(all.map((r) => r.area))].sort().map((a) => ({ value: a, label: a })),
+      options: result.facets.areas.map((a) => ({ value: a, label: a })),
     },
     { id: 'priority', label: 'Mức độ', options: PRIORITY_OPTIONS },
     { id: 'type', label: 'Loại bảo trì', options: TYPE_OPTIONS },
@@ -125,16 +135,17 @@ export function MaintenanceListSection({
               })
             }
             advancedLabel="Xoá bộ lọc"
-            advancedActive={table.isFiltered(['range'])}
-            onAdvancedFilter={() => table.reset(['range'])}
+            advancedActive={params.isFiltered(['range'])}
+            onAdvancedFilter={() => params.reset(['range'])}
           />
 
-          {selected.length > 0 && <BulkAssignBar count={selected.length} onAssign={onBulkAssign} onClear={() => setSelected([])} />}
+          {selection.selected.length > 0 && <BulkAssignBar count={selection.selected.length} onAssign={onBulkAssign} onClear={selection.clear} />}
           <p role="status" className={notice ? 'px-4 pt-2 text-sm text-success' : 'sr-only'}>
             {notice}
           </p>
 
-          <div id="maintenance-table">
+          {/* Đang tải trang / bộ lọc mới: giữ kết quả cũ, làm mờ (aria-busy) tới khi có kết quả. */}
+          <div id="maintenance-table" aria-busy={pending} className={cn('transition-opacity', pending && 'opacity-60')}>
             <DataTable
               label="Danh sách yêu cầu bảo trì"
               // Khung hẹp hơn → cuộn ngang trong khung; mã yêu cầu + cột "Xem" cố định khi cuộn.
@@ -142,19 +153,19 @@ export function MaintenanceListSection({
               stickyFirst
               stickyActions
               columns={columns}
-              rows={table.pageRows}
+              rows={result.rows}
               getRowId={getId}
               selectable
-              selectedIds={selected}
-              onSelectionChange={setSelected}
+              selectedIds={selection.selected}
+              onSelectionChange={selection.setSelected}
               rowActions={(r) => <TableActionButton label={`Xem chi tiết ${r.code}`} onClick={() => openDetail(r.id)} />}
               onRowClick={(r) => openDetail(r.id)}
               emptyState="Không có yêu cầu bảo trì phù hợp."
               pagination={{
-                page: table.page,
+                page: result.page,
                 pageSize: PAGE_SIZE,
-                total: table.filtered.length,
-                onPageChange: table.setPage,
+                total: result.total,
+                onPageChange: params.setPage,
                 summary: (a, b, n) => `Hiển thị ${a}-${b} của ${n} yêu cầu`,
               }}
             />

@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import { Cell, Pie, PieChart, Tooltip } from 'recharts';
+import { useState, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { useTokenColors, type ColorToken } from '@/lib/tokens';
 import { ChartTooltip } from '../ChartCard';
+import { annularSector, donutAngles } from '../TrendChart/geometry';
 import { StatusDot, type DotStatus } from '../StatusDot';
 
 export type DonutSegmentTone = 'success' | 'warning' | 'danger' | 'offline';
@@ -63,47 +63,44 @@ export function DonutGauge({ segments, totalLabel = 'Tổng', total, size = 180,
   const outer = (size * 65) / 180;
   const inner = ringWidth !== undefined ? outer - ringWidth : (size * 57) / 180;
   const summary = segments.map((s) => `${s.label} ${s.value}`).join(', ');
+  const mid = size / 2;
+  // Mỗi phần khác 0 cách nhau 1.5° (như Figma); bắt đầu từ 12 giờ theo chiều kim đồng hồ.
+  const angles = donutAngles(
+    segments.map((s) => s.value),
+    segments.length > 1 ? 1.5 : 0,
+  );
+  const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
+  const tip = hover ? segments[hover.i] : undefined;
 
   return (
     <div className={cn('flex flex-col gap-0', className)}>
       <div className="relative" style={{ width: size, height: size }} role="img" aria-label={label ?? `${totalLabel} ${sum}: ${summary}`}>
-        {/* role="img" đã mô tả đủ (aria-label); SVG recharts bên trong ẩn khỏi trình đọc màn hình. */}
-        <div aria-hidden="true">
-          <PieChart width={size} height={size}>
-            {/* Track */}
-            <Pie
-              data={[{ v: 1 }]}
-              rootTabIndex={-1}
-              dataKey="v"
-              innerRadius={inner}
-              outerRadius={outer}
-              stroke="none"
-              fill={c('surface-muted')}
-              isAnimationActive={false}
-              startAngle={90}
-              endAngle={-270}
-            />
-            <Pie
-              // Không truyền `id` (recharts gắn thành id của <path> → trùng id khi có nhiều donut); không tab vào SVG.
-              data={segments.map(({ id: _id, ...s }) => s)}
-              rootTabIndex={-1}
-              dataKey="value"
-              nameKey="label"
-              innerRadius={inner}
-              outerRadius={outer}
-              startAngle={90}
-              endAngle={-270}
-              paddingAngle={segments.length > 1 ? 1.5 : 0}
-              stroke="none"
-              isAnimationActive={false}
-            >
-              {segments.map((s) => (
-                <Cell key={s.id} fill={c(segColor[s.tone])} />
-              ))}
-            </Pie>
-            <Tooltip content={<ChartTooltip />} />
-          </PieChart>
-        </div>
+        {/* role="img" đã mô tả đủ (aria-label); SVG bên trong ẩn khỏi trình đọc màn hình. */}
+        <svg width={size} height={size} aria-hidden="true" className="block" onPointerLeave={() => setHover(null)}>
+          <circle cx={mid} cy={mid} r={(outer + inner) / 2} fill="none" stroke={c('surface-muted')} strokeWidth={outer - inner} />
+          {segments.map((s, i) => {
+            const a = angles[i];
+            if (!a) return null;
+            const show = (e: PointerEvent<SVGPathElement>) => {
+              const r = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
+              setHover({ i, x: e.clientX - r.left, y: e.clientY - r.top });
+            };
+            return (
+              <path
+                key={s.id}
+                d={annularSector(mid, mid, inner, outer, a.start, a.end)}
+                fill={c(segColor[s.tone])}
+                onPointerMove={show}
+                onPointerDown={show}
+              />
+            );
+          })}
+        </svg>
+        {tip && hover && (
+          <div className="pointer-events-none absolute z-10" style={{ left: hover.x + 10, top: hover.y + 10 }}>
+            <ChartTooltip active items={[{ key: tip.id, name: tip.label, value: tip.value, color: c(segColor[tip.tone]) }]} />
+          </div>
+        )}
         {center ? (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
             <span className="text-2xl font-bold leading-8 text-fg">{center.value}</span>

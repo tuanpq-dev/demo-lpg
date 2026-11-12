@@ -29,23 +29,13 @@ export type UseTableFiltersOptions<Row, S extends ParamSpec> = {
 };
 
 /**
- * Trạng thái bảng có lọc, đồng bộ với URL query (F5/chia sẻ link không mất):
- * bộ lọc theo `params` + `page` + bản ghi đang mở; lựa chọn dòng giữ trong bộ nhớ.
+ * Bộ lọc + trang + bản ghi đang mở đồng bộ với URL query (F5/chia sẻ link không mất) – KHÔNG đụng dữ liệu. Dùng trực tiếp
+ * cho bảng phân trang phía máy chủ (gửi `values` + `page` vào truy vấn); `useTableFilters` thêm lọc ở client cho bảng nhỏ.
  *
  * - Giá trị mặc định không ghi lên URL; giá trị ngoài `values` bị bỏ qua.
  * - Đổi bộ lọc → về trang 1. Ghi URL bằng `replace` (không làm đầy history).
- * - Lựa chọn tự bỏ các dòng không còn trong kết quả lọc.
  */
-export function useTableFilters<Row, S extends ParamSpec>({
-  rows,
-  getId,
-  params: spec,
-  match,
-  sort,
-  pageSize,
-  tabKey,
-  openKey = 'open',
-}: UseTableFiltersOptions<Row, S>) {
+export function useFilterParams<S extends ParamSpec>(spec: S, openKey = 'open') {
   const [search, setSearch] = useSearchParams();
 
   const values = useMemo(() => {
@@ -94,6 +84,36 @@ export function useTableFilters<Row, S extends ParamSpec>({
   const isFiltered = (ignore: readonly (keyof S)[] = []) =>
     Object.entries(spec).some(([k, def]) => !ignore.includes(k) && (values as Record<string, unknown>)[k] !== (def.default ?? null));
 
+  /** Trang trên URL (≥ 1, chưa kẹp theo số trang – máy chủ / bảng client kẹp). */
+  const page = Math.max(1, Number(search.get('page')) || 1);
+  const setPage = useCallback((p: number) => write({ page: p }), [write]);
+
+  const openId = search.get(openKey);
+  const setOpenId = useCallback((id: string | null) => write({ [openKey]: id }), [write, openKey]);
+
+  return { values, setValues, reset, isFiltered, page, setPage, openId, setOpenId, setExtra: write, search };
+}
+
+/**
+ * Trạng thái bảng có lọc Ở CLIENT (dữ liệu nhỏ, đã tải đủ), đồng bộ URL qua `useFilterParams`:
+ * bộ lọc theo `params` + `page` + bản ghi đang mở; lựa chọn dòng giữ trong bộ nhớ.
+ * Bảng dữ liệu lớn (cảnh báo, bảo trì) phân trang ở máy chủ: dùng `useFilterParams` + truy vấn trang.
+ *
+ * - Lựa chọn tự bỏ các dòng không còn trong kết quả lọc.
+ */
+export function useTableFilters<Row, S extends ParamSpec>({
+  rows,
+  getId,
+  params: spec,
+  match,
+  sort,
+  pageSize,
+  tabKey,
+  openKey = 'open',
+}: UseTableFiltersOptions<Row, S>) {
+  const p = useFilterParams(spec, openKey);
+  const { values, search } = p;
+
   // ---- Kết quả lọc + phân trang
   const filtered = useMemo(() => {
     const out = rows.filter((r) => match(r, values));
@@ -107,16 +127,8 @@ export function useTableFilters<Row, S extends ParamSpec>({
   }, [rows, values, match, spec, tabKey]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const page = Math.min(Math.max(1, Number(search.get('page')) || 1), pageCount);
+  const page = Math.min(p.page, pageCount);
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const setPage = useCallback((p: number) => write({ page: p }), [write]);
-
-  // ---- Bản ghi đang mở
-  const openId = search.get(openKey);
-  const setOpenId = useCallback((id: string | null) => write({ [openKey]: id }), [write, openKey]);
-
-  /** Ghi tham số URL tuỳ ý (ngoài `params`), ví dụ `create=1&device=V-101`. */
-  const setExtra = write;
 
   // ---- Lựa chọn
   const [selected, setSelected] = useState<string[]>([]);
@@ -128,19 +140,20 @@ export function useTableFilters<Row, S extends ParamSpec>({
 
   return {
     values,
-    setValues,
-    reset,
-    isFiltered,
+    setValues: p.setValues,
+    reset: p.reset,
+    isFiltered: p.isFiltered,
     filtered,
     pageRows,
     page,
     pageCount,
     pageSize,
-    setPage,
+    setPage: p.setPage,
     tabCounts,
-    openId,
-    setOpenId,
-    setExtra,
+    openId: p.openId,
+    setOpenId: p.setOpenId,
+    /** Ghi tham số URL tuỳ ý (ngoài `params`), ví dụ `create=1&device=V-101`. */
+    setExtra: p.setExtra,
     search,
     selected,
     setSelected,

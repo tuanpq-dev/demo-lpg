@@ -7,7 +7,7 @@ import { operationDevices, plcScadaDevices } from '@/mocks/operations';
 import type { OperationDeviceMock, PlcScadaDeviceMock } from '@/features/operations/types';
 import { liveBase } from '@/mocks/scenes/live';
 import { alertBadgeStatus } from './alerts';
-import { useAlertList } from './alertStore';
+import { useAlertsByDevices } from './alertApi';
 import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
 import { useQuery } from '@/lib/useQuery';
@@ -189,13 +189,16 @@ export function trendPoints(
  * Trang chi tiết thiết bị: `{ status, data, error, refetch, liveData, alerts }`. Số đo từ `useLiveData` (mọi tag của tham số
  * + tín hiệu PLC + trạng thái chạy); trang tự tính trạng thái bằng hàm thuần trong `features/operations/device.ts`.
  */
+const NO_LIST: string[] = [];
+
 export function useOperationDevice(id: string) {
   const { refetch: refetchDevice, ...state } = useQuery(id, () => fetchOperationDevice(id));
 
   const d = state.data;
   const tags = useMemo(() => (d ? deviceLiveTags(d) : []), [d]);
   const liveData = useLiveData(tags, { enabled: !!d });
-  const alerts = useAlertList();
+  // Chỉ cảnh báo của thiết bị liên quan / loại liên quan (máy chủ lọc).
+  const alerts = useAlertsByDevices(d?.relatedDevices ?? NO_LIST, d?.relatedKinds ?? NO_LIST);
   const refetchAlerts = alerts.refetch;
   const refetch = useCallback(() => {
     refetchDevice();

@@ -5,8 +5,9 @@ import path from 'node:path';
 
 /**
  * Thư viện tách chunk riêng: đổi code app không làm đổi hash (trình duyệt giữ cache giữa các lần deploy).
- * ⚠ Thư viện nhỏ dùng CHUNG giữa app và recharts/three (clsx, react-is, prop-types…) phải nằm ở `vendor-react` (chunk luôn
- * tải): nếu Rollup xếp chúng vào vendor-charts / vendor-three thì MỌI trang phải tải cả chunk đó. Sau khi đổi danh sách,
+ * ⚠ Thư viện nhỏ dùng CHUNG giữa app và three (clsx, react-is, prop-types…) phải nằm ở `vendor-react` (chunk luôn tải):
+ * nếu Rollup xếp chúng vào vendor-three thì MỌI trang phải tải cả chunk đó. Chart là SVG tự vẽ (`components/TrendChart`) –
+ * không còn thư viện chart. Sau khi đổi danh sách,
  * kiểm `dist/index.html` chỉ có modulepreload `vendor-react`.
  */
 const VENDOR_CHUNKS: readonly [name: string, pattern: RegExp][] = [
@@ -14,9 +15,10 @@ const VENDOR_CHUNKS: readonly [name: string, pattern: RegExp][] = [
     'vendor-react',
     /[\\/]node_modules[\\/](react|react-dom|react-is|scheduler|react-router|react-router-dom|@remix-run|clsx|prop-types|object-assign)[\\/]/,
   ],
-  // Lõi 3D (không gồm postprocessing – PostEffects vẫn là chunk lazy riêng, chỉ tải khi preset bật).
-  ['vendor-three', /[\\/]node_modules[\\/](three|three-stdlib|@react-three[\\/](fiber|drei)|react-reconciler|its-fine)[\\/]/],
-  ['vendor-charts', /[\\/]node_modules[\\/](recharts|recharts-scale|react-smooth|d3-[^\\/]+|decimal\.js-light|lodash|victory-vendor)[\\/]/],
+  // Lõi 3D: three + R3F (renderer React). drei / three-stdlib KHÔNG gom vào đây: Rollup tự đặt từng module theo nơi dùng →
+  // phần chỉ Editor cần (TransformControls của gizmo) nằm ở chunk lười của Editor, trang xem bản đồ không tải.
+  // postprocessing vẫn là chunk lười riêng (PostEffects, chỉ tải khi preset bật).
+  ['vendor-three', /[\\/]node_modules[\\/](three|@react-three[\\/]fiber|react-reconciler|its-fine)[\\/]/],
 ];
 
 /**
@@ -50,7 +52,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           // Helper ảo của Vite/Rollup (`\0vite/preload-helper`, `\0commonjsHelpers`) dùng ở mọi chunk – để Rollup tự xếp thì
-          // có thể rơi vào vendor-three/charts và kéo chúng vào mọi trang.
+          // có thể rơi vào vendor-three và kéo chúng vào mọi trang.
           if (id === '\0vite/preload-helper.js' || id === '\0commonjsHelpers.js') return 'vendor-react';
           return VENDOR_CHUNKS.find(([, re]) => re.test(id))?.[0];
         },

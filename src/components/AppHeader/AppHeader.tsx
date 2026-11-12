@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { useDismiss } from '@/lib/useDismiss';
 import { avatarAdmin } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
@@ -15,6 +15,8 @@ export type AppHeaderUser = {
   avatarSrc?: string;
 };
 
+export type HeaderMenuItem = { id: string; label: string };
+
 export type AppHeaderProps = {
   navItems: readonly NavTabItem[];
   navValue: string;
@@ -24,9 +26,14 @@ export type AppHeaderProps = {
   notificationCount?: number;
   onNotificationsClick?: () => void;
   onSettingsClick?: () => void;
+  /** Có (≥ 1 mục) → nút Cài đặt mở menu (vd "Chỉnh sửa bản đồ 3D"); chọn mục → `onSettingsMenuSelect(id)`. */
+  settingsMenu?: readonly HeaderMenuItem[];
+  onSettingsMenuSelect?: (id: string) => void;
+  /** Đang ở một trang cài đặt → nút Cài đặt có nền + viền màu nhấn (không tab menu chính nào sáng). */
+  settingsActive?: boolean;
   onUserClick?: () => void;
   /** Có → nút người dùng mở menu tài khoản (vd "Đăng xuất"); chọn mục → `onUserMenuSelect(id)`. */
-  userMenu?: readonly { id: string; label: string }[];
+  userMenu?: readonly HeaderMenuItem[];
   onUserMenuSelect?: (id: string) => void;
   /** Mặc định "Plant Control" / "Operational Intelligence". */
   title?: string;
@@ -47,6 +54,9 @@ export function AppHeader({
   notificationCount,
   onNotificationsClick,
   onSettingsClick,
+  settingsMenu,
+  onSettingsMenuSelect,
+  settingsActive,
   onUserClick,
   userMenu,
   onUserMenuSelect,
@@ -86,18 +96,39 @@ export function AppHeader({
             </span>
             {!!notificationCount && <Badge variant="count" value={notificationCount} tone="danger" outlined className="absolute -right-2 -top-1.5" />}
           </button>
-          <button
-            type="button"
-            aria-label="Cài đặt"
-            onClick={onSettingsClick}
-            className="inline-flex rounded-md opacity-90 transition-opacity hover:opacity-100"
-          >
-            <Icon name="settings" box={24} />
-          </button>
+          {settingsMenu?.length ? (
+            <HeaderMenu
+              triggerClass={settingsButtonClass(settingsActive)}
+              trigger={<Icon name="settings" box={24} />}
+              triggerLabel="Cài đặt"
+              items={settingsMenu}
+              onSelect={(id) => onSettingsMenuSelect?.(id)}
+            />
+          ) : (
+            <button type="button" aria-label="Cài đặt" onClick={onSettingsClick} className={settingsButtonClass(settingsActive)}>
+              <Icon name="settings" box={24} />
+            </button>
+          )}
           <Divider orientation="vertical" tone="strong" className="h-[23px] self-center" />
         </div>
         {userMenu?.length ? (
-          <UserMenu user={user} items={userMenu} onSelect={(id) => onUserMenuSelect?.(id)} />
+          <HeaderMenu
+            triggerClass={userButtonClass}
+            trigger={
+              <>
+                <UserButtonContent user={user} />
+                <span className="sr-only">– mở menu tài khoản</span>
+              </>
+            }
+            heading={
+              <div className="border-b border-line/30 px-3 py-2">
+                <p className="truncate text-md font-semibold text-fg">{user.name}</p>
+                {user.detail && <p className="truncate text-xs text-fg-muted">{user.detail}</p>}
+              </div>
+            }
+            items={userMenu}
+            onSelect={(id) => onUserMenuSelect?.(id)}
+          />
         ) : (
           <button type="button" onClick={onUserClick} className={userButtonClass}>
             <UserButtonContent user={user} />
@@ -110,6 +141,10 @@ export function AppHeader({
 
 const userButtonClass = 'flex items-center gap-3 rounded-md text-md font-semibold leading-normal text-primary';
 
+/** Icon là ảnh (màu cố định) → trang cài đặt đang mở hiện bằng nền + viền màu nhấn quanh icon. */
+const settingsButtonClass = (active?: boolean) =>
+  cn('inline-flex rounded-md transition-opacity hover:opacity-100', active ? 'bg-accent/15 opacity-100 ring-1 ring-accent/40' : 'opacity-90');
+
 function UserButtonContent({ user }: { user: AppHeaderUser }) {
   return (
     <>
@@ -120,20 +155,33 @@ function UserButtonContent({ user }: { user: AppHeaderUser }) {
   );
 }
 
-/** Menu tài khoản (disclosure như NavMenu): Esc / click ra ngoài đóng và trả focus về nút. */
-function UserMenu({
-  user,
+/**
+ * Menu xổ của header (tài khoản, cài đặt) – disclosure như NavMenu: nút `aria-expanded`, Esc / click ra ngoài đóng và trả focus
+ * về nút; chọn mục → đóng rồi `onSelect(id)`.
+ */
+function HeaderMenu({
+  trigger,
+  triggerLabel,
+  triggerClass,
+  heading,
   items,
   onSelect,
 }: {
-  user: AppHeaderUser;
-  items: readonly { id: string; label: string }[];
+  trigger: ReactNode;
+  /** Tên truy cập của nút khi `trigger` chỉ là icon. */
+  triggerLabel?: string;
+  triggerClass: string;
+  /** Khối đầu menu (vd tên + email người dùng). */
+  heading?: ReactNode;
+  items: readonly HeaderMenuItem[];
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const place = useMenuPlacement(open, root, button, menu);
 
   useDismiss(
     open,
@@ -147,17 +195,32 @@ function UserMenu({
 
   return (
     <div className="relative" ref={root}>
-      <button ref={button} type="button" aria-expanded={open} aria-controls={listId} onClick={() => setOpen((o) => !o)} className={userButtonClass}>
-        <UserButtonContent user={user} />
-        <span className="sr-only">– mở menu tài khoản</span>
+      <button
+        ref={button}
+        type="button"
+        aria-label={triggerLabel}
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((o) => !o)}
+        className={triggerClass}
+      >
+        {trigger}
       </button>
       {open && (
-        <div id={listId} className="absolute right-0 top-full z-40 mt-2 min-w-56 rounded-lg border border-line/30 bg-surface-raised p-1 shadow-card">
-          <div className="border-b border-line/30 px-3 py-2">
-            <p className="truncate text-md font-semibold text-fg">{user.name}</p>
-            {user.detail && <p className="truncate text-xs text-fg-muted">{user.detail}</p>}
-          </div>
-          <ul className="pt-1">
+        <div
+          ref={menu}
+          id={listId}
+          style={place.menu}
+          className="absolute left-0 top-full z-40 mt-3 w-max min-w-56 max-w-[calc(100vw-2rem)] rounded-lg border border-line/50 bg-surface-raised p-1 shadow-card"
+        >
+          {/* Mũi tên chỉ vào giữa nút (kể cả khi menu bị dịch vào trong vì sát mép màn). */}
+          <span
+            aria-hidden="true"
+            style={place.arrow}
+            className="absolute -top-1.5 size-3 -translate-x-1/2 rotate-45 rounded-tl-xs border-l border-t border-line/50 bg-surface-raised"
+          />
+          {heading}
+          <ul className={heading ? 'pt-1' : undefined}>
             {items.map((item) => (
               <li key={item.id}>
                 <button
@@ -177,4 +240,42 @@ function UserMenu({
       )}
     </div>
   );
+}
+
+/** Khoảng cách tối thiểu từ menu tới mép màn hình (= lề trang 16 px). */
+const MENU_GUTTER = 16;
+
+/**
+ * Vị trí menu xổ của header: căn GIỮA dưới nút; không đủ chỗ (màn nhỏ, nút sát mép) → dịch vào trong, luôn cách mép màn
+ * `MENU_GUTTER`; mũi tên vẫn chỉ đúng giữa nút. Tính trước khi vẽ (layout effect) + khi đổi kích thước cửa sổ.
+ */
+function useMenuPlacement(
+  open: boolean,
+  root: RefObject<HTMLElement>,
+  button: RefObject<HTMLElement>,
+  menu: RefObject<HTMLElement>,
+): { menu?: CSSProperties; arrow?: CSSProperties } {
+  const [pos, setPos] = useState<{ left: number; arrow: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    const update = () => {
+      const r = root.current?.getBoundingClientRect();
+      const b = button.current?.getBoundingClientRect();
+      const w = menu.current?.offsetWidth;
+      if (!r || !b || !w) return;
+      const center = b.left + b.width / 2;
+      const max = Math.max(MENU_GUTTER, document.documentElement.clientWidth - MENU_GUTTER - w);
+      const left = Math.min(Math.max(center - w / 2, MENU_GUTTER), max);
+      setPos({ left: left - r.left, arrow: Math.min(Math.max(center - left, 14), w - 14) });
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [open, root, button, menu]);
+  // Lần vẽ đầu (chưa đo) ẩn để không nháy ở vị trí sai.
+  if (!pos) return { menu: { visibility: 'hidden' } };
+  return { menu: { transform: `translateX(${pos.left}px)` }, arrow: { left: pos.arrow } };
 }

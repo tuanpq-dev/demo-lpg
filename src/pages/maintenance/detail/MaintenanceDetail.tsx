@@ -1,14 +1,16 @@
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_MODE } from '@/api/auth';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { useAlerts } from '@/data/alerts';
+import { useAlertById } from '@/data/alertApi';
 import { isOverdue, useMaintenance, type MaintenanceRecord } from '@/data/maintenance';
 import { resolveReviewer } from '@/features/maintenance/review';
 import { NEXT_ACTION_LABEL } from '@/features/maintenance/workflow';
 import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { useNow } from '@/lib/useNow';
+import { preloadMaintenanceModals } from '../lazyModals';
 import { DetailActionBar } from './DetailActionBar';
 import { DetailAside } from './DetailAside';
 import { DetailHeader, DetailStepper } from './DetailHeader';
@@ -21,7 +23,7 @@ import { AttachmentsCard, ChecklistCard, HistoryCard, NotesCard, ResultCard, Wor
 /**
  * Chi tiết yêu cầu bảo trì – ảnh MT-00128 (public/figma-ref/mt-detail-design.png, chưa có node Figma).
  * Header + stepper full-width · lưới 2 cột 7fr/3fr (≥ wide: cột phải `--mt-aside-width`), dưới xl xếp chồng ·
- * thanh hành động dính đáy. Mọi số liệu suy từ bản ghi (`useMaintenance`), cảnh báo (`useAlerts`), live (`useLiveData`).
+ * thanh hành động dính đáy. Mọi số liệu suy từ bản ghi (`useMaintenance`), cảnh báo nguồn (`useAlertById`), live (`useLiveData`).
  * Thao tác ghi nhanh (Tiếp nhận, tick checklist; thêm ghi chú trong NotesThread) qua `runAction` – lỗi hiện toast.
  */
 export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceRecord; listUrl: string }) {
@@ -36,9 +38,11 @@ export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceR
   const actor = user?.name || 'Admin';
   const maintenance = useMaintenance();
   const { advance, toggleChecklist, addNote } = maintenance;
-  const alerts = useAlerts();
-  const alert = r.sourceAlertId ? alerts.data?.find((a) => a.id === r.sourceAlertId) : undefined;
+  // Cảnh báo nguồn: đọc theo id (GET /alerts/:id) – không tải toàn bộ cảnh báo.
+  const alert = useAlertById(r.sourceAlertId).data ?? undefined;
   const dialogs = useDetailDialog(r, canWrite);
+  // Modal tiến độ / nghiệm thu / phân công là chunk lười – nạp trước lúc rảnh để lần bấm đầu không chờ mạng.
+  useEffect(preloadMaintenanceModals, []);
   const checklistRef = useChecklistFocus();
   const reviewer = resolveReviewer({ authOff: AUTH_MODE === 'off', userName: user?.name, submission: r.submission });
   const overdue = isOverdue(r, now);
@@ -92,7 +96,6 @@ export function MaintenanceDetail({ record: r, listUrl }: { record: MaintenanceR
         record={r}
         dialogs={dialogs}
         ops={maintenance}
-        allRecords={maintenance.data ?? []}
         actor={actor}
         reviewer={reviewer}
         onOpenChecklist={() => {

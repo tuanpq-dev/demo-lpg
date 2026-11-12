@@ -1,27 +1,27 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppHeader, AppLayout, type AppLayoutProps } from '@/components';
-import { useAlertList } from '@/data/alertStore';
+import { useUnacknowledgedCount } from '@/data/alertApi';
 import { ROLE_LABELS } from '@/features/auth/permissions';
 import { useAuth } from './auth';
 import { LiveAnnouncer } from './LiveAnnouncer';
 import { OfflineBanner } from './OfflineBanner';
 import { ToastHost } from './ToastHost';
 import { NAV_ROUTES, navIdFromPath, navPathFromId } from './navigation';
-
-/** Số cảnh báo chưa xác nhận (tab Cảnh báo + chuông); undefined khi chưa tải xong. */
-function useUnacknowledgedCount(): number | undefined {
-  const { data } = useAlertList();
-  return data?.filter((a) => a.status === 'unacknowledged').length;
-}
+import { isSettingsPath, settingsHref, settingsMenuFor } from './settingsRoutes';
 
 /** AppHeader gắn với React Router: tab active theo URL, chọn tab → navigate. */
 function RoutedAppHeader() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const unack = useUnacknowledgedCount();
   const navItems = useMemo(() => NAV_ROUTES.map((r) => (r.id === 'alerts' ? { ...r, count: unack || undefined } : r)), [unack]);
+  const settings = useMemo(() => settingsMenuFor(search, user?.role), [search, user?.role]);
+  const onSettingsSelect = (id: string) => {
+    const route = settings.find((r) => r.id === id);
+    if (route) void navigate(settingsHref(route, search));
+  };
   const onUserMenuSelect = (id: string) => {
     if (id !== 'logout') return;
     void logout().then(() => void navigate('/login', { replace: true }));
@@ -39,6 +39,9 @@ function RoutedAppHeader() {
         name: user?.name ?? '—',
         detail: user ? `${user.email} · ${ROLE_LABELS[user.role]}` : undefined,
       }}
+      settingsMenu={settings}
+      onSettingsMenuSelect={onSettingsSelect}
+      settingsActive={isSettingsPath(pathname)}
       userMenu={USER_MENU}
       onUserMenuSelect={onUserMenuSelect}
       notificationCount={unack ?? 0}

@@ -22,8 +22,6 @@ import { useAlertStaffPicker } from './assign/useAlertStaffPicker';
 export type AlertAssignModalProps = {
   /** Một cảnh báo (drawer) hoặc nhiều (hàng loạt ở bảng). */
   alerts: readonly AlertRecord[];
-  /** Toàn bộ cảnh báo – tính "x cảnh báo đang xử lý" / Bận / cảnh báo nghiêm trọng khác. */
-  allAlerts: readonly AlertRecord[];
   onClose: () => void;
   /** Ghi – modal đã kiểm tra hợp lệ trước khi gọi. */
   onConfirm: (form: AlertAssignForm) => Promise<void> | void;
@@ -67,7 +65,7 @@ function assignView(alerts: readonly AlertRecord[], f: AlertAssignForm, loads: P
  *   xác nhận. Không có Nháp.
  * KHÔNG tự xác nhận cảnh báo. Ô "Gửi thông báo khẩn cấp ngay": chỉ giao diện (TODO backend). Chỉ mount khi mở.
  */
-export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: AlertAssignModalProps) {
+export function AlertAssignModal({ alerts, onClose, onConfirm }: AlertAssignModalProps) {
   const now = useNow(60_000);
   const uid = useId();
   const blockId = `${uid}-block`;
@@ -109,7 +107,7 @@ export function AlertAssignModal({ alerts, allAlerts, onClose, onConfirm }: Aler
     setError('');
   };
 
-  const picker = useAlertStaffPicker(alerts, allAlerts, now);
+  const picker = useAlertStaffPicker(alerts, now);
   const { loads } = picker;
 
   const { plan, issues, blocked, needReason, warnings, reassignMode, confirmLabel, reasonHint, blockVerb } = assignView(alerts, f, loads, now);

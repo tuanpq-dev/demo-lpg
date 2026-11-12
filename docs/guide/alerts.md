@@ -10,44 +10,45 @@ Tách nguyên văn từ `GUIDE.md` (28/10/2026) – số mục giữ như cũ (4
 sequenceDiagram
   participant U as Người dùng
   participant P as AlertsPage
-  participant T as useTableFilters
-  participant S as useAlerts store
-  U->>P: chọn bộ lọc, tab, trang
-  P->>T: setValues
-  T->>T: ghi URL query bằng replace
-  T-->>P: filtered, pageRows, tabCounts
-  U->>P: tick nhiều dòng, bấm Xác nhận
-  P->>S: acknowledge ids
-  S-->>P: commit danh sách mới, mọi trang cập nhật
-  U->>P: bấm Xem chi tiết
-  P->>T: setOpenId, URL có alert=id
-  P-->>U: AlertDetailDrawer (pages/alerts)
-  U->>P: Xác nhận / tick hướng dẫn / ghi chú / Đánh dấu đã xử lý
-  P->>S: hàm thuần features/alerts/workflow → commit, bảng + tab + KPI tính lại
+  participant F as useFilterParams
+  participant A as alertApi (useQuery)
+  participant M as mockServer/alerts (sau này: backend)
+  U->>P: chọn bộ lọc, tab, trang, gõ tìm (debounce 300 ms)
+  P->>F: setValues → ghi URL query (replace)
+  P->>A: useAlertPage(lọc + trang) · useAlertSummary(range)
+  A->>M: GET /alerts?… · GET /alerts/summary
+  M-->>A: { rows (một trang), total, tabCounts, facets } · { counts, priority }
+  A-->>P: giữ kết quả cũ (mờ) tới khi kết quả mới về
+  U->>P: tick dòng ở nhiều trang (useRecordSelection), bấm Xác nhận
+  P->>M: useAlerts().acknowledge(ids) → store tăng phiên bản
+  A->>M: mọi truy vấn đang hiện tải lại ngầm (bảng, KPI, chuông)
+  U->>P: bấm Xem chi tiết → URL alert=id
+  P-->>U: AlertDrawerHost → GET /alerts/:id → AlertDetailDrawer (chunk lười)
 ```
 
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
 | 1 | `src/mocks/alerts.ts` | `AlertRecord` (hợp đồng `Alert` + trường CHỈ FE: `kind`, `direction`, `tag`, `notifiedTime`, `acknowledgedAt`, `resolvedAt`, `guide`, `notes`, `history` – `ALERT_FE_ONLY_FIELDS`), `alertRecords` |
 | 2 | `src/mocks/alertKinds.ts` (kiểu: `features/alerts/kinds.ts`) · `src/mocks/sensors.ts` · `src/features/plant/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
-| 3 | `src/data/alertStore.ts` | Store danh sách (nhẹ; `LiveAnnouncer` ở bundle chính chỉ dùng `useAlertList`) |
-| 4 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
-| 5 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), `matchAlert`, `derive*`, thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (đóng hàng loạt – 4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` |
-| 6 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF` |
-| 7 | `src/app/useTableFilters.ts` | Bộ lọc ↔ URL (`replace`), phân trang, số đếm tab, bản ghi đang mở, chọn dòng |
-| 8 | `src/pages/alerts/AlertsPage.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, thao tác hàng loạt, `DataTable`, drawer, modal tạo yêu cầu (trên drawer), xuất CSV |
-| 9 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
+| 3 | `src/features/alerts/query.ts` | Thuần, có test – phần BACKEND làm: `queryAlerts` (lọc, mới nhất trước, cắt trang + kẹp trang, đếm tab theo bộ lọc còn lại, facet), `alertCounts` (KPI), `priorityAlerts`, `matchAlert`, kiểu `AlertListQuery` / `AlertListResult` / `AlertSummary` |
+| 4 | `src/data/alertApi.ts` · `src/data/mockServer/alerts.ts` · `src/data/alertStore.ts` | Một `fetch*` mỗi endpoint (TODO(backend)) + hook `useAlertPage`, `useAlertSummary`, `useAlertById`, `useAlertsByDevices(devices, kinds)`, `useRelatedOpen`, `useAlertLoads`, `useUnacknowledgedCount`, `useRecentAlerts` (revision = phiên bản store) · mock server tải lười gọi `query.ts` · "cơ sở dữ liệu" mock (`mutateAlerts`, `alertsReady`) – trang KHÔNG đọc danh sách từ store |
+| 5 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
+| 6 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), tuỳ chọn bộ lọc, `alertKpis(counts)` / `priorityCard` (dựng hiển thị từ số máy chủ), thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` = CHỈ thao tác |
+| 7 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF`, `useCloseConditions(alerts)` (liên quan đang mở hỏi máy chủ) |
+| 8 | `src/app/useTableFilters.ts` (`useFilterParams`) · `src/app/useRecordSelection.ts` | Bộ lọc + trang + bản ghi đang mở ↔ URL (`replace`) · lựa chọn giữ bản ghi qua nhiều trang, đổi bộ lọc → bỏ chọn |
+| 9 | `src/pages/alerts/AlertsPage.tsx` · `AlertDrawerHost.tsx` · `list/AlertBulkActions.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, `DataTable` (một trang), xuất CSV mọi dòng khớp · drawer theo id + modal tạo yêu cầu (lười, nạp trước lúc rảnh) · thao tác hàng loạt + modal phân công / đóng hàng loạt |
+| 10 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
 
 Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` – giá trị mặc định không ghi lên URL.
 
 | Muốn sửa | Sửa ở |
 |---|---|
-| Thêm bộ lọc | `ALERT_PARAMS` + `AlertFilters` + `matchAlert` (`src/data/alerts.ts`), `filterDefs` (`AlertsPage.tsx`) |
+| Thêm bộ lọc | `ALERT_PARAMS` (`src/data/alerts.ts`) + `AlertFilters` / `matchAlert` (`src/features/alerts/query.ts` – báo backend thêm tham số), `alertFilterDefs` (`list/alertTable.tsx`) |
 | Cột bảng | Mảng `columns` trong `AlertsPage.tsx` (+ `exportCsv` nếu cần xuất) |
 | Hành vi Xác nhận/Phân công/Hoàn thành | Hàm thuần `src/features/alerts/workflow.ts` (drawer và hàng loạt dùng chung); nối store ở `src/data/alerts.ts` |
 | Nguyên nhân / hướng dẫn / panel / nút của một loại cảnh báo | `ALERT_KINDS` (`src/mocks/alertKinds.ts`) + `kind` của bản ghi (`EXTRA` trong `src/mocks/alerts.ts`) |
 | Ngưỡng / chiều cảnh báo | Cấu hình tag `alarms` trong `src/mocks/assets.ts` (bản ghi có `tag`) hoặc `threshold` + `direction` của bản ghi |
-| KPI / thẻ ưu tiên | `deriveAlertKpis`, `derivePriorityCards` trong `src/data/alerts.ts` |
+| KPI / thẻ ưu tiên | Số đếm: `alertCounts`, `priorityAlerts` (`src/features/alerts/query.ts`); hiển thị: `alertKpis`, `priorityCard` (`src/data/alerts.ts`) |
 
 **Người nhận xử lý cảnh báo = TOÀN BỘ `STAFF`** (`ALERT_STAFF`, kể cả trưởng ca/quản lý vận hành) – khác bảo trì (chỉ technician + engineer, `ASSIGNABLE_STAFF`) là **có chủ đích**: cảnh báo thuộc vận hành, trưởng ca thường nhận đầu tiên. Thay `ALERT_ASSIGNEES` cũ.
 
@@ -122,7 +123,7 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
 |---|---|
 | Chỉ đi tiến; phân công không đổi trạng thái; đánh dấu đã xử lý bắt buộc ghi chú | `src/features/alerts/workflow.ts` (+ test) |
 | Modal mở TRÊN drawer: Esc chỉ đóng hộp trên cùng, trả focus nút đã mở | `src/lib/useDialog.ts` (ngăn xếp hộp thoại, `useDialog.test.tsx`) |
-| `?alert=<id>` mở thẳng, F5 giữ; Esc đóng + trả focus | `useTableFilters` (`openKey: 'alert'`) + `Drawer` |
+| `?alert=<id>` mở thẳng, F5 giữ; Esc đóng + trả focus | `useFilterParams(ALERT_PARAMS, 'alert')` + `AlertDrawerHost` (`useAlertById`) + `Drawer` |
 | Không tạo trùng yêu cầu bảo trì | `linkedMaintenance` + `DuplicateFromAlertError` (`createMaintenance`) |
 | Thang đo bật/tắt theo loại cảnh báo | `ALERT_KINDS[kind].gauge` (`src/mocks/alertKinds.ts`) → `alertGauge` |
 | Mức gas, banner, thời gian vượt ngưỡng, điều kiện đóng | `src/features/alerts/bands.ts` (+ test); cập nhật/hỗ trợ: `gasUpdate`, `requestSupport` (`workflow.ts`) |

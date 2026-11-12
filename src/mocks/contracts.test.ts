@@ -6,7 +6,7 @@ import { ALERT_FE_ONLY_FIELDS } from '@/features/alerts/types';
 import { alertRecords } from './alerts';
 import { AREAS } from '@/features/plant/areas';
 import { FE_ONLY_FIELDS, type MaintenanceRecord } from '@/features/maintenance/types';
-import { maintenanceRecords } from './maintenance';
+import { maintenanceRecords } from './maintenanceRecords';
 
 /** Bỏ trường chỉ có ở FE (trang chi tiết – chờ đưa vào hợp đồng API, docs/decisions.md) + đổi về dạng hợp đồng. */
 function toContract(r: MaintenanceRecord) {

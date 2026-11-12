@@ -1,11 +1,8 @@
 import { AUTH_MODE } from '@/api/auth';
-import type { deriveDeviceDirectory, useMaintenance } from '@/data/maintenance';
+import type { useMaintenance } from '@/data/maintenance';
+import type { DeviceDirectoryEntry } from '@/data/maintenanceApi';
 import { resolveReviewer } from '@/features/maintenance/review';
-import { AssignModal } from '../AssignModal';
-import { CreateMaintenanceModal } from '../../shared/maintenance/CreateMaintenanceModal';
-import { ProgressUpdateModal } from '../ProgressUpdateModal';
-import { ReviewModal } from '../ReviewModal';
-import { SubmitReviewModal } from '../SubmitReviewModal';
+import { AssignModal, CreateMaintenanceModal, ProgressUpdateModal, ReviewModal, SubmitReviewModal } from '../lazyModals';
 import type { MaintenanceModalsState } from './useMaintenanceModals';
 
 type Ops = Pick<ReturnType<typeof useMaintenance>, 'create' | 'assign' | 'updateProgress' | 'submitForReview' | 'review'>;
@@ -13,10 +10,8 @@ type Ops = Pick<ReturnType<typeof useMaintenance>, 'create' | 'assign' | 'update
 export type MaintenanceModalsProps = {
   modals: MaintenanceModalsState;
   ops: Ops;
-  /** Mọi bản ghi (số việc đang làm của người được phân công). */
-  all: Parameters<typeof AssignModal>[0]['records'];
   /** Danh bạ thiết bị → khu vực cho form tạo. */
-  devices: ReturnType<typeof deriveDeviceDirectory>;
+  devices: readonly DeviceDirectoryEntry[];
   /** Người đang thao tác (ghi vào lịch sử). */
   actor: string;
   /** Tên người đăng nhập – người nghiệm thu. */
@@ -30,7 +25,7 @@ export type MaintenanceModalsProps = {
 };
 
 /** Modal của danh sách bảo trì (mount khi mở, `key` = bản ghi): tiến độ, gửi nghiệm thu, phân công, nghiệm thu, tạo yêu cầu. */
-export function MaintenanceModals({ modals: m, ops, all, devices, actor, userName, flash, onOpenChecklist, onCreated }: MaintenanceModalsProps) {
+export function MaintenanceModals({ modals: m, ops, devices, actor, userName, flash, onOpenChecklist, onCreated }: MaintenanceModalsProps) {
   const { progress, submit, assign, review } = m;
   return (
     <>
@@ -65,7 +60,6 @@ export function MaintenanceModals({ modals: m, ops, all, devices, actor, userNam
         <AssignModal
           key={assign.id}
           record={assign}
-          records={all}
           onClose={m.closeAssign}
           onSubmit={async (form) => {
             await ops.assign(assign.id, form, actor);

@@ -7,7 +7,7 @@ import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { assetV101Image, plantMapImage } from '@/assets/digital-twin';
 import { Button, HistoryIcon, Icon, MapIcon, PageHeader, StatusPill, type StatusPillTone } from '@/components';
-import { useAlerts } from '@/data/alerts';
+import { useAlertsByDevices } from '@/data/alertApi';
 import {
   EVENT_PARAMS,
   STATUS_LABEL,
@@ -18,7 +18,7 @@ import {
   useAssetDetail,
   type AssetEvent,
 } from '@/data/assetDetail';
-import { useMaintenance } from '@/data/maintenance';
+import { useMaintenanceByDevice } from '@/data/maintenanceApi';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import type { ImageAsset } from '@/lib/imageAsset';
@@ -94,12 +94,15 @@ function AssetHeaderActions({
  * trong bồn tính từ 2 mức chiều cao + kích thước bồn (features/tank/layers).
  * Khối: mô hình 3D · AssetKpiSection · StorageCard · AssetAside · AssetEventsCard; tạo yêu cầu = `useAssetCreateRequest`.
  */
+const NO_DEVICES: string[] = [];
+
 export function AssetDetail({ assetId }: { assetId: string }) {
   const navigate = useNavigate();
   const now = useNow(60_000);
   const { status, data, error, refetch, live, liveData } = useAssetDetail(assetId);
-  const alerts = useAlerts();
-  const maintenance = useMaintenance();
+  // Chỉ cảnh báo / bảo trì của thiết bị này (máy chủ lọc) – không tải toàn bộ danh sách.
+  const alerts = useAlertsByDevices(data?.relatedDevices ?? NO_DEVICES);
+  const maintenance = useMaintenanceByDevice(assetId);
   const canWrite = useCan('maintenance:write');
 
   const events = useTableFilters({

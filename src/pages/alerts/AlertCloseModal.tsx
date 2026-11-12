@@ -22,8 +22,6 @@ import { areaLabel } from '@/features/plant/areas';
 
 export type AlertCloseModalProps = {
   alert: AlertRecord;
-  /** Toàn bộ cảnh báo – điều kiện "Không còn cảnh báo liên quan đang hoạt động". */
-  allAlerts: readonly AlertRecord[];
   /** Người đang thao tác = người đóng (chưa đăng nhập: 'Admin'). */
   actor: string;
   onClose: () => void;
@@ -43,11 +41,11 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
  * Ghi chú kết luận (bắt buộc khi đóng) · Thời gian theo dõi (điền sẵn từ modal cập nhật – một giá trị `followUp`).
  * Quy tắc: `features/alerts/close.ts`. Chỉ mount khi mở (chunk lazy riêng).
  */
-export default function AlertCloseModal({ alert: a, allAlerts, actor, onClose, onConfirmClose, onMonitor }: AlertCloseModalProps) {
+export default function AlertCloseModal({ alert: a, actor, onClose, onConfirmClose, onMonitor }: AlertCloseModalProps) {
   const uid = useId();
   const ids = { closeBlock: `${uid}-close-block`, monitorBlock: `${uid}-monitor-block`, closer: `${uid}-closer` };
   const follow = followUpConfig(a);
-  const conditions = useCloseConditions([a], allAlerts)[a.id] ?? [];
+  const conditions = useCloseConditions([a])[a.id] ?? [];
   const summary = closeSummary(a);
   const closer = closerCheck(a, actor);
 

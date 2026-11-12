@@ -84,3 +84,13 @@ export function deadlineDayLabel(dueAt: string, now: Date, hasTime = true): stri
   const [y, m, day] = dueAt.slice(0, 10).split('-');
   return `${time} ${day}/${m}/${y}`;
 }
+
+/** Còn mở = chưa hoàn thành và chưa hủy. */
+export const isOpenRequest = (r: { status: string }) => r.status !== 'done' && r.status !== 'cancelled';
+
+/**
+ * Quá hạn = còn mở và now ≥ giờ hạn (hạn chỉ có ngày = hết 23:59:59) – MỘT quy tắc cho danh sách, KPI, thẻ ưu tiên, lịch,
+ * trang chi tiết và truy vấn phía máy chủ. Đã xong / đã hủy → không.
+ */
+export const isRequestOverdue = (r: { status: string; dueAt: string; dueHasTime?: boolean }, now: Date) =>
+  isOpenRequest(r) && isPastDue(r.dueAt, now, r.dueHasTime !== false);

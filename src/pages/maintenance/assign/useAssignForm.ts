@@ -1,12 +1,12 @@
-import { useMemo, useReducer, useState } from 'react';
+import { useReducer, useState } from 'react';
 import type { StaffPickerItem } from '@/components';
 import { ASSIGNABLE_STAFF, SHIFTS, staffByName, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
 import { clearAssignDraft, loadAssignDraft, saveAssignDraft } from '@/data/maintenanceDetail';
+import { useMaintenanceLoads } from '@/data/maintenanceApi';
 import {
   WORKLOAD_HINT,
   assignMode,
   assignWarnings,
-  computeWorkloads,
   initialAssignForm,
   shiftShortLabel,
   validateAssign,
@@ -29,7 +29,6 @@ const DEPT_SHORT: Record<string, string> = {
 
 export type UseAssignFormOptions = {
   record: MaintenanceRecord;
-  records: readonly MaintenanceRecord[];
   onClose: () => void;
   onSubmit: (form: AssignForm) => Promise<void>;
 };
@@ -39,7 +38,7 @@ export type UseAssignFormOptions = {
  * lỗi; suy ra tải việc từng người, lý do chặn (`validateAssign`), cảnh báo không chặn (`assignWarnings`), mục danh sách
  * nhân sự + ô chọn. Vòng đời modal qua `useFormModal` (lưu tạm sessionStorage – công tắc thông báo không tính là sửa).
  */
-export function useAssignForm({ record: r, records, onClose, onSubmit }: UseAssignFormOptions) {
+export function useAssignForm({ record: r, onClose, onSubmit }: UseAssignFormOptions) {
   const now = useNow(60_000);
   const reassign = assignMode(r.status) === 'reassign';
   const [initial] = useState(() => {
@@ -57,7 +56,8 @@ export function useAssignForm({ record: r, records, onClose, onSubmit }: UseAssi
   }));
   const f = s.form;
 
-  const workloads = useMemo(() => computeWorkloads(records, now), [records, now]);
+  // Đang làm / quá hạn / Bận của từng người: máy chủ đếm (GET /staff/maintenance-loads) – không duyệt toàn bộ yêu cầu.
+  const workloads = useMaintenanceLoads();
   const issues = validateAssign(r, f);
   const blocked = issues.length > 0;
   const modal = useFormModal({

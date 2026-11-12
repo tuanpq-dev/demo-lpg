@@ -102,7 +102,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
-| AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` (`detail` hiện trong menu), `userMenu` + `onUserMenuSelect` (menu tài khoản – Đăng xuất) < sm: chỉ icon logo, tên người dùng `sr-only`, nhãn Menu cắt "…" – không tràn ngang 390 px. | `src/app/Page.tsx` | `#layout` (bản gắn router) |
+| AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` (`detail` hiện trong menu), `settingsMenu` + `onSettingsMenuSelect` + `settingsActive` (nút Cài đặt mở menu – cùng `HeaderMenu` disclosure với menu tài khoản – menu căn GIỮA dưới nút, sát mép màn thì dịch vào trong cách mép 16 px, mũi tên luôn chỉ giữa nút (`useMenuPlacement`); không truyền → nút thường `onSettingsClick`), `userMenu` + `onUserMenuSelect` (menu tài khoản – Đăng xuất) < sm: chỉ icon logo, tên người dùng `sr-only`, nhãn Menu cắt "…" – không tràn ngang 390 px. | `src/app/Page.tsx` | `#layout` (bản gắn router) |
 | PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions`, `titleEnd` (cạnh tiêu đề, ngoài `<h1>` – ô chọn "Thiết bị" Vận hành) | mọi trang | `#layout` |
 | AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
 
@@ -131,9 +131,9 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | Tên | File | Props chính | Dùng ở | Playground |
 |---|---|---|---|---|
 | ChartCard (+ ChartTooltip) | `src/components/ChartCard/ChartCard.tsx` | `title`, `description`, `height`, `action` | Tổng quan | `#charts` |
-| AreaTrendChart, LineTrendChart | `src/components/TrendChart/TrendChart.tsx` | `data` (TrendPoint[]), `domain`, `unit`, `format` | Tổng quan | `#charts` |
-| DualTrendChart | `src/components/TrendChart/TrendChart.tsx` | `data` ({ label, [id]: số \| null }), `series` (2 × { id, name, suffix, color, `area`/`dashed`, `domain` riêng, `threshold` { value, label, color } }), `xTicks` – mỗi series một trục Y ẩn, ngưỡng số trái/tên phải, nhãn khung ở điểm CUỐI (null → không nhãn) | Vận hành ("Xu hướng vận hành") | – |
-| TargetTrendChart | `src/components/TrendChart/TrendChart.tsx` | `data` ({ x, value }), `xDomain` cố định + `xTicks`/`formatX`, `domain`/`yTicks`/`formatY` (trục Y hiện nhãn), `lines` (vạch nét đứt theo token), `color`, `name`, `format`, `grid` (lưới 2 chiều), `dots` (chấm mọi điểm), `endDot` (chấm cuối, mặc định bật), `areaOpacity`, `thinTicks` (khung hẹp bỏ bớt nhãn X) – vùng gradient, phần chưa chạy để trống; `ChartTooltip` thêm `labelFormat` | Theo dõi / Kết quả mô phỏng | – |
+| AreaTrendChart, LineTrendChart | `src/components/TrendChart/TrendChart.tsx` (SVG tự vẽ – khung chung `ChartSurface.tsx`, hình học `geometry.ts`, trục / lưới `axes.tsx`; không thư viện chart) | `data` (TrendPoint[]), `domain`, `unit`, `format` | Tổng quan | `#charts` |
+| DualTrendChart | `src/components/TrendChart/DualTrendChart.tsx` | `data` ({ label, [id]: số \| null }), `series` (2 × { id, name, suffix, color, `area`/`dashed`, `domain` riêng, `threshold` { value, label, color } }), `xTicks` – mỗi series một trục Y ẩn, ngưỡng số trái/tên phải, nhãn khung ở điểm CUỐI (null → không nhãn) | Vận hành ("Xu hướng vận hành") | – |
+| TargetTrendChart | `src/components/TrendChart/TargetTrendChart.tsx` | `data` ({ x, value }), `xDomain` cố định + `xTicks`/`formatX`, `domain`/`yTicks`/`formatY` (trục Y hiện nhãn), `lines` (vạch nét đứt theo token), `color`, `name`, `format`, `grid` (lưới 2 chiều), `dots` (chấm mọi điểm), `endDot` (chấm cuối, mặc định bật), `areaOpacity`, `thinTicks` (khung hẹp bỏ bớt nhãn X) – vùng gradient, phần chưa chạy để trống; `ChartTooltip` thêm `labelFormat` | Theo dõi / Kết quả mô phỏng | – |
 | CategoryBarList | `src/components/CategoryBarList/CategoryBarList.tsx` | `items`, `max`, `unit` | Tổng quan | `#charts` |
 | DonutGauge | `src/components/DonutGauge/DonutGauge.tsx` | `segments`, `total`, `totalLabel`, `center` ({ value, caption, tone } thay chữ giữa), `ringWidth`, `label` (aria) | Tổng quan, Chi tiết tài sản | `#charts`, `#asset` |
 | FilterBar | `src/components/FilterBar/FilterBar.tsx` | `search`, `filters`, `values`, `onValuesChange`, `onAdvancedFilter`, `layout` (split / inline – xếp từ trái, ô tìm 255px), `leading` (ô sau tìm kiếm), `onClear` + `clearDisabled` (link "Xóa bộ lọc"), `standalone` (bỏ vạch dưới – thanh lọc riêng trên danh sách thẻ, AI mô phỏng) | Cảnh báo, Bảo trì, Báo cáo | `#navigation` |
@@ -233,7 +233,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
   - ESLint jsx-a11y phải sạch; không `tabindex` > 0; vùng cuộn/bản đồ = `role="region"` + tên + `tabIndex={0}` (được phép trong config).
   - axe-core (WCAG 2.1 A/AA) trên từng trang: không còn lỗi critical; serious chỉ còn tương phản màu Figma chờ duyệt (mục 7).
   - Thông báo động qua `announce()` / `useAnnounceChange` (aria-live polite, `LiveAnnouncer`); không đặt vùng live trong nút.
-  - `ProgressBar` bắt buộc `label`; SVG chart trong `role="img"` ẩn khỏi trình đọc (`aria-hidden`, recharts `rootTabIndex={-1}`).
+  - `ProgressBar` bắt buộc `label`; SVG chart trong `role="img"`/`figure` ẩn khỏi trình đọc (`aria-hidden` ở `ChartSurface` / DonutGauge); tooltip chỉ khi rê chuột / chạm – mô tả dữ liệu đặt ở khung cha.
   - `prefers-reduced-motion`: CSS toàn cục tắt animation; 3D dùng `useReducedMotion`/`prefersReducedMotion` (pulse đứng, ống không chảy, camera không bay, frameloop demand).
   - Canvas 3D có `DeviceList` ẩn: tóm tắt trạng thái + nút từng thiết bị (Tab hiện ra, Enter chọn + đưa camera tới).
 

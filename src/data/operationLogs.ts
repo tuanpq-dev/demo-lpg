@@ -8,7 +8,7 @@ import { createCollectionStore } from '@/lib/createCollectionStore';
 import { appNow } from '@/lib/demoNow';
 import { plantDayKey } from '@/lib/plantTime';
 import { buildOperationLogs } from '@/mocks/operationLogs';
-import { useAlertList } from './alertStore';
+import { useRecentAlerts } from './alertApi';
 
 /** GET /operation-logs – TODO(backend): `api.request('/operation-logs?from=&to=', { schema })` (docs/decisions.md). */
 async function fetchOperationLogs(): Promise<OperationLogEvent[]> {
@@ -23,9 +23,13 @@ type LogsState =
   | { status: 'success'; data: OperationLogEvent[]; error?: undefined; refetch: () => void };
 
 /** Sự kiện nhật ký (chưa lọc, chưa sắp xếp). Lỗi/tải ở một trong hai nguồn → cả trang lỗi/tải. */
+/** Khoảng lớn nhất của bộ lọc nhật ký (`30d` = hôm nay + 29 ngày trước). */
+const LOG_WINDOW_DAYS = 29;
+
 export function useOperationLogs(now: Date): LogsState {
   const logs = store.useCollection();
-  const alerts = useAlertList();
+  // Cảnh báo trong khoảng lớn nhất của bộ lọc nhật ký (30 ngày – GET /alerts?from&to), không tải toàn bộ lịch sử.
+  const alerts = useRecentAlerts(LOG_WINDOW_DAYS);
   const refetchLogs = logs.refetch;
   const refetchAlerts = alerts.refetch;
   const refetch = useCallback(() => {

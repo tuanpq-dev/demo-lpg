@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Chỉ khi VITE_AUTH=off: "true" → bật /editor không cần ?edit=1. Có đăng nhập thì quyền theo vai trò (engineer/admin). */
+  /** Chỉ khi VITE_AUTH=off: "false" → ẩn Chỉnh sửa bản đồ 3D (chỉ mở với ?edit=1) cho bản demo công khai. Mặc định: theo vai trò (phiên giả admin). */
   readonly VITE_SCENE_EDITOR?: string;
   /** "off" → không đăng nhập (phiên giả admin, demo tĩnh); mặc định "api" (đăng nhập qua backend). */
   readonly VITE_AUTH?: string;
