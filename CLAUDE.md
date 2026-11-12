@@ -68,7 +68,7 @@
 ## 7. Việc tiếp theo
 - Nối API thật cho `fetch*` trong `src/data/*` (endpoint cần có: `docs/decisions.md`); schema zod cho báo cáo (cảnh báo + bảo trì đã có – `src/api/alertSchemas.ts`, `maintenanceSchemas.ts`); chuyển action ghi sang "gửi → nhận bản ghi từ server"; `WebSocketLiveSource`; backend SceneRepository (`/api/scenes`); upload tệp; job theo dõi sau xử lý cảnh báo.
 - Báo cáo: chi tiết tháng/quý/năm + ký/trả lại/nhập mốc + nút header chi tiết ngày (chờ thiết kế, `docs/questions.md` mục 12). Bản đồ 3D toàn nhà máy cho `/map` (nếu cần); ống 3D: kéo điểm theo Y, tự đi ống tránh thiết bị, nhánh chữ T.
-- Kỹ thuật: CI trên git.tbo.vn (chưa có runner – chỉ chạy gitlab.com); nâng vitest ≥ 4.1.11 (`npm audit`).
+- Kỹ thuật: CI trên git.tbo.vn (chưa có runner – chỉ chạy gitlab.com).
 - Thay TempIcons + ảnh dự phòng khi có asset (danh sách: `docs/decisions.md` mục TODO). Chờ designer/khách: `docs/questions.md`.
 
 ## 8. Tài liệu khác (không tự nạp – mở khi cần)

@@ -492,3 +492,9 @@ Theo review FE (route, bundle, lint, trang lỗi, ảnh, convention). Code khôn
 - `zodJitless.ts` (tắt JIT trước khi khai schema – CSP) thay `z.config` trong `schemas.ts`.
 - Test `data/contract.test.ts`: mọi endpoint trên TOÀN BỘ dữ liệu mẫu + bản ghi vừa tạo (hạn chỉ có ngày) + ca lệch hợp đồng. Vitest 160. Đi luồng dev (Cảnh báo, drawer + xác nhận, Bảo trì, chi tiết, tài sản, nhật ký): 0 lỗi console.
 - Còn lại: schema cho Báo cáo / Vận hành / Mô phỏng (chưa có lớp `*Api.ts`); request body (POST/PATCH) chưa có schema – thêm khi có endpoint ghi.
+
+### Nâng vitest 3.2.4 → 4.1.12 (12/11/2026, nhánh `chore/vitest-4`)
+- Lý do: `npm audit` 3 lỗ hổng (tinypool ≤ 2.1.1 – 2 critical, `@vitest/mocker` ≤ 4.1.11 – moderate) – chỉ ở công cụ dev, không vào bundle. Sau nâng: 0.
+- Chọn 4.1.12, KHÔNG 5.x: vitest 5 đòi Node ≥ 22.12, CI (`node:20-alpine`) + `.nvmrc` ghim Node 20. Lên 5.x phải nâng Node trước.
+- Không sửa code / test / `vitest.config.ts`: test chỉ dùng `describe`/`test`/`expect` + fake timers. Bundle không đổi byte nào (vitest không vào build).
+- Cách nâng: npm 10 không làm được (`npm audit fix` chỉ lên 3.2.7 vẫn lỗ hổng; `npm install vitest@4` lỗi nội bộ arborist `edgesOut`) → dùng một lần `npx npm@11 install -D vitest@4.1.12`. Lock mới vẫn `npm ci` / `npm install` được bằng npm 10 (CI). `immer` (peer tuỳ chọn của zustand, code không dùng) rơi khỏi lock – không ảnh hưởng.
