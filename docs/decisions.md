@@ -484,3 +484,11 @@ Theo review FE (route, bundle, lint, trang lỗi, ảnh, convention). Code khôn
 - `useQuery`: chuyển trạng thái tách ra `lib/queryState.ts` (thuần: `startSnapshot`, `settleSnapshot`, `viewOf`) – hook chỉ nối state / effect, hành vi không đổi. Giữ hook tự viết thay vì TanStack Query: bề mặt nhỏ (1 hook + 1 store), không thêm ~13 KB gzip; xem lại khi nối API thật nếu cần cache theo key / dedupe giữa trang.
 - Smoke e2e "nút bản đồ dưới header" hết chập chờn: chờ bố cục đứng yên trước khi đo, cuộn bằng `scrollTo` và kiểm nút đã vào vùng header (8/8 lần).
 - CLAUDE.md mục 6–7 viết lại theo `main` (mọi nhánh đã merge); README cập nhật bảng test.
+
+### Schema zod cho response Cảnh báo + Bảo trì (12/11/2026, cùng thư mục làm việc với `chore/maintainability`)
+- `src/api/alertSchemas.ts`, `maintenanceSchemas.ts` (re-export ở `schemas.ts`, tải lười như schema auth): bản ghi `AlertRecord` / `MaintenanceRecord` (hợp đồng + trường chỉ FE) và response của MỌI `fetch*` hiện có – trang danh sách, tóm tắt KPI, theo id (null), theo thiết bị / id, liên quan, tải việc, số đếm, danh bạ thiết bị, liên kết cảnh báo.
+- Khớp kiểu kiểm LÚC BIÊN DỊCH (`api/schemaCheck.ts`): `Assert<Matches<typeof S, T>>` – parse ra gán được cho kiểu FE + khai đủ mọi khoá; `allOf<Union>()` – enum đủ mọi giá trị. Đã thử cố ý sai: thiếu khoá, sai kiểu, thừa / thiếu giá trị enum đều báo lỗi `tsc`.
+- `fetch*` đi qua `fromMock(endpoint, schema, data)` (`data/contract.ts`): dev + vitest kiểm response mock bằng `validateContract` (tách từ `api/client.ts`, dùng chung với `api.request`) → mock lệch hợp đồng = `CONTRACT_ERROR` như backend lệch. Build production bỏ nhánh kiểm (`import.meta.env.DEV`) → bản demo `VITE_AUTH=off` vẫn không tải zod; build có backend: chunk schema API 2,3 KB gzip (gồm auth, chưa tính zod/mini), tải lười. Nối API = đổi `fromMock` thành `api.request(path, { schema, signal })`, giữ nguyên `schema`.
+- `zodJitless.ts` (tắt JIT trước khi khai schema – CSP) thay `z.config` trong `schemas.ts`.
+- Test `data/contract.test.ts`: mọi endpoint trên TOÀN BỘ dữ liệu mẫu + bản ghi vừa tạo (hạn chỉ có ngày) + ca lệch hợp đồng. Vitest 160. Đi luồng dev (Cảnh báo, drawer + xác nhận, Bảo trì, chi tiết, tài sản, nhật ký): 0 lỗi console.
+- Còn lại: schema cho Báo cáo / Vận hành / Mô phỏng (chưa có lớp `*Api.ts`); request body (POST/PATCH) chưa có schema – thêm khi có endpoint ghi.

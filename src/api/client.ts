@@ -190,6 +190,19 @@ function contractError(path: string, detail: string, status: number) {
   return err;
 }
 
+/**
+ * Kiểm `json` theo schema (nạp lười) → dữ liệu đã parse; sai → `ApiError('CONTRACT_ERROR')` nêu rõ trường sai + báo giám sát.
+ * Dùng chung cho `api.request` và response mock ở lớp dữ liệu (`data/contract.ts`).
+ */
+export async function validateContract<T>(path: string, pick: SchemaPick<T>, json: unknown, status = 200): Promise<T> {
+  const { schemas, safeParse } = await loadValidator();
+  const parsed = safeParse(pick(schemas), json);
+  if (parsed.success) return parsed.data;
+  // zod/mini không nạp sẵn câu lỗi tiếng Anh (message chung "Invalid input") → ghi kèm mã lỗi + kiểu mong đợi.
+  const detail = parsed.error.issues.map((i) => `${i.path.join('.') || '(gốc)'}: ${issueText(i)}`).join('; ');
+  throw contractError(path, detail, status);
+}
+
 /** Tạo client (test / DI truyền `fetch` riêng); app dùng `api` bên dưới. */
 export function createApiClient(deps: ApiClientDeps): ApiClient {
   let accessToken: string | null = null;
@@ -216,14 +229,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     if (json === Symbol.for('invalid-json') || json === undefined) {
       throw contractError(path, 'không phải JSON', res.status);
     }
-    const { schemas, safeParse } = await loadValidator();
-    const parsed = safeParse(pick(schemas), json);
-    if (!parsed.success) {
-      // zod/mini không nạp sẵn câu lỗi tiếng Anh (message chung "Invalid input") → ghi kèm mã lỗi + kiểu mong đợi.
-      const detail = parsed.error.issues.map((i) => `${i.path.join('.') || '(gốc)'}: ${issueText(i)}`).join('; ');
-      throw contractError(path, detail, res.status);
-    }
-    return parsed.data;
+    return validateContract(path, pick, json, res.status);
   };
 
   /** Chạy `fn` với signal gộp (huỷ của nơi gọi + timeout); hết giờ → `ApiError('TIMEOUT')`, huỷ → `AbortError` gốc. */
