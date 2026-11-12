@@ -111,5 +111,5 @@ export type { QueryState } from '@/lib/useQuery';
 
 /** Hook dữ liệu màn Tổng quan: `{ status, data, error, refetch }` (refetch → về loading). */
 export function useOverviewData() {
-  return useQuery('overview', fetchOverview);
+  return useQuery('overview', fetchOverview, { remember: 'overview' });
 }

@@ -23,6 +23,7 @@ import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import type { ImageAsset } from '@/lib/imageAsset';
 import { useNow } from '@/lib/useNow';
+import { combineQueries } from '@/lib/useQuery';
 import { CreateMaintenanceModal } from '../../shared/maintenance/CreateMaintenanceModal';
 import { AssetAside } from './AssetAside';
 import { AssetEventsCard, getEventId } from './AssetEventsCard';
@@ -95,14 +96,32 @@ function AssetHeaderActions({
  * Khối: mô hình 3D · AssetKpiSection · StorageCard · AssetAside · AssetEventsCard; tạo yêu cầu = `useAssetCreateRequest`.
  */
 const NO_DEVICES: string[] = [];
+/** Chiều cao khung chờ ≈ nội dung thật ở ≥ xl (hàng 3 cột · thẻ sự kiện). */
+const SKELETON_COLUMNS = 722;
+const SKELETON_EVENTS = 383;
 
-export function AssetDetail({ assetId }: { assetId: string }) {
-  const navigate = useNavigate();
-  const now = useNow(60_000);
+/**
+ * Dữ liệu của cả trang. Thẻ cột phải (cảnh báo liên quan, tóm tắt bảo trì) có truy vấn riêng: `ready` chỉ có khi ĐỦ mọi phần –
+ * dựng trang trước bằng danh sách rỗng thì thẻ cao lên khi dữ liệu về, trang đổi chiều cao sau khi đã hiện.
+ */
+function useAssetPage(assetId: string) {
   const { status, data, error, refetch, live, liveData } = useAssetDetail(assetId);
   // Chỉ cảnh báo / bảo trì của thiết bị này (máy chủ lọc) – không tải toàn bộ danh sách.
   const alerts = useAlertsByDevices(data?.relatedDevices ?? NO_DEVICES);
   const maintenance = useMaintenanceByDevice(assetId);
+  const side = combineQueries(alerts, maintenance);
+  const failed = status === 'error' ? { error, refetch } : side.status === 'error' ? { error: side.error, refetch: side.refetch } : null;
+  const ready =
+    status === 'success' && live && alerts.status === 'success' && maintenance.status === 'success'
+      ? { data, live, alerts: alerts.data, maintenance: maintenance.data }
+      : null;
+  return { data, liveData, ready, failed, refetch };
+}
+
+export function AssetDetail({ assetId }: { assetId: string }) {
+  const navigate = useNavigate();
+  const now = useNow(60_000);
+  const { data, liveData, ready, failed, refetch } = useAssetPage(assetId);
   const canWrite = useCan('maintenance:write');
 
   const events = useTableFilters({
@@ -118,6 +137,8 @@ export function AssetDetail({ assetId }: { assetId: string }) {
 
   const header = (
     <PageHeader
+      // Chưa có dữ liệu: tên / khu vực mới là chữ thế chỗ → hiện trễ như khung chờ (tải nhanh thì không lộ rồi đổi chữ).
+      className={data ? undefined : 'reveal-delayed'}
       breadcrumb={[{ label: 'Bản đồ nội khu' }, { label: data?.area ?? '…' }]}
       title={data?.name ?? assetId}
       actions={
@@ -132,66 +153,71 @@ export function AssetDetail({ assetId }: { assetId: string }) {
     />
   );
 
-  if (status !== 'success' || !live) {
-    // Đã có dữ liệu nhưng chưa có số trực tiếp → vẫn là "đang tải".
+  if (!ready) {
+    // Đã có dữ liệu nhưng chưa có số trực tiếp / dữ liệu cột phải → vẫn là "đang tải".
     return pageFallback(
-      { status: status === 'error' ? 'error' : 'loading', error, refetch },
+      { status: failed ? 'error' : 'loading', error: failed?.error, refetch: failed?.refetch ?? refetch },
       {
         header,
         errorTitle: 'Không tải được tài sản',
         errorActions: <Button onClick={() => void navigate('/overview')}>Về Tổng quan</Button>,
+        // Cao gần bằng trang thật (3 cột + thẻ sự kiện) → thanh cuộn không đổi khi nội dung thay khung chờ.
         skeleton: (
-          <div className="reveal-delayed grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,2.85fr)_272px]">
-            <Placeholder label="Đang tải…" height={688} />
-            <Placeholder label="Đang tải…" height={688} />
-            <Placeholder label="Đang tải…" height={688} />
+          <div className="reveal-delayed flex flex-col gap-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,2.85fr)_272px]">
+              <Placeholder label="Đang tải…" height={SKELETON_COLUMNS} />
+              <Placeholder label="Đang tải…" height={SKELETON_COLUMNS} />
+              <Placeholder label="Đang tải…" height={SKELETON_COLUMNS} />
+            </div>
+            <Placeholder label="Đang tải…" height={SKELETON_EVENTS} />
           </div>
         ),
       },
     );
   }
 
-  const { liquidPct, tag, description } = modelText(data, live);
+  const { data: asset, live, alerts, maintenance } = ready;
+  const { liquidPct, tag, description } = modelText(asset, live);
 
   return (
     <Page pageHeader={header}>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,2.85fr)_272px]">
         {/* Cột trái – mô hình 3D */}
         <AssetModelPanel
-          sceneId={data.sceneId}
-          assetName={data.name}
+          sceneId={asset.sceneId}
+          assetName={asset.name}
           liveData={liveData}
           tag={tag}
           description={description}
-          fallbackImage={FALLBACK_IMAGE[data.id] ?? plantMapImage}
+          fallbackImage={FALLBACK_IMAGE[asset.id] ?? plantMapImage}
           className="min-h-[420px] lg:min-h-0"
         />
 
         {/* Cột giữa – KPI + tồn chứa */}
         <div className="flex min-w-0 flex-col gap-4">
-          <AssetKpiSection data={data} live={live} liquidPct={liquidPct} />
-          <StorageCard data={data} live={live} liquidPct={liquidPct} />
+          <AssetKpiSection data={asset} live={live} liquidPct={liquidPct} />
+          <StorageCard data={asset} live={live} liquidPct={liquidPct} />
         </div>
 
         {/* Cột phải */}
         <AssetAside
-          data={data}
-          related={deriveRelatedAlerts(alerts.data ?? [], data.relatedDevices, now)}
-          summary={deriveMaintenanceSummary(maintenance.data ?? [], data.id, now)}
+          data={asset}
+          related={deriveRelatedAlerts(alerts, asset.relatedDevices, now)}
+          summary={deriveMaintenanceSummary(maintenance, asset.id, now)}
           onOpenAlert={(id) => void navigate(`/alerts?alert=${id}&range=30d`)}
-          onAllAlerts={() => void navigate(`/alerts?q=${encodeURIComponent(data.id)}&range=30d`)}
+          onAllAlerts={() => void navigate(`/alerts?q=${encodeURIComponent(asset.id)}&range=30d`)}
         />
       </div>
 
       {/* Hàng dưới – sự kiện */}
-      <AssetEventsCard assetId={data.id} events={events} />
+      <AssetEventsCard assetId={asset.id} events={events} />
 
       {create.open && (
         <CreateMaintenanceModal
           open
           onClose={create.close}
           devices={create.devices}
-          defaultDevice={data.id}
+          defaultDevice={asset.id}
           onDraftSaved={create.onDraftSaved}
           onSubmit={create.onSubmit}
         />

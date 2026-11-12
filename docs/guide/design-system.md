@@ -104,7 +104,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 |---|---|---|---|---|
 | AppHeader | `src/components/AppHeader/AppHeader.tsx` | `navItems`, `navValue`, `onNavChange`, `user` (`detail` hiện trong menu), `settingsMenu` + `onSettingsMenuSelect` + `settingsActive` (nút Cài đặt mở menu – cùng `HeaderMenu` disclosure với menu tài khoản – menu căn GIỮA dưới nút, sát mép màn thì dịch vào trong cách mép 16 px, mũi tên luôn chỉ giữa nút (`useMenuPlacement`); không truyền → nút thường `onSettingsClick`), `userMenu` + `onUserMenuSelect` (menu tài khoản – Đăng xuất) < sm: chỉ icon logo, tên người dùng `sr-only`, nhãn Menu cắt "…" – không tràn ngang 390 px. | `src/app/Page.tsx` | `#layout` (bản gắn router) |
 | PageHeader | `src/components/PageHeader/PageHeader.tsx` | `breadcrumb`, `title`, `description`, `actions`, `titleEnd` (cạnh tiêu đề, ngoài `<h1>` – ô chọn "Thiết bị" Vận hành) | mọi trang | `#layout` |
-| AppLayout | `src/components/AppLayout/AppLayout.tsx` | `header`, `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
+| AppShell · AppMain | `src/components/AppLayout/AppLayout.tsx` | `AppShell`: `header` (dính trên cùng) + `children` – dựng một lần ở layout route. `AppMain`: `variant` (full/sidebar/workspace), `pageHeader`, `sidebar`; nội dung tối đa `max-w-content` (1920px) | `src/app/Page.tsx` | không (mọi trang dùng) |
 
 **GĐ4A – Nghiệp vụ**
 

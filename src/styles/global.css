@@ -11,6 +11,13 @@
     min-height: 100%;
   }
 
+  /* Luôn giữ sẵn chỗ cho thanh cuộn dọc: trang dài / ngắn khác nhau, nội dung cao lên khi dữ liệu về, hay mở modal (khoá cuộn)
+     đều KHÔNG làm đổi bề rộng trang → header dính và nội dung không xô ngang ~15 px. Thanh cuộn nổi (điện thoại, macOS) không
+     chiếm chỗ nên không ảnh hưởng. */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-bg-app font-sans text-base text-fg antialiased;
   }

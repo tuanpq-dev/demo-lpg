@@ -107,7 +107,7 @@ export function useAlertById(id: string | null | undefined) {
 export function useAlertsByDevices(devices: readonly string[], kinds: readonly string[] = []) {
   const revision = useAlertRevision();
   const key = `${[...devices].sort().join('|')}#${[...kinds].sort().join('|')}`;
-  return useQuery(key, (signal) => fetchAlertsByDevices(devices, kinds, signal), { revision });
+  return useQuery(key, (signal) => fetchAlertsByDevices(devices, kinds, signal), { revision, remember: 'alerts-by-devices' });
 }
 
 /** Cảnh báo theo id (cảnh báo nguồn của yêu cầu bảo trì…). */

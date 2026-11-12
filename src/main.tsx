@@ -13,6 +13,7 @@ import {
 import './styles/global.css';
 import { AuthProvider, RequireAuth, useAuth } from './app/auth';
 import { canUseEditor } from './app/editorAccess';
+import { AppFrame } from './app/Page';
 import { MAP_EDITOR_PATH } from './app/settingsRoutes';
 import { reloadForNewVersion } from './lib/chunkReload';
 import { initMonitoring } from './lib/monitoring';
@@ -110,39 +111,49 @@ const router = createBrowserRouter([
       {
         // Mọi trang còn lại cần đăng nhập (chưa đăng nhập → /login?next=…).
         element: <RequireAuth />,
-        // Lỗi trong một trang → trang lỗi vẫn giữ header/menu.
-        errorElement: <RouteError />,
         children: [
-          { path: '/', loader: () => redirect('/overview') },
-          { path: '/overview', element: <OverviewPage />, ...t('Tổng quan') },
-          // Tab "Bản đồ nội khu" mở thẳng trang chi tiết bồn V-101 (như ảnh 5D); chưa có bản đồ toàn nhà máy.
-          { path: '/map', loader: () => redirect(assetPath(DEFAULT_ASSET_ID)) },
-          { path: '/map/:assetId', element: <AssetDetailPage />, ...t('Chi tiết tài sản') },
-          // Menu "Vận hành" → "Giám sát thiết bị" (chưa có danh sách thiết bị → mở E-101A, ảnh op-device-*.png).
-          // Route tĩnh xếp hạng trên /operations/:assetId (đường dẫn cũ). /operations/overview = link cũ của mục menu.
-          { path: '/operations', loader: () => redirect('/operations/devices') },
-          { path: '/operations/overview', loader: () => redirect('/operations/devices') },
-          { path: '/operations/devices', loader: () => redirect(operationDevicePath(DEFAULT_OPERATION_DEVICE)) },
-          { path: '/operations/devices/:deviceId', element: <DeviceDetailPage />, ...t('Giám sát thiết bị') },
-          { path: '/operations/logs', element: <OperationLogsPage />, ...t('Nhật ký vận hành') },
-          { path: '/operations/ai-simulation', element: <AiSimulationPage />, ...t('AI mô phỏng sự cố') },
-          // Cấu hình kịch bản mô phỏng.
-          { path: '/operations/ai-simulation/:scenarioId/config', element: <ScenarioConfigPage />, ...t('Cấu hình kịch bản') },
-          { path: '/operations/ai-simulation/:scenarioId/monitor', element: <SimulationMonitorPage />, ...t('Theo dõi mô phỏng') },
-          { path: '/operations/ai-simulation/:scenarioId/result', element: <SimulationResultPage />, ...t('Kết quả mô phỏng') },
-          { path: '/operations/:assetId', loader: legacyAssetRedirect },
-          { path: '/alerts', element: <AlertsPage />, ...t('Cảnh báo') },
-          { path: '/maintenance', element: <MaintenancePage />, ...t('Bảo trì') },
-          // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
-          { path: '/maintenance/:id', element: <MaintenanceDetailPage />, ...t('Chi tiết bảo trì') },
-          { path: '/reports', element: <ReportsPage />, ...t('Báo cáo') },
-          // Chi tiết báo cáo ngày (Figma 117:4250); tháng/quý/năm chưa có thiết kế.
-          { path: '/reports/daily/:code', element: <DailyReportDetailPage />, ...t('Báo cáo ngày') },
-          // Chỉnh sửa bản đồ 3D (Scene Editor) – mở từ menu Cài đặt trên header. /settings và /editor (link cũ) chuyển sang, giữ query.
-          { path: MAP_EDITOR_PATH, element: <EditorRoute />, ...t('Chỉnh sửa bản đồ 3D') },
-          { path: '/settings', loader: () => redirect(MAP_EDITOR_PATH) },
-          { path: '/editor', loader: ({ request }) => redirect(`${MAP_EDITOR_PATH}${new URL(request.url).search}`) },
-          { path: '*', element: <NotFoundPage />, ...t('Không tìm thấy trang') },
+          {
+            // Khung app (header + thông báo) dựng MỘT lần – chuyển trang chỉ đổi phần thân, header không dựng lại.
+            element: <AppFrame />,
+            children: [
+              {
+                // Lỗi trong một trang → trang lỗi thay phần thân, vẫn giữ header/menu. (Lỗi ở chính header → tầng gốc.)
+                errorElement: <RouteError />,
+                children: [
+                  { path: '/', loader: () => redirect('/overview') },
+                  { path: '/overview', element: <OverviewPage />, ...t('Tổng quan') },
+                  // Tab "Bản đồ nội khu" mở thẳng trang chi tiết bồn V-101 (như ảnh 5D); chưa có bản đồ toàn nhà máy.
+                  { path: '/map', loader: () => redirect(assetPath(DEFAULT_ASSET_ID)) },
+                  { path: '/map/:assetId', element: <AssetDetailPage />, ...t('Chi tiết tài sản') },
+                  // Menu "Vận hành" → "Giám sát thiết bị" (chưa có danh sách thiết bị → mở E-101A, ảnh op-device-*.png).
+                  // Route tĩnh xếp hạng trên /operations/:assetId (đường dẫn cũ). /operations/overview = link cũ của mục menu.
+                  { path: '/operations', loader: () => redirect('/operations/devices') },
+                  { path: '/operations/overview', loader: () => redirect('/operations/devices') },
+                  { path: '/operations/devices', loader: () => redirect(operationDevicePath(DEFAULT_OPERATION_DEVICE)) },
+                  { path: '/operations/devices/:deviceId', element: <DeviceDetailPage />, ...t('Giám sát thiết bị') },
+                  { path: '/operations/logs', element: <OperationLogsPage />, ...t('Nhật ký vận hành') },
+                  { path: '/operations/ai-simulation', element: <AiSimulationPage />, ...t('AI mô phỏng sự cố') },
+                  // Cấu hình kịch bản mô phỏng.
+                  { path: '/operations/ai-simulation/:scenarioId/config', element: <ScenarioConfigPage />, ...t('Cấu hình kịch bản') },
+                  { path: '/operations/ai-simulation/:scenarioId/monitor', element: <SimulationMonitorPage />, ...t('Theo dõi mô phỏng') },
+                  { path: '/operations/ai-simulation/:scenarioId/result', element: <SimulationResultPage />, ...t('Kết quả mô phỏng') },
+                  { path: '/operations/:assetId', loader: legacyAssetRedirect },
+                  { path: '/alerts', element: <AlertsPage />, ...t('Cảnh báo') },
+                  { path: '/maintenance', element: <MaintenancePage />, ...t('Bảo trì') },
+                  // Chi tiết yêu cầu (ảnh MT-00128); `/maintenance?open=<id>` cũ chuyển hướng sang đây (MaintenancePage).
+                  { path: '/maintenance/:id', element: <MaintenanceDetailPage />, ...t('Chi tiết bảo trì') },
+                  { path: '/reports', element: <ReportsPage />, ...t('Báo cáo') },
+                  // Chi tiết báo cáo ngày (Figma 117:4250); tháng/quý/năm chưa có thiết kế.
+                  { path: '/reports/daily/:code', element: <DailyReportDetailPage />, ...t('Báo cáo ngày') },
+                  // Chỉnh sửa bản đồ 3D (Scene Editor) – mở từ menu Cài đặt trên header. /settings và /editor (link cũ) chuyển sang, giữ query.
+                  { path: MAP_EDITOR_PATH, element: <EditorRoute />, ...t('Chỉnh sửa bản đồ 3D') },
+                  { path: '/settings', loader: () => redirect(MAP_EDITOR_PATH) },
+                  { path: '/editor', loader: ({ request }) => redirect(`${MAP_EDITOR_PATH}${new URL(request.url).search}`) },
+                  { path: '*', element: <NotFoundPage />, ...t('Không tìm thấy trang') },
+                ],
+              },
+            ],
+          },
         ],
       },
     ],
