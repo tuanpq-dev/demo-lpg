@@ -4,21 +4,13 @@ import { PageHeader } from '@/components';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
-import { findDailyReport, reportDetailPath } from '@/data/dailyReport';
-import { useReports } from '@/data/reports';
-import {
-  DAILY_CHECKPOINTS,
-  canInspectorSign,
-  deriveAwaitingByStep,
-  deriveMonthProgress,
-  deriveReportKpis,
-  deriveTodayActions,
-  deriveUpcomingDeadlines,
-  type ReportTab,
-} from '@/features/reports';
+import { reportDetailPath } from '@/data/dailyReport';
+import { useDailyReportByCode, useReportSummary } from '@/data/reportApi';
+import { DAILY_CHECKPOINTS, canInspectorSign, deriveUpcomingDeadlines, type ReportTab } from '@/features/reports';
 import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
 import { useNow } from '@/lib/useNow';
+import { combineQueries } from '@/lib/useQuery';
 import { ReportKpiRow } from './shared/ReportKpiRow';
 import { ReportSummaryCards } from './shared/ReportSummaryCards';
 import { ReportTableSection } from './shared/ReportTableSection';
@@ -31,14 +23,15 @@ const checkpointList = `${DAILY_CHECKPOINTS.slice(0, -1).join(', ')} và ${DAILY
 
 /**
  * Báo cáo vận hành định kỳ (ảnh thiết kế màn Báo cáo) – ghép từ các khối dùng chung `./shared`:
- * KPI · 4 thẻ tóm tắt · tab loại báo cáo + bảng. Tab mở sẵn: Báo cáo ngày.
+ * KPI · 4 thẻ tóm tắt · tab loại báo cáo + bảng. Tab mở sẵn: Báo cáo ngày. Lọc / phân trang / đếm / KPI ở MÁY CHỦ
+ * (`data/reportApi.ts`): trang chỉ giữ một trang dòng + số liệu tóm tắt.
  */
 export default function ReportsPage() {
-  const { status, data, error, refetch } = useReports();
-  const rows = useMemo(() => data ?? [], [data]);
-  // "Hôm nay"/mốc tới hạn theo giờ nhà máy – cập nhật mỗi phút.
+  // "Hôm nay"/mốc tới hạn theo giờ nhà máy – cập nhật mỗi phút; truy vấn cũng tải lại ngầm mỗi phút.
   const now = useNow(60_000);
-  const table = useReportTable(rows, now, DEFAULT_TAB);
+  const table = useReportTable(DEFAULT_TAB, now);
+  const summary = useReportSummary(now);
+  const { status, error, refetch } = combineQueries(table.list, summary);
   const tableRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   // TODO(backend): chỉ đúng Người kiểm tra của báo cáo được ký (hiện: mọi vai trò có report:sign).
@@ -46,15 +39,11 @@ export default function ReportsPage() {
 
   // ---- Ký xác nhận (?sign=<mã>): chỉ báo cáo ngày đang chờ Người kiểm tra; mã lạ / đã qua bước → không mở.
   const signCode = table.search.get('sign');
-  const signReport = canSignRole && signCode ? findDailyReport(rows, signCode) : undefined;
+  const signReport = useDailyReportByCode(canSignRole ? signCode : null).data;
   const signOpen = signReport && canInspectorSign(signReport, now) ? signReport : undefined;
   const closeSign = () => table.setExtra({ sign: null });
 
-  const kpis = useMemo(() => deriveReportKpis(rows, now), [rows, now]);
-  const awaitingByStep = useMemo(() => deriveAwaitingByStep(rows, now), [rows, now]);
-  const monthProgress = useMemo(() => deriveMonthProgress(rows, now), [rows, now]);
   const upcoming = useMemo(() => deriveUpcomingDeadlines(now), [now]);
-  const actions = useMemo(() => deriveTodayActions(rows, now), [rows, now]);
 
   const year = plantDayKey(now).slice(0, 4);
   const tabNotes: Partial<Record<ReportTab, string>> = {
@@ -84,8 +73,14 @@ export default function ReportsPage() {
     />
   );
 
-  if (status !== 'success')
-    return pageFallback({ status, error, refetch }, { header, errorTitle: 'Không tải được danh sách báo cáo', skeleton: [100, 262, 560] });
+  const result = table.list.data;
+  const s = summary.data;
+  if (status !== 'success' || !result || !s)
+    return pageFallback(
+      { status: status === 'error' ? 'error' : 'loading', error, refetch },
+      { header, errorTitle: 'Không tải được danh sách báo cáo', skeleton: [100, 262, 560] },
+    );
+  const { kpis, awaitingByStep, monthProgress, actions } = s;
 
   return (
     <Page pageHeader={header}>
@@ -101,16 +96,15 @@ export default function ReportsPage() {
         }}
         onAction={(id) => {
           const item = actions.find((a) => a.id === id);
-          const report = item && rows.find((r) => r.id === item.reportId);
-          if (!report) return;
-          filterOnly({ q: report.code });
-          showTable(`Đang hiển thị báo cáo ${report.code}.`);
+          if (!item) return;
+          filterOnly({ q: item.reportCode });
+          showTable(`Đang hiển thị báo cáo ${item.reportCode}.`);
         }}
       />
       <ReportTableSection
         ref={tableRef}
         table={table}
-        rows={rows}
+        result={result}
         now={now}
         tabNotes={tabNotes}
         label="Danh sách báo cáo vận hành"

@@ -47,7 +47,10 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 | `src/features/alerts/update.test.ts` | Cập nhật xử lý: điều kiện "Đã xử lý" theo loại (áp suất / gas / cháy, mất tín hiệu), theo dõi sau xử lý, nháp |
 | `src/features/maintenance/progress.test.ts` | Tiến độ, gửi nghiệm thu, nghiệm thu (không tự nghiệm thu, Không đạt / Cần bổ sung), tệp tải lên |
 | `src/features/maintenance/assign.test.ts` | Phân công: tải việc / Bận, lỗi chặn, đổi người, phân công hàng loạt |
-| `src/features/alerts/query.test.ts` · `maintenance/query.test.ts` | Truy vấn phía máy chủ: lọc, phân trang, đếm tab, KPI, quá hạn |
+| `src/features/alerts/query.test.ts` · `maintenance/query.test.ts` · `reports/query.test.ts` | Truy vấn phía máy chủ: lọc, phân trang, đếm tab, facet, KPI, quá hạn, báo cáo ngày theo mã |
+| `src/features/reports/status.test.ts` · `record.test.ts` | Báo cáo: trạng thái suy dẫn (hoàn thành / chữ ký / bước chờ ký), mốc thiếu, KPI + việc cần xử lý, lọc; ghi nhận mốc (nguồn giá trị, điều kiện xác nhận, nhật ký mốc) |
+| `src/features/simulation/config.test.ts` | Cấu hình mô phỏng: hợp lệ / nhắc ngưỡng, số tham chiếu mất tín hiệu, trạng thái sẵn sàng, gợi ý AI |
+| `src/data/contract.test.ts` | Response mock của mọi `fetch*` (cảnh báo, bảo trì, báo cáo) khớp schema API |
 | `src/features/reports/sign.test.ts` | 8 điều kiện ký báo cáo ngày |
 | `src/features/live/signal.test.ts` | Quy tắc "Mất tín hiệu" (không hiện số cũ) |
 | `src/lib/plantTime.test.ts` | "Hôm nay" theo giờ nhà máy |

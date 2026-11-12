@@ -23,19 +23,20 @@ import {
   SIGNATURE_LABEL,
   SIGNATURE_STATUSES,
   completionOf,
-  distinctOptions,
   formatUpdatedAt,
   missingText,
   periodLabel,
   progressText,
   signatureOf,
   type CompletionStatus,
+  type ReportListResult,
   type ReportPeriod,
   type ReportRecord,
   type ReportTab,
   type SignatureFilter,
 } from '@/features/reports';
 import { reportDetailPath } from '@/data/dailyReport';
+import { cn } from '@/lib/cn';
 import { CompletionBadge, SignatureBadge } from './ReportBadges';
 import type { ReportTableState } from './useReportTable';
 
@@ -50,8 +51,8 @@ const TAB_LABEL: Record<ReportTab, string> = {
 
 export type ReportTableSectionProps = {
   table: ReportTableState;
-  /** Toàn bộ báo cáo (lấy lựa chọn cho bộ lọc người/ca). */
-  rows: readonly ReportRecord[];
+  /** Trang kết quả từ máy chủ (dòng, tổng, số đếm tab, lựa chọn bộ lọc). */
+  result: ReportListResult;
   now: Date;
   /** Thứ tự + tập tab của màn (mặc định đủ 6 tab như ảnh). */
   tabs?: readonly ReportTab[];
@@ -215,7 +216,7 @@ function ReportRowActions({
  * cột "Ca vận hành" chỉ ở báo cáo ngày; tab gộp ("Tất cả", "Biểu mẫu đã ký") → "Kỳ báo cáo".
  */
 export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionProps>(function ReportTableSection(
-  { table, rows, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label, onSign, canSign },
+  { table, result, now, tabs = ['all', ...REPORT_PERIODS, 'signed'], tabNotes, label, onSign, canSign },
   ref,
 ) {
   const uid = useId();
@@ -223,7 +224,8 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
   const pendingId = `${uid}-pending`;
   const morePendingId = `${uid}-more-pending`;
   const { values: f, setValues } = table;
-  const counts = table.tabCounts as Record<ReportTab, number>;
+  const counts = result.tabCounts;
+  const options = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }));
   const period: ReportPeriod | undefined = (REPORT_PERIODS as readonly string[]).includes(f.tab) ? (f.tab as ReportPeriod) : undefined;
 
   const tabItems: TabItem[] = tabs.map((t) => ({
@@ -236,7 +238,7 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
 
   const filterDefs: FilterDef[] = [
     ...(period === undefined || period === 'daily'
-      ? [{ id: 'shift', label: 'Ca vận hành', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.shift)) }]
+      ? [{ id: 'shift', label: 'Ca vận hành', allLabel: 'Tất cả', options: options(result.facets.shifts) }]
       : []),
     {
       id: 'completion',
@@ -245,8 +247,8 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
       options: COMPLETION_STATUSES.map((s) => ({ value: s, label: COMPLETION_LABEL[s] })),
     },
     { id: 'signature', label: 'Trạng thái chữ ký', allLabel: 'Tất cả', options: SIGNATURE_FILTER_OPTIONS },
-    { id: 'inspector', label: 'Người kiểm tra', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.inspector)) },
-    { id: 'approver', label: 'Người duyệt', allLabel: 'Tất cả', options: distinctOptions(rows.map((r) => r.approver)) },
+    { id: 'inspector', label: 'Người kiểm tra', allLabel: 'Tất cả', options: options(result.facets.inspectors) },
+    { id: 'approver', label: 'Người duyệt', allLabel: 'Tất cả', options: options(result.facets.approvers) },
   ];
 
   const columns = reportColumns(period, now);
@@ -308,29 +310,32 @@ export const ReportTableSection = forwardRef<HTMLDivElement, ReportTableSectionP
         <span id={morePendingId} hidden>
           {MORE_PENDING}
         </span>
-        <DataTable
-          label={label}
-          density="compact"
-          minWidth={period === 'daily' ? 1320 : 1220}
-          stickyFirst
-          stickyActions
-          columns={columns}
-          rows={table.pageRows}
-          getRowId={(r) => r.id}
-          rowActions={(r) => (
-            <ReportRowActions r={r} canSign={!!onSign && !!canSign?.(r)} onSign={onSign} pendingId={pendingId} morePendingId={morePendingId} />
-          )}
-          emptyState="Không có báo cáo phù hợp."
-          pagination={{
-            page: table.page,
-            pageSize: table.pageSize,
-            total: table.filtered.length,
-            onPageChange: table.setPage,
-            summary: (a, b, n) => `Hiển thị ${a}-${b} của ${n}`,
-            pageSizeOptions: PAGE_SIZES.map(Number),
-            onPageSizeChange: (size) => setValues({ size: String(size) as (typeof PAGE_SIZES)[number] }),
-          }}
-        />
+        {/* Đang tải trang / bộ lọc mới: giữ kết quả cũ, làm mờ (aria-busy) tới khi có kết quả. */}
+        <div aria-busy={table.list.pending} className={cn('transition-opacity', table.list.pending && 'opacity-60')}>
+          <DataTable
+            label={label}
+            density="compact"
+            minWidth={period === 'daily' ? 1320 : 1220}
+            stickyFirst
+            stickyActions
+            columns={columns}
+            rows={result.rows}
+            getRowId={(r) => r.id}
+            rowActions={(r) => (
+              <ReportRowActions r={r} canSign={!!onSign && !!canSign?.(r)} onSign={onSign} pendingId={pendingId} morePendingId={morePendingId} />
+            )}
+            emptyState="Không có báo cáo phù hợp."
+            pagination={{
+              page: result.page,
+              pageSize: table.pageSize,
+              total: result.total,
+              onPageChange: table.setPage,
+              summary: (a, b, n) => `Hiển thị ${a}-${b} của ${n}`,
+              pageSizeOptions: PAGE_SIZES.map(Number),
+              onPageSizeChange: (size) => setValues({ size: String(size) as (typeof PAGE_SIZES)[number] }),
+            }}
+          />
+        </div>
       </Card>
     </div>
   );

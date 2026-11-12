@@ -1,6 +1,6 @@
 /*
  * Lớp dữ liệu modal "Ghi nhận mốc kiểm tra" (báo cáo ngày). Ảnh chụp số liệu IoT của mốc là mock (`buildCheckpointSnapshot`);
- * ghi mốc cập nhật CÙNG store `useReports` → danh sách, chi tiết ngày, bảng số liệu đổi theo.
+ * ghi mốc cập nhật kho báo cáo (`data/reports.ts`) → truy vấn danh sách, chi tiết ngày, bảng số liệu tải lại ngầm.
  */
 import {
   applyCheckpointRecord,
@@ -16,7 +16,7 @@ import { appNow } from '@/lib/demoNow';
 import { createSessionDraft } from '@/lib/sessionDraft';
 import { useIdentityRevision, useQuery } from '@/lib/useQuery';
 import { buildCheckpointSnapshot } from '@/mocks/checkpointRecord';
-import { currentReports, replaceReport } from './reports';
+import { currentReports, replaceReport, reportsReady } from './reports';
 
 /**
  * Số liệu IoT/PLC của mốc. TODO(backend): `api.request('/reports/:code/checkpoints/:key/snapshot', { schema })` – hợp đồng ở
@@ -58,6 +58,7 @@ export type RecordResult = { ok: true; record: ReportRecord } | { ok: false; err
  * của báo cáo).
  */
 export async function recordCheckpoint(id: string, key: string, input: RecordCheckpointInput): Promise<RecordResult> {
+  await reportsReady();
   const now = appNow();
   const r = currentReports().find((x) => x.id === id);
   if (!r || !canRecordCheckpoint(r, key, now)) return { ok: false, error: `Mốc ${key} không còn chờ ghi nhận.` };
