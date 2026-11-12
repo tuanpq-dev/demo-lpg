@@ -21,7 +21,7 @@ const TONE = {
 } as const;
 
 /**
- * Banner không đóng được – "Quy trình Khẩn cấp (ESD)" ở drawer cảnh báo gas (ảnh 27/10/2026): khung viền + nền nhạt theo
+ * Banner không đóng được – "Quy trình Khẩn cấp (ESD)" ở drawer cảnh báo gas (ảnh): khung viền + nền nhạt theo
  * tone, icon, tiêu đề đậm + câu hướng dẫn. Có `stage`: phần nhìn thấy `aria-hidden`, nội dung cho trình đọc nằm trong
  * `role="alert"` (một bản, không lặp).
  */

@@ -69,7 +69,7 @@ export const fetchMaintenanceLoads = (_signal?: AbortSignal) => server().then((s
 
 /**
  * `tick` = mốc phút của "bây giờ" ở trang (useNow 60 s): quá hạn / "tháng này" đổi theo thời gian → tải lại NGẦM mỗi phút
- * (giữ dữ liệu đang hiện) như trước đây trang tự tính lại mỗi phút.
+ * (giữ dữ liệu đang hiện).
  */
 const minuteKey = (tick: Date) => String(Math.floor(tick.getTime() / 60_000));
 

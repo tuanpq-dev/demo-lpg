@@ -25,7 +25,7 @@ export type AlertUpdateModalProps = {
 
 /**
  * Modal "Cập nhật xử lý" – KHUNG CHUNG mọi loại `update.kind = 'alert-update'` (ảnh áp suất
- * `scratch/figma-ref/alert-pressure-update-modal-design.png`, 28/10/2026; gas + cháy dựng theo khung đó, chưa có thiết kế
+ * `scratch/figma-ref/alert-pressure-update-modal-design.png`; gas + cháy dựng theo khung đó, chưa có thiết kế
  * riêng – lệch ảnh ghi docs/figma-diffs.md; docs/guide/alerts.md (4o)). Phần theo loại lấy từ `ALERT_KINDS[kind].update`:
  * tiêu đề, ô trạng thái (cháy tách "Đã xử lý sự cố" / "Báo động giả"), dòng thông số, nguồn xác minh, mục xác minh, theo dõi.
  * Các khối (thư mục `update/`): Thẻ đầu · Trạng thái xử lý · Kết quả kiểm tra thiết bị (= hướng dẫn của drawer, một nguồn) ·

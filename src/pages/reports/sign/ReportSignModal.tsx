@@ -19,7 +19,7 @@ export type ReportSignModalProps = {
 };
 
 /**
- * Modal "Hoàn thành nhận xét & ký xác nhận" – bước Người kiểm tra của báo cáo NGÀY (ảnh thiết kế 02/11/2026, chưa có node
+ * Modal "Hoàn thành nhận xét & ký xác nhận" – bước Người kiểm tra của báo cáo NGÀY (ảnh thiết kế, chưa có node
  * Figma; ảnh + ghi chú: scratch/figma-ref/report-sign/). Điều kiện ký: `features/reports/sign.ts`; ghi: `data/reportSign.ts`
  * (kiểm lại điều kiện từ dữ liệu hiện tại). Mã xác nhận KHÔNG lưu ở đâu (chỉ state). Chỉ mount khi mở.
  */

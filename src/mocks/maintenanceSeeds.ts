@@ -11,7 +11,7 @@ type Seed = Omit<MaintenanceRecord, 'id' | 'createdAt' | 'dueAt' | 'completedAt'
 
 export const seeds: Seed[] = [
   // ---- Figma: 3 thẻ ưu tiên (70:4581–70:4621) + bảng (70:5363–70:5441); MT-00128/127 lấy nội dung theo thẻ ----
-  // MT-00128 theo ảnh trang chi tiết (26/10/2026): chưa phân công, hạn 16:00 hôm nay, "Khu bồn LPG", tiêu đề V-101, từ ALT-00128.
+  // MT-00128 theo ảnh trang chi tiết: chưa phân công, hạn 16:00 hôm nay, "Khu bồn LPG", tiêu đề V-101, từ ALT-00128.
   // Figma danh sách ghi "PSV-101", "Quá hạn 2 ngày", người phụ trách Nguyễn Văn A – lệch, ghi docs/figma-diffs.md.
   {
     code: 'MT-00128',
@@ -157,7 +157,7 @@ export const seeds: Seed[] = [
     reportedProgress: 40,
     hold: { kind: 'blocked', reason: 'Gioăng thay thế sai kích cỡ, chờ vật tư đúng chủng loại', at: at(-1, '15:20') },
   },
-  // Hạn −1 (trước: +2) để KPI "Quá hạn" giữ 04 sau khi MT-00128 hết quá hạn.
+  // Hạn −1 → quá hạn: KPI "Quá hạn" = 04 như Figma (MT-00128 hạn hôm nay, chưa quá hạn).
   {
     code: 'MT-00118',
     title: 'Vệ sinh bộ lọc F-202',

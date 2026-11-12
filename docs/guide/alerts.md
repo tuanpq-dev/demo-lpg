@@ -37,7 +37,7 @@ sequenceDiagram
 | 7 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF`, `useCloseConditions(alerts)` (liên quan đang mở hỏi máy chủ) |
 | 8 | `src/app/useTableFilters.ts` (`useFilterParams`) · `src/app/useRecordSelection.ts` | Bộ lọc + trang + bản ghi đang mở ↔ URL (`replace`) · lựa chọn giữ bản ghi qua nhiều trang, đổi bộ lọc → bỏ chọn |
 | 9 | `src/pages/alerts/AlertsPage.tsx` · `AlertDrawerHost.tsx` · `list/AlertBulkActions.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, `DataTable` (một trang), xuất CSV mọi dòng khớp · drawer theo id + modal tạo yêu cầu (lười, nạp trước lúc rảnh) · thao tác hàng loạt + modal phân công / đóng hàng loạt |
-| 10 | `src/pages/alerts/AlertDetailDrawer.tsx` (+ `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
+| 10 | `src/pages/alerts/AlertDetailDrawer.tsx` (ghi chú: `AlertNotesSection.tsx`; + `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
 
 Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` – giá trị mặc định không ghi lên URL.
 
@@ -250,7 +250,8 @@ Quay lại Đang kiểm tra/Đang xử lý từ Tạm dừng/Cần hỗ trợ �
 | Quy tắc | Ở đâu |
 |---|---|
 | Đọc hạng mục từ `guide` – MỘT hàm cho dạng cũ `{at, by}` (= Đạt) và dạng mới `{status, at, by, note?}`; drawer tick = Chưa kiểm tra ↔ Đạt, "Có vấn đề"/"Không áp dụng" hiện chip + khoá ở drawer | `src/features/alerts/inspection.ts` (`inspectionEntry`, `inspectionItems`, `toggledInspection`, `writeInspection`) |
-| Map trạng thái (`updateStateOf`, `updateStateFields`), điều kiện theo loại (`updateCloseCheck`), màu theo ngưỡng, xác minh mâu thuẫn (`verificationErrors`), theo dõi (`followUpWindow`, `followUpLabel`, `followUpDue`), kiểm tra form (`validateAlertUpdate`), cảnh báo không chặn (`updateWarnings`), ghi bản ghi (`alertUpdate`), nháp (`parseUpdateDraft`) | `src/features/alerts/update.ts` (+ `update.test.ts`) |
+| Map trạng thái (`updateStateOf`, `updateStateFields`), điều kiện theo loại (`updateCloseCheck`), màu theo ngưỡng, xác minh mâu thuẫn (`verificationErrors`), kiểm tra form (`validateAlertUpdate`), cảnh báo không chặn (`updateWarnings`), ghi bản ghi (`alertUpdate`), nháp (`parseUpdateDraft`) | `src/features/alerts/update.ts` |
+| Theo dõi sau xử lý (`followUpWindow`, `followUpLabel`, `followUpDue`, nhãn thời lượng) | `src/features/alerts/followUp.ts` |
 | Điều kiện áp suất | `canClosePressure` – `src/features/alerts/pressure.ts` (+ `pressure.test.ts`) |
 | Dòng thông số (tag + ngưỡng theo thiết bị), ngưỡng đóng, mục xác minh đã điền chữ, nháp, trạng thái đầu báo | `updateReadingRows`, `closeLimit`, `verificationItems`, `updateDraft`, `useTagReadings`, `useDetectorStatus` (`src/data/alertDetail.ts`) |
 | Cấu hình loại | `PRESSURE_UPDATE` / `GAS_UPDATE` / `FIRE_UPDATE` trong `src/mocks/alertKinds.ts`; `REGULATORS` (V-101 → PR-101); chữ thay `{device}` `{tag}` `{regulator}` `{safetyValve}` `{sensor}` `{smoke}` `{gas}` |

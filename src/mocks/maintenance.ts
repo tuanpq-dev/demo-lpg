@@ -108,7 +108,7 @@ export const STAFF: readonly StaffMember[] = [
     areas: [],
     skills: ['mechanical'],
   },
-  // Trước đây có trong danh sách "Người phụ trách chính" (PEOPLE) – nay là trưởng ca (manager) nên không còn chọn để phân công.
+  // Trưởng ca (manager): không có trong danh sách chọn để phân công, chỉ để tra tên trên bản ghi.
   {
     id: 's09',
     name: 'Hoàng Minh E',

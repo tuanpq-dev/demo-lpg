@@ -89,7 +89,7 @@ function AssetHeaderActions({
 }
 
 /**
- * Chi tiết tài sản (GĐ 5D) – `/map/:assetId`, theo ảnh "Bồn LPG V-101" (chưa có node Figma).
+ * Chi tiết tài sản – `/map/:assetId`, theo ảnh "Bồn LPG V-101" (chưa có node Figma).
  * 3 cột (≈ 1,5 : 2,85 : 272px theo ảnh) + hàng sự kiện. Số đo qua useLiveData (Mất tín hiệu khi stale); ba lớp
  * trong bồn tính từ 2 mức chiều cao + kích thước bồn (features/tank/layers).
  * Khối: mô hình 3D · AssetKpiSection · StorageCard · AssetAside · AssetEventsCard; tạo yêu cầu = `useAssetCreateRequest`.

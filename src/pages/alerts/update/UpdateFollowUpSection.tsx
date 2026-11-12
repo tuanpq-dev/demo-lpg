@@ -2,7 +2,8 @@ import { useId } from 'react';
 import { DatePicker, NumberField, Select, StatusOptionGroup, TextField, type StatusOption } from '@/components';
 import { STAFF } from '@/data/staff';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
-import { followUpChoiceLabel, type AlertUpdateInput } from '@/features/alerts/update';
+import { followUpChoiceLabel } from '@/features/alerts/followUp';
+import type { AlertUpdateInput } from '@/features/alerts/update';
 import { plantTimeOfDay } from '@/lib/plantTime';
 
 const OWNER_OPTIONS = STAFF.map((p) => ({ value: p.name, label: p.name }));

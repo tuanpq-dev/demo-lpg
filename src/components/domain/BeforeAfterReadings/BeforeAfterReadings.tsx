@@ -38,7 +38,7 @@ const toneWord: Record<ReadingTone, string> = { danger: ' (vượt mức nguy hi
 const fmt = (n: number, unit: string) => `${+n.toFixed(1)} ${unit}`;
 
 /**
- * "Thông số trước và sau xử lý" (modal cập nhật xử lý cảnh báo áp suất – ảnh 28/10/2026): nhãn (+ giới hạn) · ô Trước (số lúc
+ * "Thông số trước và sau xử lý" (modal cập nhật xử lý cảnh báo áp suất – ảnh): nhãn (+ giới hạn) · ô Trước (số lúc
  * cảnh báo, chỉ đọc, "–" khi không có) · → · ô Sau (số trực tiếp; sửa tay khi `editable`). Màu số theo ngưỡng do nơi gọi tính
  * (`tone`) – màu kèm chữ ẩn "(vượt ngưỡng…)" để không chỉ dựa vào màu. Dưới `sm` mỗi dòng xếp nhãn lên trên hai ô.
  */

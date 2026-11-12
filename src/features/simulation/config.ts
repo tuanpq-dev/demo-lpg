@@ -1,5 +1,5 @@
 /*
- * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-config/`) – logic THUẦN:
+ * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-config/`) – logic THUẦN:
  * tham số đầu vào, kiểm tra hợp lệ, số liệu tham chiếu, trạng thái sẵn sàng, gợi ý AI theo kịch bản, lịch sử của một kịch bản.
  * `now` truyền vào. Cấu hình chỉ đổi lớp mô phỏng – không đổi ngưỡng / cấu hình PLC thật.
  */

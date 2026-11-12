@@ -83,7 +83,7 @@ const EXTRA: Record<string, Extra> = {
 };
 
 const rows: AlertRecord[] = [
-  // ---- Báo cháy (ảnh drawer FIR-00018, 27/10/2026) – tiền tố FIR, chung danh sách. Giờ thật = 3 phút trước (`minutesAgo`).
+  // ---- Báo cháy (ảnh drawer FIR-00018) – tiền tố FIR, chung danh sách. Giờ thật = 3 phút trước (`minutesAgo`).
   // Tiêu đề ảnh "…tại khu máy hóa hơi" → tên khu chung "Trạm hóa hơi" (mã FZ-02 ở `AREA_CODES`); ngưỡng = cấu hình đầu báo 57 °C.
   {
     id: 'FIR-00018',
@@ -117,7 +117,7 @@ const rows: AlertRecord[] = [
     status: 'unacknowledged',
     assignee: null,
   },
-  // Thẻ ưu tiên ghi GS-01, bảng ghi GS-04 cho cùng ALT-00127 → GS-04 (bảng Figma + ảnh drawer gas, chốt 27/10/2026).
+  // Thẻ ưu tiên ghi GS-01, bảng ghi GS-04 cho cùng ALT-00127 → GS-04 (bảng Figma + ảnh drawer gas).
   // Giờ thật = 6 phút trước (`minutesAgo` ở EXTRA). MT-00127 "GS-01" không trỏ tới cảnh báo này (không có sourceAlertId) → giữ.
   {
     id: 'ALT-00127',

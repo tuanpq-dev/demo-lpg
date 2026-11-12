@@ -125,7 +125,7 @@ export function NavTabs({ items, value, onChange, label = 'Điều hướng chí
               className={cn(
                 'group flex h-[41px] shrink-0 items-center gap-2.5 rounded-md text-md font-semibold leading-normal transition-opacity',
                 active && 'text-primary',
-                // Chữ mục chưa chọn: fg-secondary/70 (5.6:1 trên header) – Figma line-divider + opacity 70 chỉ 2.43:1 (duyệt 26/10/2026).
+                // Chữ mục chưa chọn: fg-secondary/70 (5.6:1 trên header) – Figma line-divider + opacity 70 chỉ 2.43:1.
                 !active && !item.disabled && 'text-fg-secondary/70 hover:text-fg-secondary',
                 item.disabled && 'cursor-not-allowed text-fg-disabled opacity-70',
               )}

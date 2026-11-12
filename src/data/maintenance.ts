@@ -236,6 +236,6 @@ export function useMaintenance() {
 // Hỗ trợ form "Tạo yêu cầu bảo trì" (ảnh thiết kế)
 // ============================================================================
 
-// Tách file (10/11/2026) – điểm import chung vẫn là `@/data/maintenance`.
+// Điểm import chung của lớp dữ liệu bảo trì.
 export * from './maintenanceView';
 export * from './maintenanceForm';

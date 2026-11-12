@@ -1,7 +1,6 @@
 /**
  * MỘT danh sách khu vực dùng chung cho Cảnh báo, Bảo trì và Chi tiết tài sản (bộ lọc "Khu vực", form tạo yêu cầu).
- * Trước 27/10/2026 cảnh báo/bảo trì ghi "Bồn chứa" còn MT-00128 và trang V-101 ghi "Khu bồn LPG" cho cùng một khu → gộp
- * về "Khu bồn LPG" (ảnh drawer cảnh báo ALT-00128). Figma bảng cảnh báo 70:3032 vẫn ghi "Bồn chứa" – docs/figma-diffs.md.
+ * Khu bồn dùng tên "Khu bồn LPG" (ảnh drawer ALT-00128); Figma bảng cảnh báo 70:3032 ghi "Bồn chứa" – docs/figma-diffs.md.
  * TODO(backend): GET danh mục khu vực.
  */
 export const AREAS = ['Khu bồn LPG', 'Khu nạp xuất', 'Trạm hóa hơi', 'Khu Lọc', 'Khu bơm', 'Tuyến chính', 'Khu vực B'] as const;

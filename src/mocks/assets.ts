@@ -1,5 +1,5 @@
 /**
- * Mock trang chi tiết tài sản (GĐ 5D, ảnh "Bồn LPG V-101" người dùng gửi – chưa có node Figma).
+ * Mock trang chi tiết tài sản (ảnh "Bồn LPG V-101" người dùng gửi – chưa có node Figma).
  * NGUỒN DUY NHẤT về thông số tĩnh của tài sản: kích thước bồn, áp suất định mức thiết kế, ngưỡng cảnh báo, tag.
  * Cảnh 3D `scenes/v-101.json` (kích thước) và `scenes/khu-bon-lpg.json` (ngưỡng V-101) phải khớp – có test
  * (`assets.test.ts`). Số liệu đo lấy từ nguồn trực tiếp (`useLiveData`), không nằm ở đây.

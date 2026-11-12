@@ -1,7 +1,8 @@
 /** Cấu hình bảng /alerts: tab trạng thái, bộ lọc, cột. Tách từ AlertsPage. */
 import { Badge, type DataTableColumn, type FilterDef, type Severity, type TabItem } from '@/components';
 import { SEVERITY_OPTIONS, SHIFT_OPTIONS, alertBadgeStatus, tableValue, uniqueOptions, type AlertRecord } from '@/data/alerts';
-import { ALERT_HOLD_LABEL, FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel } from '@/features/alerts/update';
+import { FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel } from '@/features/alerts/followUp';
+import { ALERT_HOLD_LABEL } from '@/features/alerts/update';
 
 const readingTone: Record<Severity, string> = {
   critical: 'text-danger-text',
@@ -17,7 +18,7 @@ export function alertTabs(counts: Readonly<Record<string, number>>): TabItem[] {
     { id: 'all', label: 'Tất cả', count: counts.all },
     { id: 'unacknowledged', label: 'Chưa xác nhận', count: counts.unacknowledged, countTone: 'danger' },
     { id: 'in-progress', label: 'Đang xử lý', count: counts['in-progress'], countTone: 'info' },
-    // Ngoài Figma (28/10/2026): cảnh báo Đã xử lý chờ xác nhận đóng – docs/figma-diffs.md.
+    // Ngoài Figma: cảnh báo Đã xử lý chờ xác nhận đóng – docs/figma-diffs.md.
     { id: 'resolved', label: 'Chờ đóng', count: counts.resolved },
     { id: 'done', label: 'Đã hoàn thành', count: counts.done },
   ];

@@ -3,7 +3,7 @@
  * MỘT nguồn dữ liệu (`AlertRecord.guide`). Drawer hiện gọn (tick = Đạt), modal "Cập nhật xử lý" áp suất hiện chi tiết
  * (Chưa kiểm tra / Đạt / Có vấn đề / Không áp dụng + người, giờ, ghi chú).
  *
- * `guide[id]` có hai dạng: CŨ `{ at, by }` (tick trước 28/10/2026) = Đạt; MỚI có `status`. Mọi nơi đọc qua
+ * `guide[id]` có hai dạng: cũ `{ at, by }` (chỉ tick) = Đạt; mới có `status`. Mọi nơi đọc qua
  * `inspectionEntry` / `inspectionItems` ở đây – không tự kiểm tra dạng dữ liệu ở chỗ khác. Thuần, có test.
  */
 import type { AlertGuideEntry, AlertGuideProgress, InspectionStatus } from '@/features/alerts/types';

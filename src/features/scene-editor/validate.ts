@@ -90,7 +90,7 @@ function crossedEquipment(scene: SceneConfig, p: SceneConfig['pipes'][number], p
 }
 
 /**
- * Kiểm tra ống (3D-4), ngoài zod:
+ * Kiểm tra ống, ngoài zod:
  * - error: hai đầu đường đi trùng nhau (ống khép vòng/độ dài 0);
  * - warning: cổng trùng điểm kề (điểm trùng liên tiếp), đầu hở (không nối cổng và không nằm trên ống khác – nhánh
  *   chữ T hợp lệ), ống xuyên thiết bị (đoạn cắt hộp bao thu nhỏ 0.15 m của equipment không phải 2 đầu nối – cảnh báo nhẹ).

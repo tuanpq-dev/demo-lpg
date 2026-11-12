@@ -1,5 +1,5 @@
 /*
- * "Xác nhận đóng cảnh báo" (ảnh `scratch/figma-ref/alert-close-modal-*.png`, 28/10/2026) – thuần, có test (close.test.ts).
+ * "Xác nhận đóng cảnh báo" (ảnh `scratch/figma-ref/alert-close-modal-*.png`) – thuần, có test (close.test.ts).
  * Đã xử lý (resolved) → Hoàn thành (done) CHỈ qua `closeAlert`; "Tiếp tục theo dõi" (`continueMonitoring`) giữ Đã xử lý.
  *
  * 3 điều kiện DO HỆ THỐNG KIỂM TRA (UI tự tick khi đúng, không cho tick khi sai):
@@ -16,7 +16,7 @@ import { plantTimeOfDay } from '@/lib/plantTime';
 import type { DetectorAlarm, DetectorDevice } from './fire';
 import { formatMeasure } from './gauge';
 import type { LiveState } from './pressure';
-import { followUpUntil } from './update';
+import { followUpUntil } from './followUp';
 import { newNote, planBulk, withHistory, type AlertActionCtx } from './workflow';
 
 export type CloseConditionId = 'stable' | 'in-range' | 'no-related';

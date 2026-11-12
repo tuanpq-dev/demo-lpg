@@ -1,5 +1,5 @@
 /*
- * Ký xác nhận báo cáo ngày – bước Người kiểm tra (modal "Hoàn thành nhận xét & ký xác nhận", ảnh thiết kế 02/11/2026).
+ * Ký xác nhận báo cáo ngày – bước Người kiểm tra (modal "Hoàn thành nhận xét & ký xác nhận", ảnh thiết kế).
  * THUẦN, `now` qua tham số. Điều kiện ký tính từ bản ghi + số đo theo mốc + cảnh báo cảm biến + 2 thao tác trong modal
  * (đã xem trước biểu mẫu, đã tick xác nhận trách nhiệm). Đủ 8 điều kiện mới ký được.
  */

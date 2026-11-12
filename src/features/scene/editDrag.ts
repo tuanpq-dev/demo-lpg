@@ -33,7 +33,7 @@ export const round = (v: number, digits = 3) => +v.toFixed(digits) || 0;
 const DRAG_START_PX = 3;
 
 /**
- * Kéo object trên mặt sàn bằng pointer events (thay cho TransformControls translate – gizmo kéo theo mặt phẳng hướng
+ * Kéo object trên mặt sàn bằng pointer events (không dùng TransformControls translate: gizmo kéo theo mặt phẳng hướng
  * camera nên lẫn trục Y):
  * - pointerdown: offset = giao điểm sàn − (X, Z) của object được nắm;
  * - pointermove: tia qua con trỏ ∩ GROUND_PLANE → X/Z = giao điểm − offset (snap lưới 0.5 m, giữ Alt = tắt snap);

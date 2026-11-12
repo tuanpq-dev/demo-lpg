@@ -40,7 +40,7 @@ export const DETAILS: Record<string, () => Partial<MaintenanceRecord>> = {
       { id: 'h3', at: at2('08:35'), kind: 'priority', text: 'Cập nhật mức ưu tiên: Nghiêm trọng', actor: 'Hệ thống' },
     ],
   }),
-  // ---- Nghiệm thu (ảnh "Gửi yêu cầu nghiệm thu" / "Nghiệm thu yêu cầu bảo trì", 27/10/2026) ----
+  // ---- Nghiệm thu (ảnh "Gửi yêu cầu nghiệm thu" / "Nghiệm thu yêu cầu bảo trì") ----
   // MT-00109 (V-101): checklist 7/7 với tên mục theo ảnh modal Gửi → đủ điều kiện gửi khi điền tóm tắt/nguyên nhân/biện pháp/người
   // nghiệm thu; tiến độ báo cáo 80 % → gửi đặt 100 %.
   'MT-00109': () => ({

@@ -31,7 +31,7 @@ export const saveAlertAssignDraft = alertAssignDraft.save;
 export const loadAlertAssignDraft = alertAssignDraft.load;
 export const clearAlertAssignDraft = alertAssignDraft.clear;
 
-// Tách file (10/11/2026) – điểm import chung vẫn là `@/data/alertDetail`.
+// Điểm import chung của dữ liệu chi tiết cảnh báo.
 export * from './alertBase';
 export * from './alertLive';
 export * from './alertUpdateData';

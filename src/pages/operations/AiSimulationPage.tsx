@@ -40,7 +40,7 @@ const getId = (s: Scenario) => s.id;
 const PENDING_DESIGN = 'Chưa có màn này – chờ thiết kế.';
 
 /**
- * AI mô phỏng sự cố (ảnh thiết kế 02/11/2026 – `scratch/figma-ref/ai-sim/`; Figma không đọc được do hết lượt MCP / không có
+ * AI mô phỏng sự cố (ảnh thiết kế – `scratch/figma-ref/ai-sim/`; Figma không đọc được do hết lượt MCP / không có
  * quyền file): header (Lịch sử · Cấu hình · Tạo kịch bản) → banner "Chế độ mô phỏng" → 4 KPI → [lọc + danh sách kịch bản |
  * Góp ý AI · Dữ liệu PLC/SCADA · Lịch sử gần đây · Quy tắc an toàn]. Mọi số suy từ kịch bản + lịch sử chạy + tag trực tiếp.
  */

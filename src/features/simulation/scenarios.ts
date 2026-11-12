@@ -1,5 +1,5 @@
 /*
- * AI mô phỏng sự cố (ảnh thiết kế 02/11/2026, `scratch/figma-ref/ai-sim/`) – logic THUẦN: kịch bản, sức khoẻ dữ liệu PLC,
+ * AI mô phỏng sự cố (ảnh thiết kế, `scratch/figma-ref/ai-sim/`) – logic THUẦN: kịch bản, sức khoẻ dữ liệu PLC,
  * điều kiện chạy, "động cơ" mô phỏng (xác định), lịch sử, KPI, góp ý AI, lọc. `now` truyền vào.
  *
  * Mô phỏng CHỈ tính trên cấu hình kịch bản + dữ liệu tham chiếu – không gửi lệnh PLC, không đổi trạng thái thiết bị,

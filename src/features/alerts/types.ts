@@ -6,7 +6,7 @@ import type { Alert, AlertStatus as ApiAlertStatus } from '@demo-lpg/shared/aler
 import type { AlertKind } from './kinds';
 
 /**
- * Trạng thái xử lý của cảnh báo ở FE = hợp đồng (`unacknowledged` · `in-progress` · `done`) + `resolved` CHỈ FE (28/10/2026):
+ * Trạng thái xử lý của cảnh báo ở FE = hợp đồng (`unacknowledged` · `in-progress` · `done`) + `resolved` CHỈ FE:
  * Đã xử lý, chờ người có thẩm quyền xác nhận đóng (tab "Chờ đóng"). `done` = Hoàn thành (đã đóng).
  * TODO(backend): thêm `resolved` vào `ALERT_STATUSES` (packages/shared – repo backend) – docs/decisions.md.
  */
@@ -34,7 +34,7 @@ export type AlertHistoryEntry = { id: string; /** ISO */ at: string; kind: Alert
 /** Trạng thái một hạng mục kiểm tra (= bước hướng dẫn của drawer – MỘT danh sách theo loại). */
 export type InspectionStatus = 'pending' | 'pass' | 'issue' | 'na';
 /**
- * Một hạng mục đã ghi: DẠNG CŨ `{ at, by }` (tick ở drawer trước 28/10/2026) = Đạt; dạng mới có `status` (+ ghi chú).
+ * Một hạng mục đã ghi: dạng cũ `{ at, by }` (chỉ tick) = Đạt; dạng mới có `status` (+ ghi chú).
  * Chỉ đọc qua `inspectionEntry` / `inspectionItems` (features/alerts/inspection.ts) – không tự kiểm tra dạng ở nơi khác.
  */
 export type AlertGuideEntry = { at: string; by: string; status?: InspectionStatus; note?: string };
@@ -71,7 +71,7 @@ export type AlertFollowUp = {
 /**
  * Cảnh báo trong mock = hợp đồng API `Alert` (packages/shared/src/alerts.ts) nhưng thời điểm ghi TƯƠNG ĐỐI
  * (`daysAgo` + `time`) thay cho `occurredAt` để demo luôn "hôm nay".
- * Các trường sau `time` CHỈ CÓ Ở FE (drawer chi tiết cảnh báo, 27/10/2026) – chờ đưa vào hợp đồng API (docs/decisions.md);
+ * Các trường sau `time` CHỈ CÓ Ở FE (drawer chi tiết cảnh báo) – chờ đưa vào hợp đồng API (docs/decisions.md);
  * liệt kê ở `ALERT_FE_ONLY_FIELDS` để test hợp đồng bỏ qua.
  */
 export type AlertRecord = Omit<Alert, 'occurredAt' | 'status'> & {
@@ -105,7 +105,7 @@ export type AlertRecord = Omit<Alert, 'occurredAt' | 'status'> & {
    * `closedBy` = căn cứ đóng: đầu báo đã phục hồi (live) hoặc kiểm tra tại chỗ khi mất tín hiệu.
    */
   resolution?: { kind: 'handled' | 'false-alarm'; closedBy: 'live' | 'field' };
-  // ---- Modal "Cập nhật xử lý cảnh báo áp suất" (28/10/2026) ----
+  // ---- Modal "Cập nhật xử lý" ----
   phase?: AlertPhase;
   hold?: AlertHold;
   /** Số đo các dòng thông số LÚC cảnh báo (ảnh chụp lưu cùng cảnh báo; dòng chính = `value`) – cột "Trước". */
@@ -119,7 +119,7 @@ export type AlertRecord = Omit<Alert, 'occurredAt' | 'status'> & {
   actionTaken?: string;
   attachments?: readonly AlertAttachment[];
   followUp?: AlertFollowUp;
-  // ---- Đóng cảnh báo (modal "Xác nhận đóng cảnh báo", 28/10/2026) ----
+  // ---- Đóng cảnh báo (modal "Xác nhận đóng cảnh báo") ----
   /** Người đánh dấu Đã xử lý (status resolved) – mức Nghiêm trọng thì người đóng phải khác người này. Thiếu → người phụ trách. */
   resolvedBy?: string;
   /** ISO – lúc xác nhận đóng (Hoàn thành) + người đóng + ghi chú kết luận. */

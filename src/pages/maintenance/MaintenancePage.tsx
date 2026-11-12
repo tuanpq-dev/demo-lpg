@@ -99,8 +99,7 @@ export default function MaintenancePage() {
 
   const columns = maintenanceColumns({ now, canWrite, canReview, openDetail, openModal: (modal, id) => setExtra({ [modal]: id }) });
 
-  // Không còn "Chuyển nghiệm thu" hàng loạt: mỗi yêu cầu cần hồ sơ gửi nghiệm thu riêng (modal Gửi yêu cầu nghiệm thu).
-  // Phân công hàng loạt: CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt); cảnh báo gộp khi người được chọn sẽ thành Bận.
+  // Phân công hàng loạt (nghiệm thu luôn làm từng yêu cầu vì cần hồ sơ riêng): CHỈ dòng Chờ tiếp nhận (không đổi người hàng loạt); cảnh báo gộp khi người được chọn sẽ thành Bận.
   const runBulkAssign = (name: string) =>
     runAction(async () => {
       const { assigned, skippedBy, busyAfter, activeAfter } = await ops.bulkAssign(selection.selected, name, actor);
@@ -134,7 +133,7 @@ export default function MaintenancePage() {
     />
   );
 
-  // Link cũ `?open=<id>` (drawer đã bỏ) → trang chi tiết; bỏ `open` khỏi URL danh sách để "Quay lại" không mở lại.
+  // Link dạng `?open=<id>` → trang chi tiết; bỏ `open` khỏi URL danh sách để "Quay lại" không mở lại.
   const legacyOpen = search.get('open');
   if (legacyOpen) {
     const from = `/maintenance${listSearchOnly(location.search)}`;

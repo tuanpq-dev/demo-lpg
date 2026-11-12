@@ -135,7 +135,7 @@ function useSwapFocus(flag: boolean) {
 }
 
 /**
- * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi 03/11/2026 – `scratch/figma-ref/ai-sim-config/`; Figma không đọc được):
+ * Cấu hình kịch bản mô phỏng (ảnh người dùng gửi – `scratch/figma-ref/ai-sim-config/`; Figma không đọc được):
  * header (Quay lại · Lưu cấu hình · Bắt đầu chạy) → banner "Chế độ mô phỏng" → [Thông tin kịch bản · Tham số đầu vào · Dữ liệu
  * PLC/SCADA tham chiếu · Kết quả mong đợi | Tóm tắt cấu hình · Trạng thái sẵn sàng · Gợi ý từ AI · Quy tắc an toàn · Lịch sử
  * kịch bản này]. Tóm tắt / trạng thái theo cấu hình ĐANG SỬA. "Bắt đầu chạy" lưu thay đổi (nếu có) rồi mở lượt chạy theo thời gian
