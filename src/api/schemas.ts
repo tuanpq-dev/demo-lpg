@@ -4,12 +4,12 @@
  * `VITE_AUTH=off` không bao giờ tải zod; có backend thì nạp song song với request đầu tiên.
  * Dùng `zod/mini` (API dạng hàm, tree-shake được). KHÔNG import file này (giá trị) từ code tải đầu – chỉ `import type`.
  */
+import './zodJitless';
 import { z } from 'zod/mini';
 import { ROLES } from '@/features/auth/permissions';
 
-// CSP của bản deploy không cho `eval` / `new Function` (script-src 'self') – tắt bộ biên dịch JIT của zod để nó không thử
-// (thử là trình duyệt ghi lỗi vi phạm CSP vào console). Chậm hơn không đáng kể với response cỡ app này.
-z.config({ jitless: true });
+export * from './alertSchemas';
+export * from './maintenanceSchemas';
 
 export const ApiErrorBodySchema = z.object({
   error: z.object({

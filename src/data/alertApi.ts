@@ -1,7 +1,8 @@
 /*
  * Đọc cảnh báo theo HÌNH DẠNG API (máy chủ lọc / phân trang / đếm) – trang không tải toàn bộ danh sách.
  * Mỗi `fetch*` = một endpoint; hôm nay gọi mock server tải lười (`mockServer/alerts.ts`), khi có backend thay thân hàm bằng
- * `api.request(…, { schema, signal })` (hợp đồng: docs/decisions.md "Truy vấn phía máy chủ"). Hook đọc qua `useQuery` với
+ * `api.request(…, { schema, signal })` – `schema` đã khai sẵn ở `fromMock` (src/api/alertSchemas.ts; hợp đồng: docs/decisions.md
+ * "Truy vấn phía máy chủ"). Hook đọc qua `useQuery` với
  * `revision` = phiên bản store: thao tác ghi (xác nhận, phân công…) xong → mọi truy vấn đang hiện tải lại NGẦM.
  */
 import { useMemo } from 'react';
@@ -11,30 +12,75 @@ import type { AlertListQuery, AlertListResult, AlertRange, AlertSummary } from '
 import type { AlertRecord } from '@/features/alerts/types';
 import { useQuery } from '@/lib/useQuery';
 import { alertStore } from './alertStore';
+import { fromMock } from './contract';
 
 export type { AlertListQuery, AlertListResult, AlertSummary };
 
 const server = () => import('./mockServer/alerts');
 
 /** TODO(backend): GET /alerts?tab&q&severity&area&device&shift&range&page&size → AlertListResult. */
-export const fetchAlertList = (q: AlertListQuery, _signal?: AbortSignal) => server().then((s) => s.list(q));
+export const fetchAlertList = (q: AlertListQuery, _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts',
+    (s) => s.AlertListResultSchema,
+    server().then((s) => s.list(q)),
+  );
 /** TODO(backend): GET /alerts/summary?range → { counts, priority }. */
-export const fetchAlertSummary = (range: AlertRange, _signal?: AbortSignal) => server().then((s) => s.summary(range));
+export const fetchAlertSummary = (range: AlertRange, _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts/summary',
+    (s) => s.AlertSummarySchema,
+    server().then((s) => s.summary(range)),
+  );
 /** TODO(backend): GET /alerts/:id (404 → null). */
-export const fetchAlert = (id: string, _signal?: AbortSignal) => server().then((s) => s.byId(id));
+export const fetchAlert = (id: string, _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts/:id',
+    (s) => s.AlertOrNullSchema,
+    server().then((s) => s.byId(id)),
+  );
 /** TODO(backend): GET /alerts?ids=… */
-export const fetchAlertsByIds = (ids: readonly string[], _signal?: AbortSignal) => server().then((s) => s.byIds(ids));
+export const fetchAlertsByIds = (ids: readonly string[], _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts?ids',
+    (s) => s.AlertArraySchema,
+    server().then((s) => s.byIds(ids)),
+  );
 /** TODO(backend): GET /alerts?devices=…&kinds=… */
 export const fetchAlertsByDevices = (devices: readonly string[], kinds: readonly string[] = [], _signal?: AbortSignal) =>
-  server().then((s) => s.byDevices(devices, kinds));
+  fromMock(
+    'GET /alerts?devices',
+    (s) => s.AlertArraySchema,
+    server().then((s) => s.byDevices(devices, kinds)),
+  );
 /** TODO(backend): GET /alerts/related-open?ids=… */
-export const fetchRelatedOpen = (ids: readonly string[], _signal?: AbortSignal) => server().then((s) => s.relatedOpen(ids));
+export const fetchRelatedOpen = (ids: readonly string[], _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts/related-open',
+    (s) => s.RelatedOpenSchema,
+    server().then((s) => s.relatedOpen(ids)),
+  );
 /** TODO(backend): GET /staff/alert-loads */
-export const fetchAlertLoads = (_signal?: AbortSignal) => server().then((s) => s.loads());
+export const fetchAlertLoads = (_signal?: AbortSignal) =>
+  fromMock(
+    'GET /staff/alert-loads',
+    (s) => s.AlertLoadsSchema,
+    server().then((s) => s.loads()),
+  );
 /** TODO(backend): GET /alerts/counts (+ đẩy qua WebSocket khi có cảnh báo mới). */
-export const fetchAlertCounts = (_signal?: AbortSignal) => server().then((s) => s.counts());
+export const fetchAlertCounts = (_signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts/counts',
+    (s) => s.AlertUnackCountSchema,
+    server().then((s) => s.counts()),
+  );
 /** TODO(backend): GET /alerts?from&to */
-export const fetchRecentAlerts = (maxDaysAgo: number, _signal?: AbortSignal) => server().then((s) => s.recent(maxDaysAgo));
+export const fetchRecentAlerts = (maxDaysAgo: number, _signal?: AbortSignal) =>
+  fromMock(
+    'GET /alerts?from',
+    (s) => s.AlertArraySchema,
+    server().then((s) => s.recent(maxDaysAgo)),
+  );
 
 /** Phiên bản dữ liệu cảnh báo (đổi khi có thao tác ghi) – `revision` cho mọi truy vấn cảnh báo. */
 export const useAlertRevision = () => alertStore.useVersion();

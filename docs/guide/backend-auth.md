@@ -105,8 +105,8 @@ sequenceDiagram
 
 ### 9f. Gọi endpoint mới có xác thực
 
-1. Thêm schema zod + type vào `src/api/types.ts` (đúng hợp đồng backend).
-2. Trong `src/data/<màn>.ts`: `api.request('/alerts', { schema: AlertListSchema })` (`import { api } from '@/api/client'`) – tự gắn Bearer, tự refresh khi 401, lỗi là `ApiError`.
+1. Thêm schema zod (`zod/mini`) vào `src/api/<miền>Schemas.ts` (re-export ở `schemas.ts`, import `./zodJitless` đầu file) + dòng kiểm lúc biên dịch `export type _X = Assert<Matches<typeof XSchema, X>>` (`schemaCheck.ts`) để schema khớp kiểu FE; enum dùng `allOf<Union>()([...])`.
+2. Trong `src/data/<miền>Api.ts`: đổi `fromMock('GET /alerts', (s) => s.AlertListResultSchema, server()…)` thành `api.request('/alerts?…', { schema: (s) => s.AlertListResultSchema, signal })` (`import { api } from '@/api/client'`) – giữ nguyên schema; tự gắn Bearer, tự refresh khi 401, lỗi là `ApiError`. Cảnh báo + Bảo trì đã có đủ schema cho mọi `fetch*`.
 3. Ẩn nút theo quyền bằng `useCan('<quyền>')` (chỉ UX – backend kiểm tra lại).
 4. Test với `mockFetch` (`src/api/test-utils.ts`), mẫu: `src/api/client.test.ts`.
 
