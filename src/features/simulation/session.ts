@@ -1,5 +1,6 @@
 /** Phiên mô phỏng: giai đoạn, thời gian chạy, mã phiên, tạo phiên. Tách từ monitor.ts. */
 import { plantDayKey } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 import { defaultRunNote, startValue } from './config';
 import { runBlocker, simulateScenario, type RunBlocker, type Scenario, type SimulationRun, type TagHealth } from './scenarios';
 import { type LiveMap, type SimulationSession, clamp, referenceSnapshot } from './monitorCore';
@@ -112,7 +113,7 @@ export function createSession(
 /** "06:32" (phút:giây kể từ lúc bắt đầu). */
 export function clockText(sec: number): string {
   const s = Math.max(0, Math.floor(sec));
-  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  return `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
 }
 
 /** Bản ghi lịch sử khi lượt kết thúc: kết quả như `simulateScenario` (theo tham số của lượt); dừng sớm → ghi chú thêm giờ dừng. */

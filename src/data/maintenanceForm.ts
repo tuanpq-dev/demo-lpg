@@ -1,5 +1,6 @@
 /** Form tạo yêu cầu bảo trì: danh mục thiết bị, phòng ban/ca, gợi ý AI, mẫu checklist, nháp. Tách từ maintenance.ts. */
 import type { SelectOption } from '@/components';
+import { parsePlantDateTime } from '@/lib/plantTime';
 import type { AlertRecord } from '@/features/alerts/types';
 import { CHECKLIST_TEMPLATES } from '@/mocks/maintenance';
 import { type DEPARTMENTS, SHIFTS } from '@/features/staff/org';
@@ -46,20 +47,11 @@ export function shiftFor(dateTime: string): ShiftId {
   return SHIFTS.find((s) => (s.from < s.to ? h >= s.from && h < s.to : h >= s.from || h < s.to))?.value ?? 'shift-1';
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
-/** "yyyy-mm-ddTHH:mm" cách bây giờ `hours` giờ, làm tròn lên giờ chẵn. */
-export function localDateTime(hoursFromNow = 0, base = new Date()) {
-  const d = new Date(base);
-  d.setMinutes(0, 0, 0);
-  d.setHours(d.getHours() + 1 + hoursFromNow);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`;
-}
-
-/** Số giờ giữa hai mốc "yyyy-mm-ddTHH:mm" (làm tròn 0.5). */
+/** Số giờ giữa hai mốc "yyyy-mm-ddTHH:mm" giờ nhà máy (làm tròn 0.5); thiếu / sai định dạng → null. */
 export function durationHours(start?: string, end?: string) {
-  if (!start || !end) return null;
-  const h = (new Date(end).getTime() - new Date(start).getTime()) / 3_600_000;
-  return Number.isFinite(h) ? Math.round(h * 2) / 2 : null;
+  const a = start ? parsePlantDateTime(start) : null;
+  const b = end ? parsePlantDateTime(end) : null;
+  return a && b ? Math.round(((b.getTime() - a.getTime()) / 3_600_000) * 2) / 2 : null;
 }
 
 export type AiSuggestion = { assessment: string; checks: string[] };

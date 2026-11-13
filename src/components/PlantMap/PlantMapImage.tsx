@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import type { SceneConfig, Vec3 } from '@/features/scene';
 import { cn } from '@/lib/cn';
-import { useElementSize } from '@/lib/useElementSize';
-import { useFullscreen } from '@/lib/useFullscreen';
+import { useElementSize } from '@/hooks/useElementSize';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { ResponsiveImage } from '../ResponsiveImage';
 import { MapMarker } from './MapMarker';
 import { MapShell } from './MapShell';

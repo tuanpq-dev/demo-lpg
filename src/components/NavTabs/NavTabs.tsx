@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { useDismiss } from '@/lib/useDismiss';
+import { useDismiss } from '@/hooks/useDismiss';
 import type { IconName } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
-import { useRovingFocus } from '@/lib/useRovingFocus';
+import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { Badge } from '../Badge';
 import { Icon, MenuIcon } from '../Icon';
 

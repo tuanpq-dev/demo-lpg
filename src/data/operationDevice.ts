@@ -10,7 +10,7 @@ import { alertBadgeStatus } from './alerts';
 import { useAlertsByDevices } from './alertApi';
 import { dayTimeLabel, type MaintenanceSummary } from './assetDetail';
 import { useLiveData } from './live';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 
 export type {
   DeviceParam,

@@ -1,7 +1,7 @@
 /** State dẫn xuất của SceneViewer: cảnh đã áp bản xem trước khi kéo, ẩn/khoá/chọn, trạng thái + nhãn theo dữ liệu trực tiếp. */
 import { useMemo, useRef, useState } from 'react';
 import { freshNumber } from '@/features/live/signal';
-import { useReducedMotion } from '@/lib/reducedMotion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ASSETS } from './assets/registry';
 import type { SceneEditState } from './EditTools';
 import { objectStatus } from './fields';

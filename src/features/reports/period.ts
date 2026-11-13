@@ -3,6 +3,7 @@
  * Ngày dạng "yyyy-mm-dd" theo giờ nhà máy (xem `lib/plantTime`); không phụ thuộc múi giờ máy người xem.
  */
 import { dayNumber, formatDayVi } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 
 export const REPORT_PERIODS = ['daily', 'monthly', 'quarterly', 'yearly'] as const;
 export type ReportPeriod = (typeof REPORT_PERIODS)[number];
@@ -35,8 +36,6 @@ export const PERIOD_CONFIG: Record<ReportPeriod, PeriodConfig> = {
 
 /** Mốc kiểm tra của báo cáo ngày (ảnh: "6 mốc kiểm tra: 08:00 … 18:00"). */
 export const DAILY_CHECKPOINTS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'] as const;
-
-const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /** Số ngày của tháng (m: 1–12). */
 export function daysInMonth(y: number, m: number): number {

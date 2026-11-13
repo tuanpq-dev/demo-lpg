@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { unitSuffix } from '@/lib/number';
 import { Card, type CardTone } from '../Card';
 import { InfoIcon, SignalLostIcon } from '../Icon';
 import { ProgressBar, type ProgressTone } from '../ProgressBar';
@@ -138,9 +139,6 @@ function SignalLostText({ size, className }: { size: number; className: string }
   );
 }
 
-/** Đơn vị dính số ("25°C", "80%") hay cách một khoảng ("3.2 bar"). */
-const withUnit = (unit?: string) => (unit ? (unit.startsWith('°') || unit === '%' ? unit : ` ${unit}`) : null);
-
 type StatProps = Pick<KpiCardProps, 'label' | 'hint' | 'value' | 'unit' | 'tone' | 'signalLost' | 'footnote' | 'emphasis' | 'align' | 'className'>;
 
 /** size="sm" valueSize="lg": ô thông số lớn (drawer chi tiết cảnh báo). */
@@ -187,7 +185,7 @@ function KpiStat({ label, hint, value, unit, tone = 'neutral', signalLost, footn
           )}
         >
           {value}
-          {withUnit(unit)}
+          {unitSuffix(unit)}
         </span>
       )}
       {footnote && <span className="text-sm text-fg-secondary">{footnote}</span>}

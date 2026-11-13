@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useFilterParams } from '@/app/useTableFilters';
 import { useReportPage, type ReportListQuery } from '@/data/reportApi';
 import { reportParams, type ReportTab } from '@/features/reports';
-import { useDebouncedValue } from '@/lib/useDebouncedValue';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 /** Ô tìm kiếm: chỉ gửi truy vấn khi ngừng gõ (URL vẫn cập nhật ngay). */
 const SEARCH_DEBOUNCE_MS = 300;

@@ -5,6 +5,7 @@
  * (Ảnh ghi tổng 186 / ngày 176 / đã ký 168 – không khớp nhau; ở đây tính từ danh sách → 184 / 175 / 166. docs/figma-diffs.md.)
  */
 import { dayNumber, plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 import {
   DAILY_CHECKPOINTS,
   dayFromNumber,
@@ -51,7 +52,6 @@ const SHIFT_REMARKS = [
   'Đã kiểm tra đầu dò khí khu nạp xuất, không phát hiện rò rỉ. Bàn giao ca đầy đủ.',
 ] as const;
 
-const pad2 = (n: number) => String(n).padStart(2, '0');
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 /** Mốc xoay vòng người: 24/06/2026 → Nguyễn Văn A (như ảnh). */
 const ROTATION_BASE = dayNumber('2026-06-24');

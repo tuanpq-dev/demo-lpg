@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { AssignNotices, Button, Modal, DiscardConfirmButtons } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
 import { stateLabel, suggestsSupport, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { UpdateCauseFields } from './update/UpdateCauseFields';
 import { UpdateFilesSection } from './update/UpdateFilesSection';
 import { UpdateFollowUpSection } from './update/UpdateFollowUpSection';

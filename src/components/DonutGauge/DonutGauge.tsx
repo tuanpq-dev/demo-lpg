@@ -1,6 +1,7 @@
 import { useState, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { useTokenColors, type ColorToken } from '@/lib/tokens';
+import { useTokenColors } from '@/hooks/useTokenColors';
+import type { ColorToken } from '@/lib/tokens';
 import { ChartTooltip } from '../ChartCard';
 import { annularSector, donutAngles } from '../TrendChart/geometry';
 import { StatusDot, type DotStatus } from '../StatusDot';

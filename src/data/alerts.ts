@@ -34,7 +34,7 @@ import {
 } from '@/features/alerts/close';
 import type { FollowUpConfig } from '@/features/alerts/kinds';
 import { appNow } from '@/lib/demoNow';
-import { withUnit } from '@/features/alerts/gauge';
+import { withUnit } from '@/lib/number';
 import type { AlertRecord, AlertStatus } from '@/features/alerts/types';
 import type { AlertCounts, AlertFilters, AlertRange, AlertShift, AlertTab } from '@/features/alerts/query';
 import type { KpiMock } from '@/mocks/types';

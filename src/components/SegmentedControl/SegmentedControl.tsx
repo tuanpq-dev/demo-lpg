@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn';
-import { useRovingFocus } from '@/lib/useRovingFocus';
+import { useRovingFocus } from '@/hooks/useRovingFocus';
 
 export type SegmentedTone = 'neutral' | 'danger' | 'warning' | 'info';
 

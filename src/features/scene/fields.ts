@@ -1,6 +1,6 @@
 import { freshValue, SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { Binding, LiveData, ObjectStatus, SceneObject, TagValue, Thresholds } from './types';
-import { formatNumber } from '@/lib/number';
+import { formatNumber, withUnit } from '@/lib/number';
 
 type StateMeta = { label: string; status: ObjectStatus };
 
@@ -61,7 +61,7 @@ export function formatField(field: string, tv: TagValue | undefined, now: number
   if (typeof value === 'string') return meta?.states?.[value]?.label ?? value;
   const d = meta?.digits ?? 1;
   const n = formatNumber(value, d);
-  return meta?.unit ? `${n} ${meta.unit}` : n;
+  return withUnit(n, meta?.unit);
 }
 
 /** Trạng thái theo ngưỡng; mất tín hiệu → offline. */

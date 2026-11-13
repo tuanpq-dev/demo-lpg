@@ -11,7 +11,7 @@ import { isActivePhase, monitorSnapshot, sessionOf, type SimulationSession } fro
 import { RUN_RESULT_LABEL, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { MonitorHeaderMeta, MonitorKpis, MonitorTimelineCard, PhaseBadge, SimAlertsCard, SimulationTrendCard } from './simulation/MonitorCards';
 import { MonitorStatusCard, MonitorSuggestionCard, ReferenceSnapshotCard } from './simulation/MonitorSideCards';
 import { BackLink, ScenarioNotFound, referenceHealth, useSuggestionConfidence } from './simulation/shared';

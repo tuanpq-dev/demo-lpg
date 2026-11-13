@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { settleSnapshot, startSnapshot, viewOf, type Snapshot } from './queryState';
-import { combineQueries } from './useQuery';
+import { combineQueries, settleSnapshot, startSnapshot, viewOf, type Snapshot } from './queryState';
 
 const ok = (data: number, key = 'a', attempt = 0): Snapshot<number> => ({ status: 'success', data, key, attempt });
 const loading = (key = 'a', attempt = 0): Snapshot<number> => ({ status: 'loading', key, attempt });

@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import type { StaffWorkload } from '@/features/maintenance/assign';
 import type { MaintenanceListQuery, MaintenanceListResult, MaintenanceSummary } from '@/features/maintenance/query';
 import type { MaintenanceRecord } from '@/features/maintenance/types';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 import { fromMock } from './contract';
 import { maintenanceStore } from './maintenanceStore';
 import type { DeviceDirectoryEntry } from './mockServer/maintenance';

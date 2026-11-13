@@ -6,7 +6,7 @@ import type { SceneViewerHandle } from '@/features/scene';
 import { addView } from '@/features/scene-editor/ops';
 import { useDirty, useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { checkScene } from '@/features/scene-editor/validate';
-import { useNotice } from '@/lib/useNotice';
+import { useNotice } from '@/hooks/useNotice';
 import { AssetLibrary } from './AssetLibrary';
 import { EditorDialogs, type EditorDialog } from './EditorDialogs';
 import { EditorFileBar } from './EditorFileBar';
@@ -41,7 +41,7 @@ export default function EditorPage() {
   const [panel, setPanel] = useState<EditorPanelId>('props');
   const issues = useMemo(() => checkScene(scene, SENSOR_TAGS), [scene]);
   const errorCount = issues.filter((i) => i.severity === 'error').length;
-  const { notice, flash } = useNotice();
+  const { notice, show: flash } = useNotice();
   const file = useSceneFile({ setDialog, flash });
 
   useEditorShortcuts({ actions, save: file.save, flash });
@@ -98,7 +98,7 @@ export default function EditorPage() {
             errorCount={errorCount}
             warningCount={issues.length - errorCount}
             source={source}
-            notice={notice}
+            notice={notice.text}
             onShowIssues={() => setPanel('issues')}
           />
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { useDismiss } from '@/lib/useDismiss';
+import { useDismiss } from '@/hooks/useDismiss';
 import { cn } from '@/lib/cn';
 import { Avatar } from '../Avatar';
 import { CloseIcon } from '../Icon';

@@ -1,6 +1,7 @@
 import { Button, Icon, Select, StatusDot, type SelectOption } from '@/components';
 import { useLiveStatus } from '@/data/live';
-import { formatDateTime, useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
+import { formatPlantClock } from '@/lib/plantTime';
 
 /** Các nút dùng lại trong slot actions của PageHeader (Figma 70:2882, 70:4037, 53:124). */
 
@@ -80,7 +81,7 @@ export function ClockButton() {
   const now = useNow();
   return (
     <Button icon={<Icon name="clock" />} className="tabular-nums">
-      {formatDateTime(now)}
+      {formatPlantClock(now)}
     </Button>
   );
 }

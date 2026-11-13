@@ -7,6 +7,7 @@
  * Hạn có giờ thật 23:59 vẫn là 23:59:00 – phân biệt bằng cờ, không so chuỗi.
  */
 import { daysFromToday, parsePlantDateTime } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 
 export type DeadlineCountdown = {
   /** Hạn − now (ms); âm = đã quá hạn. */
@@ -18,8 +19,6 @@ export type DeadlineCountdown = {
   speech: string;
 };
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
 /** Độ dài → "HH:MM:SS" (≥ 24 giờ: "N ngày HH:MM:SS"). Làm tròn xuống tới giây. */
 function formatClock(ms: number): string {
   const total = Math.floor(Math.abs(ms) / 1000);
@@ -27,7 +26,7 @@ function formatClock(ms: number): string {
   const h = Math.floor((total % 86_400) / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  const hms = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  const hms = `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
   return days ? `${days} ngày ${hms}` : hms;
 }
 

@@ -7,6 +7,7 @@
  * Kịch bản (số ngày lùi từ hôm nay): lùi 3 ngày → cảm biến áp suất bồn MẤT KẾT NỐI (không có số IoT, phải nhập đồng hồ cơ).
  */
 import { tagSeed } from '@/features/operations/device';
+import { pad2 } from '@/lib/number';
 import { PLC_REPORT_TAGS, VAPORIZER_AREA_TAGS } from '@/features/live/tags';
 import {
   DAILY_CHECKPOINTS,
@@ -210,7 +211,7 @@ export function buildCheckpointSnapshot(report: Pick<ReportRecord, 'periodKey'>,
       scada: true,
       mode: 'SCADA Remote',
       estop: false,
-      updatedAt: `${key.slice(0, 2)}:0${3 + (seed % 5)}:${String(10 + ((seed * 7) % 50)).padStart(2, '0')}`,
+      updatedAt: `${key.slice(0, 2)}:0${3 + (seed % 5)}:${pad2(10 + ((seed * 7) % 50))}`,
       delaySec: 5 + ((seed * 3) % 20),
     },
   };

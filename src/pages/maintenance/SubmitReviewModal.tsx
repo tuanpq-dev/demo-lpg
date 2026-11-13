@@ -7,8 +7,8 @@ import { defaultProposedAt, snapshotReading, submitMissing, type SubmitForm, typ
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { plantDateTimeKey } from '@/lib/plantTime';
-import { useNow } from '@/lib/useNow';
-import { useFormModal } from '@/lib/useFormModal';
+import { useNow } from '@/hooks/useNow';
+import { useFormModal } from '@/hooks/useFormModal';
 import { ChecklistSection, DeviceConditionSection, SubmitSummaryCard } from './submit/SubmitParts';
 
 export type SubmitReviewModalProps = {

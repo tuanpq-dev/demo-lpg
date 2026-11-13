@@ -5,7 +5,8 @@ import { resolveAssetId } from '@/data/assetDetail';
 import { useRelatedDevice } from '@/data/maintenanceDetail';
 import { alertGauge, alertMetric, alertPlaybook, metricText, useAlertLive } from '@/data/alertDetail';
 import type { AlertRecord } from '@/data/alerts';
-import { formatGaugeNumber, gaugeValueText, withUnit } from '@/features/alerts/gauge';
+import { formatGaugeNumber, gaugeValueText } from '@/features/alerts/gauge';
+import { withUnit } from '@/lib/number';
 import { Pair, Section } from '../drawerParts';
 
 /**
@@ -110,7 +111,7 @@ function LiveValue({ r, unit, digits = 1 }: { r: { state: string; value?: number
       </span>
     );
   if (r.value === undefined) return <span className="text-fg">—</span>;
-  return <span className={readingClass(r.status)}>{`${r.value.toFixed(digits)}${unit.startsWith('°') ? unit : ` ${unit}`}`}</span>;
+  return <span className={readingClass(r.status)}>{withUnit(r.value.toFixed(digits), unit)}</span>;
 }
 
 function RelatedDevice({ device }: { device: string }) {

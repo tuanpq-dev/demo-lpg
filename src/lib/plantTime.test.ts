@@ -1,5 +1,18 @@
 import { describe, expect, test } from 'vitest';
-import { dayNumber, daysFromToday, formatDayVi, parsePlantDateTime, plantDateTimeKey, plantDayKey, plantMonthKey, plantTimeOfDay } from './plantTime';
+import {
+  dayNumber,
+  daysFromToday,
+  formatDayVi,
+  formatPlantClock,
+  formatPlantDateTime,
+  formatPlantTimeDay,
+  parsePlantDateTime,
+  plantDateTimeKey,
+  plantDayKey,
+  plantHourFromNow,
+  plantMonthKey,
+  plantTimeOfDay,
+} from './plantTime';
 
 describe('plantTime – ngày theo giờ nhà máy (Asia/Bangkok, UTC+7)', () => {
   test('qua nửa đêm Bangkok trước nửa đêm UTC', () => {
@@ -47,5 +60,27 @@ describe('plantTimeOfDay / formatDayVi', () => {
   test('dd/mm/yyyy, bỏ phần giờ', () => {
     expect(formatDayVi('2026-10-12')).toBe('12/10/2026');
     expect(formatDayVi('2026-01-05T08:00')).toBe('05/01/2026');
+  });
+});
+
+describe('plantHourFromNow – giá trị mặc định ô thời gian (giờ chẵn kế tiếp, giờ nhà máy)', () => {
+  test('làm tròn lên giờ chẵn tới, theo giờ nhà máy chứ không theo UTC', () => {
+    expect(plantHourFromNow(new Date('2026-10-27T03:45:22Z'))).toBe('2026-10-27T11:00'); // 10:45 ICT
+    expect(plantHourFromNow(new Date('2026-10-27T03:00:00Z'))).toBe('2026-10-27T11:00'); // đúng 10:00 → 11:00
+  });
+  test('qua nửa đêm nhà máy khi ngày UTC còn là hôm trước', () => {
+    expect(plantHourFromNow(new Date('2026-10-27T16:30:00Z'))).toBe('2026-10-28T00:00'); // 23:30 ICT
+    expect(plantHourFromNow(new Date('2026-10-27T16:30:00Z'), 24)).toBe('2026-10-29T00:00');
+    expect(plantHourFromNow(new Date('2026-10-27T16:30:00Z'), -1)).toBe('2026-10-27T23:00');
+  });
+});
+
+describe('định dạng hiển thị giờ nhà máy', () => {
+  test('đồng hồ header, mốc ngắn, chuỗi ngày giờ', () => {
+    const t = new Date('2026-10-27T17:05:09Z'); // 00:05:09 ICT ngày 28
+    expect(formatPlantClock(t)).toBe('28/10/2026 ; 00:05:09');
+    expect(formatPlantTimeDay(t)).toBe('00:05 28/10');
+    expect(formatPlantDateTime('2026-10-26T08:30')).toBe('26/10/2026 08:30');
+    expect(formatPlantDateTime('2026-10-26')).toBe('26/10/2026');
   });
 });

@@ -11,6 +11,7 @@ import type {
   TrendPoint,
 } from '@/components';
 import { SYSTEM_TAGS, V101_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
+import { pad2 } from '@/lib/number';
 import type { KpiMock } from './types';
 
 export const overviewKpis: KpiMock[] = [
@@ -95,7 +96,7 @@ export const recentEvents: TimelineEvent[] = [
 
 // ---------------- Chart (53:319) ----------------
 
-const hours = Array.from({ length: 25 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
+const hours = Array.from({ length: 25 }, (_, h) => `${pad2(h)}:00`);
 
 /** Xu hướng tồn kho 24h – Figma vẽ gần như phẳng ở ~60% chiều cao (53:325 cao 144/240). */
 export const inventoryTrend: TrendPoint[] = hours.map((label, h) => ({

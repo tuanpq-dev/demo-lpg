@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from 'react';
+import { withUnit } from '@/lib/number';
 import {
   Button,
   DiscardConfirmButtons,
@@ -30,7 +31,7 @@ import {
   type ReviewResult,
 } from '@/features/maintenance/review';
 import { cn } from '@/lib/cn';
-import { useFormModal } from '@/lib/useFormModal';
+import { useFormModal } from '@/hooks/useFormModal';
 
 const RESULT_TONE = { pass: 'primary', 'needs-info': 'warning', fail: 'danger' } as const;
 
@@ -45,7 +46,7 @@ const liveText = (rd: Reading | undefined, unit: string) =>
       ? 'Hiện tại: mất tín hiệu'
       : rd.value === undefined
         ? 'Hiện tại: —'
-        : `Hiện tại: ${rd.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}`;
+        : `Hiện tại: ${withUnit(rd.value.toFixed(1), unit)}`;
 
 /** Ô thông số: số đã CHỤP lúc gửi + ngưỡng (cấu hình tag) + số trực tiếp hiện tại nhỏ bên dưới. */
 function ReadingCard({ label, unit, snap, now }: { label: string; unit: string; snap: ReadingSnapshot | undefined; now: Reading | undefined }) {

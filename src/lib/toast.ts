@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from 'react';
 import { announce } from './announce';
 
 /*
@@ -59,15 +58,12 @@ export const toastError = (text: string) => {
   showToast(text, 'error');
 };
 
-const subscribe = (l: () => void) => {
+/** Đăng ký nghe đổi danh sách toast (cho `useToasts`); trả hàm huỷ. */
+export const subscribeToasts = (l: () => void) => {
   listeners.add(l);
   return () => {
     listeners.delete(l);
   };
 };
-const read = () => items;
-
-/** Danh sách toast đang hiện. */
-export function useToasts(): readonly ToastItem[] {
-  return useSyncExternalStore(subscribe, read, read);
-}
+/** Danh sách toast đang hiện (ảnh chụp bất biến). */
+export const readToasts = () => items;

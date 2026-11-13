@@ -2,9 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { Button, Modal, TextField, TrashIcon } from '@/components';
 import { isSampleScene, useSceneList } from '@/data/scene';
 import type { EditorDraft } from '@/features/scene-editor/draft';
+import { formatPlantTimeDay } from '@/lib/plantTime';
 
-const fmtTime = (iso: string) =>
-  iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '';
+const fmtTime = (iso: string) => (iso ? formatPlantTimeDay(new Date(iso)) : '');
 
 /** Xác nhận đơn giản (rời trang khi chưa lưu, bỏ thay đổi…). */
 export function ConfirmDialog({

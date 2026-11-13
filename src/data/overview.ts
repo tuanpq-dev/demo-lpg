@@ -13,7 +13,7 @@ import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { LiveData } from '@/features/live/types';
 import { fieldStatus, FIELD_META, formatField } from '@/features/scene/fields';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 import * as mock from '@/mocks/overview';
 import type { KpiMock } from '@/mocks/types';
 import { formatNumber } from '@/lib/number';
@@ -107,7 +107,7 @@ export function applyLive(data: OverviewData, live: LiveData | undefined, now: n
   return { ...data, kpis, watchlist, map: { ...data.map, markers } };
 }
 
-export type { QueryState } from '@/lib/useQuery';
+export type { QueryState } from '@/hooks/useQuery';
 
 /** Hook dữ liệu màn Tổng quan: `{ status, data, error, refetch }` (refetch → về loading). */
 export function useOverviewData() {

@@ -30,7 +30,7 @@ import {
   type ScenarioStatus,
 } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { healthKeyOf, useAnalyzedAt } from './simulation/shared';
 import { ScenarioCard } from './simulation/ScenarioCard';
 import { AiSuggestionCard, PlcDataCard, RecentRunsCard, SafetyRulesCard } from './simulation/SimulationSideCards';

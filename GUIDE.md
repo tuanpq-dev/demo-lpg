@@ -70,7 +70,8 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/reports.ts` (báo cáo sinh theo ngày hiện tại), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
 | `src/features/scene/` | Viewer 3D + asset + validate zod | Mọi thứ về bản đồ 3D |
 | `src/features/scene-editor/` | Store undo/redo, thao tác thuần, kiểm tra, nháp | Logic của `/editor` |
-| `src/lib/` | `cn`, `createCollectionStore`, `useDialog`, `useRovingFocus`, `tokens`, `useNow`, `useElementSize`, `useFullscreen` | Viết hook/tiện ích dùng lại |
+| `src/lib/` | Tiện ích thuần / store ngoài React: `cn`, `number` (`formatNumber`, `withUnit`, `pad2`), `plantTime`, `createCollectionStore`, `tokens`, `toast`, `announce` | Viết tiện ích dùng lại (không phải hook) |
+| `src/hooks/` | Hook dùng chung: `useQuery`, `useDialog`, `useRovingFocus`, `useNow`, `useFormModal`, `useTokenColors`, `useToasts`, `useAnnounce`, `useReducedMotion`… | Viết hook dùng lại nhiều màn (hook riêng một màn để cạnh màn đó) |
 | `src/assets/digital-twin/` | Icon + ảnh bản đồ, đăng ký trong `src/assets/digital-twin/index.ts` | Thêm icon từ Figma |
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
 | `scratch/figma-ref/` (gitignore, chỉ máy dev) | Ảnh chụp Figma để so; ảnh người dùng gửi không có node (`mt-*-design.png`, `asset-v101-design.png`). Trước 27/10/2026 nằm ở `public/figma-ref/` (đã xoá; vẫn còn trong lịch sử git) | Đối chiếu thiết kế (playground ở dev) |

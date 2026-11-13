@@ -28,7 +28,7 @@ import {
   type RowResult,
 } from '@/features/reports';
 import { plantDayKey } from '@/lib/plantTime';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import NotFoundPage from '../errors/NotFoundPage';
 import { CheckpointRecordModal } from './daily/CheckpointRecordModal';
 import { CheckpointTimeline } from './daily/CheckpointTimeline';

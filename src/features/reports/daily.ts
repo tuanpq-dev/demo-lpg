@@ -7,7 +7,7 @@
 import { paramStatus } from '@/features/operations/device';
 import { foldSearch } from './filter';
 import { SIGNATURE_STEPS, SIGNATURE_STEP_LABEL, checkpointProgress, missingCheckpoints, signatureOf, type ReportRecord } from './status';
-import { formatNumber } from '@/lib/number';
+import { formatNumber, withUnit } from '@/lib/number';
 
 /** Nhóm thiết bị – thứ tự hiển thị trong bảng. */
 export const DAILY_GROUPS = [
@@ -106,9 +106,6 @@ export function rowResult(row: Pick<DailyReadingRow, 'values' | 'limits'>): RowR
 
 /** "77.1" · "2,038" (quy ước số chung – ảnh báo cáo ngày dùng dấu phẩy, đã thống nhất về dấu chấm). */
 export const formatReading = (v: number, digits: number) => formatNumber(v, digits);
-
-/** Ghép số + đơn vị: "90%" · "45°C" · "5 bar" · "10 %LEL". */
-const withUnit = (n: string, unit: string) => (unit === '%' || unit.startsWith('°') ? `${n}${unit}` : `${n} ${unit}`);
 
 /**
  * Cột "Ngưỡng/chuẩn" theo vùng cảnh báo: "10–90%" · "< 10 %LEL" · "> 15 m³/h" · "—" (chưa cấu hình).

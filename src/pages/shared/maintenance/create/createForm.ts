@@ -2,7 +2,6 @@ import { newChecklistItem, type AttachedFile, type ChecklistItem, type Severity 
 import type { AlertRecord } from '@/data/alerts';
 import {
   departmentFor,
-  localDateTime,
   shiftFor,
   templateFor,
   type MaintenanceSource,
@@ -10,6 +9,8 @@ import {
   type NewMaintenanceInput,
   type ShiftId,
 } from '@/data/maintenance';
+import { withUnit } from '@/lib/number';
+import { plantDayKey, plantHourFromNow } from '@/lib/plantTime';
 
 /** Giá trị form "Tạo yêu cầu bảo trì" (cũng là dạng lưu nháp – tệp chỉ giữ tên / dung lượng). */
 export type CreateFormValues = {
@@ -36,9 +37,12 @@ export type CreateErrors = Partial<Record<'title' | 'device' | 'dueAt', string>>
 
 export const PRIORITY_TEXT: Record<Severity, string> = { critical: 'Nghiêm trọng', high: 'Cao', medium: 'Thường', low: 'Thấp' };
 
-/** Form trống: bắt đầu = giờ chẵn kế tiếp, hạn = +24 giờ, phòng ban theo thiết bị (nếu có), ca theo giờ bắt đầu. */
-export function blankForm(device: string | null): CreateFormValues {
-  const startAt = localDateTime(0);
+/**
+ * Form trống: bắt đầu = giờ chẵn kế tiếp, hạn = +24 giờ (giờ nhà máy, tính từ `now`), phòng ban theo thiết bị (nếu có), ca
+ * theo giờ bắt đầu.
+ */
+export function blankForm(device: string | null, now: Date): CreateFormValues {
+  const startAt = plantHourFromNow(now);
   return {
     title: '',
     description: '',
@@ -49,7 +53,7 @@ export function blankForm(device: string | null): CreateFormValues {
     source: 'manual',
     referenceCode: '',
     startAt,
-    dueAt: localDateTime(24),
+    dueAt: plantHourFromNow(now, 24),
     assignee: null,
     collaborators: [],
     shift: shiftFor(startAt),
@@ -61,34 +65,34 @@ export function blankForm(device: string | null): CreateFormValues {
 }
 
 /** Điền sẵn từ cảnh báo (ảnh thiết kế: ALT-00128 → "Kiểm tra và khắc phục sự cố tăng áp suất van V-101"). */
-export function formFromAlert(a: AlertRecord, title?: string): CreateFormValues {
-  const startAt = localDateTime(0);
+export function formFromAlert(a: AlertRecord, now: Date, title?: string): CreateFormValues {
+  const startAt = plantHourFromNow(now);
   const priority: Severity = a.severity === 'low' ? 'medium' : a.severity;
   const tpl = templateFor(a.device, a);
   return {
-    ...blankForm(a.device),
+    ...blankForm(a.device, now),
     title: title ?? `Kiểm tra và khắc phục: ${a.message.charAt(0).toLowerCase()}${a.message.slice(1)}`,
-    description: `${a.message} – giá trị ${a.value} / ngưỡng ${a.threshold} ${a.unit}. Cần kiểm tra ngay lập tức nguyên nhân và xử lý theo quy trình.`,
+    description: `${a.message} – giá trị ${a.value} / ngưỡng ${withUnit(a.threshold, a.unit)}. Cần kiểm tra ngay lập tức nguyên nhân và xử lý theo quy trình.`,
     type: 'incident',
     priority,
     source: 'alert',
     referenceCode: a.code,
     startAt,
-    dueAt: localDateTime(a.severity === 'critical' ? 4 : 24),
+    dueAt: plantHourFromNow(now, a.severity === 'critical' ? 4 : 24),
     assignee: a.assignee,
     shift: shiftFor(startAt),
     checklist: (tpl?.items ?? []).map((t) => newChecklistItem(t.replace(/^Kiểm tra trực quan van$/, `Kiểm tra trực quan van ${a.device}`))),
   };
 }
 
-/** Lỗi trường bắt buộc: tên ≥ 5 ký tự, thiết bị, hạn (sau giờ bắt đầu, không trước hôm qua). `now` cho test. */
-export function validateCreate(f: CreateFormValues, now = new Date()): CreateErrors {
+/** Lỗi trường bắt buộc: tên ≥ 5 ký tự, thiết bị, hạn (sau giờ bắt đầu, không trước HÔM NAY theo giờ nhà máy). */
+export function validateCreate(f: CreateFormValues, now: Date): CreateErrors {
   const e: CreateErrors = {};
   if (f.title.trim().length < 5) e.title = 'Nhập tên yêu cầu (ít nhất 5 ký tự).';
   if (!f.device) e.device = 'Chọn thiết bị.';
   if (!f.dueAt) e.dueAt = 'Chọn hạn hoàn thành.';
   else if (f.startAt && f.dueAt <= f.startAt) e.dueAt = 'Hạn hoàn thành phải sau thời gian bắt đầu.';
-  else if (f.dueAt.slice(0, 10) < localDateTime(-1, now).slice(0, 10)) e.dueAt = 'Hạn hoàn thành không được trong quá khứ.';
+  else if (f.dueAt.slice(0, 10) < plantDayKey(now)) e.dueAt = 'Hạn hoàn thành không được trong quá khứ.';
   return e;
 }
 

@@ -1,4 +1,5 @@
 import type { KpiTone, StatusPillTone, TankLayerItem } from '@/components';
+import { withUnit } from '@/lib/number';
 import { STATUS_LABEL, WATER_STATUS_LABEL, type AssetEventType, type Reading, type useAssetDetail } from '@/data/assetDetail';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 
@@ -24,7 +25,7 @@ export const fixed = (v: number, d = 1) => v.toFixed(d);
 export const lost = (r: Reading) => r.state === 'lost';
 /** "9.2 bar" · "Mất tín hiệu" · "—". */
 export const readingText = (r: Reading, digits: number, unit: string) =>
-  r.state === 'ok' ? `${fixed(r.value!, digits)}${unit}` : r.state === 'lost' ? SIGNAL_LOST_LABEL : '—';
+  r.state === 'ok' ? withUnit(fixed(r.value!, digits), unit) : r.state === 'lost' ? SIGNAL_LOST_LABEL : '—';
 
 type Tone = TankLayerItem['tone'];
 const statusItemTone = (s: string | undefined): Tone =>

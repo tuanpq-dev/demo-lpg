@@ -11,9 +11,9 @@ import { fetchAlertList, useAlertPage, useAlertSummary, type AlertListQuery } fr
 import { ALERT_PARAMS, RANGE_OPTIONS, alertKpis, priorityCard, type AlertRecord, type AlertShift, type AlertTab } from '@/data/alerts';
 import { runAction } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
-import { useDebouncedValue } from '@/lib/useDebouncedValue';
-import { useNow } from '@/lib/useNow';
-import { combineQueries } from '@/lib/useQuery';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useNow } from '@/hooks/useNow';
+import { combineQueries } from '@/lib/queryState';
 import { AlertDrawerHost, usePreloadAlertOverlays } from './AlertDrawerHost';
 import { AlertBulkActions } from './list/AlertBulkActions';
 import { alertColumns, alertFilterDefs, alertTabs } from './list/alertTable';

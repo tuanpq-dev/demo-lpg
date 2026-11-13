@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import { useTokenColors, type ColorToken } from '@/lib/tokens';
+import { useTokenColors } from '@/hooks/useTokenColors';
+import type { ColorToken } from '@/lib/tokens';
 import { ChartSurface, type PlotArea } from './ChartSurface';
 import { ActiveDot, FadeGradient, HGrid, XLabels, niceTicks } from './axes';
 import { areaPath, linearScale, monotonePath, pointPositions, segments, type Pt } from './geometry';

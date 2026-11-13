@@ -26,7 +26,7 @@
 | `src/features/<miền>/` | Logic THUẦN: `alerts/` (workflow, bands, fire, gauge, assign, inspection, pressure, update, close), `maintenance/`, `staff/`, `live/` (`tags.ts` = tên tag giả định – MỘT chỗ), `reports/` (kỳ, trạng thái suy dẫn, lọc), `tank/`, `scene/`, `scene-editor/`, `auth/` |
 | `src/mocks/` | Dữ liệu mẫu từ Figma; `alertKinds.ts` = cấu hình theo LOẠI cảnh báo; `scenes/*.json` cảnh 3D |
 | `src/api/` | `client.ts` (fetch wrapper, refresh 401 một luồng), `types.ts` (hợp đồng API + zod, FE tự định nghĩa), `auth.ts` |
-| `src/lib/` · `src/styles/` | Tiện ích (`cn`, `useDialog`, `plantTime`, `demoNow`, `sessionDraft`, `announce`…) · `tokens.css`, `global.css` |
+| `src/lib/` · `src/hooks/` · `src/styles/` | Tiện ích thuần, KHÔNG hook (`cn`, `number`, `plantTime`, `demoNow`, `sessionDraft`, `announce`…) · hook dùng chung (`useQuery`, `useDialog`, `useNow`…) · `tokens.css`, `global.css` |
 | `scratch/` | gitignore, CHỈ máy dev: `figma-ref/` (ảnh thiết kế), ảnh chụp kiểm tra |
 | `docs/` | `figma-diffs.md`, `decisions.md`, `questions.md`, `guide/` |
 - Route: data router `createBrowserRouter`; chuyển hướng cố định bằng `loader: () => redirect(…)` (không `<Navigate>`); mọi route trừ `/login` `/register` `/pending` nằm trong `RequireAuth`. Danh sách route + query đầy đủ: docs/guide/app-structure.md (Phụ lục A).
@@ -43,7 +43,7 @@
 - **Không hardcode màu**: token ở `src/styles/tokens.css`, map trong `tailwind.config.ts` (palette mặc định Tailwind đã tắt; độ trong suốt `bg-danger/10`). Chart/SVG lấy màu qua `useTokenColors()`.
   - Nền `bg-app|header|canvas`, `surface[-raised|-sunken|-muted|-chip]` · viền `line` (/10, /30), `line-card`, `line-divider` · chữ `fg[-secondary|-muted|-label|-inverse|-disabled]` · `primary`, `accent`, `info` · `success[-strong]`, `live`, `warning[-soft]`, `neutral`.
   - **Bốn token đỏ**: `danger` = viền/nền mờ/chấm/icon · `danger-text` = MỌI chữ đỏ cỡ thường · `danger-strong` = số lớn (≥ 24 px / ≥ 18.66 px đậm) · `danger-solid` = nền đặc chữ trắng. ESLint chặn `text-danger` trần và độ mờ trên chữ đỏ.
-  - **Số**: dấu chấm thập phân + dấu phẩy hàng nghìn (12,450.5) qua `formatNumber` (`src/lib/number.ts`); ESLint chặn `toLocaleString('en|vi…')` cho số và `.replace('.', ',')`.
+  - **Số**: dấu chấm thập phân + dấu phẩy hàng nghìn (12,450.5) qua `formatNumber` (`src/lib/number.ts`); số + đơn vị qua `withUnit`/`unitSuffix` (cùng file – "80%", "25°C", "2.0% LEL", "3.2 bar"), không ghép tay; ESLint chặn `toLocaleString('en|vi…')` cho số và `.replace('.', ',')`.
   - Cỡ chữ `2xs` 10 · `xs` 11 · `sm` 12 · `base` 14 · `md` 16 · `lg` 18 · `xl` 24 · `2xl`/`kpi` 28 · `3xl` 32. Bo góc `xs` 2 · `sm` 4 · `md` 6 · `lg` 8 · `xl` 12.
 - **Breakpoint** (`tailwind.config.ts`, không viết `min-[…px]`): `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `wide` 1520 · `3xl` 1920. ≥ `wide` như Figma 1565; nội dung tối đa `max-w-content` 1920; bảng rộng cuộn ngang trong khung.
 - **Đặt tên**: prop thống nhất `variant`, `tone`, `size: sm|md`, `label`, `className`; giá trị domain tiếng Anh kebab-case, nhãn tiếng Việt; JSDoc ghi node Figma / ảnh.

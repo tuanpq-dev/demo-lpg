@@ -16,13 +16,6 @@ const SHIFT_VALUES: readonly ShiftId[] = SHIFTS.map((s) => s.value);
 import { resolveAssetId, useAssetDetail, type Reading } from './assetDetail';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 
-/** "2026-10-26T08:30" → "26/10/2026 08:30"; chỉ ngày → "26/10/2026". */
-export function formatPlantDateTime(s: string): string {
-  const [y, m, d] = s.slice(0, 10).split('-');
-  const t = s.slice(11, 16);
-  return `${d}/${m}/${y}${t ? ` ${t}` : ''}`;
-}
-
 /** "Hôm nay 10:50" · "Hôm qua 09:00" · "24/10 09:00" (năm khác: "24/10/2025 09:00") – ngày theo giờ nhà máy. */
 export function relativeDayTime(at: string, now: Date): string {
   const d = daysFromToday(at, now);

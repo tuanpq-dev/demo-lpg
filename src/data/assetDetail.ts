@@ -11,7 +11,7 @@ import { systemStatus } from '@/mocks/overview';
 import { useLiveData } from './live';
 import { dueLabel, isOverdue } from './maintenanceView';
 import type { MaintenanceRecord } from '@/features/maintenance/types';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 
 export type { AssetEvent, AssetEventStatus, AssetEventType, AssetMock };
 export type { PlaceholderValue } from '@/mocks/assets';

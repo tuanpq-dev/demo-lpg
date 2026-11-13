@@ -1,7 +1,7 @@
 import { Button, Modal, DiscardConfirmButtons } from '@/components';
 import type { MaintenanceRecord } from '@/data/maintenance';
 import type { ProgressFile, ProgressUpdateInput } from '@/features/maintenance/progress';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { ProgressFilesSection } from './progress/ProgressFilesSection';
 import { DraftNote, ProgressInfoCards, ProgressSection, ProgressTextField, WorkStateSection } from './progress/ProgressSections';
 import { useProgressUpdateForm } from './progress/useProgressUpdateForm';

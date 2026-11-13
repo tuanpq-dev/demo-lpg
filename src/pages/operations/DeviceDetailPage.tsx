@@ -16,7 +16,7 @@ import {
   useOperationDevice,
 } from '@/data/operationDevice';
 import { connectionView, HEADER_RUN_LABELS, PLC_CONNECTION_LABELS } from '@/features/operations/device';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import NotFoundPage from '../errors/NotFoundPage';
 import { PlcScadaView, plcHeaderStatus } from './PlcScadaView';
 import { VaporizerView, vaporizerRun } from './VaporizerView';

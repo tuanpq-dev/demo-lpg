@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { unitSuffix, withUnit } from '@/lib/number';
 import {
   Badge,
   BoltIcon,
@@ -33,7 +34,7 @@ import {
   type ViewTone,
 } from '@/features/operations/device';
 import { cn } from '@/lib/cn';
-import { useMinuteMemo } from '@/lib/useMinuteMemo';
+import { useMinuteMemo } from '@/hooks/useMinuteMemo';
 import { DeviceLayout, DiagramCard, TrendCard, commonSide, criticalAlertsRow } from './DeviceLayout';
 import { textTone } from './DeviceSideCards';
 import type { DeviceViewProps } from './deviceView';
@@ -122,7 +123,7 @@ function vaporizerTrend(data: OperationDeviceMock, history: Readonly<Record<stri
     {
       id: 'temperature',
       name: `Nhiệt độ (${t.param.unit})`,
-      suffix: t.param.unit,
+      suffix: unitSuffix(t.param.unit),
       color: 'accent',
       area: true,
       domain: data.trend.temperature.domain,
@@ -131,14 +132,15 @@ function vaporizerTrend(data: OperationDeviceMock, history: Readonly<Record<stri
     {
       id: 'pressure',
       name: `Áp suất (${p.param.unit})`,
-      suffix: ` ${p.param.unit}`,
+      suffix: unitSuffix(p.param.unit),
       color: 'text-secondary',
       dashed: true,
       domain: data.trend.pressure.domain,
       threshold: p.param.limits.warn !== undefined ? { value: p.param.limits.warn, label: 'Ngưỡng áp suất cao', color: 'warning' } : undefined,
     },
   ];
-  const now = (r: ParamRow) => `${valueText(r.reading, r.param, ` ${r.param.unit}`)} (ngưỡng cao ${r.param.limits.warn ?? '—'} ${r.param.unit})`;
+  const now = (r: ParamRow) =>
+    `${valueText(r.reading, r.param, unitSuffix(r.param.unit))} (ngưỡng cao ${r.param.limits.warn !== undefined ? withUnit(String(r.param.limits.warn), r.param.unit) : '—'})`;
   const label = `Xu hướng ${data.trend.minutes} phút: nhiệt độ đầu ra hiện ${now(t)}, áp suất đầu ra hiện ${now(p)}.`;
   return { points, series, label };
 }
@@ -163,8 +165,8 @@ export function VaporizerView(props: DeviceViewProps<OperationDeviceMock>) {
   const temp = byId(data.kpi.temperature);
   const pressure = byId(data.kpi.pressure);
   const trend = vaporizerTrend(data, history, byId);
-  const tempText = valueText(temp.reading, temp.param, temp.param.unit);
-  const pressureText = valueText(pressure.reading, pressure.param, ` ${pressure.param.unit}`);
+  const tempText = valueText(temp.reading, temp.param, unitSuffix(temp.param.unit));
+  const pressureText = valueText(pressure.reading, pressure.param, unitSuffix(pressure.param.unit));
 
   const conn = connectionView(liveStatus);
   const standby = standbyReadiness(standbyRun, standbyRaw);

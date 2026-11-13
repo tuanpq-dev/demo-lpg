@@ -98,6 +98,7 @@ export default tseslint.config(
       'src/components/**/*.{ts,tsx}',
       'src/app/**/*.{ts,tsx}',
       'src/lib/**/*.{ts,tsx}',
+      'src/hooks/**/*.{ts,tsx}',
       'src/pages/**/*.{ts,tsx}',
     ],
     rules: {

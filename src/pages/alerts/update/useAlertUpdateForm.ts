@@ -33,7 +33,7 @@ import { checkUploads, uploadKind } from '@/features/maintenance/progress';
 import { announce } from '@/lib/announce';
 import { appNow } from '@/lib/demoNow';
 import { parsePlantDateTime } from '@/lib/plantTime';
-import { useFormModal } from '@/lib/useFormModal';
+import { useFormModal } from '@/hooks/useFormModal';
 import { initialValues, updateFormReducer, type TempFile, type UpdateFormValues } from './updateFormState';
 
 export type { TempFile, UpdateFormValues } from './updateFormState';

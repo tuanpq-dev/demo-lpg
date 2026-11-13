@@ -10,7 +10,7 @@ import type { AlertLoad } from '@/features/alerts/assignStaff';
 import type { RelatedAlert } from '@/features/alerts/close';
 import type { AlertListQuery, AlertListResult, AlertRange, AlertSummary } from '@/features/alerts/query';
 import type { AlertRecord } from '@/features/alerts/types';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 import { alertStore } from './alertStore';
 import { fromMock } from './contract';
 

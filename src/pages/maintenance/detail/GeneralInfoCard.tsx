@@ -2,20 +2,12 @@ import { Link } from 'react-router-dom';
 import { assetPath } from '@/app/assetRoutes';
 import { Card, ExternalLinkIcon, InfoGrid, InfoIcon, type InfoGridItem } from '@/components';
 import { resolveAssetId } from '@/data/assetDetail';
-import {
-  FORM_TYPE_OPTIONS,
-  PRIORITY_OPTIONS,
-  SOURCE_OPTIONS,
-  STATUS_LABEL,
-  dueHasTime,
-  formatDate,
-  type MaintenanceRecord,
-} from '@/data/maintenance';
-import { formatPlantDateTime, relativeDayTime } from '@/data/maintenanceDetail';
+import { FORM_TYPE_OPTIONS, PRIORITY_OPTIONS, SOURCE_OPTIONS, STATUS_LABEL, dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
+import { relativeDayTime } from '@/data/maintenanceDetail';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineDayLabel } from '@/features/maintenance/deadline';
 import { HOLD_LABEL, reportedProgressOf } from '@/features/maintenance/progress';
-import { daysFromToday } from '@/lib/plantTime';
+import { daysFromToday, formatDayVi, formatPlantDateTime } from '@/lib/plantTime';
 
 const PRIORITY_LABEL = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
 const FORM_TYPE_LABEL = Object.fromEntries(FORM_TYPE_OPTIONS.map((o) => [o.value, o.label]));
@@ -26,7 +18,7 @@ function identityItems(r: MaintenanceRecord): InfoGridItem[] {
   const assetId = resolveAssetId(r.device);
   return [
     { id: 'code', label: 'Mã yêu cầu', value: r.code },
-    { id: 'created', label: 'Ngày/giờ tạo', value: created ? formatPlantDateTime(created) : formatDate(r.createdAt) },
+    { id: 'created', label: 'Ngày/giờ tạo', value: created ? formatPlantDateTime(created) : formatDayVi(r.createdAt) },
     { id: 'by', label: 'Người tạo', value: r.createdBy ?? '—' },
     {
       id: 'source',

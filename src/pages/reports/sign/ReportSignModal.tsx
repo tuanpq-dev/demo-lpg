@@ -6,7 +6,7 @@ import { signDailyReport, useReportSignData } from '@/data/reportSign';
 import { SIGN_PIN_REQUIRED, inspectorSignStatus, signConditions, signReady, type DailyReadingRow, type ReportRecord } from '@/features/reports';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { ApprovalFlowSection, DraftFormCard, ReportInfoCard, SignConditionsList, SignerSection } from './SignParts';
 
 export type ReportSignModalProps = {

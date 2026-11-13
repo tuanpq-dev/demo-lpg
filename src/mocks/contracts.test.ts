@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { pad2 } from '@/lib/number';
 import { AlertSchema } from '@demo-lpg/shared/alerts';
 import { LiveDataSchema } from '@demo-lpg/shared/live';
 import { MaintenanceRequestSchema } from '@demo-lpg/shared/maintenance';
@@ -30,7 +31,7 @@ describe('mock khớp hợp đồng shared', () => {
     for (const { daysAgo, time, ...full } of alertRecords.filter((a) => a.status !== 'resolved')) {
       const rest: Record<string, unknown> & { id: string } = { ...full };
       for (const k of ALERT_FE_ONLY_FIELDS) delete rest[k];
-      const occurredAt = `2026-10-${String(22 - daysAgo).padStart(2, '0')}T${time}+07:00`;
+      const occurredAt = `2026-10-${pad2(22 - daysAgo)}T${time}+07:00`;
       const res = AlertSchema.strict().safeParse({ ...rest, occurredAt });
       expect(res.success, `${rest.id}: ${res.error?.message}`).toBe(true);
     }

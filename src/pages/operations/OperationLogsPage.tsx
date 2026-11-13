@@ -40,7 +40,7 @@ import {
 } from '@/features/operations/logs';
 import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { downloadCsv } from '@/lib/download';
 
 const PAGE_SIZE = 10;

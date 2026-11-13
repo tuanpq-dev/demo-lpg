@@ -5,7 +5,7 @@
  * nguyên schema. Hợp đồng: docs/decisions.md "Báo cáo – hợp đồng API cần bổ sung".
  */
 import type { ReportListQuery, ReportListResult, ReportRecord, ReportSummary } from '@/features/reports';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 import { fromMock } from './contract';
 import { reportStore } from './reports';
 

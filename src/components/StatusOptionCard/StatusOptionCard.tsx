@@ -1,6 +1,6 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { useRovingFocus } from '@/lib/useRovingFocus';
+import { useRovingFocus } from '@/hooks/useRovingFocus';
 
 export type StatusOptionTone = 'primary' | 'warning' | 'danger';
 

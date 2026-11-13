@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { SceneConfig, SceneEditState, SceneView, SceneViewerHandle, ZoomLimits } from '@/features/scene';
-import { useFullscreen } from '@/lib/useFullscreen';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { Button } from '../Button';
 import { SceneLoading } from '../SceneLoading';
 import { SegmentedControl } from '../SegmentedControl';

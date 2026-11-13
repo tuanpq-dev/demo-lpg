@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { useDismiss } from '@/lib/useDismiss';
+import { useDismiss } from '@/hooks/useDismiss';
 import { avatarAdmin } from '@/assets/digital-twin';
 import { cn } from '@/lib/cn';
 import { Badge } from '../Badge';

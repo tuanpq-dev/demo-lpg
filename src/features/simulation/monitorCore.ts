@@ -2,6 +2,7 @@
 import type { TagValue } from '@/features/live/types';
 import { referenceReading, type LeakRate, type ScenarioConfig, type ScenarioSetup, type SimVariable } from './config';
 import type { Scenario } from './scenarios';
+import { withUnit } from '@/lib/number';
 
 export type LiveMap = Readonly<Record<string, TagValue>> | undefined;
 
@@ -141,14 +142,6 @@ function firstReach(p: SimProfile, level: number, direction: SimVariable['direct
 }
 
 const flip = (d: SimVariable['direction']): SimVariable['direction'] => (d === 'above' ? 'below' : 'above');
-
-/** "9.2 bar" · "28.7°C" · "76.0%" · "2.0% LEL" (đơn vị bảng tham chiếu). */
-function withUnit(text: string, unit: string): string {
-  if (unit === '%LEL') return `${text}% LEL`;
-  if (unit === '%' || unit.startsWith('°')) return `${text}${unit}`;
-  if (unit === '—' || !unit) return text;
-  return `${text} ${unit}`;
-}
 
 /** Dòng cố định cuối bảng: mô phỏng không điều khiển van. */
 const VALVE_ROW: ReferenceSnapshotRow = { id: 'valve', label: 'Van điều khiển', valueText: 'Theo quy trình SOP' };
