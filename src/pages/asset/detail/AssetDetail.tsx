@@ -22,8 +22,8 @@ import { useMaintenanceByDevice } from '@/data/maintenanceApi';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import type { ImageAsset } from '@/lib/imageAsset';
-import { useNow } from '@/lib/useNow';
-import { combineQueries } from '@/lib/useQuery';
+import { useNow } from '@/hooks/useNow';
+import { combineQueries } from '@/lib/queryState';
 import { CreateMaintenanceModal } from '../../shared/maintenance/CreateMaintenanceModal';
 import { AssetAside } from './AssetAside';
 import { AssetEventsCard, getEventId } from './AssetEventsCard';
@@ -50,7 +50,7 @@ function modelText(data: AssetData, live: AssetLive) {
   return {
     liquidPct,
     tag: { title: `${data.id} DOME`, line: tempLine, signalLost: lost(temperature) },
-    description: `${data.name}: mức bồn ${levelText}, áp suất ${readingText(pressure, 1, ' bar')}, nhiệt độ ${readingText(temperature, 1, ' °C')}, trạng thái tồn chứa ${STATUS_LABEL[storageStatus]}.`,
+    description: `${data.name}: mức bồn ${levelText}, áp suất ${readingText(pressure, 1, 'bar')}, nhiệt độ ${readingText(temperature, 1, '°C')}, trạng thái tồn chứa ${STATUS_LABEL[storageStatus]}.`,
   };
 }
 

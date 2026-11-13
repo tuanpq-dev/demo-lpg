@@ -6,7 +6,7 @@ import { resolveAssetId, type Reading } from '@/data/assetDetail';
 import { dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
 import { useRelatedDevice } from '@/data/maintenanceDetail';
 import { deadlineCountdown, deadlineDayLabel } from '@/features/maintenance/deadline';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 
 /** Ô "Hạn chót xử lý" – đồng hồ chạy mỗi giây riêng ở đây (không vẽ lại cả trang). */
 export function LiveDeadline({ record }: { record: MaintenanceRecord }) {

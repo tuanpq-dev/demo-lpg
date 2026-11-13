@@ -5,6 +5,7 @@
  * Phần dùng chung: khung thẻ, tiêu đề mục, nhãn nguồn, ô nhập đồng hồ cơ, ô giá trị, dòng nhãn – giá trị.
  */
 import { forwardRef, type ReactNode } from 'react';
+import { unitSuffix } from '@/lib/number';
 import { Badge, NumberField } from '@/components';
 import {
   effectiveValue,
@@ -128,7 +129,7 @@ export function ReadingRow({ reading: r, dim, ...m }: { reading: RecordReading; 
       ) : (
         <span className={cn('tabular-nums', st === 'warning' || st === 'abnormal' ? STATE_TEXT[st] : undefined)}>
           {formatRecordValue(v, r.digits)}
-          {r.unit.startsWith('°') ? r.unit : ` ${r.unit}`}
+          {unitSuffix(r.unit)}
           {st === 'warning' || st === 'abnormal' ? <span className="sr-only"> – {valueStateLabel(r, m.manual)}</span> : null}
         </span>
       )}

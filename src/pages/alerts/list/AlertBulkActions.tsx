@@ -5,7 +5,7 @@ import { bulkCloseMessage, planBulkClose } from '@/features/alerts/close';
 import { bulkMessage } from '@/features/alerts/workflow';
 import { runAction } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
-import { useTimedNotice } from '@/lib/useTimedNotice';
+import { useNotice } from '@/hooks/useNotice';
 import { AlertBulkCloseModal } from '../AlertBulkCloseModal';
 import { BulkActionsBar } from './AlertsSections';
 
@@ -27,7 +27,7 @@ export type AlertBulkActionsProps = {
  */
 export function AlertBulkActions({ records, onClear, actor, canAct }: AlertBulkActionsProps) {
   const alerts = useAlerts();
-  const { notice, show: setNotice, fail: failNotice } = useTimedNotice();
+  const { notice, show: setNotice, fail: failNotice } = useNotice();
   const ids = records.map((a) => a.id);
   const closeConds = useCloseConditions(records.filter((a) => a.status === 'resolved'));
   const closePlan = planBulkClose(records, ids, (a) => closeConds[a.id] ?? [], actor);

@@ -14,7 +14,7 @@ import {
 } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { createSessionDraft } from '@/lib/sessionDraft';
-import { useIdentityRevision, useQuery } from '@/lib/useQuery';
+import { useIdentityRevision, useQuery } from '@/hooks/useQuery';
 import { buildCheckpointSnapshot } from '@/mocks/checkpointRecord';
 import { currentReports, replaceReport, reportsReady } from './reports';
 

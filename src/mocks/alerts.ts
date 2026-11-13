@@ -3,6 +3,7 @@
  * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts.ts).
  */
 import type { AlertRecord } from '@/features/alerts/types';
+import { pad2 } from '@/lib/number';
 import { V101_TAGS, VAPORIZER_AREA_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import { GAS_TAGS } from '@/features/live/tags';
 import { appNow } from '@/lib/demoNow';
@@ -13,8 +14,7 @@ const NOTIFY_DELAY_S = 3;
 function addSeconds(time: string, s: number) {
   const [h, m, sec] = time.split(':').map(Number);
   const t = (h! * 3600 + m! * 60 + sec! + s) % 86_400;
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(Math.floor(t / 3600))}:${p(Math.floor(t / 60) % 60)}:${p(t % 60)}`;
+  return `${pad2(Math.floor(t / 3600))}:${pad2(Math.floor(t / 60) % 60)}:${pad2(t % 60)}`;
 }
 
 type Extra = Partial<

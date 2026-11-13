@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode, type RefObject } from 'react';
-import { useElementSize } from '@/lib/useElementSize';
+import { useElementSize } from '@/hooks/useElementSize';
 import { ChartTooltip, type ChartTooltipProps } from '../ChartCard';
 import { nearestIndex } from './geometry';
 

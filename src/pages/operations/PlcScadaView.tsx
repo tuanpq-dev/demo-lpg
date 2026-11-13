@@ -40,7 +40,7 @@ import {
   type RowTone,
 } from '@/features/operations/plcScada';
 import { cn } from '@/lib/cn';
-import { useMinuteMemo } from '@/lib/useMinuteMemo';
+import { useMinuteMemo } from '@/hooks/useMinuteMemo';
 import { DeviceLayout, DiagramCard, TrendCard, commonSide, criticalAlertsRow } from './DeviceLayout';
 import { textTone } from './DeviceSideCards';
 import type { DeviceViewProps } from './deviceView';

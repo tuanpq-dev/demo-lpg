@@ -9,6 +9,8 @@ import {
   type ShiftId,
 } from '@/data/maintenance';
 import { actionErrorText } from '@/lib/actionError';
+import { appNow } from '@/lib/demoNow';
+import { formatPlantTimeDay } from '@/lib/plantTime';
 import {
   blankForm,
   createFormReducer,
@@ -28,16 +30,20 @@ export type UseCreateMaintenanceFormOptions = {
   onDraftSaved?: () => void;
 };
 
-const draftTime = (iso: string) => new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+const draftTime = (iso: string) => formatPlantTimeDay(new Date(iso));
 
 /** Giá trị khởi tạo: cảnh báo nguồn > bản nháp (khi không điền sẵn thiết bị) > form trống. */
 function initialState(alert: AlertRecord | undefined, defaultTitle: string | undefined, defaultDevice: string | undefined): CreateFormState {
   const base = { errors: {}, submitting: false, submitError: '', touched: { department: false, shift: false }, errorTick: 0 };
-  if (alert) return { ...base, form: formFromAlert(alert, defaultTitle), draftInfo: null };
+  if (alert) return { ...base, form: formFromAlert(alert, appNow(), defaultTitle), draftInfo: null };
   const draft = loadMaintenanceDraft<CreateFormValues>();
   if (draft && !defaultDevice)
-    return { ...base, form: { ...blankForm(null), ...draft.draft, attachments: draft.draft.attachments ?? [] }, draftInfo: draftTime(draft.savedAt) };
-  return { ...base, form: blankForm(defaultDevice ?? null), draftInfo: null };
+    return {
+      ...base,
+      form: { ...blankForm(null, appNow()), ...draft.draft, attachments: draft.draft.attachments ?? [] },
+      draftInfo: draftTime(draft.savedAt),
+    };
+  return { ...base, form: blankForm(defaultDevice ?? null, appNow()), draftInfo: null };
 }
 
 /**
@@ -61,7 +67,7 @@ export function useCreateMaintenanceForm({ devices, defaultDevice, alert, defaul
   useLayoutEffect(() => {
     if (alert && alert.id !== loadedAlert) {
       setLoadedAlert(alert.id);
-      dispatch({ type: 'reset', form: formFromAlert(alert, defaultTitle) });
+      dispatch({ type: 'reset', form: formFromAlert(alert, appNow(), defaultTitle) });
     }
   }, [alert, loadedAlert, defaultTitle]);
 
@@ -70,7 +76,7 @@ export function useCreateMaintenanceForm({ devices, defaultDevice, alert, defaul
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const errs = validateCreate(form);
+    const errs = validateCreate(form, appNow());
     if (Object.values(errs).some(Boolean)) {
       dispatch({ type: 'invalid', errors: errs });
       return;
@@ -97,7 +103,7 @@ export function useCreateMaintenanceForm({ devices, defaultDevice, alert, defaul
     toggleSuggestion: (text: string) => dispatch({ type: 'toggle-suggestion', text }),
     discardDraft: () => {
       clearMaintenanceDraft();
-      dispatch({ type: 'reset', form: blankForm(null) });
+      dispatch({ type: 'reset', form: blankForm(null, appNow()) });
     },
     saveDraft: () => {
       // File thật không lưu được vào localStorage – chỉ giữ tên/dung lượng.

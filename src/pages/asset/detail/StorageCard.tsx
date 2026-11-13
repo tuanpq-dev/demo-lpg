@@ -41,7 +41,7 @@ export function StorageCard({ data, live, liquidPct }: { data: AssetData; live: 
       </div>
       <dl className="mt-5 grid max-w-[360px] grid-cols-3 gap-4">
         {[
-          { id: 'p', label: 'Áp suất bồn', value: readingText(pressure, 1, ' bar'), tone: 'text-fg' },
+          { id: 'p', label: 'Áp suất bồn', value: readingText(pressure, 1, 'bar'), tone: 'text-fg' },
           { id: 't', label: 'Nhiệt độ LPG', value: readingText(temperature, 1, '°C'), tone: 'text-fg' },
           {
             id: 'l',

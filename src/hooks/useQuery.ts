@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { settleSnapshot, startSnapshot, toError, viewOf, type QueryState, type Snapshot } from './queryState';
+import { settleSnapshot, startSnapshot, toError, viewOf, type QueryState, type Snapshot } from '@/lib/queryState';
 
 export type { QueryState };
 
@@ -87,17 +87,4 @@ export function useIdentityRevision(value: unknown): number {
   const ref = useRef({ value, n: 0 });
   if (ref.current.value !== value) ref.current = { value, n: ref.current.n + 1 };
   return ref.current.n;
-}
-
-type QueryLike = { status: 'loading' | 'error' | 'success'; error?: Error | undefined; refetch: () => void };
-
-/**
- * Gộp trạng thái nhiều truy vấn của một trang (danh sách + tóm tắt…) cho khung chờ / lỗi chung: lỗi nếu có truy vấn lỗi,
- * loading nếu còn truy vấn chưa xong; `refetch` tải lại tất cả.
- */
-export function combineQueries(...qs: readonly QueryLike[]): { status: 'loading' | 'error' | 'success'; error?: Error; refetch: () => void } {
-  const failed = qs.find((q) => q.status === 'error');
-  const refetch = () => qs.forEach((q) => q.refetch());
-  if (failed) return { status: 'error', error: failed.error, refetch };
-  return { status: qs.every((q) => q.status === 'success') ? 'success' : 'loading', refetch };
 }

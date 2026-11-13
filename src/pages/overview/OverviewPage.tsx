@@ -29,7 +29,7 @@ import { useLiveData } from '@/data/live';
 import { applyLive, useOverviewData } from '@/data/overview';
 import { resolveAssetId } from '@/data/assetDetail';
 import { assetPath } from '@/app/assetRoutes';
-import { useAnnounceChange } from '@/lib/announce';
+import { useAnnounceChange } from '@/hooks/useAnnounce';
 import { parseQuality } from '@/features/scene';
 import { formatNumber } from '@/lib/number';
 

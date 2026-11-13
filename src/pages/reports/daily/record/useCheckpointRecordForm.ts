@@ -13,7 +13,7 @@ import {
   type ReportRecord,
 } from '@/features/reports';
 import { announce } from '@/lib/announce';
-import { useFormModal } from '@/lib/useFormModal';
+import { useFormModal } from '@/hooks/useFormModal';
 
 export type RecordFormState = {
   remark: string;

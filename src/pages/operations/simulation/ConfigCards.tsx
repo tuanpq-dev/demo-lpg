@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { unitSuffix } from '@/lib/number';
 import {
   Badge,
   Card,
@@ -138,7 +139,7 @@ export function InputParamsCard({ scenario: s, config, onChange, check, start, r
               min={v.min}
               max={v.max}
               step={v.step}
-              unit={v.unit === '%' ? '%' : ` ${v.unit}`}
+              unit={unitSuffix(v.unit)}
               disabled={readOnly}
               valueText={`${formatVariable(config.target, v)}${hot ? ` – ${v.direction === 'above' ? 'vượt' : 'dưới'} ${lowerFirst(v.thresholdLabel)}` : ''}`}
               valueDisplay={

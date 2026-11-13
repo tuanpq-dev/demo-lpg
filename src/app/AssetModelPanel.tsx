@@ -5,7 +5,7 @@ import { sceneSnapshot } from '@/features/scene/sceneSnapshot';
 import type { LiveData } from '@/features/live/types';
 import { cn } from '@/lib/cn';
 import type { ImageAsset } from '@/lib/imageAsset';
-import { useFullscreen } from '@/lib/useFullscreen';
+import { useFullscreen } from '@/hooks/useFullscreen';
 
 // three + drei chỉ tải khi trang có mô hình 3D (chunk lazy dùng chung với Tổng quan).
 const SceneViewer = lazy(() => import('@/features/scene/SceneViewer'));

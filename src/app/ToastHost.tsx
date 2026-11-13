@@ -1,5 +1,6 @@
 import { ToastList } from '@/components';
-import { dismissToast, useToasts } from '@/lib/toast';
+import { useToasts } from '@/hooks/useToasts';
+import { dismissToast } from '@/lib/toast';
 
 /** Khung toast dùng chung (gắn trong `Page`): đọc store `lib/toast`, nút × gọi `dismissToast`. */
 export function ToastHost() {

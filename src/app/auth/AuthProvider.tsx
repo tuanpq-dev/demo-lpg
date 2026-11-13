@@ -3,7 +3,7 @@ import { authService as defaultService, type AuthService, type AuthState } from 
 import type { LoginRequest, RegisterRequest, User } from '@/api/types';
 import { can, type Permission } from '@/features/auth/permissions';
 import { refreshDelayMs } from '@/features/auth/session';
-import { clearRememberedQueries } from '@/lib/useQuery';
+import { clearRememberedQueries } from '@/hooks/useQuery';
 
 export type AuthContextValue = AuthState & {
   login(input: LoginRequest): Promise<User>;

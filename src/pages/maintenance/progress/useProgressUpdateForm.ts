@@ -13,7 +13,7 @@ import {
   type WorkState,
 } from '@/features/maintenance/progress';
 import { announce } from '@/lib/announce';
-import { useFormModal, type FormModalDraft } from '@/lib/useFormModal';
+import { useFormModal, type FormModalDraft } from '@/hooks/useFormModal';
 import { progressFormReducer, type Preview, type TempFile } from './progressFormReducer';
 
 export type UseProgressUpdateFormOptions = {

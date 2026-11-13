@@ -122,7 +122,7 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
 | Quy tắc | Ở đâu |
 |---|---|
 | Chỉ đi tiến; phân công không đổi trạng thái; đánh dấu đã xử lý bắt buộc ghi chú | `src/features/alerts/workflow.ts` (+ test) |
-| Modal mở TRÊN drawer: Esc chỉ đóng hộp trên cùng, trả focus nút đã mở | `src/lib/useDialog.ts` (ngăn xếp hộp thoại, `useDialog.test.tsx`) |
+| Modal mở TRÊN drawer: Esc chỉ đóng hộp trên cùng, trả focus nút đã mở | `src/hooks/useDialog.ts` (ngăn xếp hộp thoại) |
 | `?alert=<id>` mở thẳng, F5 giữ; Esc đóng + trả focus | `useFilterParams(ALERT_PARAMS, 'alert')` + `AlertDrawerHost` (`useAlertById`) + `Drawer` |
 | Không tạo trùng yêu cầu bảo trì | `linkedMaintenance` + `DuplicateFromAlertError` (`createMaintenance`) |
 | Thang đo bật/tắt theo loại cảnh báo | `ALERT_KINDS[kind].gauge` (`src/mocks/alertKinds.ts`) → `alertGauge` |

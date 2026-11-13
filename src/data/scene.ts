@@ -1,5 +1,5 @@
 import type { SceneConfig } from '@/features/scene/types';
-import { useQuery } from '@/lib/useQuery';
+import { useQuery } from '@/hooks/useQuery';
 import { sceneRepository, type SceneSummary } from './sceneRepository';
 
 // ---------------- Cảnh 3D ----------------

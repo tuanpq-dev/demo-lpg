@@ -14,8 +14,8 @@ import {
   type AssignForm,
 } from '@/features/maintenance/assign';
 import { announce } from '@/lib/announce';
-import { useFormModal } from '@/lib/useFormModal';
-import { useNow } from '@/lib/useNow';
+import { useFormModal } from '@/hooks/useFormModal';
+import { useNow } from '@/hooks/useNow';
 import { assignFormReducer } from './assignFormReducer';
 
 export const SHIFT_SHORT = Object.fromEntries(SHIFTS.map((s) => [s.value, s.label.split(' (')[0]])) as Record<ShiftId, string>;

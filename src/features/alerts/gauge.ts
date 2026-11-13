@@ -6,11 +6,9 @@
  * không đoán theo dấu của số. Ở đây chỉ còn chốt an toàn: số không hợp lệ hoặc thang suy biến (max ≤ 0) → null.
  */
 import type { AlertDirection } from '@/features/alerts/types';
+import { withUnit } from '@/lib/number';
 
 const GAUGE_HEADROOM = 1.2;
-
-/** Đơn vị dính số: "25% LEL", "45°C"; còn lại cách một khoảng: "11.8 bar". */
-export const withUnit = (v: string, unit: string) => (/^[%°]/.test(unit) ? `${v}${unit}` : `${v} ${unit}`);
 
 /**
  * MỘT hàm định dạng số đo + đơn vị cho drawer cảnh báo: 1 chữ số lẻ, bỏ số 0 thừa – "25% LEL", "25.4% LEL", "11.8 bar".

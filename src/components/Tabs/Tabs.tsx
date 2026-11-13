@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { cn } from '@/lib/cn';
-import { useRovingFocus } from '@/lib/useRovingFocus';
+import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { Badge, type CountTone } from '../Badge';
 
 export type TabItem = {

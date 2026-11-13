@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { withUnit } from '@/lib/number';
 import { AlertCard, AlertTriangleIcon, AssigneeCard, Card } from '@/components';
 import type { AlertRecord } from '@/data/alerts';
 import { SHIFTS, type MaintenanceRecord } from '@/data/maintenance';
@@ -37,8 +38,8 @@ export function DetailAside({ record: r, alert, canWrite, onAssign }: DetailAsid
             code={alert.code}
             device={alert.device}
             message={alert.message}
-            value={`${alert.value} ${alert.unit}`}
-            threshold={`${alert.threshold} ${alert.unit}`}
+            value={withUnit(alert.value, alert.unit)}
+            threshold={withUnit(alert.threshold, alert.unit)}
             handling="action-required"
             valueLabel="Lúc cảnh báo"
             footer={

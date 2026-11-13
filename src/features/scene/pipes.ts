@@ -1,4 +1,5 @@
 import { ASSET_SPECS, assetLayout, findPort, objectElevation, resolvePortName } from './assets/specs';
+import { pad2 } from '@/lib/number';
 import type { Pipe, SceneConfig, SceneObject, Vec3 } from './types';
 
 /*
@@ -165,7 +166,7 @@ export function orthoSegment(a: Vec3, b: Vec3): Vec3[] {
 export function nextPipeId(scene: Pick<SceneConfig, 'objects' | 'pipes'>) {
   const taken = new Set([...scene.objects.map((o) => o.id), ...scene.pipes.map((p) => p.id)]);
   for (let n = 1; ; n++) {
-    const id = `PL-${String(n).padStart(2, '0')}`;
+    const id = `PL-${pad2(n)}`;
     if (!taken.has(id)) return id;
   }
 }
