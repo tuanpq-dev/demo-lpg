@@ -41,7 +41,7 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 |---|---|
 | `src/api/client.test.ts` | Gọi API: lỗi theo `code`, timeout, huỷ, refresh 401 một lần, mất phiên, sai hợp đồng |
 | `src/lib/createCollectionStore.test.ts` | Store dữ liệu: kết quả cũ về muộn không đè dữ liệu vừa ghi, huỷ lượt cũ, báo subscriber khi đổi |
-| `src/lib/queryState.test.ts` | `useQuery`: không lộ dữ liệu / lỗi của key cũ, tải ngầm lỗi giữ dữ liệu, `keepPrevious`, gộp trạng thái |
+| `src/lib/queryState.test.ts` | `useQuery` (`src/hooks/useQuery.ts`): không lộ dữ liệu / lỗi của key cũ, tải ngầm lỗi giữ dữ liệu, `keepPrevious`, gộp trạng thái |
 | `src/features/alerts/workflow.test.ts` · `maintenance/workflow.test.ts` | Quy trình trạng thái cảnh báo / bảo trì chỉ đi tiến, không nhảy bước |
 | `src/features/alerts/close.test.ts` | Đóng cảnh báo: 3 điều kiện hệ thống, người đóng ≠ người xử lý (Nghiêm trọng), tiếp tục theo dõi, đóng hàng loạt |
 | `src/features/alerts/update.test.ts` | Cập nhật xử lý: điều kiện "Đã xử lý" theo loại (áp suất / gas / cháy, mất tín hiệu), theo dõi sau xử lý, nháp |
@@ -53,7 +53,8 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 | `src/data/contract.test.ts` | Response mock của mọi `fetch*` (cảnh báo, bảo trì, báo cáo) khớp schema API |
 | `src/features/reports/sign.test.ts` | 8 điều kiện ký báo cáo ngày |
 | `src/features/live/signal.test.ts` | Quy tắc "Mất tín hiệu" (không hiện số cũ) |
-| `src/lib/plantTime.test.ts` | "Hôm nay" theo giờ nhà máy |
+| `src/lib/plantTime.test.ts` | "Hôm nay", giờ chẵn kế tiếp, đồng hồ header theo giờ nhà máy (không theo múi giờ máy) |
+| `src/pages/shared/maintenance/create/createForm.test.ts` | Tạo yêu cầu bảo trì: giờ bắt đầu / hạn mặc định và chặn hạn trong quá khứ theo ngày nhà máy (ranh giới nửa đêm) |
 | `packages/shared/src/roles.test.ts` | Phân quyền theo vai trò |
 | `src/mocks/contracts.test.ts` | Mock khớp hợp đồng dữ liệu dùng chung |
 

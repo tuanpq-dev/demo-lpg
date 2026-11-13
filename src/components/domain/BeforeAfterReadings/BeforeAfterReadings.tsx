@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { withUnit } from '@/lib/number';
 import { cn } from '@/lib/cn';
 import { NumberField } from '../../FormField/NumberField';
 
@@ -35,7 +36,7 @@ export type BeforeAfterReadingsProps = {
 const toneClass: Record<ReadingTone, string> = { danger: 'text-danger-text', warning: 'text-warning', normal: 'text-fg' };
 const toneWord: Record<ReadingTone, string> = { danger: ' (vượt mức nguy hiểm)', warning: ' (vượt ngưỡng cảnh báo)', normal: '' };
 /** Một chữ số lẻ (như `formatMeasure`) – số live dao động không hiện 2 chữ số lẻ. */
-const fmt = (n: number, unit: string) => `${+n.toFixed(1)} ${unit}`;
+const fmt = (n: number, unit: string) => withUnit(String(+n.toFixed(1)), unit);
 
 /**
  * "Thông số trước và sau xử lý" (modal cập nhật xử lý cảnh báo áp suất – ảnh): nhãn (+ giới hạn) · ô Trước (số lúc

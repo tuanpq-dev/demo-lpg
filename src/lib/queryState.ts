@@ -49,3 +49,16 @@ export function viewOf<T>(snap: Snapshot<T>, key: string, attempt: number, keepP
   if (cached !== undefined) return { status: 'success', data: cached, pending: true };
   return keepPrevious && current.status === 'success' ? { ...current, pending: true } : { status: 'loading', pending: true };
 }
+
+type QueryLike = { status: 'loading' | 'error' | 'success'; error?: Error | undefined; refetch: () => void };
+
+/**
+ * Gộp trạng thái nhiều truy vấn của một trang (danh sách + tóm tắt…) cho khung chờ / lỗi chung: lỗi nếu có truy vấn lỗi,
+ * loading nếu còn truy vấn chưa xong; `refetch` tải lại tất cả.
+ */
+export function combineQueries(...qs: readonly QueryLike[]): { status: 'loading' | 'error' | 'success'; error?: Error; refetch: () => void } {
+  const failed = qs.find((q) => q.status === 'error');
+  const refetch = () => qs.forEach((q) => q.refetch());
+  if (failed) return { status: 'error', error: failed.error, refetch };
+  return { status: qs.every((q) => q.status === 'success') ? 'success' : 'loading', refetch };
+}

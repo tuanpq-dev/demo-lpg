@@ -1,5 +1,6 @@
 /** Dữ liệu modal cập nhật xử lý: dòng thông số trước/sau, ngưỡng, theo dõi sau xử lý, nháp. Tách từ alertDetail.ts. */
-import { formatGaugeNumber, isBreached, withUnit } from '@/features/alerts/gauge';
+import { formatGaugeNumber, isBreached } from '@/features/alerts/gauge';
+import { withUnit } from '@/lib/number';
 import type { AlertRecord } from '@/features/alerts/types';
 import { DEFAULT_FOLLOW_UP, GAS_BANDS, REGULATORS, fillPlaybookText } from '@/mocks/alertKinds';
 import type { AlertKindConfig, AlertUpdateConfig, FollowUpConfig } from '@/features/alerts/kinds';

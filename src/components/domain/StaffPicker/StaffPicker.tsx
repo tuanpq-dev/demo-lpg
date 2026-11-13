@@ -1,6 +1,6 @@
 import { useId, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { useRovingFocus } from '@/lib/useRovingFocus';
+import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { Avatar } from '../../Avatar';
 import { Badge } from '../../Badge';
 import { AVAILABILITY_LABEL, type Availability } from './availability';

@@ -1,7 +1,7 @@
 import { useId, useRef, type FormEvent, type ReactNode, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
-import { useDialog } from '@/lib/useDialog';
+import { useDialog } from '@/hooks/useDialog';
 
 export type ModalProps = {
   open: boolean;

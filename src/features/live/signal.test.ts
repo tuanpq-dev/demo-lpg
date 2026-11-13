@@ -32,7 +32,7 @@ describe('tagSignal – mất tín hiệu (thời gian truyền vào)', () => {
 describe('hiển thị theo quy tắc mất tín hiệu', () => {
   const tank = { id: 'V-101', asset: 'tank-horizontal', bindings: { level: 'LT-101', pressure: 'PT-101' } } as SceneObject;
   test('formatField: "Mất tín hiệu" thay cho số cũ', () => {
-    expect(formatField('level', tv(72.4), T0 + 1)).toBe('72.4 %');
+    expect(formatField('level', tv(72.4), T0 + 1)).toBe('72.4%');
     expect(formatField('level', tv(72.4), T0 + STALE_MS)).toBe(SIGNAL_LOST_LABEL);
     expect(formatField('level', tv(72.4, T0, 'bad'), T0)).toBe(SIGNAL_LOST_LABEL);
   });

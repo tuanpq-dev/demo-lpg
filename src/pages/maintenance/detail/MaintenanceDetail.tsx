@@ -9,7 +9,7 @@ import { resolveReviewer } from '@/features/maintenance/review';
 import { NEXT_ACTION_LABEL } from '@/features/maintenance/workflow';
 import { runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { preloadMaintenanceModals } from '../lazyModals';
 import { DetailActionBar } from './DetailActionBar';
 import { DetailAside } from './DetailAside';

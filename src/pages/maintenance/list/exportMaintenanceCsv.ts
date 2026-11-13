@@ -1,4 +1,5 @@
-import { PRIORITY_OPTIONS, STATUS_LABEL, TYPE_LABEL, formatDate, isOverdue, type MaintenanceRecord } from '@/data/maintenance';
+import { PRIORITY_OPTIONS, STATUS_LABEL, TYPE_LABEL, isOverdue, type MaintenanceRecord } from '@/data/maintenance';
+import { formatDayVi } from '@/lib/plantTime';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { HOLD_LABEL, reportedProgressOf } from '@/features/maintenance/progress';
 import { plantDayKey } from '@/lib/plantTime';
@@ -31,14 +32,14 @@ export function exportMaintenanceCsv(rows: readonly MaintenanceRecord[], now: Da
   const pr = Object.fromEntries(PRIORITY_OPTIONS.map((o) => [o.value, o.label]));
   const lines = rows.map((r) => [
     r.code,
-    formatDate(r.createdAt),
+    formatDayVi(r.createdAt),
     r.title,
     r.device,
     r.area,
     TYPE_LABEL[r.type],
     pr[r.priority],
     r.assignee ?? '',
-    formatDate(r.dueAt),
+    formatDayVi(r.dueAt),
     r.hold ? `${STATUS_LABEL[r.status]} – ${HOLD_LABEL[r.hold.kind]}` : STATUS_LABEL[r.status],
     String(reportedProgressOf(r)),
     checklistText(r),

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { actionErrorText } from './actionError';
+import { actionErrorText } from '@/lib/actionError';
 
 /** Nháp của modal (sessionStorage theo mã – `createSessionDraft` hoặc hàm save/clear riêng). */
 export type FormModalDraft<V> = {

@@ -12,7 +12,7 @@ import { CHECK_LABEL, areaAssetText, reportStatusText, resultCsv, resultFileName
 import type { Scenario, SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
 import { plantTimeOfDay } from '@/lib/plantTime';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { OverviewCard, ResultInfoStrip, ResultKpis, ResultTimelineCard, ResultTrendCard } from './simulation/ResultCards';
 import { CriteriaCard, PointsCards, ReportCard, ResultAdviceCard, ResultAlertsCard, ResultReferenceCard } from './simulation/ResultDetailCards';
 import { BackLink, ScenarioNotFound, useSuggestionConfidence } from './simulation/shared';

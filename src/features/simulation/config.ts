@@ -4,6 +4,7 @@
  * `now` truyền vào. Cấu hình chỉ đổi lớp mô phỏng – không đổi ngưỡng / cấu hình PLC thật.
  */
 import { SIGNAL_LOST_LABEL, freshNumber, freshValue } from '@/features/live/signal';
+import { withUnit } from '@/lib/number';
 import type { TagValue } from '@/features/live/types';
 import { formatDayVi, plantDayKey, plantTimeOfDay } from '@/lib/plantTime';
 import type { MonitorSetup } from './monitor';
@@ -144,9 +145,9 @@ const fixed = (v: number, digits: number) => v.toFixed(digits);
 /** Hạ chữ đầu, giữ viết hoa phần sau ("Ngưỡng cảnh báo PLC" → "ngưỡng cảnh báo PLC"). */
 export const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
-/** "35%" · "12 bar" · "40 °C" · "30 s" (không có qualifier). */
+/** "35%" · "12 bar" · "40°C" · "30 s" (không có qualifier). */
 export function formatQty(v: number, unit: SimUnit, digits = 0): string {
-  return unit === '%' ? `${fixed(v, digits)}%` : `${fixed(v, digits)} ${unit}`;
+  return withUnit(fixed(v, digits), unit);
 }
 
 /** "35% LEL" – có qualifier. */

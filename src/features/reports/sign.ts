@@ -3,7 +3,7 @@
  * THUẦN, `now` qua tham số. Điều kiện ký tính từ bản ghi + số đo theo mốc + cảnh báo cảm biến + 2 thao tác trong modal
  * (đã xem trước biểu mẫu, đã tick xác nhận trách nhiệm). Đủ 8 điều kiện mới ký được.
  */
-import { plantDateTimeKey } from '@/lib/plantTime';
+import { formatDayVi, plantDateTimeKey } from '@/lib/plantTime';
 import { flaggedReadings, signedSteps, type DailyReadingRow } from './daily';
 import { PERIOD_CONFIG } from './period';
 import { SIGNATURE_STEPS, awaitingStep, checkpointProgress, type ReportRecord, type SignatureStep } from './status';
@@ -206,7 +206,7 @@ export function draftVersionLabel(r: ReportRecord): string {
 /** "18:10 · 24/06/2026" (giờ nhà máy). */
 export function formatSignTime(now: Date): string {
   const k = plantDateTimeKey(now);
-  return `${k.slice(11, 16)} · ${k.slice(8, 10)}/${k.slice(5, 7)}/${k.slice(0, 4)}`;
+  return `${k.slice(11, 16)} · ${formatDayVi(k)}`;
 }
 
 // ============================================================================

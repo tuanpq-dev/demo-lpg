@@ -3,7 +3,8 @@ import type { IconName } from '@/assets/digital-twin';
 import type { PriorityTaskData, SelectOption, Severity, TimelineEvent, WorkStatus } from '@/components';
 import { isPastDue, isRequestOverdue } from '@/features/maintenance/deadline';
 import type { MaintenanceCounts, MaintenanceRange, MaintenanceTab } from '@/features/maintenance/query';
-import { daysFromToday } from '@/lib/plantTime';
+import { daysFromToday, formatDayVi } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 import type { MaintenanceRecord, MaintenanceStatus, MaintenanceType } from '@/features/maintenance/types';
 import type { KpiMock } from '@/mocks/types';
 
@@ -32,17 +33,11 @@ export function dueLabel(r: MaintenanceRecord, now: Date) {
   return `Còn ${d} ngày`;
 }
 
-/** "10/10/2023" */
-export const formatDate = (iso: string) => {
-  const [y, m, d] = iso.slice(0, 10).split('-');
-  return `${d}/${m}/${y}`;
-};
-
 /** "Hôm nay, 14:00" / "Ngày mai, 08:30" / "20/10/2026, Cuối ngày" (Lịch sắp tới 70:4902). */
 function scheduleLabel(r: MaintenanceRecord, now: Date) {
   const d = daysUntilDue(r, now);
   const time = dueTimeLabel(r);
-  const day = d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : formatDate(r.dueAt);
+  const day = d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : formatDayVi(r.dueAt);
   return `${day}, ${time}`;
 }
 
@@ -150,7 +145,6 @@ export function maintenanceKpis(c: MaintenanceCounts): KpiMock[] {
   const doneMonth = c.doneThisMonth;
   const ratio = inProgress + review + doneMonth ? (inProgress / (inProgress + review + doneMonth)) * 100 : 0;
   const base = { variant: 'compact', strongBorder: true, iconBox: 24 } as const;
-  const pad2 = (n: number) => String(n).padStart(2, '0');
   return [
     {
       ...base,

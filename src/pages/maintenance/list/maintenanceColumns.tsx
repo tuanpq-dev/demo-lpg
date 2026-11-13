@@ -1,5 +1,6 @@
 import { Badge, type DataTableColumn } from '@/components';
-import { STATUS_BADGE, STATUS_LABEL, dueLabel, formatDate, isOverdue, type MaintenanceRecord } from '@/data/maintenance';
+import { STATUS_BADGE, STATUS_LABEL, dueLabel, isOverdue, type MaintenanceRecord } from '@/data/maintenance';
+import { formatDayVi } from '@/lib/plantTime';
 import { canAssign } from '@/features/maintenance/assign';
 import { HOLD_LABEL, canUpdateProgress, reportedProgressOf } from '@/features/maintenance/progress';
 import { REVIEW_FAILED_LABEL } from '@/features/maintenance/review';
@@ -65,7 +66,7 @@ export function maintenanceColumns({
         </button>
       ),
     },
-    { id: 'createdAt', header: 'Ngày tạo', width: 100, className: 'text-base text-fg', cell: (r) => formatDate(r.createdAt) },
+    { id: 'createdAt', header: 'Ngày tạo', width: 100, className: 'text-base text-fg', cell: (r) => formatDayVi(r.createdAt) },
     {
       id: 'title',
       header: 'Nội dung',
@@ -83,7 +84,7 @@ export function maintenanceColumns({
       width: 100,
       cell: (r) => (
         <span className={cn('text-base', isOverdue(r, now) ? 'text-danger-text' : 'text-fg')} title={dueLabel(r, now)}>
-          {formatDate(r.dueAt)}
+          {formatDayVi(r.dueAt)}
         </span>
       ),
     },

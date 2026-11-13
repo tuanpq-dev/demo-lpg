@@ -1,7 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
-import { useDialog } from '@/lib/useDialog';
+import { useDialog } from '@/hooks/useDialog';
 import { CloseIcon } from '../Icon';
 
 export type DrawerProps = {

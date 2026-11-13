@@ -24,6 +24,7 @@ import {
   type MaintenanceType,
 } from '@/data/maintenance';
 import type { MaintenanceListResult } from '@/data/maintenanceApi';
+import type { Notice } from '@/hooks/useNotice';
 import { cn } from '@/lib/cn';
 import { ScheduleCard, SectionHeading } from './MaintenanceSections';
 
@@ -61,7 +62,7 @@ export type MaintenanceListSectionProps = {
   selection: ReturnType<typeof useRecordSelection<MaintenanceRecord>>;
   columns: DataTableColumn<MaintenanceRecord>[];
   /** Thông báo sau thao tác (vùng `role="status"`). */
-  notice: string;
+  notice: Notice;
   schedule: TimelineEvent[];
   onShowSchedule: () => void;
   openDetail: (id: string) => void;
@@ -140,8 +141,8 @@ export function MaintenanceListSection({
           />
 
           {selection.selected.length > 0 && <BulkAssignBar count={selection.selected.length} onAssign={onBulkAssign} onClear={selection.clear} />}
-          <p role="status" className={notice ? 'px-4 pt-2 text-sm text-success' : 'sr-only'}>
-            {notice}
+          <p role="status" className={notice.text ? cn('px-4 pt-2 text-sm', notice.error ? 'text-danger-text' : 'text-success') : 'sr-only'}>
+            {notice.text}
           </p>
 
           {/* Đang tải trang / bộ lọc mới: giữ kết quả cũ, làm mờ (aria-busy) tới khi có kết quả. */}

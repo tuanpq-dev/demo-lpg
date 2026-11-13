@@ -1,5 +1,6 @@
 /** Cấu hình theo loại cảnh báo, chỉ số chính, nhãn thời gian, nhân sự. Tách từ alertDetail.ts. */
-import { formatGaugeNumber, withUnit } from '@/features/alerts/gauge';
+import { formatGaugeNumber } from '@/features/alerts/gauge';
+import { withUnit } from '@/lib/number';
 import { formatDayVi, parsePlantDateTime, plantDayKey } from '@/lib/plantTime';
 import type { AlertDirection, AlertRecord } from '@/features/alerts/types';
 import { ALERT_KINDS, fillPlaybookText } from '@/mocks/alertKinds';

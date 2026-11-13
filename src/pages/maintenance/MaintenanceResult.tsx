@@ -1,6 +1,7 @@
 import { InfoGrid, type InfoGridItem } from '@/components';
+import { withUnit } from '@/lib/number';
 import type { MaintenanceRecord } from '@/data/maintenance';
-import { formatPlantDateTime } from '@/data/maintenanceDetail';
+import { formatPlantDateTime } from '@/lib/plantTime';
 import {
   DEVICE_CONDITION_LABEL,
   REVIEW_RESULT_LABEL,
@@ -14,7 +15,7 @@ const fmt = (s: ReadingSnapshot | undefined, unit: string) =>
     ? '—'
     : s.value === null
       ? 'Mất tín hiệu lúc gửi'
-      : `${s.value.toFixed(1)}${unit.startsWith('°') ? unit : ` ${unit}`}${s.warn !== undefined ? ` (ngưỡng ${Number(s.warn.toFixed(2))})` : ''}`;
+      : `${withUnit(s.value.toFixed(1), unit)}${s.warn !== undefined ? ` (ngưỡng ${Number(s.warn.toFixed(2))})` : ''}`;
 
 /**
  * Khối "Kết quả bảo trì" sau khi nghiệm thu ĐẠT: nguyên nhân, biện pháp, thông số đã chụp lúc gửi, tình trạng, kết quả, người +

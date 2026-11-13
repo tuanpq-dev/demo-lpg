@@ -23,7 +23,7 @@ import {
 } from '@/features/simulation/config';
 import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import { announce } from '@/lib/announce';
-import { useNow } from '@/lib/useNow';
+import { useNow } from '@/hooks/useNow';
 import { BackLink, ScenarioNotFound, healthKeyOf, useAnalyzedAt } from './simulation/shared';
 import { ExpectedOutcomesCard, InputParamsCard, ReferenceDataCard, ScenarioInfoCard } from './simulation/ConfigCards';
 import { ConfigSuggestionCard, ConfigSummaryCard, ReadinessCard, ScenarioHistoryCard } from './simulation/ConfigSideCards';

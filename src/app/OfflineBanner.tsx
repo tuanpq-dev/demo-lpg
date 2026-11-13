@@ -1,4 +1,4 @@
-import { useOnlineStatus } from '@/lib/useOnlineStatus';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 /** Thanh báo mất mạng (cố định đáy màn hình) – mọi trang trong khung app. */
 export function OfflineBanner() {

@@ -2,7 +2,7 @@
  * Lớp dữ liệu màn "Chi tiết báo cáo ngày" (`/reports/daily/:code`). Bản ghi đọc theo mã (`GET /reports/daily/:code` –
  * `reportApi`), cùng nguồn với danh sách → trạng thái/chữ ký ở hai màn luôn khớp; số đo theo mốc là mock riêng.
  */
-import { useIdentityRevision, useQuery } from '@/lib/useQuery';
+import { useIdentityRevision, useQuery } from '@/hooks/useQuery';
 import type { DailyReadingRow, ReportRecord } from '@/features/reports';
 import { appNow } from '@/lib/demoNow';
 import { buildDailyReadings } from '@/mocks/dailyReport';

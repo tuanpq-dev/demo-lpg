@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useUnacknowledgedCount } from '@/data/alertApi';
 import { useLiveStatus } from '@/data/live';
-import { announce, useAnnouncement } from '@/lib/announce';
+import { useAnnouncement } from '@/hooks/useAnnounce';
+import { announce } from '@/lib/announce';
 
 const STATUS_TEXT = {
   connected: 'Đã kết nối lại dữ liệu trực tiếp.',

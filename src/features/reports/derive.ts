@@ -2,6 +2,7 @@
  * Số liệu suy dẫn của màn báo cáo – mọi số tính từ CÙNG một danh sách báo cáo (không số tĩnh), nhận `now`.
  */
 import { dayNumber, plantDateTimeKey, plantDayKey } from '@/lib/plantTime';
+import { pad2 } from '@/lib/number';
 import { dayFromNumber, daysInMonth, quarterOf, weekdayIndex } from './period';
 import { SIGNATURE_STEPS, awaitingStep, missingCheckpoints, reportState, type ReportRecord, type ReportState, type SignatureStep } from './status';
 
@@ -76,8 +77,6 @@ export type UpcomingDeadline = {
   time: string;
   title: string;
 };
-
-const pad2 = (n: number) => String(n).padStart(2, '0');
 
 function nextDeadline(kind: DeadlineKind, now: Date): UpcomingDeadline {
   const t = plantDateTimeKey(now);

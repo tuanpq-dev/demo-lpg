@@ -14,7 +14,8 @@ import {
   NotesIcon,
   NotesThread,
 } from '@/components';
-import { formatDate, type MaintenanceAttachment, type MaintenanceRecord } from '@/data/maintenance';
+import { type MaintenanceAttachment, type MaintenanceRecord } from '@/data/maintenance';
+import { formatDayVi } from '@/lib/plantTime';
 import { historyEvents, relativeDayTime } from '@/data/maintenanceDetail';
 import { formatFileSize } from '@/lib/fileSize';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
@@ -159,7 +160,7 @@ export function ResultCard({ record: r }: { record: MaintenanceRecord }) {
         <MaintenanceResult record={r} />
       ) : r.status === 'done' ? (
         <p className="text-base text-fg">
-          Hoàn thành ngày {r.completedAt ? formatDate(r.completedAt) : '—'} · tiến độ {r.progress}%.
+          Hoàn thành ngày {r.completedAt ? formatDayVi(r.completedAt) : '—'} · tiến độ {r.progress}%.
         </p>
       ) : r.status === 'cancelled' ? (
         <p className="text-base text-fg-secondary">Yêu cầu đã hủy{r.cancelReason ? ` – lý do: ${r.cancelReason}` : ''}.</p>

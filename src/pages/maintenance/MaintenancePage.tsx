@@ -26,10 +26,10 @@ import {
   type MaintenanceRecord,
 } from '@/data/maintenance';
 import { runAction } from '@/lib/actionError';
-import { useDebouncedValue } from '@/lib/useDebouncedValue';
-import { useNotice } from '@/lib/useNotice';
-import { useNow } from '@/lib/useNow';
-import { combineQueries } from '@/lib/useQuery';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useNotice } from '@/hooks/useNotice';
+import { useNow } from '@/hooks/useNow';
+import { combineQueries } from '@/lib/queryState';
 import { maintenanceColumns } from './list/maintenanceColumns';
 import { MaintenanceListSection, PAGE_SIZE } from './list/MaintenanceListSection';
 import { MaintenanceModals } from './list/MaintenanceModals';
@@ -66,7 +66,7 @@ export default function MaintenancePage() {
   // Tạo/sửa yêu cầu: operator trở lên (UX – backend kiểm tra lại khi có API).
   const canWrite = useCan('maintenance:write');
   const canReview = useCan('maintenance:review');
-  const { notice, flash } = useNotice();
+  const { notice, show: flash } = useNotice();
   // "Hôm nay" (quá hạn, nhãn hạn) theo giờ nhà máy – cập nhật mỗi phút; truy vấn cũng tải lại ngầm mỗi phút.
   const now = useNow(60_000);
 
