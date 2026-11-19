@@ -1,4 +1,4 @@
-/** Dữ liệu mẫu yêu cầu bảo trì (hạn/ngày tương đối so với hôm nay). Tách từ mocks/maintenance.ts. */
+/** Dữ liệu mẫu yêu cầu bảo trì (hạn/ngày tương đối so với hôm nay). */
 import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { at } from './maintenanceDates';
 

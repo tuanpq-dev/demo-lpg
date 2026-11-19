@@ -3,7 +3,7 @@
  * `MaintenanceRecord` (hợp đồng `MaintenanceRequest` + trường chỉ FE), trang danh sách, tóm tắt KPI, tải việc, danh bạ thiết bị.
  * Nạp LƯỜI cùng ./schemas – chỉ `import type` từ code tải đầu.
  */
-import './zodJitless';
+import '@/lib/zodJitless';
 import { z } from 'zod/mini';
 import type { StaffWorkload } from '@/features/maintenance/assign';
 import type { MaintenanceCounts, MaintenanceListResult, MaintenanceSummary } from '@/features/maintenance/query';

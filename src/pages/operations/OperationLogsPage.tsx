@@ -19,7 +19,7 @@ import { DateRangeSelect, ExportButton, LiveDataButton, RefreshButton } from '@/
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
-import { useOperationLogs } from '@/data/operationLogs';
+import { useOperationLogs } from '@/data/operations/logs';
 import {
   LOG_CATEGORIES,
   LOG_CATEGORY_LABEL,

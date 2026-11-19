@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import type { MaintenanceRecord } from '@/data/maintenance';
-import { clearProgressDraft, loadProgressDraft, saveProgressDraft } from '@/data/maintenanceDetail';
+import { clearProgressDraft, loadProgressDraft, saveProgressDraft } from '@/data/maintenance/detail';
 import {
   canContinueToSubmit,
   checkUploads,

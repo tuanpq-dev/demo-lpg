@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, CloseIcon } from '@/components';
-import { createMaintenanceRequest, useDeviceDirectory, type NewMaintenanceInput } from '@/data/maintenanceApi';
+import { createMaintenanceRequest, useDeviceDirectory, type NewMaintenanceInput } from '@/data/maintenance/api';
 import { announce } from '@/lib/announce';
 
 /**

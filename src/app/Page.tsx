@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AppHeader, AppMain, AppShell, preloadIcons, type AppMainProps } from '@/components';
-import { useUnacknowledgedCount } from '@/data/alertApi';
+import { useUnacknowledgedCount } from '@/data/alerts/api';
 import { ROLE_LABELS } from '@/features/auth/permissions';
 import { whenIdle } from '@/lib/whenIdle';
 import { useAuth } from './auth';

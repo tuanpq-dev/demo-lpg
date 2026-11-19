@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Card, DualTrendChart, type DualTrendPoint, type DualTrendSeries, type MetricRow } from '@/components';
-import type { DeviceAlerts, DeviceMaintenanceView, PlcSignal } from '@/data/operationDevice';
+import type { DeviceAlerts, DeviceMaintenanceView, PlcSignal } from '@/data/operations/device';
 import type { OperationLogEntry } from '@/features/operations/types';
 import type { TagValue } from '@/features/live/types';
 import { trendTicks } from '@/features/operations/device';

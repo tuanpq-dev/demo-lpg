@@ -5,6 +5,9 @@
 import type { Alert, AlertStatus as ApiAlertStatus } from '@demo-lpg/shared/alerts';
 import type { AlertKind } from './kinds';
 
+/** Mức độ cảnh báo (cũng là mức ưu tiên yêu cầu bảo trì) – theo hợp đồng `packages/shared`. */
+export type { Severity } from '@demo-lpg/shared/alerts';
+
 /**
  * Trạng thái xử lý của cảnh báo ở FE = hợp đồng (`unacknowledged` · `in-progress` · `done`) + `resolved` CHỈ FE:
  * Đã xử lý, chờ người có thẩm quyền xác nhận đóng (tab "Chờ đóng"). `done` = Hoàn thành (đã đóng).

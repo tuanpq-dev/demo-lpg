@@ -1,4 +1,4 @@
-import { mockAttachmentFile } from '@/data/maintenanceDetail';
+import { mockAttachmentFile } from '@/data/maintenance/detail';
 import type { MaintenanceAttachment } from '@/data/maintenance';
 import { announce } from '@/lib/announce';
 import { downloadFile } from '@/lib/download';

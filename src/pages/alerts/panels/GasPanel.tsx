@@ -10,7 +10,7 @@ import {
   type TagTone,
 } from '@/components';
 import { cn } from '@/lib/cn';
-import { alertKind, alertOccurredAt, levelOf, useAlertLive, useAreaSensors, useTagSignal } from '@/data/alertDetail';
+import { alertKind, alertOccurredAt, levelOf, useAlertLive, useAreaSensors, useTagSignal } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { bandTicks, bannerFor, formatMinutes, overThreshold } from '@/features/alerts/bands';
 import { formatDelta, formatMeasure } from '@/features/alerts/gauge';

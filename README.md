@@ -51,6 +51,7 @@ Chỉ test logic thuần có rủi ro nghiệp vụ / an toàn (chạy trong nod
 | `src/features/reports/status.test.ts` · `record.test.ts` | Báo cáo: trạng thái suy dẫn (hoàn thành / chữ ký / bước chờ ký), mốc thiếu, KPI + việc cần xử lý, lọc; ghi nhận mốc (nguồn giá trị, điều kiện xác nhận, nhật ký mốc) |
 | `src/features/simulation/config.test.ts` | Cấu hình mô phỏng: hợp lệ / nhắc ngưỡng, số tham chiếu mất tín hiệu, trạng thái sẵn sàng, gợi ý AI |
 | `src/data/contract.test.ts` | Response mock của mọi `fetch*` (cảnh báo, bảo trì, báo cáo) khớp schema API |
+| `src/data/scene/scene.test.ts` | Tìm thấy và nạp được cảnh 3D mẫu (`import.meta.glob` sai thư mục không báo lỗi – mọi trang 3D lặng lẽ rơi về ảnh tĩnh) |
 | `src/features/reports/sign.test.ts` | 8 điều kiện ký báo cáo ngày |
 | `src/features/live/signal.test.ts` | Quy tắc "Mất tín hiệu" (không hiện số cũ) |
 | `src/lib/plantTime.test.ts` | "Hôm nay", giờ chẵn kế tiếp, đồng hồ header theo giờ nhà máy (không theo múi giờ máy) |

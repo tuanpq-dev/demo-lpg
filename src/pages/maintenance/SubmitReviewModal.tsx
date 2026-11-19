@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { Badge, Button, DatePicker, FormField, Modal, Select, Textarea, DiscardConfirmButtons } from '@/components';
 import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
-import { clearSubmitDraft, loadSubmitDraft, saveSubmitDraft, useRelatedDevice, type SubmitDraft } from '@/data/maintenanceDetail';
+import { clearSubmitDraft, loadSubmitDraft, saveSubmitDraft, useRelatedDevice, type SubmitDraft } from '@/data/maintenance/detail';
 import type { ProgressFile } from '@/features/maintenance/progress';
 import { defaultProposedAt, snapshotReading, submitMissing, type SubmitForm, type SubmitInput } from '@/features/maintenance/review';
 import { announce } from '@/lib/announce';

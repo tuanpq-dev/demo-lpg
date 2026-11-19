@@ -1,4 +1,4 @@
-/** Khối giao diện của /alerts: cảnh báo ưu tiên, thanh thao tác hàng loạt. Tách từ AlertsPage. */
+/** Khối giao diện của /alerts: cảnh báo ưu tiên, thanh thao tác hàng loạt. */
 import { AlertCard, Button, Icon, type AlertCardData } from '@/components';
 
 /** 1. Cảnh báo ưu tiên – Figma 70:2901. */

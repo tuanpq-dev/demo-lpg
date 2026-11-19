@@ -1,4 +1,4 @@
-/** Khối giao diện của modal "Hoàn thành nhận xét & ký xác nhận". Tách từ ReportSignModal. */
+/** Khối giao diện của modal "Hoàn thành nhận xét & ký xác nhận". */
 import type { ReactNode } from 'react';
 import {
   AlertCircleIcon,

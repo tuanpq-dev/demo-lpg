@@ -2,8 +2,8 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Page } from '@/app/Page';
 import { PageError, Placeholder } from '@/app/Placeholder';
 import { Button, PageHeader } from '@/components';
-import { useMaintenanceById } from '@/data/maintenanceApi';
-import { maintenanceListUrl } from '@/data/maintenanceDetail';
+import { useMaintenanceById } from '@/data/maintenance/api';
+import { maintenanceListUrl } from '@/data/maintenance/detail';
 import NotFoundPage from '../errors/NotFoundPage';
 import { MaintenanceDetail } from './detail/MaintenanceDetail';
 

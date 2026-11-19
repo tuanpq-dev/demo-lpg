@@ -1,4 +1,4 @@
-import type { DeviceAlerts, DeviceMaintenanceView } from '@/data/operationDevice';
+import type { DeviceAlerts, DeviceMaintenanceView } from '@/data/operations/device';
 import type { LiveSourceStatus, TagValue } from '@/features/live/types';
 
 /** Props chung của phần nội dung theo loại thiết bị (VaporizerView, PlcScadaView). */

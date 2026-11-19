@@ -10,7 +10,7 @@ import {
   useDetectorStatus,
   useTagReadings,
   verificationItems,
-} from '@/data/alertDetail';
+} from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { followUpWindow } from '@/features/alerts/followUp';
 import type { InspectionEntry } from '@/features/alerts/inspection';

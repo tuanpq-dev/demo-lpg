@@ -1,5 +1,5 @@
 import { Badge, InfoGrid } from '@/components';
-import { alertDateTimeLabel, alertMetric, metricText } from '@/data/alertDetail';
+import { alertDateTimeLabel, alertMetric, metricText } from '@/data/alerts/detail';
 import { assetName } from '@/data/assetDetail';
 import { alertBadgeStatus, type AlertRecord } from '@/data/alerts';
 import { areaLabel } from '@/features/plant/areas';

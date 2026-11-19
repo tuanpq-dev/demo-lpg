@@ -15,7 +15,7 @@ import {
 } from '@/components';
 import type { Reading } from '@/data/assetDetail';
 import { REVIEWERS, type MaintenanceRecord } from '@/data/maintenance';
-import { useRelatedDevice } from '@/data/maintenanceDetail';
+import { useRelatedDevice } from '@/data/maintenance/detail';
 import {
   DEFAULT_FOLLOW_UP_HOURS,
   DEVICE_CONDITION_LABEL,

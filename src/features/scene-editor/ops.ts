@@ -1,6 +1,6 @@
 import { ASSET_SPECS, assetLayout } from '@/features/scene/assets/specs';
 import { EDIT_SNAP, snapTo } from '@/features/scene/editConstants';
-import type { ObjectTransform } from '@/features/scene/EditTools';
+import type { ObjectTransform } from '@/features/scene/edit';
 import { objectsById, parsePortRef, portWorld, roundVec } from '@/features/scene/pipes';
 import {
   SCENE_SCHEMA_VERSION,

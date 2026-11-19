@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useFilterParams } from '@/app/useTableFilters';
-import { useReportPage, type ReportListQuery } from '@/data/reportApi';
+import { useReportPage, type ReportListQuery } from '@/data/reports/api';
 import { reportParams, type ReportTab } from '@/features/reports';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 

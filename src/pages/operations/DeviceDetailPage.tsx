@@ -6,7 +6,7 @@ import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { Button, CpuIcon, InfoChip, InfoIcon, MapPinIcon, PageHeader, Select, StableWidth, StatusPill } from '@/components';
 import { deriveMaintenanceSummary } from '@/data/assetDetail';
 import { useLiveStatus } from '@/data/live';
-import { useMaintenanceByDevice } from '@/data/maintenanceApi';
+import { useMaintenanceByDevice } from '@/data/maintenance/api';
 import {
   OPERATION_DEVICE_IDS,
   OPERATION_DEVICE_OPTIONS,
@@ -14,7 +14,7 @@ import {
   deriveDeviceMaintenance,
   resolveOperationDeviceId,
   useOperationDevice,
-} from '@/data/operationDevice';
+} from '@/data/operations/device';
 import { connectionView, HEADER_RUN_LABELS, PLC_CONNECTION_LABELS } from '@/features/operations/device';
 import { useNow } from '@/hooks/useNow';
 import NotFoundPage from '../errors/NotFoundPage';

@@ -1,5 +1,5 @@
 /*
- * MOCK SERVER báo cáo – thay cho backend tới khi có API (tải lười: chỉ nạp khi trang gọi `fetch*` ở `data/reportApi.ts`).
+ * MOCK SERVER báo cáo – thay cho backend tới khi có API (tải lười: chỉ nạp khi trang gọi `fetch*` ở `data/reports/api.ts`).
  * Logic lọc / đếm ở `features/reports/query.ts` (thuần) – backend làm đúng phần đó. "Bây giờ" = giờ của máy chủ (`appNow`).
  */
 import { findDailyReport, queryReports, reportSummary, type ReportListQuery, type ReportListResult, type ReportSummary } from '@/features/reports';

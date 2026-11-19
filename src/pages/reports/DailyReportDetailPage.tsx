@@ -5,7 +5,7 @@ import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
 import { useTableFilters } from '@/app/useTableFilters';
-import { useDailyReport } from '@/data/dailyReport';
+import { useDailyReport } from '@/data/reports/daily';
 import {
   DAILY_DETAIL_PARAMS,
   DAILY_GROUPS,

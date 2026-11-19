@@ -14,14 +14,15 @@ import {
   ScaleIcon,
 } from '@/components';
 import { useLiveData } from '@/data/live';
-import type { SceneEditState, SceneViewerHandle } from '@/features/scene';
+import type { SceneViewerHandle } from '@/scene3d';
+import type { SceneEditState } from '@/features/scene';
 import { FLOOR_HALF_SIZE } from '@/features/scene/editConstants';
 import type { AssetType, Vec3 } from '@/features/scene/types';
 import { useEditorUi, useSceneDoc, type EditorTool } from '@/features/scene-editor/store';
 import type { EditorActions } from './useEditorActions';
 
 // Dùng lại SceneViewer của Viewer (chunk lazy three/drei) – không viết renderer riêng.
-const SceneViewer = lazy(() => import('@/features/scene/SceneViewer'));
+const SceneViewer = lazy(() => import('@/scene3d/SceneViewer'));
 
 const TOOLS: { id: EditorTool; label: string; key: string; icon: ReactNode }[] = [
   { id: 'select', label: 'Chọn', key: 'Q', icon: <CursorIcon /> },

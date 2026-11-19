@@ -1,14 +1,14 @@
 import { Suspense, lazy, useEffect, useId, useRef, useState } from 'react';
-import { Button, Card, FocusIcon, ResponsiveImage, SceneLoading, SignalLostIcon, preloadSceneViewer } from '@/components';
+import { Button, Card, FocusIcon, ResponsiveImage, SceneLoading, SignalLostIcon } from '@/components';
+import { preloadSceneViewer, sceneSnapshot } from '@/scene3d';
 import { useSceneConfig } from '@/data/scene';
-import { sceneSnapshot } from '@/features/scene/sceneSnapshot';
 import type { LiveData } from '@/features/live/types';
 import { cn } from '@/lib/cn';
 import type { ImageAsset } from '@/lib/imageAsset';
 import { useFullscreen } from '@/hooks/useFullscreen';
 
 // three + drei chỉ tải khi trang có mô hình 3D (chunk lazy dùng chung với Tổng quan).
-const SceneViewer = lazy(() => import('@/features/scene/SceneViewer'));
+const SceneViewer = lazy(() => import('@/scene3d/SceneViewer'));
 
 export type AssetModelPanelProps = {
   /** Cảnh chỉ có tài sản (src/mocks/scenes/<id>.json). */

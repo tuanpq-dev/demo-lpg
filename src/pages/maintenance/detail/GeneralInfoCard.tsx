@@ -3,7 +3,7 @@ import { assetPath } from '@/app/assetRoutes';
 import { Card, ExternalLinkIcon, InfoGrid, InfoIcon, type InfoGridItem } from '@/components';
 import { resolveAssetId } from '@/data/assetDetail';
 import { FORM_TYPE_OPTIONS, PRIORITY_OPTIONS, SOURCE_OPTIONS, STATUS_LABEL, dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
-import { relativeDayTime } from '@/data/maintenanceDetail';
+import { relativeDayTime } from '@/data/maintenance/detail';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineDayLabel } from '@/features/maintenance/deadline';
 import { HOLD_LABEL, reportedProgressOf } from '@/features/maintenance/progress';

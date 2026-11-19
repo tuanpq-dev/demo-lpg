@@ -8,12 +8,12 @@ Tách nguyên văn từ `GUIDE.md` (28/10/2026) – số mục giữ như cũ (4
 
 | Chủ đề | Quy ước | File |
 |---|---|---|
-| Màu, bo góc, font | **Không hardcode màu.** Token là CSS var dạng kênh RGB, map sang Tailwind (`bg-surface`, `text-fg-muted`, `border-line/30`…). Palette mặc định của Tailwind đã tắt. Chart/SVG/3D đọc màu bằng `tokenColor` / `useTokenColors` / `sceneColor` | `src/styles/tokens.css`, `tailwind.config.ts`, `src/lib/tokens.ts`, `src/hooks/useTokenColors.ts`, `src/features/scene/colors.ts` |
+| Màu, bo góc, font | **Không hardcode màu.** Token là CSS var dạng kênh RGB, map sang Tailwind (`bg-surface`, `text-fg-muted`, `border-line/30`…). Palette mặc định của Tailwind đã tắt. Chart/SVG/3D đọc màu bằng `tokenColor` / `useTokenColors` / `sceneColor` | `src/styles/tokens.css`, `tailwind.config.ts`, `src/lib/tokens.ts`, `src/hooks/useTokenColors.ts`, `src/scene3d/colors.ts` |
 | Component thuần | `src/components/*` không import router, không import `src/data`/`src/mocks` (ngoại lệ: `PageHeader` dùng `<Link>`). Nhận dữ liệu qua props, báo sự kiện qua callback | `src/components/index.ts` |
 | Component nối dữ liệu | Nằm ở `src/app/` hoặc trong trang: `Page` (header gắn router), `KpiFromData`, `ConnectedPlantMap` (nạp cảnh 3D) | `src/app/` |
 | Hook dữ liệu | Trang chỉ đọc qua `useOverviewData()`, `useAlerts()`, `useMaintenance()`, `useSceneConfig()`, `useLiveData()`. Không import `src/mocks` trong trang | `src/data/*.ts` |
 | 3 trạng thái | Mỗi trang xử lý `loading` (Placeholder) · `error` (Card danger + "Thử lại") · `success` | `src/app/Placeholder.tsx` |
-| Số liệu suy dẫn | KPI, số đếm tab, thẻ ưu tiên, lịch… tính bằng hàm `derive*` từ cùng một danh sách (Cảnh báo, Bảo trì). KPI Tổng quan hiện là mock tĩnh | `src/data/alerts.ts`, `src/data/maintenance.ts` |
+| Số liệu suy dẫn | KPI, số đếm tab, thẻ ưu tiên, lịch… tính bằng hàm `derive*` từ cùng một danh sách (Cảnh báo, Bảo trì). KPI Tổng quan hiện là mock tĩnh | `src/data/alerts/index.ts`, `src/data/maintenance/index.ts` |
 | Mock | Nội dung lấy nguyên văn từ Figma | `src/mocks/` |
 | Kiểu dữ liệu chính | `OverviewData`, `QueryState` · `AlertRecord` · `MaintenanceRecord` · `KpiMock` · `SceneConfig`/`SceneObject`/`Pipe`/`AssetType`/`LiveData` | `src/data/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/types.ts`, `src/features/scene/types.ts` |
 | Đặt tên | Thư mục `src/components/<PascalCase>/` + `<PascalCase>/index.ts`; component chỉ dùng cho MỘT nghiệp vụ (thẻ cảnh báo, sơ đồ thiết bị, chọn nhân sự…) đặt ở `src/components/domain/<PascalCase>/` (vẫn thuần, vẫn export qua `@/components`). Prop thống nhất: `variant`, `tone`, `size: sm\|md`, `label` (aria), `className`. Giá trị domain tiếng Anh kebab-case, nhãn hiển thị tiếng Việt | — |
@@ -37,7 +37,7 @@ flowchart LR
 |---|---|
 | Token | `src/styles/tokens.css` (nhóm Background, Border, Text, Brand, Status, `scene-*`). Đỏ: xem bảng "Bốn token đỏ" ngay dưới |
 | Map sang class | `tailwind.config.ts` (`v('…')` → `rgb(var(--color-…) / alpha)`) |
-| Dùng trong JS | `src/lib/tokens.ts` (`tokenColor`), `src/hooks/useTokenColors.ts`, 3D: `src/features/scene/colors.ts` |
+| Dùng trong JS | `src/lib/tokens.ts` (`tokenColor`), `src/hooks/useTokenColors.ts`, 3D: `src/scene3d/colors.ts` |
 | Xem trực quan | `/playground` – `src/pages/playground/PlaygroundPage.tsx`, mỗi mục một file `*Section.tsx` |
 
 **Bốn token đỏ – dùng cho gì** (duyệt 26/10/2026; mẫu sống ở `/playground` mục 1). ESLint (`DANGER_TEXT_RULES` trong `eslint.config.js`, test `src/test/colorRules.test.ts`) chặn `text-danger` trần, `text-danger-strong` cho chữ thường và mọi độ mờ trên chữ đỏ `text-danger*/NN`; ngoại lệ ghi `// eslint-disable-next-line no-restricted-syntax -- icon` hoặc `-- chữ lớn 28px đậm`.
@@ -123,7 +123,7 @@ Tất cả export từ `src/components/index.ts`. Cột "Dùng ở" chỉ tính 
 | SensorList | `src/components/domain/SensorList/SensorList.tsx` | `label`, `rows` ({ name, valueText (null = mất tín hiệu), levelLabel, tone, highlight }) – dòng gây cảnh báo: vạch trái + chữ đậm | Drawer cảnh báo gas | `#alert-drawer` |
 | ToastList (+ `ToastHost` ở src/app, store `lib/toast.ts`, hook `hooks/useToasts.ts`) | `src/components/Toast/Toast.tsx` | `items` ({ id, text, tone info/success/error }), `onDismiss`, `label` – góc trên phải dưới header (dưới `sm` trải ngang), viền + icon theo loại, nút × "Đóng thông báo"; KHÔNG phải vùng live (`showToast` tự `announce`); tự tắt 5 s / lỗi 8 s, tối đa 3 | mọi trang (`Page`): lỗi thao tác bấm nhanh (`runAction` mặc định `toastError`) | – |
 | Modal | `src/components/Modal/Modal.tsx` | `open`, `onClose`, `title`, `footer`, `onSubmit`, `size`, `titleTone` (primary = modal tiến độ), `headerExtra` (dải thông tin trong header), `beforeBody` (dải không cuộn – tab điều hướng), `bodyRef` (thân cuộn) | form Bảo trì, Editor, Ghi nhận mốc kiểm tra | `#forms` |
-| PlantMap, MapMarker | `src/components/PlantMap/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`, `focus` (id object → thêm view bay tới, chọn sẵn); chung `onSelect`, `onRendererChange`, `notice`; `preloadSceneViewer()` = tải code 3D sớm (song song dữ liệu cảnh) | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
+| PlantMap, MapMarker | `src/scene3d/PlantMap.tsx`, `src/components/PlantMap/MapMarker.tsx` | ảnh: `image`, `markers`, `views` · 3D: `scene`, `liveData`, `editable`, `quality`, `onFallback`, `focus` (id object → thêm view bay tới, chọn sẵn); chung `onSelect`, `onRendererChange`, `notice`; `preloadSceneViewer()` = tải code 3D sớm (song song dữ liệu cảnh) | Tổng quan, `src/app/ConnectedPlantMap.tsx` | `#scene` (qua ConnectedPlantMap) |
 | SceneLoading | `src/components/SceneLoading/SceneLoading.tsx` | `label` (mặc định "Đang tải mô hình 3D…"), `hidden` (mờ dần 250 ms) – lớp chờ DUY NHẤT của cảnh 3D, nền `bg-app` = màu sàn cảnh, phủ `absolute inset-0` | PlantMap, ConnectedPlantMap, AssetModelPanel, SceneViewer | – |
 
 **GĐ4B – Chart & bảng**

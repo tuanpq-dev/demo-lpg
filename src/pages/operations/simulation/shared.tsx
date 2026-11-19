@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeftIcon, buttonClass, type BreadcrumbItem } from '@/components';
-import { SIMULATION_REFERENCE_TAGS, type useSimulation } from '@/data/simulation';
+import { SIMULATION_REFERENCE_TAGS, type useSimulation } from '@/data/operations/simulation';
 import { suggestionConfidence, tagHealth, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';
 import NotFoundPage from '../../errors/NotFoundPage';
 

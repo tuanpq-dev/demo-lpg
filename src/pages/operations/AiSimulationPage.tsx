@@ -6,7 +6,7 @@ import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
-import { SIMULATION_REFERENCE_TAGS, startSimulation, useSimulation } from '@/data/simulation';
+import { SIMULATION_REFERENCE_TAGS, startSimulation, useSimulation } from '@/data/operations/simulation';
 import { activeSessionOf, startBlocker } from '@/features/simulation/monitor';
 import {
   SCENARIO_GROUPS,

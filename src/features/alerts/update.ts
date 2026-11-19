@@ -363,7 +363,7 @@ function closeOutcome(cfg: AlertUpdateConfig, s: UpdateState, close: Extract<Upd
   return {};
 }
 
-// ---- Nháp (sessionStorage theo mã – `createSessionDraft` ở data/alertDetail) ----
+// ---- Nháp (sessionStorage theo mã – `createSessionDraft` ở data/alerts/detail.ts) ----
 
 export type UpdateDraft = Omit<AlertUpdateInput, 'files'> & { /** ISO */ savedAt: string };
 

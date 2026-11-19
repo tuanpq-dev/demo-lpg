@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_MODE } from '@/api/auth';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
-import { useAlertById } from '@/data/alertApi';
+import { useAlertById } from '@/data/alerts/api';
 import { isOverdue, useMaintenance, type MaintenanceRecord } from '@/data/maintenance';
 import { resolveReviewer } from '@/features/maintenance/review';
 import { NEXT_ACTION_LABEL } from '@/features/maintenance/workflow';

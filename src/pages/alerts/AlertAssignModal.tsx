@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { AssignNotices, Badge, Button, Checkbox, Combobox, FormField, Modal, Textarea } from '@/components';
-import { ALERT_STAFF, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alertDetail';
+import { ALERT_STAFF, clearAlertAssignDraft, loadAlertAssignDraft, saveAlertAssignDraft } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import {
   alertAssignChange,
