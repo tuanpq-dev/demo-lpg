@@ -1,4 +1,4 @@
-/** Chi tiết bổ sung theo mã yêu cầu (checklist, ghi chú, lịch sử…). Tách từ mocks/maintenance.ts. */
+/** Chi tiết bổ sung theo mã yêu cầu (checklist, ghi chú, lịch sử…). */
 import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { isoDay } from './maintenanceDates';
 

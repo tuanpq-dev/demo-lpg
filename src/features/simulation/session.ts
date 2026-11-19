@@ -1,4 +1,4 @@
-/** Phiên mô phỏng: giai đoạn, thời gian chạy, mã phiên, tạo phiên. Tách từ monitor.ts. */
+/** Phiên mô phỏng: giai đoạn, thời gian chạy, mã phiên, tạo phiên. */
 import { plantDayKey } from '@/lib/plantTime';
 import { pad2 } from '@/lib/number';
 import { defaultRunNote, startValue } from './config';

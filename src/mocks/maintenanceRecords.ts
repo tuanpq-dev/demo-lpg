@@ -1,7 +1,7 @@
 /**
  * Mock yêu cầu bảo trì – Figma 70:3964. Ngày tính TƯƠNG ĐỐI theo hôm nay (Figma: hôm nay = 15/10).
  * Đây là NGUỒN DUY NHẤT: KPI, thẻ ưu tiên, số đếm Tabs, Lịch sắp tới đều suy ra từ danh sách này (ở mock server).
- * Nạp LƯỜI (`data/maintenanceStore.ts` → `maintenanceReady`) – không nằm trong chunk các trang.
+ * Nạp LƯỜI (`data/maintenance/store.ts` → `maintenanceReady`) – không nằm trong chunk các trang.
  */
 import { checklistProgress } from '@/features/maintenance/checklist';
 import type { MaintenanceRecord } from '@/features/maintenance/types';

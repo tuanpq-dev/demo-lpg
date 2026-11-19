@@ -1,5 +1,5 @@
 /*
- * MOCK SERVER bảo trì – thay backend tới khi có API (tải lười qua `data/maintenanceApi.ts`). Mỗi hàm = một endpoint.
+ * MOCK SERVER bảo trì – thay backend tới khi có API (tải lười qua `data/maintenance/api.ts`). Mỗi hàm = một endpoint.
  */
 import { linkedMaintenance } from '@/features/alerts/workflow';
 import { computeWorkloads, type StaffWorkload } from '@/features/maintenance/assign';
@@ -14,8 +14,8 @@ import {
 } from '@/features/maintenance/query';
 import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { appNow } from '@/lib/demoNow';
-import { alertsReady, currentAlerts } from '../alertStore';
-import { currentMaintenance, maintenanceReady } from '../maintenanceStore';
+import { alertsReady, currentAlerts } from '../alerts/store';
+import { currentMaintenance, maintenanceReady } from '../maintenance/store';
 
 export type DeviceDirectoryEntry = { device: string; area: string };
 

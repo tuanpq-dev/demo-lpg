@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAlertById } from '@/data/alertApi';
-import { useLinkedMaintenance, useMaintenanceById } from '@/data/maintenanceApi';
+import { useAlertById } from '@/data/alerts/api';
+import { useLinkedMaintenance, useMaintenanceById } from '@/data/maintenance/api';
 import { canAssign } from '@/features/maintenance/assign';
 import { canUpdateProgress, type ProgressFile } from '@/features/maintenance/progress';
 

@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { Avatar } from '../../Avatar';
 import { Badge } from '../../Badge';
-import { AVAILABILITY_LABEL, type Availability } from './availability';
+import { AVAILABILITY_LABEL, type Availability } from '@/features/staff/availability';
 
 export type StaffPickerItem = {
   /** Khoá + giá trị chọn (hiện là tên nhân sự). */

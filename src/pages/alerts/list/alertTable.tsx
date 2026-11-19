@@ -1,4 +1,4 @@
-/** Cấu hình bảng /alerts: tab trạng thái, bộ lọc, cột. Tách từ AlertsPage. */
+/** Cấu hình bảng /alerts: tab trạng thái, bộ lọc, cột. */
 import { Badge, type DataTableColumn, type FilterDef, type Severity, type TabItem } from '@/components';
 import { SEVERITY_OPTIONS, SHIFT_OPTIONS, alertBadgeStatus, tableValue, uniqueOptions, type AlertRecord } from '@/data/alerts';
 import { FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel } from '@/features/alerts/followUp';

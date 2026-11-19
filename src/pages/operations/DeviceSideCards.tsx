@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertItem, Badge, Button, Card, EventTimeline, Icon, StatusDot, StatusPill, UserIcon, type StatusPillTone } from '@/components';
-import type { DeviceAlerts, DeviceMaintenanceView } from '@/data/operationDevice';
+import type { DeviceAlerts, DeviceMaintenanceView } from '@/data/operations/device';
 import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import { logTimeLabel, type ViewTone } from '@/features/operations/device';

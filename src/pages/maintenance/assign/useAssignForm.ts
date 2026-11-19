@@ -1,8 +1,8 @@
 import { useReducer, useState } from 'react';
 import type { StaffPickerItem } from '@/components';
 import { ASSIGNABLE_STAFF, SHIFTS, staffByName, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
-import { clearAssignDraft, loadAssignDraft, saveAssignDraft } from '@/data/maintenanceDetail';
-import { useMaintenanceLoads } from '@/data/maintenanceApi';
+import { clearAssignDraft, loadAssignDraft, saveAssignDraft } from '@/data/maintenance/detail';
+import { useMaintenanceLoads } from '@/data/maintenance/api';
 import {
   WORKLOAD_HINT,
   assignMode,

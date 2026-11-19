@@ -1,5 +1,5 @@
 /*
- * MOCK SERVER cảnh báo – thay cho backend tới khi có API (tải lười: chỉ nạp khi trang gọi `fetch*` ở `data/alertApi.ts`).
+ * MOCK SERVER cảnh báo – thay cho backend tới khi có API (tải lười: chỉ nạp khi trang gọi `fetch*` ở `data/alerts/api.ts`).
  * Mỗi hàm = một endpoint; kết quả là bản sao (như JSON từ mạng – trang sửa object không đụng "cơ sở dữ liệu" mock).
  * Logic lọc / đếm thuần ở `features/alerts/query.ts` – backend làm tương đương.
  */
@@ -16,7 +16,7 @@ import {
   type AlertSummary,
 } from '@/features/alerts/query';
 import type { AlertRecord } from '@/features/alerts/types';
-import { alertsReady, currentAlerts } from '../alertStore';
+import { alertsReady, currentAlerts } from '../alerts/store';
 
 const copy = (a: AlertRecord): AlertRecord => ({ ...a });
 

@@ -1,6 +1,6 @@
 import { useReducer, useState } from 'react';
 import type { AttachedFile } from '@/components';
-import { clearRecordDraft, loadRecordDraft, recordCheckpoint, saveRecordDraft } from '@/data/checkpointRecord';
+import { clearRecordDraft, loadRecordDraft, recordCheckpoint, saveRecordDraft } from '@/data/reports/checkpoint';
 import {
   appendRemark,
   recordBlockers,

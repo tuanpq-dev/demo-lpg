@@ -9,7 +9,7 @@ import { assetEvents, assetMocks, type AssetEvent, type AssetEventStatus, type A
 import { isoDay } from '@/mocks/maintenanceDates';
 import { systemStatus } from '@/mocks/overview';
 import { useLiveData } from './live';
-import { dueLabel, isOverdue } from './maintenanceView';
+import { dueLabel, isOverdue } from './maintenance/view';
 import type { MaintenanceRecord } from '@/features/maintenance/types';
 import { useQuery } from '@/hooks/useQuery';
 

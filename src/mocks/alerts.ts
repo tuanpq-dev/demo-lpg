@@ -1,6 +1,6 @@
 /**
  * Mock data màn Cảnh báo – 5 dòng đầu nguyên văn Figma 70:3032, 15 dòng bổ sung để thử lọc/phân trang.
- * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts.ts).
+ * Đây là NGUỒN DUY NHẤT: thẻ ưu tiên, KPI, số đếm Tabs đều tính ra từ danh sách này (src/data/alerts).
  */
 import type { AlertRecord } from '@/features/alerts/types';
 import { pad2 } from '@/lib/number';

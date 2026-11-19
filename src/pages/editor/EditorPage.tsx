@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Card } from '@/components';
 import { Page } from '@/app/Page';
 import { SENSOR_TAGS } from '@/data/scene';
-import type { SceneViewerHandle } from '@/features/scene';
+import type { SceneViewerHandle } from '@/scene3d';
 import { addView } from '@/features/scene-editor/ops';
 import { useDirty, useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { checkScene } from '@/features/scene-editor/validate';

@@ -3,17 +3,17 @@
 Tài liệu cho người mới: đọc theo **luồng** (URL → dữ liệu → màn hình) thay vì mở file ngẫu nhiên.
 GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi mỗi luồng 1–2 dòng + link tới `docs/guide/<luồng>.md`. **Chỉ mở file của luồng đang làm**, không đọc hết.
 
-> **11/11/2026**: có lại bộ test TỐI THIỂU (`npm test`, 9 file logic thuần – bảng trong `README.md`) + GitLab CI. **10/11/2026 (nhánh `chore/fe-hardening`)**: đã xoá bộ unit test cũ, trang `/playground`, mã giả lập `liveSimulator`/`devScenarios` và cấu hình Netlify. Các nhắc tới `#playground` hay file test KHÔNG có trong bảng của README trong `docs/guide/*` là **lịch sử** – không còn trong repo. Chi tiết: `docs/decisions.md` mục "FE hardening". Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
+> Test: bộ TỐI THIỂU (`npm test` – logic thuần có hậu quả nghiệp vụ, bảng trong `README.md`) + smoke test trình duyệt (`npm run test:e2e`) + GitLab CI. Trang `/playground`, bộ unit test cũ, `devScenarios` và cấu hình Netlify đã xoá (10/11/2026) – nhắc tới chúng trong `docs/guide/*` là **lịch sử**. Quy ước bắt buộc: [`CLAUDE.md`](CLAUDE.md) · sai khác Figma: [`docs/figma-diffs.md`](docs/figma-diffs.md) · quyết định/nhật ký: [`docs/decisions.md`](docs/decisions.md).
 
 ---
 
 ## 1. Dự án làm gì
 
-- Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**, **Chi tiết tài sản** (`/map/:assetId` – tab "Bản đồ nội khu", hiện có V-101).
+- Dashboard giám sát hệ thống LPG "Digital Twin 2026 – Plant Control": **Tổng quan**, **Cảnh báo**, **Bảo trì**, **Báo cáo** vận hành, **Vận hành** (chi tiết thiết bị, nhật ký, AI mô phỏng), **Chi tiết tài sản** (`/map/:assetId` – tab "Bản đồ nội khu", hiện có V-101).
 - Dựng theo Figma (file `stJtcbE3XGzA4WFrJFE1un`); ảnh tham chiếu trong `scratch/figma-ref/` – **chỉ ở máy dev** (gitignore). KHÔNG đặt ảnh thiết kế trong `public/` (bị deploy công khai).
 - Dữ liệu hiện là **mock** (`src/mocks/`), đi qua lớp `src/data/` để sau thay bằng API mà không sửa UI.
 - Bản đồ nhà máy có 2 kiểu: ảnh 2.5D (mặc định) và cảnh 3D (three.js) dựng từ JSON `SceneConfig`.
-- Có **Scene Editor** (`/editor`) để dựng/sửa cảnh 3D, lưu tạm trong localStorage.
+- Có **Chỉnh sửa bản đồ 3D** (Scene Editor, `/settings/map-editor` – menu Cài đặt ⚙ trên header) để dựng/sửa cảnh 3D, lưu tạm trong localStorage.
 
 **Chạy**
 
@@ -29,12 +29,11 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 | `/overview?scene=tram-chiet-nap` | Mở cảnh 3D khác (cảnh mẫu hoặc cảnh lưu từ Editor), luôn ở 3D |
 | `/overview?map=3d&focus=V-101` | Mở 3D và bay tới object (thêm chế độ xem "<nhãn object>") – nút "Xem trên bản đồ" của trang chi tiết |
 | `/map` · `/map/V-101` | Tab "Bản đồ nội khu": `/map` mở thẳng chi tiết "Bồn LPG V-101" (như ảnh 5D). `/map/v-101` → `/map/V-101`; mã lạ → "Không tìm thấy tài sản"; `/operations/V-101` (link cũ) → `/map/V-101`; `?hide=alert,sensor` ẩn loại sự kiện; `?create=1` mở modal tạo yêu cầu bảo trì |
-| `/editor` | Scene Editor – chỉ engineer/admin (vai trò khác → `/overview`); khi `VITE_AUTH=off` vẫn cần `?edit=1` |
+| `/settings/map-editor` | Chỉnh sửa bản đồ 3D – chỉ engineer/admin (quyền `scene:write`; `VITE_AUTH=off` = phiên giả admin nên vào được, build thêm `VITE_SCENE_EDITOR=false` để chỉ mở khi có `?edit=1`). `/editor` (link cũ) → chuyển hướng |
 | `/operations` · `/operations/devices/E-101A` | Menu "Vận hành": chi tiết máy hóa hơi E-101A (ảnh op-device-*.png); mã khác kiểu chữ → mã chuẩn; mã lạ → "Không tìm thấy thiết bị" – docs/guide/operations.md |
 | `/reports?now=2026-06-24T18:30` | Báo cáo vận hành định kỳ, dữ liệu gần đúng ảnh thiết kế (`?now=` chỉ dev) – docs/guide/reports.md |
 
-- Deploy (**chỉ Vercel**): `vercel.json` (build `npm run build`, publish `dist`, `VITE_AUTH=off` trong `buildCommand`, mọi route trừ `/assets/*` → `/index.html`, `/assets/*` cache immutable) – không thêm file `_redirects` vào `public/`.
-- Deploy (Vercel): `vercel.json` – build `VITE_AUTH=off npm run build`, output `dist`, rewrite `/(.*)` → `/index.html` (vào thẳng route / F5 không 404). Node: theo Project Settings của Vercel (20.x hoặc 22.x; khi package.json có `engines` thì theo `engines`).
+- Deploy (**chỉ Vercel**): `vercel.json` (build `VITE_AUTH=off npm run build`, publish `dist`, mọi route trừ `/assets/*` → `/index.html` – chunk cũ phải 404 để app tự tải lại; `/assets/*` cache immutable; header bảo mật CSP…) – không thêm file `_redirects` vào `public/`. Node: 20.x hoặc 22.x (`engines`).
 - Lý do: app là SPA dùng history router (`createBrowserRouter` trong `src/main.tsx`), host tĩnh không có file `/alerts` nên gõ thẳng URL hoặc F5 sẽ 404 nếu thiếu luật trả `index.html` cho React Router xử lý; vì vậy `base` trong `vite.config.ts` phải để mặc định `/`.
 
 ---
@@ -45,15 +44,19 @@ GUIDE.md chỉ là **mục lục**: cách chạy, bản đồ thư mục, rồi 
 src/
 ├─ main.tsx            khai báo route (createBrowserRouter)
 ├─ app/                "keo" nối router + dữ liệu vào component
-├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, operations, reports, editor, errors, shared)
+├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, operations, reports, editor, login, errors, shared)
 ├─ components/         component THUẦN (không import router/data), barrel index.ts
-├─ data/               hook + hàm dữ liệu theo màn (bọc mock, chỗ thay API)
+├─ data/               hook + hàm dữ liệu, gom theo miền (alerts/, maintenance/, reports/, operations/, scene/, live/…)
 ├─ mocks/              dữ liệu giả từ Figma; mocks/scenes/*.json = cảnh 3D
-├─ features/scene/     engine 3D: kiểu SceneConfig, validate, Viewer, asset
+├─ scene3d/            vẽ 3D (React Three Fiber, tải lười): PlantMap, SceneViewer, asset, công cụ sửa
+├─ features/scene/     phần thuần của cảnh 3D: kiểu SceneConfig, validate, hình học, ống
 ├─ features/scene-editor/  logic Editor (store, ops, validate, nháp)
+├─ features/<miền>/    logic THUẦN theo miền (alerts, maintenance, reports, staff, auth, simulation…)
 ├─ features/live/      kiểu số liệu trực tiếp, quy tắc mất tín hiệu, tags.ts (tên tag giả định – một chỗ)
 ├─ features/tank/      volume.ts (mức → % thể tích), layers.ts (3 lớp trong bồn)
-├─ lib/                tiện ích chung (cn, store, dialog, focus…)
+├─ api/                gọi backend: client (fetch + refresh 401), schema zod hợp đồng API, auth
+├─ hooks/              hook dùng chung (useQuery, useDialog, useNow…)
+├─ lib/                tiện ích thuần, KHÔNG hook (cn, number, plantTime, createCollectionStore…)
 ├─ assets/digital-twin/    SVG/PNG từ Figma + sổ đăng ký icon
 └─ styles/             tokens.css (màu, bo góc…) + global.css
 
@@ -63,18 +66,19 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 | Thư mục | Chứa gì | Khi nào cần vào |
 |---|---|---|
 | `src/main.tsx` | Danh sách route, lazy-load trang | Thêm trang / đổi đường dẫn |
-| `src/app/` | `Page.tsx` (layout + header có router), `navigation.ts` (menu), `useTableFilters.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `AssetModelPanel.tsx` (mô hình 3D tài sản + ảnh dự phòng), `editorAccess.ts`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
-| `src/pages/` | Trang ghép component: `src/pages/overview/`, `src/pages/alerts/`, `src/pages/maintenance/`, `src/pages/asset/` (`AssetDetailPage`), `src/pages/reports/` (`ReportsPage` + khối dùng chung `shared/`), `src/pages/editor/`, `src/pages/playground/`, `src/pages/SimplePage.tsx` | Sửa bố cục/hành vi một màn |
+| `src/app/` | `Page.tsx` (`AppFrame` khung + header dựng một lần, `Page` thân trang), `navigation.ts` (menu), `settingsRoutes.ts` (menu Cài đặt), `auth/` (`AuthProvider`, `RequireAuth`, `useCan`), `useTableFilters.ts`, `useRecordSelection.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `AssetModelPanel.tsx` (mô hình 3D tài sản + ảnh dự phòng), `editorAccess.ts`, `LiveAnnouncer.tsx`, `OfflineBanner.tsx`, `ToastHost.tsx`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
+| `src/pages/` | Trang ghép component: `overview/`, `alerts/`, `maintenance/`, `asset/` (`AssetDetailPage`), `operations/` (chi tiết thiết bị, nhật ký, AI mô phỏng), `reports/` (`ReportsPage` + khối dùng chung `shared/`), `editor/` (Chỉnh sửa bản đồ 3D), `login/`, `errors/` (403/404/500), `shared/` (khối dùng chung nhiều màn) | Sửa bố cục/hành vi một màn |
 | `src/components/` | 40+ component thuần, mỗi cái một thư mục `<Tên>/` | Sửa giao diện dùng chung |
-| `src/data/` | `src/data/overview.ts`, `src/data/alerts.ts`, `src/data/maintenance.ts`, `src/data/assetDetail.ts`, `src/data/reports.ts`, `src/data/scene.ts`, `src/data/sceneRepository.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
+| `src/data/` | Theo miền: `src/data/alerts/`, `src/data/maintenance/`, `src/data/reports/`, `src/data/operations/`, `src/data/scene/` (+ `repository.ts`), `src/data/live/`, `src/data/mockServer/`; miền một file: `overview.ts`, `assetDetail.ts`, `staff.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
 | `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/reports.ts` (báo cáo sinh theo ngày hiện tại), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
-| `src/features/scene/` | Viewer 3D + asset + validate zod | Mọi thứ về bản đồ 3D |
-| `src/features/scene-editor/` | Store undo/redo, thao tác thuần, kiểm tra, nháp | Logic của `/editor` |
+| `src/scene3d/` | Vẽ 3D: `PlantMap`, `SceneViewer`, asset thiết bị, công cụ sửa của Editor | Hình dáng / ánh sáng / tương tác bản đồ 3D |
+| `src/features/scene/` | Phần thuần: kiểu `SceneConfig`, validate zod, migrate, hình học, ống | Đổi dữ liệu / quy tắc cảnh 3D |
+| `src/features/scene-editor/` | Store undo/redo, thao tác thuần, kiểm tra, nháp | Logic của Chỉnh sửa bản đồ 3D |
 | `src/lib/` | Tiện ích thuần / store ngoài React: `cn`, `number` (`formatNumber`, `withUnit`, `pad2`), `plantTime`, `createCollectionStore`, `tokens`, `toast`, `announce` | Viết tiện ích dùng lại (không phải hook) |
 | `src/hooks/` | Hook dùng chung: `useQuery`, `useDialog`, `useRovingFocus`, `useNow`, `useFormModal`, `useTokenColors`, `useToasts`, `useAnnounce`, `useReducedMotion`… | Viết hook dùng lại nhiều màn (hook riêng một màn để cạnh màn đó) |
 | `src/assets/digital-twin/` | Icon + ảnh bản đồ, đăng ký trong `src/assets/digital-twin/index.ts` | Thêm icon từ Figma |
 | `src/styles/` | `tokens.css`, `global.css` | Đổi màu/token |
-| `scratch/figma-ref/` (gitignore, chỉ máy dev) | Ảnh chụp Figma để so; ảnh người dùng gửi không có node (`mt-*-design.png`, `asset-v101-design.png`). Trước 27/10/2026 nằm ở `public/figma-ref/` (đã xoá; vẫn còn trong lịch sử git) | Đối chiếu thiết kế (playground ở dev) |
+| `scratch/figma-ref/` (gitignore, chỉ máy dev) | Ảnh chụp Figma để so; ảnh người dùng gửi không có node (`mt-*-design.png`, `asset-v101-design.png`). Trước 27/10/2026 nằm ở `public/figma-ref/` (đã xoá; vẫn còn trong lịch sử git) | Đối chiếu thiết kế |
 | `packages/shared/src/` | Hợp đồng dữ liệu FE/BE: `scene/` (SceneConfig, specs, migrate, parse), `live.ts`, `alerts.ts`, `maintenance.ts`, `roles.ts`, `auth.ts`. FE dùng mã nguồn (alias), backend (repo riêng) dùng bản build `dist/` | Đổi kiểu dữ liệu dùng chung, thêm quyền |
 | `src/api/` | Gọi backend: `client.ts` (fetch wrapper, lỗi có kiểu, refresh khi 401), `types.ts` (types + zod của hợp đồng API), `auth.ts` (phiên đăng nhập) | Thêm endpoint, đổi hợp đồng API |
 | `src/app/auth/`, `src/features/auth/`, `src/pages/login/` | `AuthProvider`/`useAuth`/`useCan`, `RequireAuth`; logic thuần (phiên, quyền, thông báo lỗi); trang `/login`, `/register`, `/pending` | Đổi luồng/giao diện đăng nhập |

@@ -5,7 +5,7 @@ import { SIMULATION_PATH, simulationConfigPath, simulationResultPath } from '@/a
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
-import { stopSimulation, useSimulation } from '@/data/simulation';
+import { stopSimulation, useSimulation } from '@/data/operations/simulation';
 import { dataSyncState } from '@/features/simulation/config';
 import { isActivePhase, monitorSnapshot, sessionOf, type SimulationSession } from '@/features/simulation/monitor';
 import { RUN_RESULT_LABEL, type Scenario, type SimulationRun } from '@/features/simulation/scenarios';

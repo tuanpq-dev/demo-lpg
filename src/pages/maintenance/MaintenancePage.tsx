@@ -13,8 +13,8 @@ import {
   useMaintenancePage,
   useMaintenanceSummary,
   type MaintenanceListQuery,
-} from '@/data/maintenanceApi';
-import { listSearchOnly, rememberListSearch } from '@/data/maintenanceDetail';
+} from '@/data/maintenance/api';
+import { listSearchOnly, rememberListSearch } from '@/data/maintenance/detail';
 import { bulkAssignMessage } from '@/features/maintenance/assign';
 import {
   MAINTENANCE_PARAMS,
@@ -55,7 +55,7 @@ const exportMatching = (query: MaintenanceListQuery, total: number, now: Date) =
 /**
  * Quản lý bảo trì (Figma 70:3964) – AppLayout full-width. Khối (thư mục `list/`): KPI · Công việc cần ưu tiên · Danh sách
  * yêu cầu + Lịch sắp tới · modal (tạo / tiến độ / gửi nghiệm thu / nghiệm thu / phân công – mở qua query, `useMaintenanceModals`).
- * Lọc / phân trang / đếm / KPI ở MÁY CHỦ (`data/maintenanceApi.ts`): trang chỉ giữ một trang dòng + số đếm.
+ * Lọc / phân trang / đếm / KPI ở MÁY CHỦ (`data/maintenance/api.ts`): trang chỉ giữ một trang dòng + số đếm.
  */
 export default function MaintenancePage() {
   const ops = useMaintenance();

@@ -1,4 +1,4 @@
-/** Thẻ chi tiết màn kết quả mô phỏng: tiêu chí, điểm, khuyến nghị AI, cảnh báo, số liệu tham chiếu, báo cáo. Tách từ ResultCards.tsx. */
+/** Thẻ chi tiết màn kết quả mô phỏng: tiêu chí, điểm, khuyến nghị AI, cảnh báo, số liệu tham chiếu, báo cáo. */
 import { useId, useState } from 'react';
 import {
   AiSparklesIcon,

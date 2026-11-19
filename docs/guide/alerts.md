@@ -31,10 +31,10 @@ sequenceDiagram
 | 1 | `src/mocks/alerts.ts` | `AlertRecord` (hợp đồng `Alert` + trường CHỈ FE: `kind`, `direction`, `tag`, `notifiedTime`, `acknowledgedAt`, `resolvedAt`, `guide`, `notes`, `history` – `ALERT_FE_ONLY_FIELDS`), `alertRecords` |
 | 2 | `src/mocks/alertKinds.ts` (kiểu: `features/alerts/kinds.ts`) · `src/mocks/sensors.ts` · `src/features/plant/areas.ts` | `ALERT_KINDS` (cấu hình theo LOẠI cảnh báo: panel, nguồn số lớn, thang + bands, banner, nguyên nhân, hướng dẫn, nút phụ, kiểu cập nhật, mục thu gọn – mục 4m) · `AREA_SENSORS` (cảm biến theo khu) · `AREAS` – MỘT danh sách khu vực cho Cảnh báo + Bảo trì |
 | 3 | `src/features/alerts/query.ts` | Thuần, có test – phần BACKEND làm: `queryAlerts` (lọc, mới nhất trước, cắt trang + kẹp trang, đếm tab theo bộ lọc còn lại, facet), `alertCounts` (KPI), `priorityAlerts`, `matchAlert`, kiểu `AlertListQuery` / `AlertListResult` / `AlertSummary` |
-| 4 | `src/data/alertApi.ts` · `src/data/mockServer/alerts.ts` · `src/data/alertStore.ts` · `src/api/alertSchemas.ts` | Một `fetch*` mỗi endpoint (TODO(backend)), response qua `fromMock` + schema zod của endpoint (dev/test kiểm hợp đồng) + hook `useAlertPage`, `useAlertSummary`, `useAlertById`, `useAlertsByDevices(devices, kinds)`, `useRelatedOpen`, `useAlertLoads`, `useUnacknowledgedCount`, `useRecentAlerts` (revision = phiên bản store) · mock server tải lười gọi `query.ts` · "cơ sở dữ liệu" mock (`mutateAlerts`, `alertsReady`) – trang KHÔNG đọc danh sách từ store |
+| 4 | `src/data/alerts/api.ts` · `src/data/mockServer/alerts.ts` · `src/data/alerts/store.ts` · `src/api/alertSchemas.ts` | Một `fetch*` mỗi endpoint (TODO(backend)), response qua `fromMock` + schema zod của endpoint (dev/test kiểm hợp đồng) + hook `useAlertPage`, `useAlertSummary`, `useAlertById`, `useAlertsByDevices(devices, kinds)`, `useRelatedOpen`, `useAlertLoads`, `useUnacknowledgedCount`, `useRecentAlerts` (revision = phiên bản store) · mock server tải lười gọi `query.ts` · "cơ sở dữ liệu" mock (`mutateAlerts`, `alertsReady`) – trang KHÔNG đọc danh sách từ store |
 | 5 | `src/features/alerts/workflow.ts` · `gauge.ts` | Thuần, có test: quy trình chỉ đi tiến (`acknowledgeAlert`, `assignAlert`, `resolveAlert` cần ghi chú, `toggleGuideStep`, `addAlertNote`, `linkedMaintenance`, `planBulk`, `alertSteps`) · thang đo (`gaugeScale`, `isBreached`, `gaugeValueText`) |
-| 6 | `src/data/alerts.ts` | `ALERT_PARAMS` (tham số URL), tuỳ chọn bộ lọc, `alertKpis(counts)` / `priorityCard` (dựng hiển thị từ số máy chủ), thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` = CHỈ thao tác |
-| 7 | `src/data/alertDetail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF`, `useCloseConditions(alerts)` (liên quan đang mở hỏi máy chủ) |
+| 6 | `src/data/alerts/index.ts` | `ALERT_PARAMS` (tham số URL), tuỳ chọn bộ lọc, `alertKpis(counts)` / `priorityCard` (dựng hiển thị từ số máy chủ), thao tác (`acknowledgeAlerts`/`assignAlerts` trả `{ done, skipped }`, `closeAlerts` (4p), `resolveOneAlert`, `updateAlert`, `closeOneAlert`, `monitorAlert`, `toggleAlertGuide`, `addNoteToAlert`, `noteMaintenanceCreated`), `useAlerts()` = CHỈ thao tác |
+| 7 | `src/data/alerts/detail.ts` | Chỉ drawer: `alertMetric` (ngưỡng theo cấu hình tag → `assets.ts`, thiếu thì ngưỡng bản ghi), `alertPlaybook`, `useAlertLive` (số trực tiếp của tag), `alertDateTimeLabel`, `ALERT_STAFF`, `useCloseConditions(alerts)` (liên quan đang mở hỏi máy chủ) |
 | 8 | `src/app/useTableFilters.ts` (`useFilterParams`) · `src/app/useRecordSelection.ts` | Bộ lọc + trang + bản ghi đang mở ↔ URL (`replace`) · lựa chọn giữ bản ghi qua nhiều trang, đổi bộ lọc → bỏ chọn |
 | 9 | `src/pages/alerts/AlertsPage.tsx` · `AlertDrawerHost.tsx` · `list/AlertBulkActions.tsx` | Thẻ ưu tiên, KPI, Tabs, FilterBar, `DataTable` (một trang), xuất CSV mọi dòng khớp · drawer theo id + modal tạo yêu cầu (lười, nạp trước lúc rảnh) · thao tác hàng loạt + modal phân công / đóng hàng loạt |
 | 10 | `src/pages/alerts/AlertDetailDrawer.tsx` (ghi chú: `AlertNotesSection.tsx`; + `AlertAssignModal`, `AlertBulkCloseModal`, `AlertUpdateModal`, `AlertCloseModal`) | Drawer chi tiết theo ảnh (mục 4m); phân công (4n); cập nhật xử lý (4o); xác nhận đóng + đóng hàng loạt (4p) |
@@ -43,12 +43,12 @@ Tham số URL: `?tab=&q=&severity=&area=&device=&shift=&range=&page=&alert=` –
 
 | Muốn sửa | Sửa ở |
 |---|---|
-| Thêm bộ lọc | `ALERT_PARAMS` (`src/data/alerts.ts`) + `AlertFilters` / `matchAlert` (`src/features/alerts/query.ts` – báo backend thêm tham số), `alertFilterDefs` (`list/alertTable.tsx`) |
+| Thêm bộ lọc | `ALERT_PARAMS` (`src/data/alerts/index.ts`) + `AlertFilters` / `matchAlert` (`src/features/alerts/query.ts` – báo backend thêm tham số), `alertFilterDefs` (`list/alertTable.tsx`) |
 | Cột bảng | Mảng `columns` trong `AlertsPage.tsx` (+ `exportCsv` nếu cần xuất) |
-| Hành vi Xác nhận/Phân công/Hoàn thành | Hàm thuần `src/features/alerts/workflow.ts` (drawer và hàng loạt dùng chung); nối store ở `src/data/alerts.ts` |
+| Hành vi Xác nhận/Phân công/Hoàn thành | Hàm thuần `src/features/alerts/workflow.ts` (drawer và hàng loạt dùng chung); nối store ở `src/data/alerts/index.ts` |
 | Nguyên nhân / hướng dẫn / panel / nút của một loại cảnh báo | `ALERT_KINDS` (`src/mocks/alertKinds.ts`) + `kind` của bản ghi (`EXTRA` trong `src/mocks/alerts.ts`) |
 | Ngưỡng / chiều cảnh báo | Cấu hình tag `alarms` trong `src/mocks/assets.ts` (bản ghi có `tag`) hoặc `threshold` + `direction` của bản ghi |
-| KPI / thẻ ưu tiên | Số đếm: `alertCounts`, `priorityAlerts` (`src/features/alerts/query.ts`); hiển thị: `alertKpis`, `priorityCard` (`src/data/alerts.ts`) |
+| KPI / thẻ ưu tiên | Số đếm: `alertCounts`, `priorityAlerts` (`src/features/alerts/query.ts`); hiển thị: `alertKpis`, `priorityCard` (`src/data/alerts/index.ts`) |
 
 **Người nhận xử lý cảnh báo = TOÀN BỘ `STAFF`** (`ALERT_STAFF`, kể cả trưởng ca/quản lý vận hành) – khác bảo trì (chỉ technician + engineer, `ASSIGNABLE_STAFF`) là **có chủ đích**: cảnh báo thuộc vận hành, trưởng ca thường nhận đầu tiên. Thay `ALERT_ASSIGNEES` cũ.
 
@@ -108,7 +108,7 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
   ├─ Header: icon theo mức độ · Badge severity chip · mã · tiêu đề · Thiết bị (link /map/<id> nếu có trang) | Khu vực · Thời gian "HH:mm:ss - dd/mm/yyyy" · Người phụ trách · Badge trạng thái
   ├─ Thông số cảnh báo: KpiCard sm lg "Giá trị lúc cảnh báo" (+ "Hiện tại: x" live / Mất tín hiệu – chỉ khi bản ghi có tag) · "Ngưỡng cho phép" (/"Ngưỡng tối thiểu" khi below)
   │    └─ ThresholdGauge role=meter: thang 0 → nguy hiểm × 1.2 (cấu hình) | ngưỡng × 1.2 (bản ghi); vượt thang → giá trị × 1.05;
-  │       không vẽ khi loại cảnh báo cấu hình `gauge: false` (tốc độ thay đổi, vd level-drop) – `alertGauge` (data/alertDetail)
+  │       không vẽ khi loại cảnh báo cấu hình `gauge: false` (tốc độ thay đổi, vd level-drop) – `alertGauge` (data/alerts/detail)
   ├─ Thiết bị liên quan: useRelatedDevice (mã, tên assets.ts, trạng thái xấu nhất, áp suất, nhiệt độ live) | "Chưa có số liệu trực tiếp"
   ├─ Nguyên nhân có thể + Hướng dẫn xử lý: ALERT_KINDS[kind] – Checklist plain, tick khi Đang xử lý (lưu `guide[stepId]` + lịch sử);
   │    trước khi xác nhận: ô `aria-disabled` (vẫn Tab tới) + aria-describedby → "Xác nhận cảnh báo để bắt đầu xử lý."
@@ -127,7 +127,7 @@ AlertDetailDrawer (pages/alerts, nhận AlertRecord + handler) – panel thresho
 | Không tạo trùng yêu cầu bảo trì | `linkedMaintenance` + `DuplicateFromAlertError` (`createMaintenance`) |
 | Thang đo bật/tắt theo loại cảnh báo | `ALERT_KINDS[kind].gauge` (`src/mocks/alertKinds.ts`) → `alertGauge` |
 | Mức gas, banner, thời gian vượt ngưỡng, điều kiện đóng | `src/features/alerts/bands.ts` (+ test); cập nhật/hỗ trợ: `gasUpdate`, `requestSupport` (`workflow.ts`) |
-| Đầu báo (báo động/thiết bị), tín hiệu liên quan, xác nhận chéo, điều kiện đóng báo cháy | `src/features/alerts/fire.ts` (+ test); `fireUpdate` (`workflow.ts`); số liệu: `useFireReadings` (`data/alertDetail.ts`) |
+| Đầu báo (báo động/thiết bị), tín hiệu liên quan, xác nhận chéo, điều kiện đóng báo cháy | `src/features/alerts/fire.ts` (+ test); `fireUpdate` (`workflow.ts`); số liệu: `useFireReadings` (`data/alerts/detail.ts`) |
 
 **Mã mock để thử drawer** (`/alerts?alert=<mã>`; cảnh báo cũ hơn hôm nay cần thêm `&range=30d` để thấy trong bảng – drawer vẫn mở theo URL):
 
@@ -162,7 +162,7 @@ Mở: drawer áp suất + báo cháy – "Phân công xử lý" (chưa có ngư�
       │    "Chưa gửi được – chờ backend") · AssignNotices (cảnh báo aria-live polite + lý do chặn)
       └─ Chân: Hủy (đã sửa / có nháp → hỏi "Bỏ các thay đổi?") · Nháp (CHỈ một cảnh báo; sessionStorage `demo-lpg:alert-assign-draft:<id>`)
              · Xác nhận phân công / Xác nhận đổi người / Cập nhật phân công (aria-disabled + aria-describedby khi bị chặn)
-Ghi (features/alerts/assign.ts → data/alerts.ts):
+Ghi (features/alerts/assign.ts → data/alerts/index.ts):
   một cảnh báo – assignOneAlert → applyAlertAssignment: người phụ trách, người phối hợp, ghi chú chỉ đạo → ghi chú "Chỉ đạo: …",
     MỘT dòng lịch sử `assign` ("Phân công xử lý cho A · phối hợp: B · kèm ghi chú chỉ đạo" / "Đổi người xử lý: A → B – lý do: …" /
     "Cập nhật phân công (A) · …"). TRẠNG THÁI GIỮ NGUYÊN (không tự xác nhận). `notify` không ghi gì (không giả vờ đã gửi).
@@ -253,7 +253,7 @@ Quay lại Đang kiểm tra/Đang xử lý từ Tạm dừng/Cần hỗ trợ �
 | Map trạng thái (`updateStateOf`, `updateStateFields`), điều kiện theo loại (`updateCloseCheck`), màu theo ngưỡng, xác minh mâu thuẫn (`verificationErrors`), kiểm tra form (`validateAlertUpdate`), cảnh báo không chặn (`updateWarnings`), ghi bản ghi (`alertUpdate`), nháp (`parseUpdateDraft`) | `src/features/alerts/update.ts` |
 | Theo dõi sau xử lý (`followUpWindow`, `followUpLabel`, `followUpDue`, nhãn thời lượng) | `src/features/alerts/followUp.ts` |
 | Điều kiện áp suất | `canClosePressure` – `src/features/alerts/pressure.ts` (+ `pressure.test.ts`) |
-| Dòng thông số (tag + ngưỡng theo thiết bị), ngưỡng đóng, mục xác minh đã điền chữ, nháp, trạng thái đầu báo | `updateReadingRows`, `closeLimit`, `verificationItems`, `updateDraft`, `useTagReadings`, `useDetectorStatus` (`src/data/alertDetail.ts`) |
+| Dòng thông số (tag + ngưỡng theo thiết bị), ngưỡng đóng, mục xác minh đã điền chữ, nháp, trạng thái đầu báo | `updateReadingRows`, `closeLimit`, `verificationItems`, `updateDraft`, `useTagReadings`, `useDetectorStatus` (`src/data/alerts/detail.ts`) |
 | Cấu hình loại | `PRESSURE_UPDATE` / `GAS_UPDATE` / `FIRE_UPDATE` trong `src/mocks/alertKinds.ts`; `REGULATORS` (V-101 → PR-101); chữ thay `{device}` `{tag}` `{regulator}` `{safetyValve}` `{sensor}` `{smoke}` `{gas}` |
 | "Đang theo dõi đến HH:MM[, mục tiêu < 10 bar]" (drawer + cột Trạng thái bảng, khi Đã xử lý / Hoàn thành) – hết giờ thì ẩn; Đã xử lý hết giờ → chip "Đến giờ kiểm tra lại". Tự tạo lại cảnh báo khi vượt mục tiêu: **TODO backend** | `followUpLabel`, `followUpDue` |
 
@@ -299,12 +299,12 @@ Drawer (Đã xử lý) → "Xác nhận đóng cảnh báo" → AlertCloseModal 
 
 | Quy tắc | Ở đâu |
 |---|---|
-| 3 điều kiện: ổn định (tín hiệu chính đọc được, đầu báo trực tuyến + đã phục hồi, tín hiệu phụ không bất thường – mất tín hiệu phụ không chặn) · trong ngưỡng (live tag chính < ngưỡng đóng theo chiều) · không còn cảnh báo **Chưa xác nhận / Đang xử lý** cùng thiết bị HOẶC cùng khu. Không có tag → 2 điều kiện đầu đạt kèm ghi chú | `closeConditions`, `relatedOpenAlerts` (`src/features/alerts/close.ts`); đầu vào từ live: `closeConditionInput`, `useCloseConditions` (`src/data/alertDetail.ts`) |
+| 3 điều kiện: ổn định (tín hiệu chính đọc được, đầu báo trực tuyến + đã phục hồi, tín hiệu phụ không bất thường – mất tín hiệu phụ không chặn) · trong ngưỡng (live tag chính < ngưỡng đóng theo chiều) · không còn cảnh báo **Chưa xác nhận / Đang xử lý** cùng thiết bị HOẶC cùng khu. Không có tag → 2 điều kiện đầu đạt kèm ghi chú | `closeConditions`, `relatedOpenAlerts` (`src/features/alerts/close.ts`); đầu vào từ live: `closeConditionInput`, `useCloseConditions` (`src/data/alerts/detail.ts`) |
 | Người đóng: Nghiêm trọng → khác người xử lý (`resolvedBy`, thiếu → người phụ trách); mức khác tự đóng được. Chưa đăng nhập = 'Admin'. **TODO backend: kiểm tra vai trò** | `closerCheck` |
 | Đóng: done + `closedAt`/`closedBy`/`closingNote` + ghi chú "Kết luận: …" + lịch sử `close` | `closeAlert`, `closeBlock` |
 | Theo dõi: MỘT giá trị `followUp` – giữ nguyên nếu không đổi và chưa hết giờ, đổi → tính lại từ lúc lưu; Tiếp tục theo dõi giữ resolved, lịch sử `monitor` | `followUpFor`, `continueMonitoring` |
 | Đóng hàng loạt (bảng): chỉ dòng resolved đủ 3 điều kiện, một ghi chú chung, bỏ qua Nghiêm trọng nếu người đóng là người xử lý → "Đã đóng X · bỏ qua N (lý do)". Thao tác cũ "Đánh dấu hoàn thành" đã bỏ | `planBulkClose`, `bulkCloseMessage`, `closeAlerts` (data), `AlertBulkCloseModal` |
-| Tab "Chờ đóng" (ngoài Figma) giữa "Đang xử lý" và "Đã hoàn thành"; 5 KPI giữ như Figma (resolved không vào ô nào); thẻ ưu tiên bỏ resolved; badge "Đã xử lý" xanh (`resolved`), "Hoàn thành" trung tính (`closed`) | `ALERT_PARAMS`, `countByStatus`, `alertBadgeStatus` (`src/data/alerts.ts`), `Badge` |
+| Tab "Chờ đóng" (ngoài Figma) giữa "Đang xử lý" và "Đã hoàn thành"; 5 KPI giữ như Figma (resolved không vào ô nào); thẻ ưu tiên bỏ resolved; badge "Đã xử lý" xanh (`resolved`), "Hoàn thành" trung tính (`closed`) | `ALERT_PARAMS`, `countByStatus`, `alertBadgeStatus` (`src/data/alerts/index.ts`), `Badge` |
 
 ## 5. Cách làm các việc hay gặp (phần của luồng này)
 
@@ -313,7 +313,7 @@ Drawer (Đã xử lý) → "Xác nhận đóng cảnh báo" → AlertCloseModal 
 2. Thêm cột vào mảng `columns` trong `src/pages/alerts/AlertsPage.tsx`: `{ id, header, width?, align?, className?, cell? }` (kiểu `DataTableColumn` trong `src/components/DataTable/DataTable.tsx`). Không có `cell` → hiển thị `row[id]`, nên `id` phải trùng tên trường.
 3. Màu chữ dùng token (`text-info`, `text-fg-muted`…), không hardcode.
 4. Muốn cột đó có trong file CSV: thêm vào `head` và mảng giá trị trong `exportCsv` (cùng file).
-5. Muốn tìm kiếm theo cột đó: thêm trường vào mảng trong `matchAlert` (`src/data/alerts.ts`).
+5. Muốn tìm kiếm theo cột đó: thêm trường vào mảng trong `matchAlert` (`src/data/alerts/index.ts`).
 6. Muốn hiện trong drawer chi tiết: drawer nhận nguyên `AlertRecord` – thêm vào khối tương ứng trong `src/pages/alerts/AlertDetailDrawer.tsx` (`DrawerHeader` / `AlertMetrics` / `RelatedDevice`).
 7. Kiểm tra: `npm run typecheck`, mở `/alerts?range=30d`, gõ giá trị của cột vào ô tìm kiếm.
 8. Bảng Bảo trì làm tương tự ở `src/pages/maintenance/MaintenancePage.tsx` + `src/mocks/maintenance.ts`.

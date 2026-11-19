@@ -16,7 +16,7 @@ import {
 } from '@/components';
 import { type MaintenanceAttachment, type MaintenanceRecord } from '@/data/maintenance';
 import { formatDayVi } from '@/lib/plantTime';
-import { historyEvents, relativeDayTime } from '@/data/maintenanceDetail';
+import { historyEvents, relativeDayTime } from '@/data/maintenance/detail';
 import { formatFileSize } from '@/lib/fileSize';
 import { CHECKLIST_LOCK_HINT, checklistLock, checklistProgress } from '@/features/maintenance/checklist';
 import { downloadSampleAttachment } from '../../shared/attachments';

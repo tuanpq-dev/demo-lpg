@@ -20,7 +20,7 @@ import {
   StatusPill,
   type TagTone,
 } from '@/components';
-import { plcLatencyHistory, trendPoints, type PlcScadaDeviceMock, type PlcSourceIcon } from '@/data/operationDevice';
+import { plcLatencyHistory, trendPoints, type PlcScadaDeviceMock, type PlcSourceIcon } from '@/data/operations/device';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import { readParam, type ViewTone } from '@/features/operations/device';

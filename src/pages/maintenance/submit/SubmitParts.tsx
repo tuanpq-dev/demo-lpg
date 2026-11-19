@@ -1,4 +1,4 @@
-/** Khối giao diện của modal "Gửi yêu cầu nghiệm thu". Tách từ SubmitReviewModal. */
+/** Khối giao diện của modal "Gửi yêu cầu nghiệm thu". */
 import { useId, type ReactNode } from 'react';
 import {
   AlertCircleIcon,
@@ -14,7 +14,7 @@ import {
 } from '@/components';
 import type { Reading } from '@/data/assetDetail';
 import { STATUS_LABEL, dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
-import type { useRelatedDevice } from '@/data/maintenanceDetail';
+import type { useRelatedDevice } from '@/data/maintenance/detail';
 import { checklistProgress } from '@/features/maintenance/checklist';
 import { deadlineDayLabel } from '@/features/maintenance/deadline';
 import { isNearOrPastDue, reportedProgressOf } from '@/features/maintenance/progress';

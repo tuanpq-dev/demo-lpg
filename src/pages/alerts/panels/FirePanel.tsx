@@ -1,7 +1,7 @@
 import { EmergencyBanner, InfoGrid, SignalLostIcon, type InfoGridItem } from '@/components';
 import { cn } from '@/lib/cn';
 import { plantTimeOfDay } from '@/lib/plantTime';
-import { alertKind, useFireReadings, type AlertLiveReading } from '@/data/alertDetail';
+import { alertKind, useFireReadings, type AlertLiveReading } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { ALARM_LABEL, DEVICE_LABEL, crossConfirmText, type SignalTone } from '@/features/alerts/fire';
 import { formatMeasure } from '@/features/alerts/gauge';

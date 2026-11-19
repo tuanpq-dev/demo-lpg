@@ -23,7 +23,7 @@ import {
   type MaintenanceTab,
   type MaintenanceType,
 } from '@/data/maintenance';
-import type { MaintenanceListResult } from '@/data/maintenanceApi';
+import type { MaintenanceListResult } from '@/data/maintenance/api';
 import type { Notice } from '@/hooks/useNotice';
 import { cn } from '@/lib/cn';
 import { ScheduleCard, SectionHeading } from './MaintenanceSections';

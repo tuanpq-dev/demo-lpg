@@ -20,7 +20,7 @@ import {
   VaporizerDiagram,
   type DiagramReading,
 } from '@/components';
-import { type DeviceParam, type DeviceParamId, type OperationDeviceMock, deviceHistory, trendPoints } from '@/data/operationDevice';
+import { type DeviceParam, type DeviceParamId, type OperationDeviceMock, deviceHistory, trendPoints } from '@/data/operations/device';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';
 import {

@@ -11,12 +11,12 @@ flowchart TD
   A["AlertDetailDrawer: Tạo yêu cầu bảo trì"] --> D
   B["/maintenance?create=1&device=&from= (link cũ)"] --> C["MaintenancePage: đã có yêu cầu từ cảnh báo → chuyển tới yêu cầu đó"]
   C --> D["CreateMaintenanceModal: điền sẵn theo cảnh báo (mở TRÊN drawer ở /alerts)"]
-  D --> E["createMaintenanceRequest (data/maintenanceApi.ts – nạp lười)"]
-  E --> F["data/maintenance.ts createMaintenance: MT-xxxxx → maintenanceStore tăng phiên bản"]
+  D --> E["createMaintenanceRequest (data/maintenance/api.ts – nạp lười)"]
+  E --> F["data/maintenance/index.ts createMaintenance: MT-xxxxx → maintenanceStore tăng phiên bản"]
   F --> G["Truy vấn đang hiện (bảng, KPI, ưu tiên, lịch) tải lại ngầm từ mock server"]
 ```
 
-**Ngày và quá hạn:** "hôm nay" tính theo giờ nhà máy `Asia/Bangkok` (`src/lib/plantTime.ts`: `plantDayKey`, `daysFromToday`, `plantMonthKey`, `plantDateTimeKey`, `parsePlantDateTime`), không theo múi giờ máy người xem. Mọi hàm ngày (`isOverdue`, `dueLabel` ở `data/maintenanceView.ts`; `matchMaintenance`, `queryMaintenance`, `maintenanceCounts`… ở `features/maintenance/query.ts`) nhận `now` từ nơi gọi, không tự gọi `Date.now()` – test được bằng `now` cố định. Truy vấn danh sách / tóm tắt chạy ở mock server với `appNow()` (giờ máy chủ); trang tải lại ngầm mỗi phút (`useMaintenancePage(q, now)` – `revision` gồm mốc phút).
+**Ngày và quá hạn:** "hôm nay" tính theo giờ nhà máy `Asia/Bangkok` (`src/lib/plantTime.ts`: `plantDayKey`, `daysFromToday`, `plantMonthKey`, `plantDateTimeKey`, `parsePlantDateTime`), không theo múi giờ máy người xem. Mọi hàm ngày (`isOverdue`, `dueLabel` ở `data/maintenance/view.ts`; `matchMaintenance`, `queryMaintenance`, `maintenanceCounts`… ở `features/maintenance/query.ts`) nhận `now` từ nơi gọi, không tự gọi `Date.now()` – test được bằng `now` cố định. Truy vấn danh sách / tóm tắt chạy ở mock server với `appNow()` (giờ máy chủ); trang tải lại ngầm mỗi phút (`useMaintenancePage(q, now)` – `revision` gồm mốc phút).
 
 **Quá hạn theo GIỜ (một quy tắc cho danh sách, KPI, thẻ ưu tiên, lịch, trang chi tiết, tóm tắt ở trang tài sản):** còn mở (không `done`/`cancelled`) và `now ≥ giờ hạn` (`isRequestOverdue` / `isPastDue` trong `src/features/maintenance/deadline.ts`). Hạn chỉ có ngày = cờ `dueHasTime: false` (vẫn lưu `…T23:59` cho khớp hợp đồng) → quá hạn tại 23:59:59, hiển thị "Cuối ngày"; hạn thật 23:59 vẫn là 23:59:00 – phân biệt bằng cờ, không so chuỗi. Nhãn: "Quá hạn N ngày" · "Quá hạn từ 16:00" · "Hết hạn hôm nay" (chưa tới giờ).
 
@@ -26,10 +26,10 @@ flowchart TD
 
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
-| 1 | `src/mocks/maintenance.ts` · `src/mocks/maintenanceRecords.ts` | Danh mục `PEOPLE`, `DEPARTMENTS`, `SHIFTS`, `CHECKLIST_TEMPLATES` · bản ghi mẫu `maintenanceRecords` (nạp LƯỜI qua `data/maintenanceStore.ts`) |
+| 1 | `src/mocks/maintenance.ts` · `src/mocks/maintenanceRecords.ts` | Danh mục `PEOPLE`, `DEPARTMENTS`, `SHIFTS`, `CHECKLIST_TEMPLATES` · bản ghi mẫu `maintenanceRecords` (nạp LƯỜI qua `data/maintenance/store.ts`) |
 | 2 | `src/features/maintenance/query.ts` | Thuần, có test – phần BACKEND làm: `queryMaintenance` (lọc, sắp xếp `created`/`due`, cắt + kẹp trang, đếm 7 tab theo bộ lọc còn lại – Đã hủy chỉ vào "Tất cả", facet khu vực), `maintenanceCounts` (KPI), `priorityMaintenance`, `upcomingPeriodic` |
-| 2b | `src/data/maintenanceApi.ts` · `src/data/mockServer/maintenance.ts` · `src/data/maintenanceStore.ts` · `src/api/maintenanceSchemas.ts` | Một `fetch*` mỗi endpoint (TODO(backend)), response qua `fromMock` + schema zod của endpoint (dev/test kiểm hợp đồng) + hook `useMaintenancePage`, `useMaintenanceSummary`, `useMaintenanceById` (mã không phân biệt hoa thường), `useMaintenanceLoads` (tải việc hộp phân công), `useLinkedMaintenance`, `useMaintenanceByDevice`, `useDeviceDirectory`, `createMaintenanceRequest` · mock server tải lười · "cơ sở dữ liệu" mock + phiên bản |
-| 2c | `src/data/maintenance.ts` · `src/data/maintenanceView.ts` | Thao tác ghi (`createMaintenance`, `advanceMaintenance`, `bulkAssign`…) – `useMaintenance()` = CHỈ thao tác; `MAINTENANCE_PARAMS`, nhãn, `isOverdue`, `dueLabel`, dựng hiển thị `maintenanceKpis(counts)` / `priorityTask` / `scheduleEvents`; gợi ý AI mock `suggestForRequest`; nháp form |
+| 2b | `src/data/maintenance/api.ts` · `src/data/mockServer/maintenance.ts` · `src/data/maintenance/store.ts` · `src/api/maintenanceSchemas.ts` | Một `fetch*` mỗi endpoint (TODO(backend)), response qua `fromMock` + schema zod của endpoint (dev/test kiểm hợp đồng) + hook `useMaintenancePage`, `useMaintenanceSummary`, `useMaintenanceById` (mã không phân biệt hoa thường), `useMaintenanceLoads` (tải việc hộp phân công), `useLinkedMaintenance`, `useMaintenanceByDevice`, `useDeviceDirectory`, `createMaintenanceRequest` · mock server tải lười · "cơ sở dữ liệu" mock + phiên bản |
+| 2c | `src/data/maintenance/index.ts` · `src/data/maintenance/view.ts` | Thao tác ghi (`createMaintenance`, `advanceMaintenance`, `bulkAssign`…) – `useMaintenance()` = CHỈ thao tác; `MAINTENANCE_PARAMS`, nhãn, `isOverdue`, `dueLabel`, dựng hiển thị `maintenanceKpis(counts)` / `priorityTask` / `scheduleEvents`; gợi ý AI mock `suggestForRequest`; nháp form |
 | 3 | `src/pages/maintenance/MaintenancePage.tsx` | KPI, việc ưu tiên, bảng 7 tab (gồm "Quá hạn"), lịch, mở modal theo URL; mã/nút "Xem chi tiết"/dòng/thẻ ưu tiên/lịch → `/maintenance/:id` (mục 4i). `?open=<id>` cũ → chuyển hướng (drawer đã bỏ). Khối ở `list/`: `MaintenanceSections` (KPI, ưu tiên, lịch), `MaintenanceListSection` (tab, lọc, hàng loạt, bảng – một trang từ máy chủ, chọn qua nhiều trang `useRecordSelection`), `maintenanceColumns`, `MaintenanceModals`; modal theo URL = `useMaintenanceModals` (bản ghi đọc theo mã); 5 modal tải lười `lazyModals.tsx` (dùng chung với trang chi tiết, nạp trước lúc rảnh); CSV = `exportMaintenanceCsv` (mọi dòng khớp bộ lọc) |
 | 4 | `src/pages/maintenance/CreateMaintenanceModal.tsx` + `create/` | Form tạo yêu cầu: hàm thuần `create/createForm.ts` (`blankForm` / `formFromAlert` khởi tạo, `validateCreate`, `toCreateInput`, reducer), state = `useCreateMaintenanceForm`, khối `CreateBanners` / `CreateInfoColumns` / `CreateSections`; lưu nháp |
 | 5 | `src/features/maintenance/*` | Thuần, có test: `workflow.ts` (bước, không nhảy bước, hủy, phân công, ghi chú, lịch sử) · `checklist.ts` (tiến độ bỏ mục N/A, khoá theo trạng thái) · `deadline.ts` (giờ hạn, đếm ngược) · `progress.ts` (modal cập nhật tiến độ – mục 4j) · `review.ts` (gửi nghiệm thu + nghiệm thu – mục 4k) |
@@ -43,12 +43,12 @@ export const isRequestOverdue = (r, now) => isOpenRequest(r) && isPastDue(r.dueA
 
 | Muốn sửa | Sửa ở |
 |---|---|
-| Quy tắc quá hạn / nhãn hạn | `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
-| Các bước trạng thái | `NEXT_STATUS`, `NEXT_ACTION_LABEL`, `advanceRecord`, `cancelRecord` (`src/features/maintenance/workflow.ts`); nhãn `STATUS_LABEL` (`src/data/maintenance.ts`) |
+| Quy tắc quá hạn / nhãn hạn | `isOverdue`, `dueLabel` (`src/data/maintenance/index.ts`) |
+| Các bước trạng thái | `NEXT_STATUS`, `NEXT_ACTION_LABEL`, `advanceRecord`, `cancelRecord` (`src/features/maintenance/workflow.ts`); nhãn `STATUS_LABEL` (`src/data/maintenance/index.ts`) |
 | Cập nhật tiến độ / tạm dừng / sự cố | `src/features/maintenance/progress.ts` (mục 4j) |
 | Gửi nghiệm thu / nghiệm thu (Đạt · Cần bổ sung · Không đạt) | `src/features/maintenance/review.ts` (mục 4k) |
-| Quy tắc quá hạn / giờ hạn | `isPastDue`, `dueInstant`, `deadlineCountdown` (`src/features/maintenance/deadline.ts`); `isOverdue`, `dueLabel` (`src/data/maintenance.ts`) |
-| Trường của form tạo | `MaintenanceRecord` (`src/mocks/maintenance.ts`), `NewMaintenanceInput` + `createMaintenance` (`src/data/maintenance.ts`), `CreateMaintenanceModal.tsx` |
+| Quy tắc quá hạn / giờ hạn | `isPastDue`, `dueInstant`, `deadlineCountdown` (`src/features/maintenance/deadline.ts`); `isOverdue`, `dueLabel` (`src/data/maintenance/index.ts`) |
+| Trường của form tạo | `MaintenanceRecord` (`src/mocks/maintenance.ts`), `NewMaintenanceInput` + `createMaintenance` (`src/data/maintenance/index.ts`), `CreateMaintenanceModal.tsx` |
 | Liên kết từ cảnh báo | Modal mở ở `AlertsPage.tsx` (`createFor`); liên kết = `sourceAlertId` của yêu cầu (`linkedMaintenance` – một cảnh báo chỉ một yêu cầu chưa hủy, `createMaintenance` ném `DuplicateFromAlertError`); `?create=1&from=` ở `list/useMaintenanceModals.ts` |
 
 ### 4i. Chi tiết yêu cầu bảo trì `/maintenance/:id`
@@ -68,14 +68,14 @@ URL /maintenance/:id
   → MaintenanceDetail (src/pages/maintenance/detail/): DetailHeader + DetailStepper · GeneralInfoCard · WorkCards
     (nội dung, checklist, ghi chú, tệp, lịch sử, kết quả) · DetailAside · LiveCards (hạn chót, thiết bị liên quan) ·
     DetailActionBar · DetailModals; useDetailDialog (?submit= / ?review= / ?assign= mở sẵn rồi bỏ khỏi URL) + useChecklistFocus
-      useMaintenance()                    src/data/maintenance.ts  (chỉ thao tác; ghi xong → useMaintenanceById tải lại ngầm)
+      useMaintenance()                    src/data/maintenance/index.ts  (chỉ thao tác; ghi xong → useMaintenanceById tải lại ngầm)
         ├─ advance(id, actor)  → advanceRecord   (pending → assigned → in-progress → review → done, một bước, + lịch sử)
         ├─ cancel(id, reason)  → cancelRecord    (khi chưa xong; cancelledFrom = bước đã tới)
         ├─ assign(ids, {assignee, department, shift}) → assignRecord
         ├─ toggleChecklist(id, item) → toggleChecklistItem + progress = checklistProgress (bỏ N/A)
         └─ addNote(id, text, actor) → addNoteRecord
       useAlertById → cảnh báo gốc (sourceAlertId) → AlertCard compact ("Lúc cảnh báo" = giá trị lúc phát sinh)
-      useRelatedDevice(device)            src/data/maintenanceDetail.ts → useAssetDetail → useLiveData (Mất tín hiệu khi stale)
+      useRelatedDevice(device)            src/data/maintenance/detail.ts → useAssetDetail → useLiveData (Mất tín hiệu khi stale)
       LiveDeadline: useNow(1000) chỉ trong ô hạn chót (không vẽ lại cả trang mỗi giây)
 ```
 
@@ -89,7 +89,7 @@ URL /maintenance/:id
 
 - Dưới `xl` (1280): xếp một cột theo thứ tự **Hạn chót → cột trái → Phân công/Cảnh báo/Thiết bị**. Làm bằng thứ tự DOM + đặt ô lưới ở ≥ xl (Hạn chót cột phải hàng 1, cột trái trải 2 hàng), KHÔNG dùng CSS `order` → thứ tự Tab luôn khớp thứ tự nhìn thấy (ô hạn chót không có phần tử nhận focus).
 - Người thao tác (`actor`) = `useAuth().user.name`, không có → `'Admin'`. Quyền chi tiết theo vai trò: TODO khi có backend.
-- Thêm loại lịch sử: `MaintenanceHistoryKind` (`src/mocks/maintenance.ts`) + màu `HISTORY_TONE` (`src/data/maintenanceDetail.ts`).
+- Thêm loại lịch sử: `MaintenanceHistoryKind` (`src/mocks/maintenance.ts`) + màu `HISTORY_TONE` (`src/data/maintenance/detail.ts`).
 - Khối "Kết quả bảo trì": sau nghiệm thu Đạt = `MaintenanceResult` (`src/pages/maintenance/MaintenanceResult.tsx`, InfoGrid – mục 4k); done cũ (không có `review`) = một dòng ngày hoàn thành.
 - InfoGrid thêm "Tiến độ báo cáo", "Checklist x/y" và (khi có cờ) "Lý do tạm dừng" / "Sự cố đang gặp". Khối Checklist có `id="checklist"` (`tabIndex=-1`): URL `#checklist` → cuộn + focus.
 
@@ -131,7 +131,7 @@ Chi tiết: thanh dính đáy "Cập nhật tiến độ" → state dialog='prog
 | Ánh xạ ô → trạng thái, bắt buộc nội dung, câu lịch sử | `applyProgressUpdate`, `validateProgressUpdate`, `historyLine` (`progress.ts`) |
 | Ngưỡng "gần hạn" / bước thanh trượt / luật tệp | `NEAR_DUE_MS`, `PROGRESS_STEP`, `UPLOAD_RULES` (`progress.ts`) |
 | Giao diện modal | `src/pages/maintenance/ProgressUpdateModal.tsx` + `progress/` (`ProgressSections` = nháp / 5 ô / trạng thái / tiến độ / nội dung, `ProgressFilesSection` = tệp + xem trước, `useProgressUpdateForm` + `progressFormReducer` = state + kiểm tra) |
-| Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenanceDetail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
+| Nháp | `saveProgressDraft` / `loadProgressDraft` / `clearProgressDraft` (`src/data/maintenance/detail.ts`, key `demo-lpg:mt-progress-draft:<id>`) |
 | Gửi nghiệm thu / nghiệm thu | mục 4k |
 | Phân công / đổi người | mục 4l |
 

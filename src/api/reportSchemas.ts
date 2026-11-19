@@ -2,7 +2,7 @@
  * Schema response các endpoint báo cáo (hợp đồng FE – docs/decisions.md "Báo cáo – hợp đồng API cần bổ sung"): bản ghi
  * `ReportRecord`, trang danh sách, số liệu màn báo cáo, báo cáo ngày theo mã. Nạp LƯỜI cùng ./schemas.
  */
-import './zodJitless';
+import '@/lib/zodJitless';
 import { z } from 'zod/mini';
 import type { ReportListResult, ReportRecord, ReportSummary, SignatureStep } from '@/features/reports';
 import { allOf, type Assert, type Matches } from './schemaCheck';

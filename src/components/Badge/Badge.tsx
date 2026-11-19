@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import type { Severity } from '@demo-lpg/shared/alerts';
 import { cn } from '@/lib/cn';
 import { AlertTriangleIcon, Icon } from '../Icon';
 import { StatusDot } from '../StatusDot';
 
-export type Severity = 'critical' | 'high' | 'medium' | 'low';
+/** Mức độ theo hợp đồng API (một nguồn) – thêm mức ở backend thì các bảng màu bên dưới báo thiếu lúc biên dịch. */
+export type { Severity };
 /**
  * - unacknowledged: "Chưa xác nhận" (bảng cảnh báo, tông đỏ)
  * - pending:        "Chờ tiếp nhận" (bảng bảo trì, tông vàng)

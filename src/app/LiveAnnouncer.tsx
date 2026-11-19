@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useUnacknowledgedCount } from '@/data/alertApi';
+import { useUnacknowledgedCount } from '@/data/alerts/api';
 import { useLiveStatus } from '@/data/live';
 import { useAnnouncement } from '@/hooks/useAnnounce';
 import { announce } from '@/lib/announce';

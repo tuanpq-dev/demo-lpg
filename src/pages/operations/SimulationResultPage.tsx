@@ -5,7 +5,7 @@ import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
-import { updateSessionReport, useSimulation } from '@/data/simulation';
+import { updateSessionReport, useSimulation } from '@/data/operations/simulation';
 import { formatVariable, lowerFirst } from '@/features/simulation/config';
 import { finishedSessionOf, isActivePhase, sessionCode, sessionPhase, type SimulationSession } from '@/features/simulation/monitor';
 import { CHECK_LABEL, areaAssetText, reportStatusText, resultCsv, resultFileName, simulationResult } from '@/features/simulation/result';

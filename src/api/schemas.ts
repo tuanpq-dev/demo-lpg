@@ -4,7 +4,7 @@
  * `VITE_AUTH=off` không bao giờ tải zod; có backend thì nạp song song với request đầu tiên.
  * Dùng `zod/mini` (API dạng hàm, tree-shake được). KHÔNG import file này (giá trị) từ code tải đầu – chỉ `import type`.
  */
-import './zodJitless';
+import '@/lib/zodJitless';
 import { z } from 'zod/mini';
 import { ROLES } from '@/features/auth/permissions';
 
