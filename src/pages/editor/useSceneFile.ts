@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { fetchScene, isSampleScene } from '@/data/scene';
-import { sceneRepository } from '@/data/sceneRepository';
+import { sceneRepository } from '@/data/scene/repository';
 import { migrateScene } from '@/features/scene/migrate';
 import { validateSceneConfig } from '@/features/scene/parse';
 import type { SceneConfig } from '@/features/scene/types';

@@ -1,4 +1,4 @@
-/** Diễn biến mô phỏng: cảnh báo High / High-High, sự kiện theo thời gian. Tách từ monitor.ts. */
+/** Diễn biến mô phỏng: cảnh báo High / High-High, sự kiện theo thời gian. */
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { formatQty, formatVariable, lowerFirst } from './config';
 import type { Scenario } from './scenarios';

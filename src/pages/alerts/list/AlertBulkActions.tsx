@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from 'react';
-import { followUpConfig, useCloseConditions } from '@/data/alertDetail';
+import { followUpConfig, useCloseConditions } from '@/data/alerts/detail';
 import { useAlerts, type AlertRecord } from '@/data/alerts';
 import { bulkCloseMessage, planBulkClose } from '@/features/alerts/close';
 import { bulkMessage } from '@/features/alerts/workflow';

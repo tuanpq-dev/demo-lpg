@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { StaffPickerItem } from '@/components';
-import { ALERT_STAFF, alertKind } from '@/data/alertDetail';
+import { ALERT_STAFF, alertKind } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
-import { useAlertLoads } from '@/data/alertApi';
+import { useAlertLoads } from '@/data/alerts/api';
 import { ALERT_LOAD_HINT, MATCH_LABEL, alertLoadLabel, rankAlertStaff } from '@/features/alerts/assignStaff';
 import type { ShiftId } from '@/features/maintenance/types';
 import { shiftShortLabel } from '@/features/staff/availability';

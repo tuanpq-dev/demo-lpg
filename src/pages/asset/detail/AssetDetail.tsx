@@ -7,7 +7,7 @@ import { pageFallback, Placeholder } from '@/app/Placeholder';
 import { useTableFilters } from '@/app/useTableFilters';
 import { assetV101Image, plantMapImage } from '@/assets/digital-twin';
 import { Button, HistoryIcon, Icon, MapIcon, PageHeader, StatusPill, type StatusPillTone } from '@/components';
-import { useAlertsByDevices } from '@/data/alertApi';
+import { useAlertsByDevices } from '@/data/alerts/api';
 import {
   EVENT_PARAMS,
   STATUS_LABEL,
@@ -18,7 +18,7 @@ import {
   useAssetDetail,
   type AssetEvent,
 } from '@/data/assetDetail';
-import { useMaintenanceByDevice } from '@/data/maintenanceApi';
+import { useMaintenanceByDevice } from '@/data/maintenance/api';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { levelPercentToVolumePercent } from '@/features/tank/volume';
 import type { ImageAsset } from '@/lib/imageAsset';

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components';
-import { alertRecordedValue, alertShortTimeLabel } from '@/data/alertDetail';
+import { alertRecordedValue, alertShortTimeLabel } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { cn } from '@/lib/cn';
 import { areaLabel } from '@/features/plant/areas';

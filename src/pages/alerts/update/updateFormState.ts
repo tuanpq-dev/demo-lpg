@@ -1,4 +1,4 @@
-import { alertPlaybook, updateConfig, updateDraft } from '@/data/alertDetail';
+import { alertPlaybook, updateConfig, updateDraft } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { inspectionItems, type InspectionEntry } from '@/features/alerts/inspection';
 import { updateStateOf, type AlertUpdateInput, type UpdateErrors, type UpdateFile, type VerificationSource } from '@/features/alerts/update';

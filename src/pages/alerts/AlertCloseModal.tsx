@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Checkbox, Icon, Modal, Select, Textarea } from '@/components';
-import { closeSummary, followUpConfig, metricText, useCloseConditions } from '@/data/alertDetail';
+import { closeSummary, followUpConfig, metricText, useCloseConditions } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import {
   CLOSE_MANUAL_ITEMS,

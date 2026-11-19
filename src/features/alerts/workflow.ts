@@ -5,11 +5,19 @@
  * cảnh báo"). "Tiếp tục theo dõi" giữ Đã xử lý. Không có đường nhảy cóc (kể cả hàng loạt), không lùi bước. Phân công KHÔNG tự xác nhận (drawer và hàng loạt dùng chung `assignAlert`).
  * Hàm gặp thao tác không hợp lệ trả lại CHÍNH bản ghi cũ (so tham chiếu được) hoặc `{ ok: false }`.
  */
-import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord } from '@/features/alerts/types';
+import type { AlertHistoryEntry, AlertHistoryKind, AlertRecord, AlertStatus } from '@/features/alerts/types';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { inspectionEntry, toggledInspection, writeInspection } from './inspection';
 
 export type AlertActionCtx = { by: string; at: Date };
+
+/** Nhãn trạng thái cảnh báo khi hiện chữ không kèm badge (trùng chữ của badge: `done` = "Hoàn thành"). */
+export const ALERT_STATUS_LABEL: Readonly<Record<AlertStatus, string>> = {
+  unacknowledged: 'Chưa xác nhận',
+  'in-progress': 'Đang xử lý',
+  resolved: 'Đã xử lý',
+  done: 'Hoàn thành',
+};
 
 export const canAcknowledge = (a: Pick<AlertRecord, 'status'>) => a.status === 'unacknowledged';
 export const canResolve = (a: Pick<AlertRecord, 'status'>) => a.status === 'in-progress';

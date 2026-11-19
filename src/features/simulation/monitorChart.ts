@@ -1,4 +1,4 @@
-/** Trục / miền giá trị biểu đồ màn theo dõi mô phỏng. Tách từ monitor.ts. */
+/** Trục / miền giá trị biểu đồ màn theo dõi mô phỏng. */
 import { formatQty, type SimVariable } from './config';
 
 export const CHART_STEP_SEC = 5;

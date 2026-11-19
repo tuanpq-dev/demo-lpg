@@ -10,9 +10,9 @@ import {
   fetchAlertSummary,
   fetchRecentAlerts,
   fetchRelatedOpen,
-} from './alertApi';
+} from './alerts/api';
 import { fromMock } from './contract';
-import { fetchDailyReport, fetchReportList, fetchReportSummary } from './reportApi';
+import { fetchDailyReport, fetchReportList, fetchReportSummary } from './reports/api';
 import {
   fetchDeviceDirectory,
   fetchLinkedMaintenance,
@@ -22,7 +22,7 @@ import {
   fetchMaintenanceLoads,
   fetchMaintenanceSummary,
   createMaintenanceRequest,
-} from './maintenanceApi';
+} from './maintenance/api';
 
 /** Mọi endpoint cảnh báo / bảo trì trên TOÀN BỘ dữ liệu mẫu phải khớp schema API – thay mock bằng backend không vỡ UI. */
 describe('response mock khớp schema API (src/api/*Schemas.ts)', () => {

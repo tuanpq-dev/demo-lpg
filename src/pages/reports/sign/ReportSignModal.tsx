@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { ModalDataFallback } from '@/app/Placeholder';
 import { Button, Modal, SignaturePenIcon } from '@/components';
-import { reportDetailPath } from '@/data/dailyReport';
-import { signDailyReport, useReportSignData } from '@/data/reportSign';
+import { reportDetailPath } from '@/data/reports/daily';
+import { signDailyReport, useReportSignData } from '@/data/reports/sign';
 import { SIGN_PIN_REQUIRED, inspectorSignStatus, signConditions, signReady, type DailyReadingRow, type ReportRecord } from '@/features/reports';
 import { actionErrorText } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
@@ -20,7 +20,7 @@ export type ReportSignModalProps = {
 
 /**
  * Modal "Hoàn thành nhận xét & ký xác nhận" – bước Người kiểm tra của báo cáo NGÀY (ảnh thiết kế, chưa có node
- * Figma; ảnh + ghi chú: scratch/figma-ref/report-sign/). Điều kiện ký: `features/reports/sign.ts`; ghi: `data/reportSign.ts`
+ * Figma; ảnh + ghi chú: scratch/figma-ref/report-sign/). Điều kiện ký: `features/reports/sign.ts`; ghi: `data/reports/sign.ts`
  * (kiểm lại điều kiện từ dữ liệu hiện tại). Mã xác nhận KHÔNG lưu ở đâu (chỉ state). Chỉ mount khi mở.
  */
 export function ReportSignModal(props: ReportSignModalProps) {

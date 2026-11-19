@@ -5,7 +5,7 @@ import { Button, buttonClass } from '@/components';
 import { actionErrorText, runAction } from '@/lib/actionError';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/cn';
-import { alertKind, fillPlaybookText } from '@/data/alertDetail';
+import { alertKind, fillPlaybookText } from '@/data/alerts/detail';
 import { FOLLOW_UP_DUE_LABEL, followUpDue, followUpLabel } from '@/features/alerts/followUp';
 import { isResolvedState } from '@/features/alerts/update';
 import type { AlertRecord } from '@/data/alerts';

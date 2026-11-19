@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Button, PlantMap, SceneLoading, preloadSceneViewer, type PlantMapThreeProps } from '@/components';
+import { Button, SceneLoading, type PlantMapThreeProps } from '@/components';
+import { PlantMap, preloadSceneViewer } from '@/scene3d';
 import { useSceneConfig } from '@/data/scene';
 import { PageError } from './Placeholder';
 

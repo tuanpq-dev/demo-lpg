@@ -34,6 +34,84 @@ const DANGER_TEXT_RULES = [
 ];
 
 /**
+ * Phân lớp (CLAUDE.md mục 3, 5): phụ thuộc chỉ đi XUỐNG
+ *   pages → app → data → features → api
+ *   pages / app → scene3d → components → hooks → lib ; scene3d → features   (vẽ 3D: R3F, tải lười)
+ *   mocks chỉ đọc từ data
+ * - Bắt cả alias `@/x` lẫn đường tương đối vượt lớp (`../../x`) – không có thư mục con nào trùng tên lớp.
+ * - `@typescript-eslint/no-restricted-imports` chỉ dùng chỗ cần `allowTypeImports` (component đọc KIỂU miền; data dựng
+ *   view-model theo KIỂU props của component).
+ * Flat config GHI ĐÈ (không gộp) cùng một rule khi nhiều khối khớp một file → mỗi lớp khai đủ trong MỘT khối.
+ */
+const ban = (dir, message, extra = {}) => ({ regex: `^(@/|(\\.\\./)+)${dir}(/|$)`, message, ...extra });
+const MOCKS = ban('mocks', 'Không import src/mocks ngoài lớp dữ liệu – đọc qua src/data/*, kiểu ở src/features/<miền>/types.ts.');
+const LAYER_MSG = {
+  lib: 'src/lib là tiện ích thuần ở tầng thấp nhất – không phụ thuộc hook, component, dữ liệu hay trang.',
+  hooks: 'src/hooks là hook dùng chung – chỉ dựa trên src/lib, không phụ thuộc component, logic miền, dữ liệu hay trang.',
+  api: 'src/api là tầng gọi backend – không phụ thuộc UI, lớp dữ liệu hay trang.',
+  features:
+    'src/features là logic miền thuần – không phụ thuộc component / hook React, lớp vẽ 3D, lớp dữ liệu, nối router hay trang (phần vẽ 3D ở src/scene3d).',
+  componentsUp: 'Component thuần – nhận dữ liệu qua props, không đọc lớp dữ liệu, nối router, trang, API hay lớp vẽ 3D (src/scene3d).',
+  componentsFeatures: 'Component UI chỉ import KIỂU từ src/features (`import type`); component nghiệp vụ đặt trong components/domain/.',
+  dataUp: 'src/data là lớp dữ liệu – không phụ thuộc lớp vẽ 3D, nối router hay trang.',
+  scene3d: 'src/scene3d là lớp vẽ 3D – nhận cảnh + số liệu qua props, không đọc lớp dữ liệu, API, nối router hay trang.',
+  dataUi: 'src/data chỉ import KIỂU props từ component (`import type`, dựng view-model) – nhãn / hằng số nghiệp vụ đặt ở src/features/<miền>.',
+  app: 'src/app nối router với dữ liệu – không import trang (trang import app, không ngược lại).',
+};
+const restrict = (patterns) => ['error', { patterns }];
+const bans = (dirs, message) => dirs.map((d) => ban(d, message));
+const LAYER_RULES = [
+  {
+    files: ['src/lib/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrict([
+        MOCKS,
+        ...bans(['hooks', 'components', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.lib),
+      ]),
+    },
+  },
+  {
+    files: ['src/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrict([MOCKS, ...bans(['components', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.hooks)]),
+    },
+  },
+  {
+    files: ['src/api/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['hooks', 'components', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.api)]) },
+  },
+  {
+    files: ['src/features/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['components', 'hooks', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.features)]) },
+  },
+  {
+    files: ['src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrict([MOCKS, ...bans(['data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.componentsUp)]),
+      '@typescript-eslint/no-restricted-imports': restrict([ban('features', LAYER_MSG.componentsFeatures, { allowTypeImports: true })]),
+    },
+  },
+  // Component nghiệp vụ (components/domain) được dùng hằng số / hàm thuần của src/features (một chiều).
+  { files: ['src/components/domain/**/*.{ts,tsx}'], rules: { '@typescript-eslint/no-restricted-imports': 'off' } },
+  {
+    files: ['src/scene3d/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['data', 'api', 'app', 'pages'], LAYER_MSG.scene3d)]) },
+  },
+  {
+    files: ['src/data/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrict(bans(['app', 'pages', 'scene3d'], LAYER_MSG.dataUp)),
+      '@typescript-eslint/no-restricted-imports': restrict([ban('components', LAYER_MSG.dataUi, { allowTypeImports: true })]),
+    },
+  },
+  {
+    files: ['src/app/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restrict([MOCKS, ban('pages', LAYER_MSG.app)]) },
+  },
+  { files: ['src/pages/**/*.{ts,tsx}'], rules: { 'no-restricted-imports': restrict([MOCKS]) } },
+];
+
+/**
  * ESLint 9 (flat config): TypeScript (có rule dựa trên type) + React hooks + accessibility (jsx-a11y) + kiểm comment
  * eslint-disable. Format do Prettier lo (`npm run format`), ESLint không có rule định dạng. `npm run lint`.
  */
@@ -90,29 +168,5 @@ export default tseslint.config(
   },
   // Dữ liệu mẫu (src/mocks) là bảng dữ liệu tạm – sẽ thay bằng API; giới hạn số dòng chỉ áp cho code.
   { files: ['src/mocks/**/*.{ts,tsx}'], rules: { 'max-lines': 'off' } },
-  // Phân lớp (CLAUDE.md mục 5 "Dữ liệu"): logic, component, nối router và trang KHÔNG import dữ liệu mẫu – đọc qua
-  // `src/data/*` (lớp dữ liệu, chỗ thay API); kiểu dữ liệu ở `src/features/<miền>/types.ts`.
-  {
-    files: [
-      'src/features/**/*.{ts,tsx}',
-      'src/components/**/*.{ts,tsx}',
-      'src/app/**/*.{ts,tsx}',
-      'src/lib/**/*.{ts,tsx}',
-      'src/hooks/**/*.{ts,tsx}',
-      'src/pages/**/*.{ts,tsx}',
-    ],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/mocks', '@/mocks/*'],
-              message: 'Không import src/mocks ngoài lớp dữ liệu – đọc qua src/data/*, kiểu ở src/features/<miền>/types.ts.',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  ...LAYER_RULES,
 );

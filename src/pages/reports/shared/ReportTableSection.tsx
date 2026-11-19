@@ -35,7 +35,7 @@ import {
   type ReportTab,
   type SignatureFilter,
 } from '@/features/reports';
-import { reportDetailPath } from '@/data/dailyReport';
+import { reportDetailPath } from '@/data/reports/daily';
 import { cn } from '@/lib/cn';
 import { CompletionBadge, SignatureBadge } from './ReportBadges';
 import type { ReportTableState } from './useReportTable';

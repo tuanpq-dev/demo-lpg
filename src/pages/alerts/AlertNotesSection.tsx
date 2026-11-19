@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Button, Textarea } from '@/components';
-import { alertKind } from '@/data/alertDetail';
+import { alertKind } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { canAddAlertNote } from '@/features/alerts/workflow';
 import { runAction } from '@/lib/actionError';

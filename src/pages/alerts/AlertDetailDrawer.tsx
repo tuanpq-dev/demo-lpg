@@ -4,7 +4,7 @@ import { AlertTriangleIcon, Badge, Checklist, Drawer, EventTimeline, Icon, Workf
 import { assetPath } from '@/app/assetRoutes';
 import { runAction } from '@/lib/actionError';
 import { resolveAssetId } from '@/data/assetDetail';
-import { alertDateTimeLabel, alertKind, alertPlaybook } from '@/data/alertDetail';
+import { alertDateTimeLabel, alertKind, alertPlaybook } from '@/data/alerts/detail';
 import { INSPECTION_STATUS_LABEL, inspectedCount, inspectionItems } from '@/features/alerts/inspection';
 import { FOLLOW_UP_DUE_LABEL, followUpDue } from '@/features/alerts/followUp';
 import { ALERT_HOLD_LABEL, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';

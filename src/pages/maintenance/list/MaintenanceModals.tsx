@@ -1,6 +1,6 @@
 import { AUTH_MODE } from '@/api/auth';
 import type { useMaintenance } from '@/data/maintenance';
-import type { DeviceDirectoryEntry } from '@/data/maintenanceApi';
+import type { DeviceDirectoryEntry } from '@/data/maintenance/api';
 import { resolveReviewer } from '@/features/maintenance/review';
 import { AssignModal, CreateMaintenanceModal, ProgressUpdateModal, ReviewModal, SubmitReviewModal } from '../lazyModals';
 import type { MaintenanceModalsState } from './useMaintenanceModals';

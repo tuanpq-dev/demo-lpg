@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Checkbox } from '@/components';
-import { metricText } from '@/data/alertDetail';
+import { metricText } from '@/data/alerts/detail';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
 
 export type UpdateVerificationFieldsetProps = {

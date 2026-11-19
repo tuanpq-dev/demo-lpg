@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { durationHours } from '@/data/maintenanceForm';
+import { durationHours } from '@/data/maintenance/form';
 import { blankForm, validateCreate, type CreateFormValues } from './createForm';
 
 /** 23:30 ngày 27/10 giờ nhà máy – ngày UTC (16:30Z) vẫn là 27, ngày nhà máy là 27; 17:30Z = 00:30 ngày 28 ở nhà máy. */

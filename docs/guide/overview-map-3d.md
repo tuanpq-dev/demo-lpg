@@ -44,16 +44,16 @@ export function useOverviewData() { /* → { status, data, error, refetch } */ }
 
 ```mermaid
 flowchart TD
-  JSON["mocks/scenes/khu-bon-lpg.json"] --> FETCH["data/scene.ts fetchScene"]
-  REPO["data/sceneRepository.ts cảnh lưu từ Editor"] --> FETCH
+  JSON["mocks/scenes/khu-bon-lpg.json"] --> FETCH["data/scene/index.ts fetchScene"]
+  REPO["data/scene/repository.ts cảnh lưu từ Editor"] --> FETCH
   FETCH --> MIG["features/scene/migrate.ts định dạng cũ"]
   MIG --> ZOD["features/scene/parse.ts zod"]
   ZOD --> HOOK["useSceneConfig"]
   HOOK --> CPM["app/ConnectedPlantMap"]
   CPM --> PM["components/PlantMap thuần"]
-  PM --> SV["features/scene/SceneViewer lazy"]
+  PM --> SV["scene3d/SceneViewer lazy"]
   SV --> GEO["geometry.ts resolveScene"]
-  SV --> REG["features/scene/assets/registry.ts ASSETS"]
+  SV --> REG["scene3d/assets/registry.ts ASSETS"]
   SV --> PIPE["PipeMesh"]
   SV --> MARK["markers.ts nhãn MapMarker"]
   LIVE["data/live useLiveData (LiveDataSource)"] --> SV
@@ -62,27 +62,27 @@ flowchart TD
 
 **Quy ước mặt sàn:** mọi asset có gốc tại **tâm đáy** (y = 0 cục bộ là sàn, không phần nào dưới 0). Độ cao của object = `elevation` (mặc định 0, `position[1]` luôn bằng nó). Chỉ asset lắp trên ống (`inline`: van, đồng hồ) mới nên nâng; Editor cảnh báo phần còn lại.
 
-**Ranh giới quan trọng:** `src/components/PlantMap/PlantMap.tsx` là component **thuần** – nhận `scene` đã nạp, không gọi hook dữ liệu.
+**Ranh giới quan trọng:** `src/scene3d/PlantMap.tsx` là component **thuần** – nhận `scene` đã nạp, không gọi hook dữ liệu.
 Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)` + 3 trạng thái). Trang Tổng quan truyền `liveData` từ `useLiveData()`.
 
 | Thứ tự đọc | File | Vai trò |
 |---|---|---|
 | 1 | `src/features/scene/types.ts` | Hợp đồng dữ liệu `SceneConfig`, `SceneObject` (gồm `elevation`), `Pipe`, `ASSET_TYPES`, `LiveData`, `SCENE_SCHEMA_VERSION` (không phụ thuộc three) |
 | 2 | `src/mocks/scenes/khu-bon-lpg.json` | Ví dụ cảnh thật: camera, views, thresholds, objects, pipes |
-| 3 | `src/data/scene.ts` + `src/data/live/` | `fetchScene` (mock → kho), `useSceneConfig`, `SCENE_IDS`; số liệu: `useLiveData`, `useLiveStatus`, `SENSOR_TAGS` (xem 4b) |
+| 3 | `src/data/scene/index.ts` + `src/data/live/` | `fetchScene` (mock → kho), `useSceneConfig`, `SCENE_IDS`; số liệu: `useLiveData`, `useLiveStatus`, `SENSOR_TAGS` (xem 4b) |
 | 4 | `src/features/scene/migrate.ts` → `parse.ts` | `migrateScene` (v1 → v2: position[1] → `elevation`, van/đồng hồ dời pivot, version + 1) rồi validate zod: cấu trúc + tham chiếu (asset, id trùng, cổng ống, params, position[1] = elevation…) |
 | 5 | `src/app/ConnectedPlantMap.tsx` | Nạp theo `sceneId` → `PlantMap renderer="three"` |
-| 6 | `src/components/PlantMap/PlantMap.tsx` | Khung chung (nút view, zoom, toàn màn hình, 2.5D/3D); lazy-load SceneViewer |
-| 7 | `src/features/scene/SceneViewer.tsx` | Canvas R3F: camera, đèn, sàn, object, ống, nhãn, tooltip, preset chất lượng |
+| 6 | `src/scene3d/PlantMap.tsx` | Khung chung (nút view, zoom, toàn màn hình, 2.5D/3D); lazy-load SceneViewer |
+| 7 | `src/scene3d/SceneViewer.tsx` | Canvas R3F: camera, đèn, sàn, object, ống, nhãn, tooltip, preset chất lượng |
 | 8 | `src/features/scene/geometry.ts` | `resolveScene`: đặt object (X/Z + `elevation` = đáy), dựng đường cong ống (cổng theo transform thế giới, gồm elevation), object gắn ống (`attach`, đáy = tâm ống − `inline.axisY`) |
 | 8b | `src/features/scene/ground.ts` | Thuần: độ cao đáy thế giới (`worldBaseY`, hộp bao spec sau xoay + scale), `mayFloat` (asset lắp trên ống) – dùng cho cảnh báo mặt sàn, Properties, vạch chân |
 | 9 | `src/features/scene/assets/specs.ts` → `registry.ts` → `tanks.tsx`/`equipment.tsx`/`structures.tsx` | Spec thuần (tham số, cổng, hộp bao) + component hình học |
-| 10 | `src/features/scene/PipeMesh.tsx` | Ống: lõi sáng, vỏ trong mờ, vệt chảy theo `flowTag` (`selected` → vỏ màu primary trong Editor) |
+| 10 | `src/scene3d/PipeMesh.tsx` | Ống: lõi sáng, vỏ trong mờ, vệt chảy theo `flowTag` (`selected` → vỏ màu primary trong Editor) |
 | 10b | `src/features/scene/pipes.ts` | Thuần: cổng thế giới (`portWorld`, bí danh), đường đi ống (`pipePath`), điểm gần nhất/`pointAtT`, vuông góc (`orthoSegment`), `nextPipeId`, va chạm đoạn–hộp bao |
 | 11 | `src/features/scene/fields.ts` + `markers.ts` | Bindings → trạng thái (ngưỡng) → nhãn tự sinh `MapMarker` |
-| 12 | `src/features/scene/look.ts`, `quality.ts`, `PostEffects.tsx` | Ánh sáng/exposure, preset high/medium/low, bloom + outline |
-| 12b | `src/features/scene/sceneReady.tsx`, `src/components/SceneLoading` | Chống nháy khi tải: mọi giai đoạn (dữ liệu cảnh → chunk three → canvas) cùng một `SceneLoading`; `ReadySignal` (cuối `<Canvas>`) báo sẵn sàng sau 3 khung đã vẽ (camera canh khung, nhãn đã đặt; tối đa 5 s) rồi lớp chờ mờ đi; `QualityMonitor` (PerformanceMonitor) chỉ gắn sau khi hiện cảnh 1,5 s – khung đầu chậm do biên dịch shader không làm hạ preset (đổi preset = composer dựng lại = tắt đen một nhịp). Chunk 3D tải song song dữ liệu cảnh (`preloadSceneViewer`) |
-| 12c | `src/features/scene/sceneSnapshot.ts` | Mở lại cảnh trong phiên (rời trang rồi quay lại): `ReadySignal` chụp canvas (`toBlob`, microtask sau khung vẽ) theo mã cảnh; lớp chờ (`SceneLoading snapshot`) hiện ảnh đó thay vòng xoay rồi mờ sang canvas mới. Chỉ cảnh xem, camera mặc định (không Editor / `view`). ⚠ Còn lỗi (11/11): ảnh đôi khi chụp lúc camera chưa canh khung xong → ảnh to hơn cảnh thật, chồng hình khi mờ; khung đầu khi quay lại vẫn tối 1 nhịp (ảnh blob chưa kịp vẽ) |
+| 12 | `src/scene3d/look.ts`, `quality.ts`, `PostEffects.tsx` | Ánh sáng/exposure, preset high/medium/low, bloom + outline |
+| 12b | `src/scene3d/sceneReady.tsx`, `src/components/SceneLoading` | Chống nháy khi tải: mọi giai đoạn (dữ liệu cảnh → chunk three → canvas) cùng một `SceneLoading`; `ReadySignal` (cuối `<Canvas>`) báo sẵn sàng sau 3 khung đã vẽ (camera canh khung, nhãn đã đặt; tối đa 5 s) rồi lớp chờ mờ đi; `QualityMonitor` (PerformanceMonitor) chỉ gắn sau khi hiện cảnh 1,5 s – khung đầu chậm do biên dịch shader không làm hạ preset (đổi preset = composer dựng lại = tắt đen một nhịp). Chunk 3D tải song song dữ liệu cảnh (`preloadSceneViewer`) |
+| 12c | `src/scene3d/sceneSnapshot.ts` | Mở lại cảnh trong phiên (rời trang rồi quay lại): `ReadySignal` chụp canvas (`toBlob`, microtask sau khung vẽ) theo mã cảnh; lớp chờ (`SceneLoading snapshot`) hiện ảnh đó thay vòng xoay rồi mờ sang canvas mới. Chỉ cảnh xem, camera mặc định (không Editor / `view`). ⚠ Còn lỗi (11/11): ảnh đôi khi chụp lúc camera chưa canh khung xong → ảnh to hơn cảnh thật, chồng hình khi mờ; khung đầu khi quay lại vẫn tối 1 nhịp (ảnh blob chưa kịp vẽ) |
 
 | Muốn sửa | Sửa ở |
 |---|---|
@@ -92,8 +92,8 @@ Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)
 | Ống (đường đi, cổng nối, tag lưu lượng) | `/editor` (công cụ Vẽ ống P + Thuộc tính ống) hoặc `pipes` trong JSON (`from/to` = `"objectId.port"`) |
 | Cổng nối của asset | `layout().ports` + `portAliases` trong `specs.ts` (kèm họng/bích trong component) |
 | Hình dáng thiết bị | `src/features/scene/assets/*.tsx` |
-| Ánh sáng, màu nét viền, bloom | `src/features/scene/look.ts` |
-| Nhãn hiển thị thế nào | `src/features/scene/markers.ts`, `src/components/PlantMap/MapMarker.tsx` |
+| Ánh sáng, màu nét viền, bloom | `src/scene3d/look.ts` |
+| Nhãn hiển thị thế nào | `src/scene3d/markers.ts`, `src/components/PlantMap/MapMarker.tsx` |
 | Xử lý khi bấm object | Prop `onSelect` của `PlantMap` (Tổng quan hiện chưa truyền; ví dụ có ở `src/pages/playground/SceneSection.tsx`) |
 
 ### 4f. Chế độ sửa nhanh (`?edit=1` trên bản đồ) và Scene Editor
@@ -120,10 +120,10 @@ sequenceDiagram
 | File | Vai trò |
 |---|---|
 | `src/pages/overview/OverviewPage.tsx` | Đọc `?edit=1` → `editable` |
-| `src/components/PlantMap/PlantMap.tsx` | `PlantMapThree`: bản nháp, thanh sửa (Di chuyển/Xoay), `copyJson` |
-| `src/features/scene/EditTools.tsx` | `SceneEditState`, `GROUND_PLANE` + `groundHit` (bỏ tia gần song song/quá xa), `startGroundDrag` (kéo trên sàn: X/Z, giữ elevation, snap 0.5 m, Alt tắt snap, Esc huỷ, nhóm cùng delta, tắt OrbitControls), `EditGizmo` (chỉ xoay quanh Y / scale giữ đáy), `SelectionFootprints` (vạch chân + "đáy ±x m"), chọn bằng tia/vùng, viền sàn |
+| `src/scene3d/PlantMap.tsx` | `PlantMapThree`: bản nháp, thanh sửa (Di chuyển/Xoay), `copyJson` |
+| `src/scene3d/EditTools.tsx` | `SceneEditState`, `GROUND_PLANE` + `groundHit` (bỏ tia gần song song/quá xa), `startGroundDrag` (kéo trên sàn: X/Z, giữ elevation, snap 0.5 m, Alt tắt snap, Esc huỷ, nhóm cùng delta, tắt OrbitControls), `EditGizmo` (chỉ xoay quanh Y / scale giữ đáy), `SelectionFootprints` (vạch chân + "đáy ±x m"), chọn bằng tia/vùng, viền sàn |
 | `src/features/scene/editConstants.ts` | Hằng thuần: snap (0.5 m, 15°, 0.1, độ cao 0.25 m), vùng sàn ±60 m, ngưỡng tia sàn (`GROUND_GRAZING_DOT` 0.05, `GROUND_WORK_LIMIT` 120 m), MIME kéo thả |
-| `src/features/scene/SceneViewer.tsx` | `onPointerDownCapture`: chế độ Di chuyển → nắm object dưới con trỏ → `startGroundDrag`; Shift+kéo → chọn vùng; `onDrop` → `groundHit` + snap |
+| `src/scene3d/SceneViewer.tsx` | `onPointerDownCapture`: chế độ Di chuyển → nắm object dưới con trỏ → `startGroundDrag`; Shift+kéo → chọn vùng; `onDrop` → `groundHit` + snap |
 
 Scene Editor đầy đủ (`/editor?edit=1`) dùng cùng SceneViewer:
 
@@ -137,7 +137,7 @@ Scene Editor đầy đủ (`/editor?edit=1`) dùng cùng SceneViewer:
 | `src/features/scene-editor/store.ts` | `useSceneDoc` (zustand + zundo, undo/redo) và `useEditorUi` (chọn, công cụ, ẩn/khoá) |
 | `src/features/scene-editor/ops.ts` | Biến đổi thuần trên `SceneConfig`, sinh id theo `idPrefix`; `setElevation`, `alignObjects`, `cleanObject` (giữ position[1] = elevation) |
 | `src/features/scene-editor/validate.ts` | Lỗi zod + cảnh báo (tag lạ, ngoài sàn, lún dưới sàn, đáy ≠ elevation, lơ lửng) |
-| `src/data/sceneRepository.ts` | `SceneRepository` + `LocalStorageRepository` |
+| `src/data/scene/repository.ts` | `SceneRepository` + `LocalStorageRepository` |
 | `src/pages/editor/PropertiesPanel.tsx` | Vị trí X/Z, `ElevationField` (snap 0.25 + "Đặt xuống sàn"), góc quanh Y, `GroupPlacement` (Căn hàng X/Z, elevation nhóm) |
 | `Outliner.tsx`, `AssetLibrary.tsx`, `ViewsPanel.tsx`, `ValidationPanel.tsx`, `dialogs.tsx` | Các bảng của Editor |
 
@@ -164,10 +164,10 @@ sequenceDiagram
 | File | Vai trò |
 |---|---|
 | `src/features/scene/pipes.ts` | Hình học ống thuần dùng chung (Editor, validate, ops) |
-| `src/features/scene/PipeTools.tsx` | `PipeDrawTool` (vẽ), `PortMarkers`, `PipeHandles` + `startPointDrag` (kéo điểm gập) |
-| `src/features/scene/EditTools.tsx` | `planeHit` (mặt phẳng ngang bất kỳ), `startAttachDrag` (kéo van/đồng hồ dọc ống), callback ống trong `SceneEditState` |
+| `src/scene3d/PipeTools.tsx` | `PipeDrawTool` (vẽ), `PortMarkers`, `PipeHandles` + `startPointDrag` (kéo điểm gập) |
+| `src/scene3d/EditTools.tsx` | `planeHit` (mặt phẳng ngang bất kỳ), `startAttachDrag` (kéo van/đồng hồ dọc ống), callback ống trong `SceneEditState` |
 | `src/features/scene/geometry.ts` | `CurveCache`, `ScenePreview` + `applyPreview` |
-| `src/features/scene/SceneViewer.tsx` | Chọn ống, click đoạn = thêm điểm, Delete điểm, bắt tay nắm trong `onPointerDownCapture` |
+| `src/scene3d/SceneViewer.tsx` | Chọn ống, click đoạn = thêm điểm, Delete điểm, bắt tay nắm trong `onPointerDownCapture` |
 | `src/features/scene-editor/pipeOps.ts` (+ `ops.ts`) | `addPipe`, `updatePipe`, `removePipes`, `renamePipe`, `insertPipePoint`, `reversePipe`, `attachToPipe`, `detachFromPipe`, `removeObjects(…, 'keep' \| 'delete')` |
 | `src/pages/editor/PropertiesPanel.tsx` | `PipeProperties`, "Gắn lên ống" / "Tháo khỏi ống" |
 | `src/pages/editor/useEditorShortcuts.ts` · `EditorDialogs.tsx` | Phím P/O, hộp "Xoá – còn ống liên quan" |
@@ -226,7 +226,7 @@ URL /map/V-101
 1. Thêm phần tử `KpiMock` vào `overviewKpis` trong `src/mocks/overview.ts` (`id`, `label`, `value`, `unit`, `icon` là tên trong `src/assets/digital-twin/index.ts`).
 2. Nếu cần biến thể (danger, with-progress, compact): xem `KpiCardProps` trong `src/components/KpiCard/KpiCard.tsx`.
 3. Lưới đang 6 cột (`grid-cols-3 … min-[1520px]:grid-cols-6`) trong `src/pages/overview/OverviewPage.tsx` – chỉnh nếu số KPI đổi.
-4. KPI của Cảnh báo/Bảo trì **không** sửa mock: sửa `deriveAlertKpis` (`src/data/alerts.ts`) hoặc `deriveMaintenanceKpis` (`src/data/maintenance.ts`).
+4. KPI của Cảnh báo/Bảo trì **không** sửa mock: sửa `deriveAlertKpis` (`src/data/alerts/index.ts`) hoặc `deriveMaintenanceKpis` (`src/data/maintenance/index.ts`).
 
 **Thêm loại asset 3D**
 1. Thêm tên vào `ASSET_TYPES` trong `src/features/scene/types.ts` (đúng nhóm equipment/environment).
@@ -237,7 +237,7 @@ URL /map/V-101
 3. Viết component trong `src/features/scene/assets/` (vd `equipment.tsx`): nhận `AssetComponentProps` (`{ params, path }`), lấy vật liệu bằng `useAssetMaterials()`, chi tiết dùng lại từ `parts.tsx` (`Flange`, `Ladder`, `Railing`…).
    - **Gốc toạ độ tại tâm đáy, Y lên, không phần nào dưới y = 0** (`bounds.min[1] = 0`). Hình dựng quanh tâm (vd van quanh trục ống) → bọc trong `<group position-y={…}>` dịch lên; asset lắp trên ống khai báo `inline: { axisY }` trong spec.
    - Kiểm tra: đo hộp bao three (script `diagnose.mjs` trong scratchpad e2e, dùng `window.__sceneThree` ở dev) – min.y phải = 0.
-4. Trong `src/features/scene/assets/registry.ts`: import component ở đầu file, rồi thêm `'ten-asset': TenComponent` vào `COMPONENTS`.
+4. Trong `src/scene3d/assets/registry.ts`: import component ở đầu file, rồi thêm `'ten-asset': TenComponent` vào `COMPONENTS`.
 5. Thêm hình vẽ vào `PATHS` trong `src/pages/editor/AssetGlyph.tsx` (TypeScript báo lỗi nếu thiếu). Thư viện asset của Editor tự liệt kê theo `ASSET_TYPES`.
 6. Kiểm tra: `npm run typecheck`, rồi thêm object vào cảnh (JSON trong `src/mocks/scenes/` hoặc `/editor`) và mở `/overview?scene=<id>`. Validate zod tự nhận loại mới (params ngoài min–max, cổng sai… hiện thành Card lỗi).
 
@@ -270,6 +270,6 @@ URL /map/V-101
 
 **Thêm scene mới**
 1. Cách nhanh: `/editor?edit=1` → dựng → "Lưu thành bản mới" (lưu localStorage) → mở `/overview?scene=<id>`.
-2. Cách cố định (cảnh mẫu): tạo `src/mocks/scenes/<id>.json` theo `SceneConfig` (`src/features/scene/types.ts`, có `"schemaVersion": 2`; thiếu thì được coi là định dạng cũ và migrate); `import.meta.glob` trong `src/data/scene.ts` tự nhận, `SCENE_IDS` tự thêm.
+2. Cách cố định (cảnh mẫu): tạo `src/mocks/scenes/<id>.json` theo `SceneConfig` (`src/features/scene/types.ts`, có `"schemaVersion": 2`; thiếu thì được coi là định dạng cũ và migrate); `import.meta.glob` trong `src/data/scene/index.ts` tự nhận, `SCENE_IDS` tự thêm.
 3. Mở `/overview?scene=<id>`; JSON sai → Card lỗi liệt kê từng lỗi zod.
 4. Đổi cảnh mặc định của Tổng quan: `DEFAULT_SCENE_ID` trong `src/pages/overview/OverviewPage.tsx`.

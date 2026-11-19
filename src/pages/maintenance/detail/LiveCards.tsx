@@ -4,7 +4,7 @@ import { Placeholder } from '@/app/Placeholder';
 import { Card, DeadlineCountdownCard, DeviceArmIcon, KpiCard, StatusDot, type KpiTone } from '@/components';
 import { resolveAssetId, type Reading } from '@/data/assetDetail';
 import { dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
-import { useRelatedDevice } from '@/data/maintenanceDetail';
+import { useRelatedDevice } from '@/data/maintenance/detail';
 import { deadlineCountdown, deadlineDayLabel } from '@/features/maintenance/deadline';
 import { useNow } from '@/hooks/useNow';
 

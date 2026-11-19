@@ -1,6 +1,6 @@
 import { useMemo, type RefObject } from 'react';
-import type { SceneViewerHandle } from '@/features/scene';
-import type { ObjectTransform } from '@/features/scene/EditTools';
+import type { SceneViewerHandle } from '@/scene3d';
+import type { ObjectTransform } from '@/features/scene/edit';
 import type { AssetType, Pipe, PipeAttachment, SceneConfig, SceneObject, Vec3 } from '@/features/scene/types';
 import {
   addObjects,

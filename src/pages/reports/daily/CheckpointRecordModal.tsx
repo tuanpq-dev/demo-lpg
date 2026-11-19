@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { ModalDataFallback } from '@/app/Placeholder';
 import { Button, Modal } from '@/components';
-import { useCheckpointSnapshot } from '@/data/checkpointRecord';
+import { useCheckpointSnapshot } from '@/data/reports/checkpoint';
 import type { CheckpointSnapshot, ReportRecord } from '@/features/reports';
 import { RecordFooter, RecordFooterStart, RecordHeaderInfo, RecordNav } from './record/RecordChrome';
 import { RecordEquipment, RecordOverview, RecordRemarkAndFiles, RecordSummary } from './record/RecordSections';
@@ -17,7 +17,7 @@ export type CheckpointRecordModalProps = {
 
 /**
  * Modal "Ghi nhận mốc kiểm tra HH:mm" – Figma bản sao A88YJ2BRhICDDdeu2rtRg1, node 126:7966 (frame 126:8506). Mở từ chi tiết
- * báo cáo ngày (`?record=<mốc>`). Số IoT tự điền (`data/checkpointRecord`), nhập đồng hồ cơ ghi đè, nhận xét bắt buộc,
+ * báo cáo ngày (`?record=<mốc>`). Số IoT tự điền (`data/reports/checkpoint.ts`), nhập đồng hồ cơ ghi đè, nhận xét bắt buộc,
  * tệp chỉ giữ trong phiên. Logic: `features/reports/record.ts`. Nháp sessionStorage theo mã + mốc. Chỉ mount khi mở.
  * Khối (thư mục `record/`): thông tin đầu + tab + chân (RecordChrome), tổng quan / nhóm thiết bị / nhận xét + tệp / tóm tắt
  * (RecordSections). State + kiểm tra: `useCheckpointRecordForm` (reducer + useFormModal); tab theo cuộn: `useSectionNav`.

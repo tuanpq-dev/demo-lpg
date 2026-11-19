@@ -3,7 +3,7 @@
  * (hợp đồng `Alert` + trường chỉ FE), trang danh sách, tóm tắt KPI, số đếm, cảnh báo liên quan, tải việc.
  * Nạp LƯỜI cùng ./schemas – chỉ `import type` từ code tải đầu.
  */
-import './zodJitless';
+import '@/lib/zodJitless';
 import { z } from 'zod/mini';
 import type { AlertLoad } from '@/features/alerts/assignStaff';
 import type { RelatedAlert } from '@/features/alerts/close';

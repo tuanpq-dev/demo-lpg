@@ -7,7 +7,7 @@ import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useFilterParams } from '@/app/useTableFilters';
 import { useRecordSelection } from '@/app/useRecordSelection';
-import { fetchAlertList, useAlertPage, useAlertSummary, type AlertListQuery } from '@/data/alertApi';
+import { fetchAlertList, useAlertPage, useAlertSummary, type AlertListQuery } from '@/data/alerts/api';
 import { ALERT_PARAMS, RANGE_OPTIONS, alertKpis, priorityCard, type AlertRecord, type AlertShift, type AlertTab } from '@/data/alerts';
 import { runAction } from '@/lib/actionError';
 import { cn } from '@/lib/cn';
@@ -45,7 +45,7 @@ const exportMatching = (query: AlertListQuery, total: number) =>
   });
 
 /**
- * Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. Phân trang / lọc / đếm ở MÁY CHỦ (`data/alertApi.ts`): trang
+ * Trung tâm cảnh báo (Figma 70:2809) – AppLayout full-width. Phân trang / lọc / đếm ở MÁY CHỦ (`data/alerts/api.ts`): trang
  * chỉ giữ một trang dòng + số đếm, đổi bộ lọc / trang giữ dữ liệu cũ (mờ) tới khi kết quả mới về.
  */
 export default function AlertsPage() {

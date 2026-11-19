@@ -4,8 +4,8 @@ import { PageHeader } from '@/components';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
 import { useCan } from '@/app/auth';
-import { reportDetailPath } from '@/data/dailyReport';
-import { useDailyReportByCode, useReportSummary } from '@/data/reportApi';
+import { reportDetailPath } from '@/data/reports/daily';
+import { useDailyReportByCode, useReportSummary } from '@/data/reports/api';
 import { DAILY_CHECKPOINTS, canInspectorSign, deriveUpcomingDeadlines, type ReportTab } from '@/features/reports';
 import { announce } from '@/lib/announce';
 import { plantDayKey } from '@/lib/plantTime';
@@ -24,7 +24,7 @@ const checkpointList = `${DAILY_CHECKPOINTS.slice(0, -1).join(', ')} và ${DAILY
 /**
  * Báo cáo vận hành định kỳ (ảnh thiết kế màn Báo cáo) – ghép từ các khối dùng chung `./shared`:
  * KPI · 4 thẻ tóm tắt · tab loại báo cáo + bảng. Tab mở sẵn: Báo cáo ngày. Lọc / phân trang / đếm / KPI ở MÁY CHỦ
- * (`data/reportApi.ts`): trang chỉ giữ một trang dòng + số liệu tóm tắt.
+ * (`data/reports/api.ts`): trang chỉ giữ một trang dòng + số liệu tóm tắt.
  */
 export default function ReportsPage() {
   // "Hôm nay"/mốc tới hạn theo giờ nhà máy – cập nhật mỗi phút; truy vấn cũng tải lại ngầm mỗi phút.

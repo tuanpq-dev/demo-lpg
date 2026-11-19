@@ -1,5 +1,5 @@
 import type { MaintenanceRecord, useMaintenance } from '@/data/maintenance';
-import { clearProgressDraft, clearSubmitDraft } from '@/data/maintenanceDetail';
+import { clearProgressDraft, clearSubmitDraft } from '@/data/maintenance/detail';
 import { announce } from '@/lib/announce';
 import { AssignModal, ProgressUpdateModal, ReviewModal, SubmitReviewModal } from '../lazyModals';
 import { CancelMaintenanceModal } from '../MaintenanceDetailDialogs';

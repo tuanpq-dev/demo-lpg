@@ -1,4 +1,4 @@
-/** Lõi mô phỏng: kiểu phiên, mô hình diễn biến (tăng → đỉnh → ESD ảo giảm), mốc cảnh báo / AI. Tách từ monitor.ts. */
+/** Lõi mô phỏng: kiểu phiên, mô hình diễn biến (tăng → đỉnh → ESD ảo giảm), mốc cảnh báo / AI. */
 import type { TagValue } from '@/features/live/types';
 import { referenceReading, type LeakRate, type ScenarioConfig, type ScenarioSetup, type SimVariable } from './config';
 import type { Scenario } from './scenarios';

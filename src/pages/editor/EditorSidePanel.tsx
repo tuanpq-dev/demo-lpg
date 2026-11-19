@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 import { Card, Tabs } from '@/components';
-import type { SceneViewerHandle } from '@/features/scene';
+import type { SceneViewerHandle } from '@/scene3d';
 import type { EditorIssue } from '@/features/scene-editor/validate';
 import { useEditorUi, useSceneDoc } from '@/features/scene-editor/store';
 import { PropertiesPanel } from './PropertiesPanel';

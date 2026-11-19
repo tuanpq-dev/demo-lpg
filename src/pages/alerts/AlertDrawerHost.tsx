@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { followUpConfig } from '@/data/alertDetail';
-import { useAlertById } from '@/data/alertApi';
+import { followUpConfig } from '@/data/alerts/detail';
+import { useAlertById } from '@/data/alerts/api';
 import { useAlerts, type AlertRecord } from '@/data/alerts';
 import {
   DuplicateFromAlertError,
@@ -8,7 +8,7 @@ import {
   useDeviceDirectory,
   useLinkedMaintenance,
   type NewMaintenanceInput,
-} from '@/data/maintenanceApi';
+} from '@/data/maintenance/api';
 import { announce } from '@/lib/announce';
 import { preloadWhenIdle } from '@/lib/whenIdle';
 import type { AlertDrawerHandlers } from './AlertDetailDrawer';

@@ -5,7 +5,7 @@ import { useAuth, useCan } from '@/app/auth';
 import { SIMULATION_PATH, simulationMonitorPath } from '@/app/assetRoutes';
 import { Page } from '@/app/Page';
 import { pageFallback } from '@/app/Placeholder';
-import { SIMULATION_REFERENCE_TAGS, saveScenarioConfig, startSimulation, useSimulation } from '@/data/simulation';
+import { SIMULATION_REFERENCE_TAGS, saveScenarioConfig, startSimulation, useSimulation } from '@/data/operations/simulation';
 import { activeSessionOf, startBlocker, type SimulationSession } from '@/features/simulation/monitor';
 import {
   checkConfig,

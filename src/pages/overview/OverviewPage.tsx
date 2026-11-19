@@ -14,13 +14,13 @@ import {
   Icon,
   LineTrendChart,
   PageHeader,
-  PlantMap,
   type PlantMapRenderer,
   RecentEventsCard,
   StatusPill,
   SystemHealthCard,
 } from '@/components';
 import { ConnectedPlantMap } from '@/app/ConnectedPlantMap';
+import { PlantMap } from '@/scene3d';
 import { ClockButton, LiveDataButton } from '@/app/HeaderActions';
 import { KpiFromData } from '@/app/kpi';
 import { Page } from '@/app/Page';
