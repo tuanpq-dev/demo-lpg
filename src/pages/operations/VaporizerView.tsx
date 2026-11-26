@@ -17,9 +17,8 @@ import {
   type StatusPillTone,
   type TagTone,
   ThermometerIcon,
-  VaporizerDiagram,
-  type DiagramReading,
 } from '@/components';
+import { VaporizerDiagram, type DiagramReading } from '@/widgets';
 import { type DeviceParam, type DeviceParamId, type OperationDeviceMock, deviceHistory, trendPoints } from '@/data/operations/device';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';

@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import { AssignNotices, Button, Modal, DiscardConfirmButtons } from '@/components';
+import { Button, Modal, DiscardConfirmButtons } from '@/components';
+import { AssignNotices } from '@/widgets';
 import type { AlertRecord } from '@/data/alerts';
 import { stateLabel, suggestsSupport, type AlertUpdateInput, type AlertUpdateResult, type UpdateCheck } from '@/features/alerts/update';
 import { useNow } from '@/hooks/useNow';

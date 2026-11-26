@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import { BeforeAfterReadings, DatePicker, Select, type ReadingRowView } from '@/components';
+import { DatePicker, Select } from '@/components';
+import { BeforeAfterReadings, type ReadingRowView } from '@/widgets';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
 import { sourceLabel, type VerificationSource } from '@/features/alerts/update';
 

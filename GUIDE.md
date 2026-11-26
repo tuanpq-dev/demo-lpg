@@ -46,6 +46,7 @@ src/
 ├─ app/                "keo" nối router + dữ liệu vào component
 ├─ pages/              mỗi màn một thư mục (overview, alerts, maintenance, asset, operations, reports, editor, login, errors, shared)
 ├─ components/         component THUẦN (không import router/data), barrel index.ts
+├─ widgets/            component NGHIỆP VỤ một miền (thẻ cảnh báo, sơ đồ thiết bị, chọn nhân sự…), barrel index.ts
 ├─ data/               hook + hàm dữ liệu, gom theo miền (alerts/, maintenance/, reports/, operations/, scene/, live/…)
 ├─ mocks/              dữ liệu giả từ Figma; mocks/scenes/*.json = cảnh 3D
 ├─ scene3d/            vẽ 3D (React Three Fiber, tải lười): PlantMap, SceneViewer, asset, công cụ sửa
@@ -67,8 +68,9 @@ packages/shared/       kiểu + schema zod dùng chung FE/BE (scene, live, alert
 |---|---|---|
 | `src/main.tsx` | Danh sách route, lazy-load trang | Thêm trang / đổi đường dẫn |
 | `src/app/` | `Page.tsx` (`AppFrame` khung + header dựng một lần, `Page` thân trang), `navigation.ts` (menu), `settingsRoutes.ts` (menu Cài đặt), `auth/` (`AuthProvider`, `RequireAuth`, `useCan`), `useTableFilters.ts`, `useRecordSelection.ts`, `kpi.tsx`, `HeaderActions.tsx`, `ConnectedPlantMap.tsx`, `AssetModelPanel.tsx` (mô hình 3D tài sản + ảnh dự phòng), `editorAccess.ts`, `LiveAnnouncer.tsx`, `OfflineBanner.tsx`, `ToastHost.tsx`, `Placeholder.tsx` | Nối component với URL/dữ liệu; thêm tab menu |
-| `src/pages/` | Trang ghép component: `overview/`, `alerts/`, `maintenance/`, `asset/` (`AssetDetailPage`), `operations/` (chi tiết thiết bị, nhật ký, AI mô phỏng), `reports/` (`ReportsPage` + khối dùng chung `shared/`), `editor/` (Chỉnh sửa bản đồ 3D), `login/`, `errors/` (403/404/500), `shared/` (khối dùng chung nhiều màn) | Sửa bố cục/hành vi một màn |
+| `src/pages/` | Trang ghép component: `overview/`, `alerts/`, `maintenance/`, `asset/` (`AssetDetailPage`), `operations/` (chi tiết thiết bị, nhật ký, AI mô phỏng), `reports/` (`ReportsPage` + khối dùng chung `shared/`), `editor/` (Chỉnh sửa bản đồ 3D), `login/`, `errors/` (403/404/500), `shared/` (khối dùng chung nhiều màn) – màn không import màn khác (chỉ `shared/`, `errors/`) | Sửa bố cục/hành vi một màn |
 | `src/components/` | 40+ component thuần, mỗi cái một thư mục `<Tên>/` | Sửa giao diện dùng chung |
+| `src/widgets/` | 17 component nghiệp vụ (được dùng hằng số / hàm thuần của `features`), mỗi cái một thư mục `<Tên>/` | Sửa thẻ / sơ đồ / bảng của một miền |
 | `src/data/` | Theo miền: `src/data/alerts/`, `src/data/maintenance/`, `src/data/reports/`, `src/data/operations/`, `src/data/scene/` (+ `repository.ts`), `src/data/live/`, `src/data/mockServer/`; miền một file: `overview.ts`, `assetDetail.ts`, `staff.ts` | Đổi nguồn dữ liệu, bộ lọc, số liệu suy dẫn |
 | `src/mocks/` | `src/mocks/overview.ts`, `src/mocks/alerts.ts`, `src/mocks/maintenance.ts`, `src/mocks/assets.ts` (thông số tĩnh tài sản + sự kiện), `src/mocks/reports.ts` (báo cáo sinh theo ngày hiện tại), `src/mocks/types.ts`, `src/mocks/scenes/` (cảnh 3D + số liệu giả `live.ts`) | Sửa/thêm dữ liệu giả |
 | `src/scene3d/` | Vẽ 3D: `PlantMap`, `SceneViewer`, asset thiết bị, công cụ sửa của Editor | Hình dáng / ánh sáng / tương tác bản đồ 3D |

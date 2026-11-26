@@ -1,5 +1,6 @@
 import { currentAlerts, mutateAlerts } from './store';
-import type { AlertCardData, AlertHandling, SelectOption } from '@/components';
+import type { SelectOption } from '@/components';
+import type { AlertCardData, AlertHandling } from '@/widgets';
 import type { Severity } from '@/features/alerts/types';
 import {
   acknowledgeAlert,

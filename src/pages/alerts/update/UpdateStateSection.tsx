@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import { StaffList, StatusOptionGroup, Textarea, type StatusOption } from '@/components';
+import { StatusOptionGroup, Textarea, type StatusOption } from '@/components';
+import { StaffList } from '@/widgets';
 import type { AlertUpdateConfig } from '@/features/alerts/kinds';
 import { isResolvedState, stateLabel, type UpdateClose, type UpdateErrors, type UpdateState } from '@/features/alerts/update';
 import { supportStaffItems } from '../SupportRequestModal';

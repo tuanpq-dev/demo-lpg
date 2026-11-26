@@ -1,14 +1,5 @@
-import type {
-  AlertItemData,
-  AssetRowData,
-  CategoryBarItem,
-  DonutSegment,
-  HealthStat,
-  MapMarkerData,
-  MapView,
-  TimelineEvent,
-  TrendPoint,
-} from '@/components';
+import type { CategoryBarItem, DonutSegment, MapMarkerData, MapView, TimelineEvent, TrendPoint } from '@/components';
+import type { AlertItemData, AssetRowData, HealthStat } from '@/widgets';
 import { SIGNAL_LOST_LABEL, tagSignal } from '@/features/live/signal';
 import type { LiveData } from '@/features/live/types';
 import { fieldStatus, FIELD_META, formatField } from '@/features/scene/fields';

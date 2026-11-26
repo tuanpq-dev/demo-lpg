@@ -1,6 +1,7 @@
 /** Hiển thị + lọc danh sách bảo trì: hạn, nhãn trạng thái/loại, tham số lọc URL, KPI, việc ưu tiên, lịch. */
 import type { IconName } from '@/assets/digital-twin';
-import type { PriorityTaskData, SelectOption, TimelineEvent, WorkStatus } from '@/components';
+import type { SelectOption, TimelineEvent, WorkStatus } from '@/components';
+import type { PriorityTaskData } from '@/widgets';
 import type { Severity } from '@/features/alerts/types';
 import { isPastDue, isRequestOverdue } from '@/features/maintenance/deadline';
 import type { MaintenanceCounts, MaintenanceRange, MaintenanceTab } from '@/features/maintenance/query';

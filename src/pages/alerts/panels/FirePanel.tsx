@@ -1,4 +1,5 @@
-import { EmergencyBanner, InfoGrid, SignalLostIcon, type InfoGridItem } from '@/components';
+import { InfoGrid, SignalLostIcon, type InfoGridItem } from '@/components';
+import { EmergencyBanner } from '@/widgets';
 import { cn } from '@/lib/cn';
 import { plantTimeOfDay } from '@/lib/plantTime';
 import { alertKind, useFireReadings, type AlertLiveReading } from '@/data/alerts/detail';

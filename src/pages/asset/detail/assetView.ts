@@ -1,4 +1,5 @@
-import type { KpiTone, StatusPillTone, TankLayerItem } from '@/components';
+import type { KpiTone, StatusPillTone } from '@/components';
+import type { TankLayerItem } from '@/widgets';
 import { withUnit } from '@/lib/number';
 import { STATUS_LABEL, WATER_STATUS_LABEL, type AssetEventType, type Reading, type useAssetDetail } from '@/data/assetDetail';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';

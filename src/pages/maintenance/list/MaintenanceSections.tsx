@@ -1,4 +1,5 @@
-import { Card, EventTimeline, Icon, PriorityTaskCard, type PriorityTaskData, type TimelineEvent } from '@/components';
+import { Card, EventTimeline, Icon, type TimelineEvent } from '@/components';
+import { PriorityTaskCard, type PriorityTaskData } from '@/widgets';
 import { KpiFromData } from '@/app/kpi';
 import type { KpiData } from '@/data/overview';
 

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { assetPath } from '@/app/assetRoutes';
 import { Placeholder } from '@/app/Placeholder';
-import { Card, DeadlineCountdownCard, DeviceArmIcon, KpiCard, StatusDot, type KpiTone } from '@/components';
+import { Card, DeviceArmIcon, KpiCard, StatusDot, type KpiTone } from '@/components';
+import { DeadlineCountdownCard } from '@/widgets';
 import { resolveAssetId, type Reading } from '@/data/assetDetail';
 import { dueHasTime, type MaintenanceRecord } from '@/data/maintenance';
 import { useRelatedDevice } from '@/data/maintenance/detail';

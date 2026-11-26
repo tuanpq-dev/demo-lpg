@@ -1,4 +1,4 @@
-import type { MapMarkerData, MapMarkerTone } from '@/components/PlantMap/MapMarker';
+import type { MapMarkerData, MapMarkerTone } from '@/components/PlantMapImage/MapMarker';
 import { tagSignal } from '@/features/live/signal';
 import { bindingTag, formatField, objectStatus } from '@/features/scene/fields';
 import type { LiveData, ObjectStatus, SceneObject, Thresholds } from '@/features/scene/types';

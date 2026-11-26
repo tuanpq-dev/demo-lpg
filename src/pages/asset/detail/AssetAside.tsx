@@ -1,4 +1,5 @@
-import { AlertItem, Button, Card, DonutGauge, MaintenanceSummaryCard } from '@/components';
+import { Button, Card, DonutGauge } from '@/components';
+import { AlertItem, MaintenanceSummaryCard } from '@/widgets';
 import type { deriveMaintenanceSummary, deriveRelatedAlerts } from '@/data/assetDetail';
 import type { AssetData } from './AssetKpiSection';
 

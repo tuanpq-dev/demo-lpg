@@ -1,4 +1,5 @@
-import { Card, StatusPill, TankCutawayDiagram, TankLayerList } from '@/components';
+import { Card, StatusPill } from '@/components';
+import { TankCutawayDiagram, TankLayerList } from '@/widgets';
 import { STATUS_LABEL } from '@/data/assetDetail';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import { cn } from '@/lib/cn';

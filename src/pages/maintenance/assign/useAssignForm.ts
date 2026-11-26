@@ -1,5 +1,5 @@
 import { useReducer, useState } from 'react';
-import type { StaffPickerItem } from '@/components';
+import type { StaffPickerItem } from '@/widgets';
 import { ASSIGNABLE_STAFF, SHIFTS, staffByName, type MaintenanceRecord, type ShiftId } from '@/data/maintenance';
 import { clearAssignDraft, loadAssignDraft, saveAssignDraft } from '@/data/maintenance/detail';
 import { useMaintenanceLoads } from '@/data/maintenance/api';
