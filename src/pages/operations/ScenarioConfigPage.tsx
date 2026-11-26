@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, EmergencyBanner, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { Button, PageHeader, PlayCircleSolidIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { EmergencyBanner } from '@/widgets';
 import { useAuth, useCan } from '@/app/auth';
 import { SIMULATION_PATH, simulationMonitorPath } from '@/app/assetRoutes';
 import { Page } from '@/app/Page';

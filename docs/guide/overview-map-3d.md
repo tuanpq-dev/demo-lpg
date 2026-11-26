@@ -50,7 +50,7 @@ flowchart TD
   MIG --> ZOD["features/scene/parse.ts zod"]
   ZOD --> HOOK["useSceneConfig"]
   HOOK --> CPM["app/ConnectedPlantMap"]
-  CPM --> PM["components/PlantMap thuần"]
+  CPM --> PM["scene3d/PlantMap thuần"]
   PM --> SV["scene3d/SceneViewer lazy"]
   SV --> GEO["geometry.ts resolveScene"]
   SV --> REG["scene3d/assets/registry.ts ASSETS"]
@@ -94,7 +94,7 @@ Nạp cảnh nằm ở `src/app/ConnectedPlantMap.tsx` (`useSceneConfig(sceneId)
 | Cổng nối của asset | `layout().ports` + `portAliases` trong `specs.ts` (kèm họng/bích trong component) |
 | Hình dáng thiết bị | `src/features/scene/assets/*.tsx` |
 | Ánh sáng, màu nét viền, bloom | `src/scene3d/look.ts` |
-| Nhãn hiển thị thế nào | `src/scene3d/markers.ts`, `src/components/PlantMap/MapMarker.tsx` |
+| Nhãn hiển thị thế nào | `src/scene3d/markers.ts`, `src/components/PlantMapImage/MapMarker.tsx` |
 | Xử lý khi bấm object | Prop `onSelect` của `PlantMap` (Tổng quan hiện chưa truyền; ví dụ có ở `src/pages/playground/SceneSection.tsx`) |
 
 ### 4f. Chế độ sửa nhanh (`?edit=1` trên bản đồ) và Scene Editor

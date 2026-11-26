@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { withUnit } from '@/lib/number';
-import { AlertCard, AlertTriangleIcon, AssigneeCard, Card } from '@/components';
+import { AlertTriangleIcon, Card } from '@/components';
+import { AlertCard, AssigneeCard } from '@/widgets';
 import type { AlertRecord } from '@/data/alerts';
 import { SHIFTS, type MaintenanceRecord } from '@/data/maintenance';
 import { assignMode } from '@/features/maintenance/assign';

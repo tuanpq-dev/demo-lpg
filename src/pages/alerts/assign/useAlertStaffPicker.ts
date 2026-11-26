@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { StaffPickerItem } from '@/components';
+import type { StaffPickerItem } from '@/widgets';
 import { ALERT_STAFF, alertKind } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';
 import { useAlertLoads } from '@/data/alerts/api';

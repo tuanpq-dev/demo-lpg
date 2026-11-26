@@ -14,12 +14,11 @@ import {
   type MetricRow,
   NetworkIcon,
   PipeLineIcon,
-  PlcScadaDiagram,
-  type DiagramLinkState,
   SlidersIcon,
   StatusPill,
   type TagTone,
 } from '@/components';
+import { PlcScadaDiagram, type DiagramLinkState } from '@/widgets';
 import { plcLatencyHistory, trendPoints, type PlcScadaDeviceMock, type PlcSourceIcon } from '@/data/operations/device';
 import { SIGNAL_LOST_LABEL } from '@/features/live/signal';
 import type { TagValue } from '@/features/live/types';

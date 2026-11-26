@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import js from '@eslint/js';
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
@@ -37,6 +38,8 @@ const DANGER_TEXT_RULES = [
  * Phân lớp (CLAUDE.md mục 3, 5): phụ thuộc chỉ đi XUỐNG
  *   pages → app → data → features → api
  *   pages / app → scene3d → components → hooks → lib ; scene3d → features   (vẽ 3D: R3F, tải lười)
+ *   pages / app → widgets → components ; widgets → features                   (component nghiệp vụ)
+ *   pages/<màn> không import màn khác – chỉ pages/shared, pages/errors
  *   mocks chỉ đọc từ data
  * - Bắt cả alias `@/x` lẫn đường tương đối vượt lớp (`../../x`) – không có thư mục con nào trùng tên lớp.
  * - `@typescript-eslint/no-restricted-imports` chỉ dùng chỗ cần `allowTypeImports` (component đọc KIỂU miền; data dựng
@@ -51,64 +54,95 @@ const LAYER_MSG = {
   api: 'src/api là tầng gọi backend – không phụ thuộc UI, lớp dữ liệu hay trang.',
   features:
     'src/features là logic miền thuần – không phụ thuộc component / hook React, lớp vẽ 3D, lớp dữ liệu, nối router hay trang (phần vẽ 3D ở src/scene3d).',
-  componentsUp: 'Component thuần – nhận dữ liệu qua props, không đọc lớp dữ liệu, nối router, trang, API hay lớp vẽ 3D (src/scene3d).',
-  componentsFeatures: 'Component UI chỉ import KIỂU từ src/features (`import type`); component nghiệp vụ đặt trong components/domain/.',
+  componentsUp:
+    'Component thuần – nhận dữ liệu qua props, không đọc lớp dữ liệu, nối router, trang, API, lớp vẽ 3D (src/scene3d) hay component nghiệp vụ (src/widgets).',
+  componentsFeatures: 'Component UI chỉ import KIỂU từ src/features (`import type`); component nghiệp vụ đặt trong src/widgets/.',
+  widgets: 'src/widgets là component nghiệp vụ – nhận dữ liệu qua props, không đọc lớp dữ liệu, nối router, trang, API hay lớp vẽ 3D.',
   dataUp: 'src/data là lớp dữ liệu – không phụ thuộc lớp vẽ 3D, nối router hay trang.',
-  scene3d: 'src/scene3d là lớp vẽ 3D – nhận cảnh + số liệu qua props, không đọc lớp dữ liệu, API, nối router hay trang.',
-  dataUi: 'src/data chỉ import KIỂU props từ component (`import type`, dựng view-model) – nhãn / hằng số nghiệp vụ đặt ở src/features/<miền>.',
+  scene3d:
+    'src/scene3d là lớp vẽ 3D – nhận cảnh + số liệu qua props, không đọc lớp dữ liệu, API, nối router, trang hay component nghiệp vụ (src/widgets).',
+  dataUi:
+    'src/data chỉ import KIỂU props từ component / widget (`import type`, dựng view-model) – nhãn / hằng số nghiệp vụ đặt ở src/features/<miền>.',
+  pages: 'Trang không import màn khác – khối dùng chung nhiều màn đặt ở src/pages/shared (trang lỗi: src/pages/errors).',
   app: 'src/app nối router với dữ liệu – không import trang (trang import app, không ngược lại).',
 };
 const restrict = (patterns) => ['error', { patterns }];
 const bans = (dirs, message) => dirs.map((d) => ban(d, message));
+/** Thư mục màn trong src/pages; `shared` (khối dùng chung) và `errors` (403/404/500) màn nào cũng import được. */
+const PAGE_DIRS = readdirSync(new URL('./src/pages', import.meta.url), { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name);
+const PAGES_OPEN = ['shared', 'errors'];
+/** `@/pages/<màn khác>` hoặc `(../)+<màn khác>` – trong src/pages không có thư mục con trùng tên màn ngoài pages/shared/maintenance (không import ngược lên). */
+const otherPages = (page) => {
+  const others = PAGE_DIRS.filter((p) => p !== page && !PAGES_OPEN.includes(p));
+  return others.length ? { regex: `^(@/pages/|(\\.\\./)+)(${others.join('|')})(/|$)`, message: LAYER_MSG.pages } : null;
+};
 const LAYER_RULES = [
   {
     files: ['src/lib/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': restrict([
         MOCKS,
-        ...bans(['hooks', 'components', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.lib),
+        ...bans(['hooks', 'components', 'widgets', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.lib),
       ]),
     },
   },
   {
     files: ['src/hooks/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': restrict([MOCKS, ...bans(['components', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.hooks)]),
+      'no-restricted-imports': restrict([
+        MOCKS,
+        ...bans(['components', 'widgets', 'features', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.hooks),
+      ]),
     },
   },
   {
     files: ['src/api/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['hooks', 'components', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.api)]) },
+    rules: {
+      'no-restricted-imports': restrict([MOCKS, ...bans(['hooks', 'components', 'widgets', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.api)]),
+    },
   },
   {
     files: ['src/features/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['components', 'hooks', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.features)]) },
+    rules: {
+      'no-restricted-imports': restrict([MOCKS, ...bans(['components', 'widgets', 'hooks', 'data', 'app', 'pages', 'scene3d'], LAYER_MSG.features)]),
+    },
   },
   {
     files: ['src/components/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': restrict([MOCKS, ...bans(['data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.componentsUp)]),
+      'no-restricted-imports': restrict([MOCKS, ...bans(['widgets', 'data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.componentsUp)]),
       '@typescript-eslint/no-restricted-imports': restrict([ban('features', LAYER_MSG.componentsFeatures, { allowTypeImports: true })]),
     },
   },
-  // Component nghiệp vụ (components/domain) được dùng hằng số / hàm thuần của src/features (một chiều).
-  { files: ['src/components/domain/**/*.{ts,tsx}'], rules: { '@typescript-eslint/no-restricted-imports': 'off' } },
+  // Component nghiệp vụ: như component nhưng được dùng GIÁ TRỊ của src/features (hằng số, hàm thuần).
+  {
+    files: ['src/widgets/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['data', 'app', 'pages', 'api', 'scene3d'], LAYER_MSG.widgets)]) },
+  },
   {
     files: ['src/scene3d/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['data', 'api', 'app', 'pages'], LAYER_MSG.scene3d)]) },
+    rules: { 'no-restricted-imports': restrict([MOCKS, ...bans(['widgets', 'data', 'api', 'app', 'pages'], LAYER_MSG.scene3d)]) },
   },
   {
     files: ['src/data/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': restrict(bans(['app', 'pages', 'scene3d'], LAYER_MSG.dataUp)),
-      '@typescript-eslint/no-restricted-imports': restrict([ban('components', LAYER_MSG.dataUi, { allowTypeImports: true })]),
+      '@typescript-eslint/no-restricted-imports': restrict(
+        ['components', 'widgets'].map((d) => ban(d, LAYER_MSG.dataUi, { allowTypeImports: true })),
+      ),
     },
   },
   {
     files: ['src/app/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': restrict([MOCKS, ban('pages', LAYER_MSG.app)]) },
   },
-  { files: ['src/pages/**/*.{ts,tsx}'], rules: { 'no-restricted-imports': restrict([MOCKS]) } },
+  // Một khối mỗi màn (đọc thư mục lúc chạy lint → màn mới tự có luật): cấm import màn khác, kể cả đường tương đối.
+  ...PAGE_DIRS.map((page) => ({
+    files: [`src/pages/${page}/**/*.{ts,tsx}`],
+    rules: { 'no-restricted-imports': restrict([MOCKS, otherPages(page)].filter(Boolean)) },
+  })),
 ];
 
 /**

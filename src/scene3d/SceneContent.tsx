@@ -2,7 +2,7 @@
 import { Html } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import type { CatmullRomCurve3 } from 'three';
-import { MapMarker, type MapMarkerData } from '@/components/PlantMap/MapMarker';
+import { MapMarker, type MapMarkerData } from '@/components/PlantMapImage/MapMarker';
 import { ASSETS } from './assets/registry';
 import type { ScenePalette } from './colors';
 import { EDIT_SNAP } from '@/features/scene/editConstants';

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Button, Modal, StaffList, Textarea, type StaffPickerItem } from '@/components';
+import { Button, Modal, Textarea } from '@/components';
+import { StaffList, type StaffPickerItem } from '@/widgets';
 import type { AlertRecord } from '@/data/alerts';
 import { runAction } from '@/lib/actionError';
 import { STAFF } from '@/data/staff';

@@ -1,6 +1,7 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, EmergencyBanner, FilterBar, HistoryIcon, Icon, KpiCard, PageHeader, buttonClass, type FilterDef } from '@/components';
+import { Button, Card, FilterBar, HistoryIcon, Icon, KpiCard, PageHeader, buttonClass, type FilterDef } from '@/components';
+import { EmergencyBanner } from '@/widgets';
 import { simulationConfigPath, simulationMonitorPath } from '@/app/assetRoutes';
 import { useAuth, useCan } from '@/app/auth';
 import { Page } from '@/app/Page';

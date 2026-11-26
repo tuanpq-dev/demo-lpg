@@ -1,15 +1,6 @@
 /** Mock data màn Tổng quan – nội dung lấy nguyên văn từ Figma 53:11. */
-import type {
-  AlertItemData,
-  AssetRowData,
-  CategoryBarItem,
-  DonutSegment,
-  HealthStat,
-  MapMarkerData,
-  MapView,
-  TimelineEvent,
-  TrendPoint,
-} from '@/components';
+import type { CategoryBarItem, DonutSegment, MapMarkerData, MapView, TimelineEvent, TrendPoint } from '@/components';
+import type { AlertItemData, AssetRowData, HealthStat } from '@/widgets';
 import { SYSTEM_TAGS, V101_TAGS, VAPORIZER_TAGS } from '@/features/live/tags';
 import { pad2 } from '@/lib/number';
 import type { KpiMock } from './types';

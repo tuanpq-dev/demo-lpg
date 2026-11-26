@@ -1,14 +1,5 @@
-import {
-  AlertCircleIcon,
-  Badge,
-  EmergencyBanner,
-  InfoGrid,
-  SensorList,
-  SignalLostIcon,
-  ThresholdGauge,
-  type InfoGridItem,
-  type TagTone,
-} from '@/components';
+import { AlertCircleIcon, Badge, InfoGrid, SignalLostIcon, ThresholdGauge, type InfoGridItem, type TagTone } from '@/components';
+import { EmergencyBanner, SensorList } from '@/widgets';
 import { cn } from '@/lib/cn';
 import { alertKind, alertOccurredAt, levelOf, useAlertLive, useAreaSensors, useTagSignal } from '@/data/alerts/detail';
 import type { AlertRecord } from '@/data/alerts';

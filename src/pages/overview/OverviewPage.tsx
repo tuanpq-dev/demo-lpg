@@ -4,9 +4,7 @@ import { useAuth } from '@/app/auth';
 import { canUseEditor } from '@/app/editorAccess';
 import { plantMapImage } from '@/assets/digital-twin';
 import {
-  AlertItem,
   AreaTrendChart,
-  AssetWatchlist,
   Card,
   CategoryBarList,
   ChartCard,
@@ -17,8 +15,8 @@ import {
   type PlantMapRenderer,
   RecentEventsCard,
   StatusPill,
-  SystemHealthCard,
 } from '@/components';
+import { AlertItem, AssetWatchlist, SystemHealthCard } from '@/widgets';
 import { ConnectedPlantMap } from '@/app/ConnectedPlantMap';
 import { PlantMap } from '@/scene3d';
 import { ClockButton, LiveDataButton } from '@/app/HeaderActions';

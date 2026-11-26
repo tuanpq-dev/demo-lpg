@@ -5,9 +5,9 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { Button } from '@/components/Button';
 import { SceneLoading } from '@/components/SceneLoading';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { MapShell } from '@/components/PlantMap/MapShell';
-import { PlantMapImage, applyTransform } from '@/components/PlantMap/PlantMapImage';
-import { type PlantMapProps, type PlantMapThreeProps } from '@/components/PlantMap/types';
+import { MapShell } from '@/components/PlantMapImage/MapShell';
+import { PlantMapImage, applyTransform } from '@/components/PlantMapImage/PlantMapImage';
+import { type PlantMapProps, type PlantMapThreeProps } from '@/components/PlantMapImage/types';
 
 // three + drei (~700KB) chỉ tải khi dùng renderer 3D.
 // `/* @__PURE__ */`: lời gọi lazy() ở top-level bị Rollup coi là side effect → cả module bị giữ trong chunk chính qua barrel.

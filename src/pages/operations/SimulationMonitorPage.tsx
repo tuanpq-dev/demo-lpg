@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Card, EmergencyBanner, PageHeader, StopCircleIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { Button, Card, PageHeader, StopCircleIcon, buttonClass, type BreadcrumbItem } from '@/components';
+import { EmergencyBanner } from '@/widgets';
 import { SIMULATION_PATH, simulationConfigPath, simulationResultPath } from '@/app/assetRoutes';
 import { useCan } from '@/app/auth';
 import { Page } from '@/app/Page';

@@ -1,5 +1,6 @@
 /** Khối giao diện của /alerts: cảnh báo ưu tiên, thanh thao tác hàng loạt. */
-import { AlertCard, Button, Icon, type AlertCardData } from '@/components';
+import { Button, Icon } from '@/components';
+import { AlertCard, type AlertCardData } from '@/widgets';
 
 /** 1. Cảnh báo ưu tiên – Figma 70:2901. */
 export function PriorityAlerts({ cards, onOpen }: { cards: readonly AlertCardData[]; onOpen: (id: string) => void }) {

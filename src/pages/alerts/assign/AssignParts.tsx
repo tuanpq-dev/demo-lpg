@@ -1,6 +1,7 @@
 /** Khối giao diện của modal "Phân công xử lý cảnh báo". */
 import type { RefObject } from 'react';
-import { Button, SearchInput, StaffFilters, StaffList, DiscardConfirmButtons } from '@/components';
+import { Button, SearchInput, DiscardConfirmButtons } from '@/components';
+import { StaffFilters, StaffList } from '@/widgets';
 import { ALERT_STAFF } from '@/data/alerts/detail';
 import type { planBulkAlertAssign } from '@/features/alerts/assign';
 import { shiftShortLabel } from '@/features/staff/availability';

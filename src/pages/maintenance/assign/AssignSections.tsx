@@ -1,19 +1,6 @@
 import { useId } from 'react';
-import {
-  AssignNotices,
-  Badge,
-  Button,
-  Combobox,
-  DatePicker,
-  DeviceArmIcon,
-  FormField,
-  MapIcon,
-  SearchInput,
-  Select,
-  StaffList,
-  Switch,
-  Textarea,
-} from '@/components';
+import { Badge, Button, Combobox, DatePicker, DeviceArmIcon, FormField, MapIcon, SearchInput, Select, Switch, Textarea } from '@/components';
+import { AssignNotices, StaffList } from '@/widgets';
 import { ASSIGNABLE_STAFF, DEPARTMENTS, SHIFTS, STATUS_LABEL, type MaintenanceRecord } from '@/data/maintenance';
 import { shiftShortLabel } from '@/features/maintenance/assign';
 import { SHIFT_SHORT, type AssignFormModel } from './useAssignForm';

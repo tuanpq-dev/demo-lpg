@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { InspectionTable } from '@/components';
+import { InspectionTable } from '@/widgets';
 import {
   INSPECTION_STATUSES,
   INSPECTION_STATUS_LABEL,

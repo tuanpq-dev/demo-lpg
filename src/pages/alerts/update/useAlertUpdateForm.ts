@@ -1,5 +1,5 @@
 import { useMemo, useReducer, useState } from 'react';
-import type { ReadingRowView } from '@/components';
+import type { ReadingRowView } from '@/widgets';
 import {
   alertPlaybook,
   closeLimit,
