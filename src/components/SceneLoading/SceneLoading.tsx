@@ -27,7 +27,11 @@ export function SceneLoading({ label = 'Đang tải mô hình 3D…', hidden = f
     >
       {snapshot && <img src={snapshot} alt="" decoding="sync" className="absolute inset-0 size-full object-cover" />}
       <span className={cn('flex flex-col items-center gap-3 text-sm text-fg-muted', snapshot && 'sr-only')}>
-        <span aria-hidden className="size-6 animate-spin rounded-full border-2 border-line/30 border-t-accent motion-reduce:animate-none" />
+        {/* Đã ẩn thì dừng xoay: lớp chờ vẫn nằm trong DOM (opacity 0), animation chạy tiếp sẽ bắt trình duyệt tính lại style mỗi khung hình. */}
+        <span
+          aria-hidden
+          className={cn('size-6 rounded-full border-2 border-line/30 border-t-accent', !hidden && 'animate-spin motion-reduce:animate-none')}
+        />
         {label}
       </span>
     </div>

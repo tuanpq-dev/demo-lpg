@@ -25,12 +25,13 @@ import { FloorOutline, PickerBridge, SelectionFootprints, type ScenePicker } fro
 import type { ResolvedObject, ResolvedScene } from '@/features/scene/geometry';
 import { SCENE_EXPOSURE } from './look';
 import { ObjectNode } from './ObjectNode';
-import { isWebGLAvailable, QUALITY_PRESETS, SCENE_QUALITIES, type SceneQuality } from '@/features/scene/quality';
+import { QUALITY_PRESETS, SCENE_QUALITIES, type SceneQuality } from '@/features/scene/quality';
 import { SceneLabels, ScenePipes } from './SceneContent';
 import { Ground, RendererLook, SceneLights, ShadowUpdates, WebGLErrorBoundary } from './SceneEnvironment';
 import { DeviceList, ObjectTooltip } from './SceneOverlays';
 import type { AssetType, LiveData, ObjectStatus, SceneCamera, SceneConfig, SceneView, Vec3 } from '@/features/scene/types';
 import { QualityMonitor, ReadySignal, useSceneReady } from './sceneReady';
+import { createRenderer, ShaderWarmup, useWarmFrameloop } from './renderer';
 import { useSceneSnapshot } from './sceneSnapshot';
 import { useEditPointer, type Marquee } from './useEditPointer';
 import { useSceneLive, useSceneSelection } from './useSceneModel';
@@ -83,8 +84,7 @@ const DEFAULT_CAMERA: SceneCamera = { position: [58, 50, 64], target: [0, 0, 0],
 
 /** Lỗi WebGL (không hỗ trợ / tạo context lỗi / mất context) – chỉ giữ lỗi đầu tiên, báo lên trang một lần. */
 function useGlError(onWebGLError?: (message: string) => void) {
-  const [webgl] = useState(isWebGLAvailable);
-  const [glError, setGlError] = useState<string | null>(webgl ? null : 'Trình duyệt không hỗ trợ WebGL.');
+  const [glError, setGlError] = useState<string | null>(null);
   const reportGlError = useCallback((message: string) => setGlError((cur) => cur ?? message), []);
   useEffect(() => {
     if (glError) onWebGLError?.(glError);
@@ -276,6 +276,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
   );
 
   const { labels, markedIds, statuses, flowOf, reducedMotion, animated } = useSceneLive(config, visible, liveData);
+  const { frameloop, markWarm } = useWarmFrameloop(animated);
   const cam = config.camera ?? DEFAULT_CAMERA;
   const hoveredObj = hovered ? byId.get(hovered) : undefined;
   const background = composerOn ? groundBehindToneMap : palette.ground;
@@ -306,8 +307,8 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
           dpr={preset.dpr}
           // PCF (không phải PCFSoft) để dùng được shadow.radius → bóng mềm.
           shadows="percentage"
-          frameloop={animated ? 'always' : 'demand'}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          frameloop={frameloop}
+          gl={createRenderer}
           onCreated={({ gl }) => {
             gl.domElement.addEventListener('webglcontextlost', (e) => {
               e.preventDefault();
@@ -376,6 +377,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(function Sce
               />
             </Suspense>
           )}
+          <ShaderWarmup offscreen={preset.postprocessing} hold={preset.postprocessing && !composerOn} onDone={markWarm} />
           <ReadySignal onReady={markReady} onCapture={onCapture} />
         </Canvas>
       </WebGLErrorBoundary>
